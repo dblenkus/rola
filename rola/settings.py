@@ -83,6 +83,19 @@ database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
 if database_password:
     DATABASES['default']['PASSWORD'] = database_password
 
+redis_host = config('ROLA_REDIS_HOST', default='redis')
+redis_port = config('ROLA_REDIS_PORT', default=6379, cast=int)
+redis_db = config('ROLA_REDIS_DB', default=1, cast=int)
+CACHES = {
+    'default': {
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': f'redis://{redis_host}:{redis_port}/{redis_db}',
+    }
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
 # Password validation
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 
