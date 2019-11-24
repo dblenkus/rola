@@ -14,6 +14,6 @@ RUN apk add \
 
 FROM common
 COPY --from=builder /install /usr/local
-COPY . /app
+COPY rola manage.py LICENSE /app/
 WORKDIR /app
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "rola.asgi:application"]
