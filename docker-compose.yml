@@ -1,12 +1,11 @@
-version: '3.7'
+version: "3.7"
 
 services:
-
   postgresql:
     image: postgres:12-alpine
     environment:
-        POSTGRES_USER: rola
-        POSTGRES_DB: rola
+      POSTGRES_USER: rola
+      POSTGRES_DB: rola
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
     networks:
@@ -34,6 +33,7 @@ services:
     volumes:
       - ".:/app"
       - "django_media:/storage/media"
+    env_file: docker.env
     entrypoint: ["./manage.py"]
     command: ["runserver", "0.0.0.0:8000"]
     networks:
@@ -66,12 +66,10 @@ services:
     ports:
       - "8080:80"
 
-
 volumes:
   postgres_data:
   redis_data:
   django_media:
-
 
 networks:
   internal:
