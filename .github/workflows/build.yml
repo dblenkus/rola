@@ -1,0 +1,91 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+  schedule:
+    - cron: "30 2 * * *"
+
+jobs:
+  test:
+    runs-on: ubuntu-18.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tox-env: [py38, linters, packaging, migrations]
+
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_USER: rola
+          POSTGRES_DB: rola
+        ports:
+          - 5432/tcp
+        # Needed because the postgres container does not provide a healthcheck.
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+      redis:
+        image: redis:5
+        ports:
+          - 6379/tcp
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install Tox
+        run: python -m pip install --user tox
+      # - name: Run Tox
+      #   run: python -m tox -e ${{ matrix.tox-env }} --skip-missing-interpreters false
+      #   env:
+      #     # Get randomly assigned published ports.
+      #     ROLA_POSTGRESQL_PORT: ${{ job.services.postgres.ports[5432] }}
+      #     ROLA_REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+      # - name: Upload coverage to Codecov
+      #   if: matrix.tox-env == 'py38'
+      #   uses: codecov/codecov-action@v1
+      #   with:
+      #     token: ${{ secrets.codecov_token }}
+      #     file: .coverage
+
+  build:
+    runs-on: ubuntu-18.04
+
+    needs: test
+
+    strategy:
+      matrix:
+        image-name: [backend, frontend, nginx]
+        include:
+          - image-name: backend
+            workdir: "."
+            dockerfile: Dockerfile
+          - image-name: frontend
+            workdir: frontend
+            dockerfile: Dockerfile
+          - image-name: nginx
+            workdir: docker/nginx
+            dockerfile: Dockerfile
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Publish Docker Image to GPR
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: dblenkus/rola/${{ matrix.image-name }}
+          username: dblenkus
+          password: ${{ secrets.GITHUB_TOKEN }}
+          workdir: ${{ matrix.workdir }}
+          dockerfile: ${{ matrix.dockerfile }}
+          tag_names: true
+          registry: docker.pkg.github.com
