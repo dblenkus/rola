@@ -1,17 +1,18 @@
-FROM python:3.8-alpine as base
+FROM python:3.8-alpine as common
+RUN apk add postgresql-dev
 
-FROM base as builder
+FROM common as builder
 WORKDIR /install
 COPY requirements.txt /requirements.txt
 RUN apk add \
-        build-base \
-        libffi-dev \
-        openssl-dev && \
+    build-base \
+    libffi-dev \
+    openssl-dev && \
     pip install --prefix=/install --no-warn-script-location \
-        -r /requirements.txt \
-        daphne==2.4.0
+    -r /requirements.txt \
+    daphne==2.4.0
 
-FROM base
+FROM common
 COPY --from=builder /install /usr/local
 COPY . /app
 WORKDIR /app
