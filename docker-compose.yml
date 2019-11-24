@@ -46,10 +46,21 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile
+      target: installer
+    volumes:
+      - "./frontend:/node/app"
+      # Shade mounted modules to force node to use ones from the parent dir.
+      - "empty:/node/app/node_modules"
+    environment:
+      # Detecting file system changes on bind mounts sometimes doesn't work
+      # by default: https://github.com/paulmillr/chokidar
+      CHOKIDAR_USEPOLLING: "true"
+    entrypoint: ["npm"]
+    command: ["run", "serve"]
     networks:
       - internal
     expose:
-      - "80"
+      - "8080"
 
   nginx:
     image: rolca/nginx
@@ -69,6 +80,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  empty:
   django_media:
 
 networks:
