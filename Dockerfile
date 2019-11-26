@@ -10,7 +10,8 @@ RUN apk add \
     openssl-dev && \
     pip install --prefix=/install --no-warn-script-location \
     -r /requirements.txt \
-    daphne==2.4.0
+    daphne==2.4.0 \
+    ipython
 
 FROM common
 COPY --from=builder /install /usr/local
