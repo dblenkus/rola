@@ -24,6 +24,7 @@ SECRET_KEY = config('ROLA_SECRET_KEY')
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
 
+AUTH_USER_MODEL = 'drf_user.User'
 
 # Application definition
 
@@ -35,8 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken',
-    'rola.user',
+    'drf_user.apps.UserConfig',
 ]
 
 MIDDLEWARE = [
@@ -115,9 +115,7 @@ if not config('ROLA_DISABLE_PASSWORD_VALIDATORS', default=False):
 # Django REST Framework
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['drf_user.authentication.TokenAuthentication',],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),

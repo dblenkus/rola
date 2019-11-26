@@ -17,10 +17,15 @@ from django.contrib import admin
 from django.urls import include, path
 
 from rest_framework.authtoken import views as drf_views
+from rest_framework.routers import SimpleRouter
+from drf_user import views as user_views
 
+router = SimpleRouter(trailing_slash=False)
+router.register(r'user', user_views.UserViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('api-token-auth/', drf_views.obtain_auth_token),
+    path('api/v1/login', user_views.LoginView.as_view(), name='login'),
+    path('api/v1/', include(router.urls)),
 ]
