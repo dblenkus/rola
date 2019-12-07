@@ -14,6 +14,9 @@ sftp-config.json
 # Python virtual environment.
 /.venv/
 
+# Test files.
+.pytest_cache/
+
 # Ignore binaries.
 *.py[cod]
 *.so
