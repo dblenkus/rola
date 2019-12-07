@@ -56,8 +56,8 @@ services:
       # Detecting file system changes on bind mounts sometimes doesn't work
       # by default: https://github.com/paulmillr/chokidar
       CHOKIDAR_USEPOLLING: "true"
-    entrypoint: ["npm"]
-    command: ["run", "serve"]
+    entrypoint: ["vue-cli-service"]
+    command: ["serve"]
     networks:
       - internal
     expose:
