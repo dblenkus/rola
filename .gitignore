@@ -11,6 +11,9 @@ sftp-config.json
 .idea
 .vscode
 
+# Python virtual environment.
+/.venv/
+
 # Ignore binaries.
 *.py[cod]
 *.so
