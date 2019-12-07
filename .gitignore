@@ -9,7 +9,6 @@
 *.sublime-workspace
 sftp-config.json
 .idea
-.vscode
 
 # Python virtual environment.
 /.venv/
