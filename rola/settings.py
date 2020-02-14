@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_user.apps.UserConfig',
+    'storages',
     'utils',
 ]
 
@@ -145,4 +146,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_URL = '/static/'
+if config('ROLA_USE_S3', default=False, cast=bool):
+    # AWS settings.
+    AWS_ACCESS_KEY_ID = config('ROLA_AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('ROLA_AWS_SECRET_ACCESS_KEY')
+    AWS_S3_ENDPOINT_URL = config('ROLA_AWS_S3_ENDPOINT_URL')
+    AWS_STORAGE_BUCKET_NAME = config('ROLA_AWS_STORAGE_BUCKET_NAME')
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    # S3 static settings.
+    AWS_LOCATION = 'django'
+    STATIC_URL = config('ROLA_STATIC_URL')
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+else:
+    STATIC_URL = '/static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
