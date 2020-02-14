@@ -85,6 +85,8 @@ DATABASES = {
 database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
 if database_password:
     DATABASES['default']['PASSWORD'] = database_password
+if config('ROLA_POSTGRESQL_SSLMODE', default=False, cast=bool):
+    DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
 
 redis_host = config('ROLA_REDIS_HOST', default='redis')
 redis_port = config('ROLA_REDIS_PORT', default=6379, cast=int)
