@@ -80,13 +80,15 @@ DATABASES = {
         'USER': config('ROLA_POSTGRESQL_USER', default='rola'),
         'HOST': config('ROLA_POSTGRESQL_HOST', default='postgresql'),
         'PORT': config('ROLA_POSTGRESQL_PORT', default=5432, cast=int),
+        'CONN_MAX_AGE': None,  # Unlimited persistent connection.
+        'OPTIONS': {'connect_timeout': 3,},
     }
 }
 database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
 if database_password:
     DATABASES['default']['PASSWORD'] = database_password
 if config('ROLA_POSTGRESQL_SSLMODE', default=False, cast=bool):
-    DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
+    DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 
 redis_host = config('ROLA_REDIS_HOST', default='redis')
 redis_port = config('ROLA_REDIS_PORT', default=6379, cast=int)
