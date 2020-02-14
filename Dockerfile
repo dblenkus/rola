@@ -28,6 +28,7 @@ USER python
 FROM common
 COPY --from=builder /install /usr/local
 COPY rola rola
+COPY utils utils
 COPY drf_user drf_user
 COPY manage.py LICENSE ./
 RUN python -m compileall rola
