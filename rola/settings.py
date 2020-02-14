@@ -107,15 +107,15 @@ if not config('ROLA_DISABLE_PASSWORD_VALIDATORS', default=False):
         {
             'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
         },
-        {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-        {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-        {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+        {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+        {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+        {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
     ]
 
 # Django REST Framework
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ['drf_user.authentication.TokenAuthentication',],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['drf_user.authentication.TokenAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
