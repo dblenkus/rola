@@ -21,7 +21,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:11
+        image: postgres:11.6
         env:
           POSTGRES_USER: rola
           POSTGRES_DB: rola
