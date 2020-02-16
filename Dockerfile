@@ -10,6 +10,7 @@ WORKDIR /install
 COPY requirements.txt requirements.dev.txt /
 RUN apk add --update --no-cache \
     build-base \
+    git \
     libffi-dev \
     openssl-dev && \
     pip install --prefix=/install --no-warn-script-location \
@@ -22,7 +23,7 @@ RUN apk add --update --no-cache \
 
 FROM common as development
 COPY --from=builder /install_dev /usr/local
-RUN apk add --update --no-cache git
+# RUN apk add --update --no-cache git
 USER python
 
 FROM common

@@ -92,13 +92,23 @@ if database_password:
 if config('ROLA_POSTGRESQL_SSLMODE', default=False, cast=bool):
     DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 
-redis_host = config('ROLA_REDIS_HOST', default='redis')
-redis_port = config('ROLA_REDIS_PORT', default=6379, cast=int)
-redis_db = config('ROLA_REDIS_DB', default=1, cast=int)
+redis_url = "{host}:{port}/{db}".format(
+    host=config('ROLA_REDIS_HOST', default='redis'),
+    port=config('ROLA_REDIS_PORT', default=6379, cast=int),
+    db=config('ROLA_REDIS_DB', default=1, cast=int),
+)
+redis_password = config('ROLA_REDIS_PASSWORD', default=None)
+if redis_password:
+    redis_url = ":{}@{}".format(redis_password, redis_url)
+redis_sslmode = config('ROLA_REDIS_SSLMODE', default=False, cast=bool)
+redis_url = "{protocol}://{url}".format(
+    protocol="rediss" if redis_sslmode else "redis", url=redis_url,
+)
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.RedisCache',
-        'LOCATION': f'redis://{redis_host}:{redis_port}/{redis_db}',
+        'LOCATION': redis_url,
+        'OPTIONS': {'SOCKET_TIMEOUT': 3, 'SOCKET_CONNECT_TIMEOUT': 3,},
     }
 }
 
