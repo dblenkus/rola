@@ -21,8 +21,9 @@ jobs:
 
     services:
       postgres:
-        image: postgres:11.6
+        image: postgres:11
         env:
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: rola
           POSTGRES_DB: rola
         ports:
