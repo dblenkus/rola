@@ -108,7 +108,7 @@ class UserManagementTest(APITestCase):
         response = self.client.get(self.admin_detail_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_get_user(self):
+    def test_get_user_admin(self):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token {}'.format(self.admin_token.key)
         )
