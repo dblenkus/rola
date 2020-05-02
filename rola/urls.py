@@ -20,8 +20,14 @@ from rest_framework.authtoken import views as drf_views
 from rest_framework.routers import SimpleRouter
 from drf_user import views as user_views
 
+from rolca.urls import route_lists
+
 router = SimpleRouter(trailing_slash=False)
 router.register(r'user', user_views.UserViewSet)
+
+for route_list in route_lists:
+    for prefix, viewset in route_list:
+        router.register(prefix, viewset)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

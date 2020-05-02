@@ -7,3 +7,4 @@ python-decouple==3.3
 # https://github.com/sebleier/django-redis-cache/commit/87e615eeb1fe5ab2b47ed628de701fc3d9ea03bb
 git+https://github.com/sebleier/django-redis-cache.git#egg=master
 djangorestframework~=3.10.0
+git+https://github.com/dblenkus/rolca.git#egg=master
