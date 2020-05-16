@@ -156,6 +156,8 @@ USE_L10N = True
 USE_TZ = True
 
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 USE_X_FORWARDED_HOST = True
 
 # Static files (CSS, JavaScript, Images)
