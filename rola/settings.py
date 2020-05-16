@@ -176,6 +176,8 @@ if config('ROLA_USE_S3', default=False, cast=bool):
     STATIC_URL = config('ROLA_STATIC_URL')
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     STATIC_URL = '/static2/'
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
