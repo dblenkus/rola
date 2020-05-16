@@ -200,3 +200,8 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+
+# Rolca.
+ROLCA_MAX_UPLOAD_SIZE = 2097152  # 2MB
+ROLCA_MAX_UPLOAD_RESOLUTION = 1920
