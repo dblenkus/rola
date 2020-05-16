@@ -29,6 +29,7 @@ AUTH_USER_MODEL = 'drf_user.User'
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -172,3 +174,25 @@ if config('ROLA_USE_S3', default=False, cast=bool):
 else:
     STATIC_URL = '/static2/'
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+
+# CORS.
+
+CORS_ORIGIN_REGEX_WHITELIST = [
+    r"^(http:\/\/)?(localhost|127.0.0.1)(:\d+)$",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-disposition',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
