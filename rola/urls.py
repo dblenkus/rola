@@ -32,6 +32,9 @@ for route_list in route_lists:
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('api/v1/login', user_views.LoginView.as_view(), name='login'),
+    path('api/v1/user/login', user_views.LoginView.as_view(), name='login'),
     path('api/v1/', include(router.urls)),
+    path('core/', include('rolca.core.urls', namespace='rolca-core')),
+    path('register/activate', user_views.activate_user_view, name='activate-user'),
+    path('password-reset', user_views.password_reset_view, name='password-reset'),
 ]

@@ -1,5 +1,6 @@
 import logging
 
+from django.http import HttpResponse
 from rest_framework import exceptions, mixins, views, viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -105,3 +106,11 @@ class UserViewSet(viewsets.ModelViewSet):
     #     serializer.is_valid()
 
     #     return Response(serializer.errors)
+
+
+def activate_user_view(request):
+    return HttpResponse(status=501)
+
+
+def password_reset_view(request):
+    return HttpResponse(status=501)

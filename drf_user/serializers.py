@@ -156,4 +156,3 @@ class PasswordResetSerializer(serializers.Serializer):
         user.save()
 
         Token.objects.expire_for_user(user)
-
