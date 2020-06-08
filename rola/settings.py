@@ -157,6 +157,14 @@ USE_TZ = True
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+if config('ROLA_USE_SES', default=False, cast=bool):
+    EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
+    DEFAULT_FROM_EMAIL = config('ROLA_DEFAULT_FROM_EMAIL')
+    EMAIL_HOST = 'email-smtp.eu-west-1.amazonaws.com'
+    EMAIL_PORT = 465
+    EMAIL_HOST_USER = config('ROLA_SES_ACCESS_KEY_ID')
+    EMAIL_HOST_PASSWORD = config('ROLA_SES_SECRET_ACCESS_KEY')
+    EMAIL_USE_SSL = True
 
 USE_X_FORWARDED_HOST = True
 
