@@ -11,8 +11,11 @@ COPY requirements.txt requirements.dev.txt /
 RUN apk add --update --no-cache \
     build-base \
     git \
+    jpeg-dev \
     libffi-dev \
-    openssl-dev && \
+    openssl-dev \
+    zlib-dev && \
+    pip install --upgrade pip && \
     pip install --prefix=/install --no-warn-script-location \
     -r /requirements.txt \
     daphne==2.4.0 \
@@ -32,6 +35,7 @@ COPY rola rola
 COPY utils utils
 COPY drf_user drf_user
 COPY manage.py LICENSE ./
+RUN apk add --update --no-cache jpeg-dev
 RUN python -m compileall rola
 USER python
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "rola.asgi:application"]
