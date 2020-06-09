@@ -176,7 +176,7 @@ if config('ROLA_USE_S3', default=False, cast=bool):
     AWS_ACCESS_KEY_ID = config('ROLA_AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = config('ROLA_AWS_SECRET_ACCESS_KEY')
     AWS_S3_ENDPOINT_URL = config('ROLA_AWS_S3_ENDPOINT_URL')
-    AWS_DEFAULT_ACL = 'public-read'
+    AWS_DEFAULT_ACL = None
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     # S3 static settings.
     STATICFILES_STORAGE = 'rola.backends.StaticStorage'
