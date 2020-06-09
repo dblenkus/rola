@@ -176,13 +176,16 @@ if config('ROLA_USE_S3', default=False, cast=bool):
     AWS_ACCESS_KEY_ID = config('ROLA_AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = config('ROLA_AWS_SECRET_ACCESS_KEY')
     AWS_S3_ENDPOINT_URL = config('ROLA_AWS_S3_ENDPOINT_URL')
-    AWS_STORAGE_BUCKET_NAME = config('ROLA_AWS_STORAGE_BUCKET_NAME')
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     # S3 static settings.
-    AWS_LOCATION = 'django'
+    STATICFILES_STORAGE = 'rola.backends.StaticStorage'
+    AWS_STATIC_STORAGE_BUCKET_NAME = config('ROLA_AWS_STATIC_STORAGE_BUCKET_NAME')
     STATIC_URL = config('ROLA_STATIC_URL')
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # S3 media settings.
+    DEFAULT_FILE_STORAGE = 'rola.backends.MediaStorage'
+    AWS_MEDIA_STORAGE_BUCKET_NAME = config('ROLA_AWS_MEDIA_STORAGE_BUCKET_NAME')
+    MEDIA_URL = config('ROLA_MEDIA_URL')
 else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
