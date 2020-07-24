@@ -49,6 +49,22 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+class Location(models.Model):
+    """Location model."""
+
+    address = models.CharField(max_length=100)
+
+    city = models.CharField(max_length=100)
+
+    postal_code = models.CharField(max_length=100)
+
+    country = models.CharField(max_length=100)
+
+    def __str__(self):
+        """String representation of the object."""
+        return f"{self.address}, {self.postal_code} {self.city}, {self.country}"
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     """User model."""
 
@@ -63,6 +79,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, null=True, blank=True)
 
     last_name = models.CharField(max_length=150, null=True, blank=True)
+
+    location = models.ForeignKey(
+        Location, on_delete=models.CASCADE, null=True, blank=True
+    )
 
     is_staff = models.BooleanField(default=False)
 

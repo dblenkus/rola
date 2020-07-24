@@ -4,7 +4,7 @@ from django.db.models import F
 
 from rest_framework import exceptions, serializers
 
-from .models import User, Token
+from .models import Location, User, Token
 from .utils.signing import (
     send_activation_email,
     send_reset_email,
@@ -13,10 +13,32 @@ from .utils.signing import (
 )
 
 
+class LocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Location
+        fields = ['address', 'city', 'postal_code', 'country']
+
+
 class UserSerializer(serializers.ModelSerializer):
+
+    address = serializers.CharField(source='location.address')
+    city = serializers.CharField(source='location.city')
+    postal_code = serializers.CharField(source='location.postal_code')
+    country = serializers.CharField(source='location.country')
+
     class Meta:
         model = User
-        fields = ['id', 'password', 'email', 'first_name', 'last_name']
+        fields = [
+            'id',
+            'password',
+            'email',
+            'first_name',
+            'last_name',
+            'address',
+            'city',
+            'postal_code',
+            'country',
+        ]
         read_only_fields = ['id']
         extra_kwargs = {
             'first_name': {'required': True},
@@ -25,11 +47,13 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, data):
+        location = Location.objects.create(**data['location'])
         user = User.objects.create_user(
             email=data['email'],
             password=data['password'],
             first_name=data['first_name'],
             last_name=data['last_name'],
+            location=location,
         )
         send_activation_email(user, self.context.get('request'))
 
