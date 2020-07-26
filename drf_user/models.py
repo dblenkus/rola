@@ -1,5 +1,6 @@
 """User models."""
 import binascii
+import logging
 import os
 import uuid
 
@@ -10,11 +11,14 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
 from django.utils.timezone import now
 from django.core.mail import send_mail
 from django.db import models
 
 from .settings import drf_user_settings
+
+logger = logging.getLogger(__name__)
 
 
 class UserManager(BaseUserManager):
@@ -47,6 +51,31 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self._create_user(email, password, **extra_fields)
+
+
+class Email(models.Model):
+    """E-mail model."""
+
+    subject = models.CharField(max_length=100)
+
+    body = models.TextField()
+
+    html_body = models.TextField(null=True, blank=True)
+
+    def send(self, address):
+        """Send email to give address."""
+        subject = ''.join(self.subject.splitlines())
+
+        email_kwargs = {}
+        if self.html_body:
+            email_kwargs['html_message'] = self.html_body
+
+        try:
+            send_mail(subject, self.body, None, [address], **email_kwargs)
+        except Exception:
+            logger.exception(
+                "Error while sending e-mail for user '{}'.".format(address)
+            )
 
 
 class Location(models.Model):
