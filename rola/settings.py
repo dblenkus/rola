@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rolca.core',
     'drf_user.apps.UserConfig',
     'storages',
@@ -137,6 +138,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ['drf_user.authentication.TokenAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.backends.DjangoFilterBackend',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
