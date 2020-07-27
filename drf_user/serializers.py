@@ -66,6 +66,12 @@ class UserSerializer(serializers.ModelSerializer):
 
         return email
 
+    def validate_password(self, password):
+        """Validate password."""
+        user = self.context.get("user")
+        validate_password(password, user)
+        return password
+
 
 class TokenSerializer(serializers.ModelSerializer):
     class Meta:
