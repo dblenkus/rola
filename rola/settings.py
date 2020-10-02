@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rolca.backup',
     'rolca.core',
+    'rolca.payment',
     'drf_user.apps.UserConfig',
     'storages',
     'utils',
