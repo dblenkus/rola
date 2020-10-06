@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    'rolca.backup',
+    # 'rolca.backup',
     'rolca.core',
     'rolca.payment',
     'drf_user.apps.UserConfig',
