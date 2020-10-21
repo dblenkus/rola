@@ -32,7 +32,7 @@ for route_list in route_lists:
         router.register(prefix, viewset)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/v1/user/login', user_views.LoginView.as_view(), name='login'),
     path('api/v1/', include(router.urls)),
