@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # 'rolca.backup',
     'rolca.core',
     'rolca.payment',
+    'rolca.rating',
     'drf_user.apps.UserConfig',
     'storages',
     'utils',
