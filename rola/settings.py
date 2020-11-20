@@ -147,7 +147,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.backends.DjangoFilterBackend',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rola.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'PAGE_SIZE': 500,
 }
 
 # Django channels.
