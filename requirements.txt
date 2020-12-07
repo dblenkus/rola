@@ -1,4 +1,4 @@
-boto3==1.11.17
+boto3==1.14.0
 Django==3.0rc1
 django-cors-headers==3.2.1
 django-smtp-ssl==1.0
