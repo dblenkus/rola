@@ -19,10 +19,12 @@ RUN apk add --update --no-cache \
     pip install --prefix=/install --no-warn-script-location \
     -r /requirements.txt \
     daphne==2.4.0 \
-    ipython && \
+    ipython \
+    jedi==0.17 && \
     pip install --prefix=/install_dev --no-warn-script-location \
     -r /requirements.dev.txt \
-    ipython
+    ipython \
+    jedi==0.17
 
 FROM common as development
 COPY --from=builder /install_dev /usr/local
