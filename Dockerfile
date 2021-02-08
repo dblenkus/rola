@@ -10,6 +10,8 @@ WORKDIR /install
 COPY requirements.txt requirements.dev.txt /
 RUN apk add --update --no-cache \
     build-base \
+    rust \
+    cargo \
     git \
     libffi-dev \
     openssl-dev \
