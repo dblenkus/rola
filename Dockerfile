@@ -17,7 +17,7 @@ RUN apk add --update --no-cache \
     openssl-dev \
     zlib-dev && \
     pip install --upgrade pip && \
-    pip install --prefix=/install --no-warn-script-location \
+    CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip install --prefix=/install --no-warn-script-location \
     -r /requirements.txt \
     daphne==2.4.0 \
     ipython \
