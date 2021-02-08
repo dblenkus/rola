@@ -6,6 +6,7 @@ services:
     environment:
       POSTGRES_USER: rola
       POSTGRES_DB: rola
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
       # Create another user to support rumming Rolca's tests.
@@ -33,7 +34,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development
     depends_on:
       - postgresql
       - redis
