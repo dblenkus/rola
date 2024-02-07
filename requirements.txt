@@ -1,5 +1,5 @@
 boto3==1.14.0
-Django==3.0rc1
+Django==3.2.24
 django-cors-headers==3.2.1
 django-smtp-ssl==1.0
 django-storages==1.9.1
