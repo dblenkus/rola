@@ -1,4 +1,4 @@
-FROM python:3.8-alpine as common
+FROM python:3.14-alpine as common
 WORKDIR /app
 EXPOSE 8000
 RUN addgroup -g 1000 python && \
