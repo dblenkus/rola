@@ -100,6 +100,9 @@ class UserManagementTest(APITestCase):
 
         response = self.client.get(self.user_detail_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertCountEqual(
+            response.data.keys(), ['id', 'first_name', 'last_name', 'email']
+        )
         self.assertEqual(response.data['id'], str(self.user.id))
         self.assertEqual(response.data['email'], self.user.email)
         self.assertEqual(response.data['first_name'], self.user.first_name)
@@ -143,6 +146,29 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user.refresh_from_db()
         self.assertTrue(user.is_active)
+
+    def test_create_user_with_location(self):
+        post_data = {
+            **self.post_data,
+            'email': 'janez-location@example.com',
+            'address': 'Main street 1',
+            'city': 'Ljubljana',
+            'postal_code': '1000',
+            'country': 'Slovenia',
+        }
+        response = self.client.post(self.list_url, post_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotIn('address', response.data)
+        self.assertNotIn('city', response.data)
+        self.assertNotIn('postal_code', response.data)
+        self.assertNotIn('country', response.data)
+
+        user = User.objects.select_related('location').get(id=response.data['id'])
+        self.assertIsNotNone(user.location)
+        self.assertEqual(user.location.address, post_data['address'])
+        self.assertEqual(user.location.city, post_data['city'])
+        self.assertEqual(user.location.postal_code, post_data['postal_code'])
+        self.assertEqual(user.location.country, post_data['country'])
 
     def test_expired_activation_token(self):
         self.user.is_active = False
@@ -311,6 +337,15 @@ class ResetPasswordTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(new_password))
+
+    def test_request_password_reset_unknown_user(self):
+        response = self.client.post(
+            self.request_reset_password_url,
+            {'email': 'missing@example.com'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('User does not exist', str(response.data['detail']))
 
     def test_expired_token(self):
         mocked_time = Mock()
