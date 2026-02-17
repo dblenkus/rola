@@ -29,7 +29,7 @@ router.register(r'user', user_views.UserViewSet)
 
 for route_list in route_lists:
     for prefix, viewset in route_list:
-        router.register(prefix, viewset)
+        router.register(prefix, viewset, basename=prefix.replace('/', '-'))
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),

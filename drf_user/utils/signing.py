@@ -77,7 +77,7 @@ def send_activation_email(user, request):
         email_template_name=os.path.join('drf_user', 'registration', 'email_body.txt'),
         token=generate_activation_token(user),
         user=user,
-        url=request.build_absolute_uri(reverse('activate-user')),
+        url=request.build_absolute_uri(reverse('user-activate-account')),
         html_email_template_name=os.path.join(
             'drf_user', 'registration', 'email_body.html'
         ),
@@ -95,7 +95,7 @@ def send_reset_email(user, request):
         ),
         token=generate_reset_token(user),
         user=user,
-        url=request.build_absolute_uri(reverse('password-reset')),
+        url=request.build_absolute_uri(reverse('user-password-reset')),
         html_email_template_name=os.path.join(
             'drf_user', 'password_reset', 'email_body.html'
         ),

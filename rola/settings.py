@@ -83,22 +83,31 @@ WSGI_APPLICATION = 'rola.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('ROLA_POSTGRESQL_NAME', default='rola'),
-        'USER': config('ROLA_POSTGRESQL_USER', default='rola'),
-        'HOST': config('ROLA_POSTGRESQL_HOST', default='postgresql'),
-        'PORT': config('ROLA_POSTGRESQL_PORT', default=5432, cast=int),
-        'CONN_MAX_AGE': None,  # Unlimited persistent connection.
-        'OPTIONS': {'connect_timeout': 3,},
+db_engine = config('ROLA_DB_ENGINE', default='django.db.backends.postgresql')
+if db_engine == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': config('ROLA_SQLITE_NAME', default=os.path.join(BASE_DIR, 'db.sqlite3')),
+        }
     }
-}
-database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
-if database_password:
-    DATABASES['default']['PASSWORD'] = database_password
-if config('ROLA_POSTGRESQL_SSLMODE', default=False, cast=bool):
-    DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': config('ROLA_POSTGRESQL_NAME', default='rola'),
+            'USER': config('ROLA_POSTGRESQL_USER', default='rola'),
+            'HOST': config('ROLA_POSTGRESQL_HOST', default='postgresql'),
+            'PORT': config('ROLA_POSTGRESQL_PORT', default=5432, cast=int),
+            'CONN_MAX_AGE': None,  # Unlimited persistent connection.
+            'OPTIONS': {'connect_timeout': 3,},
+        }
+    }
+    database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
+    if database_password:
+        DATABASES['default']['PASSWORD'] = database_password
+    if config('ROLA_POSTGRESQL_SSLMODE', default=False, cast=bool):
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 
 redis_url = "{host}:{port}/{db}".format(
     host=config('ROLA_REDIS_HOST', default='redis'),
@@ -114,7 +123,7 @@ redis_url = "{protocol}://{url}".format(
 )
 CACHES = {
     'default': {
-        'BACKEND': 'redis_cache.RedisCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': redis_url,
         'OPTIONS': {'SOCKET_TIMEOUT': 3, 'SOCKET_CONNECT_TIMEOUT': 3,},
     }
@@ -171,8 +180,6 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 
@@ -215,7 +222,7 @@ else:
 
 # CORS.
 
-CORS_ORIGIN_REGEX_WHITELIST = [
+CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^(http:\/\/)?(localhost|127.0.0.1)(:\d+)$",
 ]
 

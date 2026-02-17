@@ -21,10 +21,18 @@ class LocationSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
 
-    address = serializers.CharField(source='location.address')
-    city = serializers.CharField(source='location.city')
-    postal_code = serializers.CharField(source='location.postal_code')
-    country = serializers.CharField(source='location.country')
+    address = serializers.CharField(
+        source='location.address', required=False, allow_null=True, allow_blank=True, write_only=True
+    )
+    city = serializers.CharField(
+        source='location.city', required=False, allow_null=True, allow_blank=True, write_only=True
+    )
+    postal_code = serializers.CharField(
+        source='location.postal_code', required=False, allow_null=True, allow_blank=True, write_only=True
+    )
+    country = serializers.CharField(
+        source='location.country', required=False, allow_null=True, allow_blank=True, write_only=True
+    )
 
     class Meta:
         model = User
@@ -47,7 +55,8 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, data):
-        location = Location.objects.create(**data['location'])
+        location_data = data.pop('location', None)
+        location = Location.objects.create(**location_data) if location_data else None
         user = User.objects.create_user(
             email=data['email'],
             password=data['password'],
