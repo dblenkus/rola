@@ -14,7 +14,6 @@ import os
 
 from decouple import config, Csv
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -25,6 +24,7 @@ SECRET_KEY = config('ROLA_SECRET_KEY')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
 
 AUTH_USER_MODEL = 'drf_user.User'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Application definition
 
@@ -88,7 +88,9 @@ if db_engine == 'django.db.backends.sqlite3':
     DATABASES = {
         'default': {
             'ENGINE': db_engine,
-            'NAME': config('ROLA_SQLITE_NAME', default=os.path.join(BASE_DIR, 'db.sqlite3')),
+            'NAME': config(
+                'ROLA_SQLITE_NAME', default=os.path.join(BASE_DIR, 'db.sqlite3')
+            ),
         }
     }
 else:
@@ -100,7 +102,7 @@ else:
             'HOST': config('ROLA_POSTGRESQL_HOST', default='postgresql'),
             'PORT': config('ROLA_POSTGRESQL_PORT', default=5432, cast=int),
             'CONN_MAX_AGE': None,  # Unlimited persistent connection.
-            'OPTIONS': {'connect_timeout': 3,},
+            'OPTIONS': {'connect_timeout': 3},
         }
     }
     database_password = config('ROLA_POSTGRESQL_PASSWORD', default=None)
@@ -119,13 +121,14 @@ if redis_password:
     redis_url = ":{}@{}".format(redis_password, redis_url)
 redis_sslmode = config('ROLA_REDIS_SSLMODE', default=False, cast=bool)
 redis_url = "{protocol}://{url}".format(
-    protocol="rediss" if redis_sslmode else "redis", url=redis_url,
+    protocol="rediss" if redis_sslmode else "redis",
+    url=redis_url,
 )
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': redis_url,
-        'OPTIONS': {'SOCKET_TIMEOUT': 3, 'SOCKET_CONNECT_TIMEOUT': 3,},
+        'OPTIONS': {'SOCKET_TIMEOUT': 3, 'SOCKET_CONNECT_TIMEOUT': 3},
     }
 }
 
@@ -137,9 +140,6 @@ SESSION_CACHE_ALIAS = "default"
 
 if not config('ROLA_DISABLE_PASSWORD_VALIDATORS', default=False):
     AUTH_PASSWORD_VALIDATORS = [
-        # {
-        #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-        # },
         {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
         {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
         {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
