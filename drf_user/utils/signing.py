@@ -126,7 +126,8 @@ def validate_reset_token(token):
             max_age=drf_user_settings.RESET_TOKEN_EXPIRES_SECONDS.total_seconds(),
         )
         user = User.objects.get(
-            email=data['email'], password_reset_counter=data['counter'],
+            email=data['email'],
+            password_reset_counter=data['counter'],
         )
     except (signing.BadSignature, User.DoesNotExist):
         raise exceptions.ValidationError('Bad token.')

@@ -19,9 +19,19 @@ class Migration(migrations.Migration):
             name='User',
             fields=[
                 ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
+                (
+                    'last_login',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name='last login'
+                    ),
+                ),
                 ('internal_id', models.AutoField(primary_key=True, serialize=False)),
-                ('id', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False, unique=True)),
+                (
+                    'id',
+                    models.UUIDField(
+                        db_index=True, default=uuid.uuid4, editable=False, unique=True
+                    ),
+                ),
                 ('email', models.EmailField(max_length=254, unique=True)),
                 ('first_name', models.CharField(blank=True, max_length=150, null=True)),
                 ('last_name', models.CharField(blank=True, max_length=150, null=True)),
@@ -30,8 +40,31 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=False)),
                 ('date_joined', models.DateTimeField(auto_now_add=True)),
                 ('password_reset_counter', models.IntegerField(default=0)),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.Group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.Permission', verbose_name='user permissions')),
+                (
+                    'groups',
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text=(
+                            'The groups this user belongs to. A user will get all '
+                            'permissions granted to each of their groups.'
+                        ),
+                        related_name='user_set',
+                        related_query_name='user',
+                        to='auth.Group',
+                        verbose_name='groups',
+                    ),
+                ),
+                (
+                    'user_permissions',
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text='Specific permissions for this user.',
+                        related_name='user_set',
+                        related_query_name='user',
+                        to='auth.Permission',
+                        verbose_name='user permissions',
+                    ),
+                ),
             ],
             options={
                 'swappable': 'AUTH_USER_MODEL',
@@ -40,10 +73,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Token',
             fields=[
-                ('key', models.CharField(max_length=40, primary_key=True, serialize=False)),
+                (
+                    'key',
+                    models.CharField(max_length=40, primary_key=True, serialize=False),
+                ),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('expires', models.DateTimeField()),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='auth_tokens', to=settings.AUTH_USER_MODEL)),
+                (
+                    'user',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='auth_tokens',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

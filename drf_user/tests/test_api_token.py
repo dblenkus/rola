@@ -54,4 +54,3 @@ class TokenTestCase(APITestCase):
             "Unable to log in with provided credentials.",
         )
         self.assertEqual(self.user.auth_tokens.count(), 0)
-

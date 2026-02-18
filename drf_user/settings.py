@@ -1,4 +1,5 @@
 """Settings for DFR User application."""
+
 from datetime import timedelta
 
 from django.conf import settings

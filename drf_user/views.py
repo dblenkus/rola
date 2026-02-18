@@ -1,7 +1,7 @@
 import logging
 
 from django.http import HttpResponse
-from rest_framework import exceptions, mixins, views, viewsets, permissions, status
+from rest_framework import views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -98,14 +98,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         return Response()
-
-    # @action(detail=False, methods=['post'])
-    # def validate_password(self, request):
-    #     """Validate user password."""
-    #     serializer = ValidatePasswordSerializer(data=request.data, context={'user': request.user})
-    #     serializer.is_valid()
-
-    #     return Response(serializer.errors)
 
 
 def activate_user_view(request):

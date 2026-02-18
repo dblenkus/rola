@@ -1,4 +1,5 @@
 """User models."""
+
 import binascii
 import logging
 import os
@@ -13,7 +14,6 @@ from django.contrib.auth.models import (
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from django.utils.timezone import now
-from django.core.mail import send_mail
 from django.db import models
 
 from .settings import drf_user_settings

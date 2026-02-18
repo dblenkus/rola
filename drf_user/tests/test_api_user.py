@@ -181,7 +181,9 @@ class UserManagementTest(APITestCase):
             token = generate_activation_token(self.user)
 
         response = self.client.post(
-            self.activate_account_url, {'token': token}, format='json',
+            self.activate_account_url,
+            {'token': token},
+            format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.user.refresh_from_db()
@@ -190,25 +192,41 @@ class UserManagementTest(APITestCase):
     def test_required_fields(self):
         post_data = self.post_data.copy()
         post_data.pop('first_name')
-        response = self.client.post(self.list_url, post_data, format='json',)
+        response = self.client.post(
+            self.list_url,
+            post_data,
+            format='json',
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['first_name'][0], "This field is required.")
 
         post_data = self.post_data.copy()
         post_data.pop('last_name')
-        response = self.client.post(self.list_url, post_data, format='json',)
+        response = self.client.post(
+            self.list_url,
+            post_data,
+            format='json',
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['last_name'][0], "This field is required.")
 
         post_data = self.post_data.copy()
         post_data.pop('email')
-        response = self.client.post(self.list_url, post_data, format='json',)
+        response = self.client.post(
+            self.list_url,
+            post_data,
+            format='json',
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['email'][0], "This field is required.")
 
         post_data = self.post_data.copy()
         post_data.pop('password')
-        response = self.client.post(self.list_url, post_data, format='json',)
+        response = self.client.post(
+            self.list_url,
+            post_data,
+            format='json',
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['password'][0], "This field is required.")
 
@@ -257,7 +275,9 @@ class ChangePasswordTest(APITestCase):
 
     def test_reset_password_missing_current(self):
         response = self.client.post(
-            self.change_user_password_url, {'new_password': 'n3wp4ss!'}, format='json',
+            self.change_user_password_url,
+            {'new_password': 'n3wp4ss!'},
+            format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
@@ -317,7 +337,9 @@ class ResetPasswordTest(APITestCase):
         new_password = 'n3wp4ss!'
 
         response = self.client.post(
-            self.request_reset_password_url, {'email': self.USER_EMAIL}, format='json',
+            self.request_reset_password_url,
+            {'email': self.USER_EMAIL},
+            format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
