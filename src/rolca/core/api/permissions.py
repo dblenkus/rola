@@ -8,7 +8,23 @@ Core API permissions
     :members:
 
 """
+
+from django.utils import timezone
+
 from rest_framework import permissions
+
+
+class IsSubmissionOwnerOrReadOnly(permissions.BasePermission):
+    """Allow writes only by the owner before publication."""
+
+    def has_object_permission(self, request, view, obj):
+        """Separate visibility of published submissions from write access."""
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return (
+            obj.user_id == request.user.pk
+            and obj.theme.contest.publish_date > timezone.now()
+        )
 
 
 class IsSuperUser(permissions.BasePermission):

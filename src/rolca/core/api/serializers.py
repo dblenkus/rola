@@ -7,7 +7,7 @@ Core API serializers
 .. autoclass:: rolca.core.api.serializers.FileSerializer
     :members:
 
-.. autoclass:: rolca.core.api.serializers.PhotoSerializer
+.. autoclass:: rolca.core.api.serializers.SubmissionSerializer
     :members:
 
 .. autoclass:: rolca.core.api.serializers.ThemeSerializer
@@ -17,6 +17,7 @@ Core API serializers
     :members:
 
 """
+
 from rest_framework import serializers
 
 from rolca.core.models import (
@@ -33,7 +34,9 @@ from rolca.core.models import (
 class BaseSerializer(serializers.ModelSerializer):
     """Base serializer for Rolca models."""
 
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    user = serializers.HiddenField(
+        default=serializers.CreateOnlyDefault(serializers.CurrentUserDefault())
+    )
 
     class Meta:
         """Serializer configuration."""
@@ -96,7 +99,7 @@ class AuthorSerializer(BaseSerializer):
         if not self.context['request'].user.is_superuser:
             return None
 
-        return author.user.email
+        return author.user.email if author.user else author.email
 
 
 class SubmissionSerializer(BaseSerializer):
@@ -130,17 +133,61 @@ class SubmissionSerializer(BaseSerializer):
         return fields
 
     def validate_files(self, value):
+        """Reject missing, foreign, duplicate, or already attached uploads."""
         file_ids = [file['id'] for file in value]
-        return File.objects.filter(id__in=file_ids)
+        if len(file_ids) != len(set(file_ids)):
+            raise serializers.ValidationError('Each file may only be used once.')
+        files = list(
+            File.objects.filter(id__in=file_ids, user=self.context['request'].user)
+        )
+        if len(files) != len(file_ids):
+            raise serializers.ValidationError('Files must exist and belong to you.')
+        allowed_submission = self.instance.pk if self.instance else None
+        if any(file.submission_id not in (None, allowed_submission) for file in files):
+            raise serializers.ValidationError(
+                'A file is already attached to another submission.'
+            )
+        return files
 
     def validate_author(self, value):
-        return Author.objects.get(pk=value['id'])
+        """Resolve only authors owned by the current user."""
+        try:
+            return Author.objects.get(pk=value['id'], user=self.context['request'].user)
+        except Author.DoesNotExist as error:
+            raise serializers.ValidationError(
+                'Author must exist and belong to you.'
+            ) from error
+
+    def validate(self, attrs):
+        """Keep existing submission groups consistent when editing."""
+        if self.instance:
+            if 'author' in attrs and attrs['author'].pk != self.instance.author_id:
+                raise serializers.ValidationError(
+                    {'author': 'The author cannot be changed.'}
+                )
+            if (
+                'theme' in attrs
+                and attrs['theme'].contest_id != self.instance.theme.contest_id
+            ):
+                raise serializers.ValidationError(
+                    {'theme': 'The contest cannot be changed.'}
+                )
+        return attrs
 
     def create(self, validated_data):
+        """Create a submission and attach its validated uploads."""
         files = validated_data.pop('files')
         submission = Submission.objects.create(**validated_data)
         submission.files.add(*files)
         return submission
+
+    def update(self, instance, validated_data):
+        """Replace uploaded-file relations only when supplied by the client."""
+        files = validated_data.pop('files', None)
+        instance = super().update(instance, validated_data)
+        if files is not None:
+            instance.files.set(files)
+        return instance
 
 
 class SubmissionSetSerializer(BaseSerializer):
@@ -183,6 +230,7 @@ class ThemeSerializer(BaseSerializer):
         ]
 
     def get_submissions_number(self, theme):
+        """Count submissions in this theme."""
         return theme.submission_set.count()
 
 

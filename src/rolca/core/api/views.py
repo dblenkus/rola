@@ -4,15 +4,18 @@
 Core API views
 ==============
 
-.. autoclass:: rolca.core.api.views.PhotoViewSet
+.. autoclass:: rolca.core.api.views.FileViewSet
     :members:
 
 .. autoclass:: rolca.core.api.views.ContestViewSet
     :members:
 
 """
-import logging
 
+import logging
+from functools import partial
+
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -26,7 +29,7 @@ from rolca.core.api.filters import (
     SubmissionSetFilter,
 )
 from rolca.core.api.parsers import ImageUploadParser
-from rolca.core.api.permissions import AdminOrReadOnly
+from rolca.core.api.permissions import AdminOrReadOnly, IsSubmissionOwnerOrReadOnly
 from rolca.core.api.serializers import (
     AuthorSerializer,
     ContestSerializer,
@@ -57,6 +60,8 @@ class FileViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 class InstitutionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """List institutions with optional filters."""
+
     queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
     filterset_class = InstitutionFilter
@@ -70,11 +75,12 @@ class AuthorViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
+        """Restrict authors to their owner unless the requester is an administrator."""
         queryset = self.queryset
         if self.request.user.is_superuser:
             return queryset
 
-        return queryset.objects.filter(user=self.request.user)
+        return queryset.filter(user=self.request.user)
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
@@ -82,7 +88,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     serializer_class = SubmissionSerializer
     queryset = Submission.objects.all()
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsSubmissionOwnerOrReadOnly)
     filterset_class = SubmissionFilter
 
     def get_queryset(self):
@@ -98,36 +104,85 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             | Q(theme__contest__publish_date__lte=timezone.now())
         )
 
-    def create(self, request):
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """Create one coherent submission set, atomically, for either payload shape."""
         serializer_kwargs = {}
         if isinstance(request.data, list):
-            serializer_kwargs['many'] = True
+            serializer_kwargs.update(many=True, allow_empty=False)
 
         serializer = self.get_serializer(data=request.data, **serializer_kwargs)
         serializer.is_valid(raise_exception=True)
+        items = (
+            serializer.validated_data
+            if serializer_kwargs
+            else [serializer.validated_data]
+        )
+        contest = items[0]['theme'].contest
+        if any(item['theme'].contest_id != contest.pk for item in items):
+            raise exceptions.ValidationError(
+                'All submissions must belong to the same contest.'
+            )
+        if any(item['author'] != items[0]['author'] for item in items):
+            raise exceptions.ValidationError(
+                'All submissions must have the same author.'
+            )
+        files = [file for item in items for file in item['files']]
+        if len({file.pk for file in files}) != len(files):
+            raise exceptions.ValidationError(
+                'Each file may only be used once in a submission set.'
+            )
+        self._lock_files(files)
         self.perform_create(serializer)
 
-        instance = serializer.instance
-        first_instance = instance[0] if isinstance(instance, list) else instance
-        theme_ids = [submission['theme'] for submission in serializer.data]
-        contest = Contest.objects.filter(themes__id__in=theme_ids).first()
+        instances = serializer.instance if serializer_kwargs else [serializer.instance]
+        first_instance = instances[0]
 
         submission_set = SubmissionSet.objects.create(
             author=first_instance.author, user=first_instance.user, contest=contest
         )
-        submission_set.submissions.add(
-            *instance if isinstance(instance, list) else instance
-        )
+        submission_set.submissions.add(*instances)
 
         if contest.confirmation_email and request.user.email:
-            contest.confirmation_email.send(request.user.email)
+            transaction.on_commit(
+                partial(contest.confirmation_email.send, request.user.email),
+                robust=True,
+            )
 
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
+    def _lock_files(self, files, submission=None):
+        """Recheck attachment state under a lock to prevent concurrent file reuse."""
+        locked = list(
+            File.objects.select_for_update()
+            .filter(pk__in=[file.pk for file in files])
+            .order_by('pk')
+        )
+        if len(locked) != len(files) or any(
+            file.user_id != self.request.user.pk
+            or file.submission_id not in (None, submission)
+            for file in locked
+        ):
+            raise exceptions.ValidationError(
+                {'files': 'An upload is no longer available.'}
+            )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        """Serialize file reassignment with other submission writes."""
+        return super().update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        """Lock uploads before changing their submission relation."""
+        if 'files' in serializer.validated_data:
+            self._lock_files(serializer.validated_data['files'], serializer.instance.pk)
+        serializer.save()
+
     def destroy(self, request, *args, **kwargs):
+        """Delete an unpublished submission owned by the requester."""
         instance = self.get_object()
 
         if request.user != instance.user:
@@ -149,6 +204,8 @@ class SubmissionSetViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
+    """List and delete the requesting user's submission sets."""
+
     queryset = SubmissionSet.objects.all()
     serializer_class = SubmissionSetSerializer
     permission_classes = (permissions.IsAuthenticated,)
