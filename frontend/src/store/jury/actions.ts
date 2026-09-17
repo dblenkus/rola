@@ -64,7 +64,7 @@ export const getCurrentSubmission = (state: AppState): Submission | null => {
   } = state;
 
   if (!submissions) return null;
-  return submissions[currentIndex];
+  return submissions[currentIndex] ?? null;
 };
 
 export const getIsPrevious = (state: AppState): boolean => {
