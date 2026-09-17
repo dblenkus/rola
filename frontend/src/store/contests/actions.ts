@@ -1,15 +1,15 @@
-import { Dispatch } from 'redux';
+import type { AppThunk } from '..';
 
 import { STORE_CONTESTS, Contest, ContestsActionTypes } from './types';
 
 import ContestService from '../../services/ContestService';
 
 export const storeContests = (contests: Contest[]): ContestsActionTypes => ({
-    type: STORE_CONTESTS,
-    payload: { contests },
+  type: STORE_CONTESTS,
+  payload: { contests },
 });
 
-export const loadContests = (): Function => async (dispatch: Dispatch) => {
-    const resp = await ContestService.getActiveContests();
-    dispatch(storeContests(resp.data.results));
+export const loadContests = (): AppThunk => async (dispatch) => {
+  const resp = await ContestService.getActiveContests();
+  dispatch(storeContests(resp.data.results));
 };

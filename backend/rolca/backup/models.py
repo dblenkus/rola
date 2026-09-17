@@ -23,4 +23,4 @@ class FileBackup(models.Model):
 
     def __str__(self):
         """Return string representation of FileBackup object."""
-        return "Backup of {}".format(self.source)
+        return f"Backup of {self.source}"

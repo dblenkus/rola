@@ -1,7 +1,7 @@
 """User models."""
-import binascii
+
 import logging
-import os
+import secrets
 import uuid
 
 from django.conf import settings
@@ -12,9 +12,8 @@ from django.contrib.auth.models import (
 )
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
-from django.utils.timezone import now
-from django.core.mail import send_mail
 from django.db import models
+from django.utils.timezone import now
 
 from .settings import drf_user_settings
 
@@ -26,29 +25,32 @@ class UserManager(BaseUserManager):
 
     def _create_user(self, email, password, **extra_fields):
         """Create and save a user with the given email, and password."""
+        if not email:
+            raise ValueError("An email address is required.")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        validate_password(password, user)
+        if password is not None:
+            validate_password(password, user)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_user(self, email, password=None, **extra_fields):
         """Create a user."""
-        extra_fields.setdefault('is_staff', False)
-        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
         """Create a superuser."""
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(email, password, **extra_fields)
 
@@ -64,18 +66,22 @@ class Email(models.Model):
 
     def send(self, address):
         """Send email to give address."""
-        subject = ''.join(self.subject.splitlines())
+        subject = "".join(self.subject.splitlines())
 
         email_kwargs = {}
         if self.html_body:
-            email_kwargs['html_message'] = self.html_body
+            email_kwargs["html_message"] = self.html_body
 
         try:
-            send_mail(subject, self.body, None, [address], **email_kwargs)
-        except Exception:
-            logger.exception(
-                "Error while sending e-mail for user '{}'.".format(address)
+            send_mail(
+                subject,
+                self.body,
+                from_email=None,
+                recipient_list=[address],
+                **email_kwargs,
             )
+        except Exception:
+            logger.error("Unable to send contest email.")
 
 
 class Location(models.Model):
@@ -125,39 +131,46 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'email'
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "email"
 
     class Meta:
         """User's meta options."""
 
-        swappable = 'AUTH_USER_MODEL'
-        ordering = ('internal_id',)
+        swappable = "AUTH_USER_MODEL"
+        ordering = ("internal_id",)
 
     def clean(self):
         """Clean the model."""
         super().clean()
-        self.email = self.objects.normalize_email(self.email)
+        self.email = type(self).objects.normalize_email(self.email)
 
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""
-        return f'{self.first_name} {self.last_name}'.strip()
+        return " ".join(filter(None, (self.first_name, self.last_name)))
 
     def get_short_name(self):
         """Return the short name for the user."""
-        return self.first_name.strip()
+        return (self.first_name or "").strip()
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
-        send_mail(subject, message, from_email, [self.email], **kwargs)
+        send_mail(
+            subject,
+            message,
+            from_email=from_email,
+            recipient_list=[self.email],
+            **kwargs,
+        )
 
 
 class TokenManager(models.Manager):
     """Manager for Token model."""
 
     def create_token(self, **kwargs):
-        if 'expires' not in kwargs:
-            kwargs['expires'] = now() + drf_user_settings.TOKEN_EXPIRES_SECONDS
+        """Issue a token using the configured expiry unless explicitly supplied."""
+        if "expires" not in kwargs:
+            kwargs["expires"] = now() + drf_user_settings.TOKEN_EXPIRES_SECONDS
 
         return self.create(**kwargs)
 
@@ -172,7 +185,7 @@ class Token(models.Model):
     key = models.CharField(max_length=40, primary_key=True)
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE
+        settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
     )
 
     created = models.DateTimeField(auto_now_add=True)
@@ -184,13 +197,14 @@ class Token(models.Model):
     def save(self, *args, **kwargs):
         """Generate the key if it doesn't exist and save the model."""
         if not self.key:
-            self.key = binascii.hexlify(os.urandom(20)).decode()
+            self.key = secrets.token_hex(20)
         return super().save(*args, **kwargs)
 
     @property
     def is_expired(self):
-        return self.expires < now()
+        """Return whether the token has reached its expiry."""
+        return self.expires <= now()
 
     def __str__(self):
         """Return string representation of the model."""
-        return self.key
+        return f"Token issued {self.created}"

@@ -1,10 +1,15 @@
+"""Validate account and token API payloads."""
+
+from functools import partial
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
-from django.db.models import F
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from drf_spectacular.utils import extend_schema_serializer
+from rest_framework import serializers
 
-from rest_framework import exceptions, serializers
-
-from .models import Location, User, Token
+from .models import Location, Token, User
 from .utils.signing import (
     send_activation_email,
     send_reset_email,
@@ -14,175 +19,231 @@ from .utils.signing import (
 
 
 class LocationSerializer(serializers.ModelSerializer):
+    """Validate postal address fields against the location model."""
+
     class Meta:
+        """Define the writable address fields."""
+
         model = Location
-        fields = ['address', 'city', 'postal_code', 'country']
+        fields = ["address", "city", "postal_code", "country"]
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Expose a public profile with an embedded postal address."""
 
-    address = serializers.CharField(source='location.address')
-    city = serializers.CharField(source='location.city')
-    postal_code = serializers.CharField(source='location.postal_code')
-    country = serializers.CharField(source='location.country')
+    address = serializers.CharField(source="location.address", allow_null=True)
+    city = serializers.CharField(source="location.city", allow_null=True)
+    postal_code = serializers.CharField(source="location.postal_code", allow_null=True)
+    country = serializers.CharField(source="location.country", allow_null=True)
 
     class Meta:
+        """Define the public account fields."""
+
         model = User
         fields = [
-            'id',
-            'password',
-            'email',
-            'first_name',
-            'last_name',
-            'address',
-            'city',
-            'postal_code',
-            'country',
+            "id",
+            "password",
+            "email",
+            "first_name",
+            "last_name",
+            "address",
+            "city",
+            "postal_code",
+            "country",
         ]
-        read_only_fields = ['id']
+        read_only_fields = ["id"]
         extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'password': {'write_only': True},
+            "first_name": {"required": True},
+            "last_name": {"required": True},
+            "password": {"write_only": True, "trim_whitespace": False},
         }
 
-    def create(self, data):
-        location = Location.objects.create(**data['location'])
-        user = User.objects.create_user(
-            email=data['email'],
-            password=data['password'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
-            location=location,
-        )
-        send_activation_email(user, self.context.get('request'))
 
+@extend_schema_serializer(component_name="User")
+class UserWriteSerializer(UserSerializer):
+    """Validate profile writes while retaining the flat account representation."""
+
+    def get_fields(self):
+        """Use model-derived address fields for profile input."""
+        fields = super().get_fields()
+        for name, field in LocationSerializer().fields.items():
+            field.source = f"location.{name}"
+            fields[name] = field
+        return fields
+
+    def to_representation(self, instance):
+        """Return nullable address fields through the profile response serializer."""
+        return UserSerializer(instance, context=self.context).data
+
+    def validate(self, attrs):
+        """Validate password context and complete address writes."""
+        if self.instance is not None and "password" in attrs:
+            raise serializers.ValidationError(
+                {"password": "Use the change-password endpoint."}
+            )
+        location = attrs.get("location", {})
+        if self.instance is not None and self.instance.location_id is None and location:
+            LocationSerializer(data=location).is_valid(raise_exception=True)
+        if self.instance is None:
+            user = User(
+                **{key: attrs.get(key) for key in ("email", "first_name", "last_name")}
+            )
+            try:
+                validate_password(attrs.get("password"), user)
+            except ValidationError as error:
+                raise serializers.ValidationError(
+                    {"password": error.messages}
+                ) from error
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """Create an inactive account and email it after the transaction commits."""
+        location = Location.objects.create(**validated_data.pop("location"))
+        user = User.objects.create_user(location=location, **validated_data)
+        transaction.on_commit(
+            partial(send_activation_email, user, self.context["request"])
+        )
         return user
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """Update profile and location together without changing credentials."""
+        location_data = validated_data.pop("location", None)
+        if location_data:
+            if instance.location_id is None:
+                instance.location = Location.objects.create(**location_data)
+            else:
+                for field, value in location_data.items():
+                    setattr(instance.location, field, value)
+                instance.location.save(update_fields=list(location_data))
+        return super().update(instance, validated_data)
+
     def validate_email(self, email):
-        """Prevent updating the email."""
-        if self.instance:
-            return self.instance.email
-
-        return email
-
-    def validate_password(self, password):
-        """Validate password."""
-        user = self.context.get("user")
-        validate_password(password, user)
-        return password
+        """Keep the existing verified address on profile updates."""
+        return (
+            self.instance.email
+            if self.instance
+            else User.objects.normalize_email(email)
+        )
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Token
-        fields = ['token', 'expires']
+    """Represent a newly issued token and its expiration."""
 
-    token = serializers.CharField(source='key')
+    token = serializers.CharField(source="key", read_only=True)
+
+    class Meta:
+        """Define the login response."""
+
+        model = Token
+        fields = ["token", "expires"]
+        read_only_fields = ["expires"]
 
 
 class LoginSerializer(serializers.Serializer):
+    """Authenticate an active account."""
+
     email = serializers.EmailField()
-    password = serializers.CharField(
-        style={'input_type': 'password'}, trim_whitespace=False
-    )
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate(self, attrs):
-        user = authenticate(
-            request=self.context.get('request'),
-            email=attrs.get('email'),
-            password=attrs.get('password'),
-        )
+        """Verify credentials without revealing account existence."""
+        user = authenticate(request=self.context.get("request"), **attrs)
         if not user:
             raise serializers.ValidationError(
-                'Unable to log in with provided credentials.', code='authorization'
+                "Unable to log in with provided credentials.", code="authorization"
             )
-
-        attrs['user'] = user
+        attrs["user"] = user
         return attrs
 
 
 class ActivationSerializer(serializers.Serializer):
-    """Serializer for user account activation."""
+    """Activate the account referenced by a signed token."""
 
-    token = serializers.CharField()
+    token = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        attrs['user'] = validate_activation_token(attrs['token'])
+        """Require an unexpired token for an inactive account."""
+        validate_activation_token(attrs["token"])
         return attrs
 
-    def save(self):
-        user = self.validated_data['user']
-
+    @transaction.atomic
+    def save(self, **kwargs):
+        """Consume an activation token exactly once."""
+        user = validate_activation_token(self.validated_data["token"], lock=True)
         user.is_active = True
-        user.save()
+        user.save(update_fields=["is_active"])
+        return user
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer for changing the user password."""
+    """Validate a credential change against the current password."""
 
-    current_password = serializers.CharField()
-    new_password = serializers.CharField()
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate_current_password(self, current_password):
-        """Validate existing password."""
-        user = self.context.get('user')
-        if not user.check_password(current_password):
+        """Require the account's existing password."""
+        if not self.context["user"].check_password(current_password):
             raise serializers.ValidationError("Incorrect current password.")
-
         return current_password
 
     def validate_new_password(self, new_password):
-        """Validate new password."""
-        user = self.context.get('user')
-        validate_password(new_password, user)
-
+        """Apply the configured password validators."""
+        validate_password(new_password, self.context["user"])
         return new_password
 
-    def save(self):
-        """Change the password."""
-        user = self.context.get('user')
-        user.set_password(self.validated_data['new_password'])
-        user.save()
-
+    @transaction.atomic
+    def save(self, **kwargs):
+        """Replace the password and revoke outstanding login and reset tokens."""
+        user = User.objects.select_for_update().get(pk=self.context["user"].pk)
+        if not user.check_password(self.validated_data["current_password"]):
+            raise serializers.ValidationError(
+                {"current_password": "Incorrect current password."}
+            )
+        user.set_password(self.validated_data["new_password"])
+        user.password_reset_counter += 1
+        user.save(update_fields=["password", "password_reset_counter"])
         Token.objects.expire_for_user(user)
+        return user
 
 
 class RequestPasswordResetSerializer(serializers.Serializer):
-    """Serializer for requesting a password reset."""
+    """Request recovery without exposing whether an account exists."""
 
     email = serializers.EmailField()
 
-    def save(self):
-        """Send the password reset email."""
-        try:
-            user = User.objects.get(email=self.validated_data['email'])
-        except User.DoesNotExist:
-            raise exceptions.NotFound("User does not exist.")
-
-        send_reset_email(user, self.context.get('request'))
+    def save(self, **kwargs):
+        """Send a recovery message only for an active account."""
+        user = User.objects.filter(
+            email=self.validated_data["email"], is_active=True
+        ).first()
+        if user is not None:
+            transaction.on_commit(
+                partial(send_reset_email, user, self.context["request"])
+            )
+        return user
 
 
 class PasswordResetSerializer(serializers.Serializer):
-    """Serializer for password reset."""
+    """Validate a signed recovery token and replacement password."""
 
-    token = serializers.CharField()
-    new_password = serializers.CharField()
+    token = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     def validate(self, attrs):
-        user = validate_reset_token(attrs['token'])
-        attrs['user'] = user
-
-        validate_password(attrs['new_password'], user)
-
+        """Check the token and password policy before changing credentials."""
+        user = validate_reset_token(attrs["token"])
+        validate_password(attrs["new_password"], user)
         return attrs
 
-    def save(self):
-        user = self.validated_data['user']
-
-        user.set_password(self.validated_data['new_password'])
-        # Increment password reset counter (invalidates all previous tokens).
-        user.password_reset_counter = F('password_reset_counter') + 1
-        user.save()
-
+    @transaction.atomic
+    def save(self, **kwargs):
+        """Consume the recovery token and revoke all login tokens atomically."""
+        user = validate_reset_token(self.validated_data["token"], lock=True)
+        user.set_password(self.validated_data["new_password"])
+        user.password_reset_counter += 1
+        user.save(update_fields=["password", "password_reset_counter"])
         Token.objects.expire_for_user(user)
+        return user
