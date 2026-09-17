@@ -1,6 +1,5 @@
 import logging
 
-from django.http import HttpResponse
 from rest_framework import exceptions, mixins, views, viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -35,24 +34,26 @@ class LoginView(views.APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """API view User model."""
+    """Manage the current account, with administrative access for superusers."""
 
     lookup_field = "id"
     lookup_value_regex = (
-        "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+        "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
     )
-
-    queryset = User.objects.all()
+    queryset = User.objects.select_related("location")
     serializer_class = UserSerializer
     permission_classes = [IsTargetUser | IsSuperUser]
 
     def get_queryset(self):
-        """Return query sets."""
+        """Limit account visibility before object lookup or serialization."""
+        if (
+            getattr(self, "swagger_fake_view", False)
+            or not self.request.user.is_authenticated
+        ):
+            return self.queryset.none()
         user = self.request.user
-
         if self.request.query_params.get("current", False) or not user.is_superuser:
             return self.queryset.filter(pk=user.pk)
-
         return self.queryset
 
     @action(detail=False, methods=["post"])
@@ -106,11 +107,3 @@ class UserViewSet(viewsets.ModelViewSet):
     #     serializer.is_valid()
 
     #     return Response(serializer.errors)
-
-
-def activate_user_view(request):
-    return HttpResponse(status=501)
-
-
-def password_reset_view(request):
-    return HttpResponse(status=501)
