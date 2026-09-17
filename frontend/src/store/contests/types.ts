@@ -7,10 +7,10 @@ export interface Contest extends ApiContest {}
 export type ContestsState = Array<Contest>;
 
 interface StoreContestsAction {
-    type: typeof STORE_CONTESTS;
-    payload: {
-        contests: Contest[];
-    };
+  type: typeof STORE_CONTESTS;
+  payload: {
+    contests: Contest[];
+  };
 }
 
 export type ContestsActionTypes = StoreContestsAction;

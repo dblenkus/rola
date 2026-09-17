@@ -17,98 +17,105 @@ import LoadingProgress from '../../components/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
 
 interface RouteMatchParams {
-    contestId: string;
+  contestId: string;
 }
 
 interface SubmissionSetListState {
-    contest: Contest | null;
-    pendingSubmissionSet: SubmissionSet | null;
-    showDialog: boolean;
+  contest: Contest | null;
+  pendingSubmissionSet: SubmissionSet | null;
+  showDialog: boolean;
 }
 
 interface SubmissionSetListProps
-    extends WithStyles<typeof editListStyles>,
-        WithTranslation,
-        RouteComponentProps<RouteMatchParams> {}
+  extends
+    WithStyles<typeof editListStyles>,
+    WithTranslation,
+    RouteComponentProps<RouteMatchParams> {}
 
-class SubmissionSetList extends React.Component<SubmissionSetListProps, SubmissionSetListState> {
-    constructor(props: SubmissionSetListProps) {
-        super(props);
+class SubmissionSetList extends React.Component<
+  SubmissionSetListProps,
+  SubmissionSetListState
+> {
+  constructor(props: SubmissionSetListProps) {
+    super(props);
 
-        this.state = {
-            contest: null,
-            pendingSubmissionSet: null,
-            showDialog: false,
-        };
-    }
-
-    async componentDidMount(): Promise<void> {
-        await this.fetchData();
-    }
-
-    fetchData = async (): Promise<void> => {
-        const {
-            match: {
-                params: { contestId },
-            },
-        } = this.props;
-
-        const { data: contest } = await ContestService.getContest(contestId);
-
-        this.setState({ contest });
+    this.state = {
+      contest: null,
+      pendingSubmissionSet: null,
+      showDialog: false,
     };
+  }
 
-    handleDelete = (pendingSubmissionSet: SubmissionSet): void => {
-        this.setState({ pendingSubmissionSet, showDialog: true });
-    };
+  async componentDidMount(): Promise<void> {
+    await this.fetchData();
+  }
 
-    closeDialog = (): void => this.setState({ pendingSubmissionSet: null, showDialog: false });
+  fetchData = async (): Promise<void> => {
+    const {
+      match: {
+        params: { contestId },
+      },
+    } = this.props;
 
-    processDelete = async (): Promise<void> => {
-        const { pendingSubmissionSet } = this.state;
-        if (!pendingSubmissionSet) return;
+    const { data: contest } = await ContestService.getContest(contestId);
 
-        await SubmissionSetService.deleteSubmissionSet(pendingSubmissionSet.id);
-        await this.fetchData();
-    };
+    this.setState({ contest });
+  };
 
-    render(): React.ReactNode {
-        const { contest, showDialog } = this.state;
-        const { t } = this.props;
+  handleDelete = (pendingSubmissionSet: SubmissionSet): void => {
+    this.setState({ pendingSubmissionSet, showDialog: true });
+  };
 
-        if (!contest) return <LoadingProgress />;
+  closeDialog = (): void =>
+    this.setState({ pendingSubmissionSet: null, showDialog: false });
 
-        const dataSource = (
-            page: number,
-            pageSize: number,
-        ): AxiosPromise<PaginatedResponse<SubmissionSet>> =>
-            SubmissionSetService.getByContest(contest.id.toString(), page, pageSize);
+  processDelete = async (): Promise<void> => {
+    const { pendingSubmissionSet } = this.state;
+    if (!pendingSubmissionSet) return;
 
-        return (
-            <>
-                <Typography align="center" variant="h2">
-                    {contest?.title}
-                </Typography>
+    await SubmissionSetService.deleteSubmissionSet(pendingSubmissionSet.id);
+    await this.fetchData();
+  };
 
-                <Grid item xs={12}>
-                    <SubmissionSetTable
-                        contestId={contest ? contest.id : 0}
-                        dataSource={dataSource}
-                        onDelete={this.handleDelete}
-                    />
-                </Grid>
+  render(): React.ReactNode {
+    const { contest, showDialog } = this.state;
+    const { t } = this.props;
 
-                <ConfirmDialog
-                    open={showDialog}
-                    title={t('delete_confirmation_title')}
-                    onClose={this.closeDialog}
-                    onConfirm={this.processDelete}
-                >
-                    {t('delete_confirmation') as React.ReactChild}
-                </ConfirmDialog>
-            </>
-        );
-    }
+    if (!contest) return <LoadingProgress />;
+
+    const dataSource = (
+      page: number,
+      pageSize: number,
+    ): AxiosPromise<PaginatedResponse<SubmissionSet>> =>
+      SubmissionSetService.getByContest(contest.id.toString(), page, pageSize);
+
+    return (
+      <>
+        <Typography align="center" variant="h2">
+          {contest?.title}
+        </Typography>
+
+        <Grid item xs={12}>
+          <SubmissionSetTable
+            contestId={contest ? contest.id : 0}
+            dataSource={dataSource}
+            onDelete={this.handleDelete}
+          />
+        </Grid>
+
+        <ConfirmDialog
+          open={showDialog}
+          title={t('delete_confirmation_title')}
+          onClose={this.closeDialog}
+          onConfirm={this.processDelete}
+        >
+          {t('delete_confirmation') as React.ReactChild}
+        </ConfirmDialog>
+      </>
+    );
+  }
 }
 
-export default withTranslation()(withStyles(editListStyles)(withRouter(SubmissionSetList)));
+export default withTranslation()(
+  withStyles(editListStyles)(withRouter(SubmissionSetList)),
+);

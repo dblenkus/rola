@@ -2,39 +2,45 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@material-ui/core';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from '@material-ui/core';
 
 interface ConfirmDialogProps {
-    children: React.ReactChild;
-    title: string;
-    open: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
+  children: React.ReactChild;
+  title: string;
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = (props) => {
-    const { title, children, open, onClose, onConfirm } = props;
+  const { title, children, open, onClose, onConfirm } = props;
 
-    const { t } = useTranslation();
+  const { t } = useTranslation();
 
-    const handleConfirm = () => {
-        onClose();
-        onConfirm();
-    };
+  const handleConfirm = () => {
+    onClose();
+    onConfirm();
+  };
 
-    return (
-        <Dialog open={open} onClose={onClose}>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogContent>{children}</DialogContent>
-            <DialogActions>
-                <Button variant="contained" onClick={onClose} color="secondary">
-                    {t('no')}
-                </Button>
-                <Button variant="contained" onClick={handleConfirm} color="primary">
-                    {t('yes')}
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>{children}</DialogContent>
+      <DialogActions>
+        <Button variant="contained" onClick={onClose} color="secondary">
+          {t('no')}
+        </Button>
+        <Button variant="contained" onClick={handleConfirm} color="primary">
+          {t('yes')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 export default ConfirmDialog;
