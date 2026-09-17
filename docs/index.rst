@@ -12,3 +12,5 @@ Contents
 
    reference
    contributing
+   upgrading
+   validation

@@ -17,3 +17,12 @@ Rolca
     :alt: Documentation Status
 
 Open source platform for organising photography contests.
+
+
+Development and upgrades
+========================
+
+Requires Python 3.12–3.14 and Django 6.1. See ``docs/contributing.rst`` for
+installation and tests, and ``docs/upgrading.rst`` for integration and migration
+requirements. Rolca relies on the host application's ``drf_user`` models; the
+unrelated PyPI package with that name is not a substitute.
