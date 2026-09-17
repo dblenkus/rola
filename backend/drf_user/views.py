@@ -1,6 +1,6 @@
 """Account management endpoints."""
 
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -36,6 +36,11 @@ class LoginView(views.APIView):
         return Response(TokenSerializer(token).data)
 
 
+@extend_schema_view(
+    create=extend_schema(responses={201: UserSerializer}),
+    update=extend_schema(responses=UserSerializer),
+    partial_update=extend_schema(responses=UserSerializer),
+)
 class UserViewSet(viewsets.ModelViewSet):
     """Manage the current account, with administrative access for superusers."""
 

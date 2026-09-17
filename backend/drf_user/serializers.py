@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from .models import Location, Token, User
@@ -58,6 +59,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
 
+@extend_schema_serializer(component_name="User")
 class UserWriteSerializer(UserSerializer):
     """Validate profile writes while retaining the flat account representation."""
 
