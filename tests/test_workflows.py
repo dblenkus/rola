@@ -301,6 +301,21 @@ def test_export_requires_organizer_and_includes_every_file(world):
             assert Image.open(io.BytesIO(archive.read(name))).size == (800, 600)
 
 
+def test_payment_permissions_upsert_and_filter(world):
+    group = SubmissionSet.objects.create(
+        user=world.owner, author=world.author, contest=world.contest
+    )
+    data = {'submissionset': group.pk, 'paid': True}
+    assert world.client.post('/api/payment/', data, format='json').status_code == 403
+    world.client.force_authenticate(world.admin)
+    assert world.client.post('/api/payment/', data, format='json').status_code == 201
+    data['paid'] = False
+    assert world.client.post('/api/payment/', data, format='json').status_code == 201
+    assert Payment.objects.count() == 1
+    assert not Payment.objects.get().paid
+    assert world.client.get('/api/payment/', {'paid': 'true'}).data == []
+
+
 def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
     judge = Judge.objects.create(judge=world.owner, contest=world.contest)
     item = submitted(world, user=world.other, author=world.other_author)
