@@ -1,4 +1,5 @@
 """User models."""
+
 import binascii
 import logging
 import os
@@ -35,20 +36,20 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         """Create a user."""
-        extra_fields.setdefault('is_staff', False)
-        extra_fields.setdefault('is_superuser', False)
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password=None, **extra_fields):
         """Create a superuser."""
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(email, password, **extra_fields)
 
@@ -64,11 +65,11 @@ class Email(models.Model):
 
     def send(self, address):
         """Send email to give address."""
-        subject = ''.join(self.subject.splitlines())
+        subject = "".join(self.subject.splitlines())
 
         email_kwargs = {}
         if self.html_body:
-            email_kwargs['html_message'] = self.html_body
+            email_kwargs["html_message"] = self.html_body
 
         try:
             send_mail(subject, self.body, None, [address], **email_kwargs)
@@ -125,14 +126,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'email'
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "email"
 
     class Meta:
         """User's meta options."""
 
-        swappable = 'AUTH_USER_MODEL'
-        ordering = ('internal_id',)
+        swappable = "AUTH_USER_MODEL"
+        ordering = ("internal_id",)
 
     def clean(self):
         """Clean the model."""
@@ -141,7 +142,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""
-        return f'{self.first_name} {self.last_name}'.strip()
+        return f"{self.first_name} {self.last_name}".strip()
 
     def get_short_name(self):
         """Return the short name for the user."""
@@ -156,8 +157,8 @@ class TokenManager(models.Manager):
     """Manager for Token model."""
 
     def create_token(self, **kwargs):
-        if 'expires' not in kwargs:
-            kwargs['expires'] = now() + drf_user_settings.TOKEN_EXPIRES_SECONDS
+        if "expires" not in kwargs:
+            kwargs["expires"] = now() + drf_user_settings.TOKEN_EXPIRES_SECONDS
 
         return self.create(**kwargs)
 
@@ -172,7 +173,7 @@ class Token(models.Model):
     key = models.CharField(max_length=40, primary_key=True)
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE
+        settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
     )
 
     created = models.DateTimeField(auto_now_add=True)

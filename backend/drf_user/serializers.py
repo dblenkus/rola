@@ -16,46 +16,45 @@ from .utils.signing import (
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
-        fields = ['address', 'city', 'postal_code', 'country']
+        fields = ["address", "city", "postal_code", "country"]
 
 
 class UserSerializer(serializers.ModelSerializer):
-
-    address = serializers.CharField(source='location.address')
-    city = serializers.CharField(source='location.city')
-    postal_code = serializers.CharField(source='location.postal_code')
-    country = serializers.CharField(source='location.country')
+    address = serializers.CharField(source="location.address")
+    city = serializers.CharField(source="location.city")
+    postal_code = serializers.CharField(source="location.postal_code")
+    country = serializers.CharField(source="location.country")
 
     class Meta:
         model = User
         fields = [
-            'id',
-            'password',
-            'email',
-            'first_name',
-            'last_name',
-            'address',
-            'city',
-            'postal_code',
-            'country',
+            "id",
+            "password",
+            "email",
+            "first_name",
+            "last_name",
+            "address",
+            "city",
+            "postal_code",
+            "country",
         ]
-        read_only_fields = ['id']
+        read_only_fields = ["id"]
         extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'password': {'write_only': True},
+            "first_name": {"required": True},
+            "last_name": {"required": True},
+            "password": {"write_only": True},
         }
 
     def create(self, data):
-        location = Location.objects.create(**data['location'])
+        location = Location.objects.create(**data["location"])
         user = User.objects.create_user(
-            email=data['email'],
-            password=data['password'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
+            email=data["email"],
+            password=data["password"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
             location=location,
         )
-        send_activation_email(user, self.context.get('request'))
+        send_activation_email(user, self.context.get("request"))
 
         return user
 
@@ -76,29 +75,29 @@ class UserSerializer(serializers.ModelSerializer):
 class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Token
-        fields = ['token', 'expires']
+        fields = ["token", "expires"]
 
-    token = serializers.CharField(source='key')
+    token = serializers.CharField(source="key")
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
-        style={'input_type': 'password'}, trim_whitespace=False
+        style={"input_type": "password"}, trim_whitespace=False
     )
 
     def validate(self, attrs):
         user = authenticate(
-            request=self.context.get('request'),
-            email=attrs.get('email'),
-            password=attrs.get('password'),
+            request=self.context.get("request"),
+            email=attrs.get("email"),
+            password=attrs.get("password"),
         )
         if not user:
             raise serializers.ValidationError(
-                'Unable to log in with provided credentials.', code='authorization'
+                "Unable to log in with provided credentials.", code="authorization"
             )
 
-        attrs['user'] = user
+        attrs["user"] = user
         return attrs
 
 
@@ -108,11 +107,11 @@ class ActivationSerializer(serializers.Serializer):
     token = serializers.CharField()
 
     def validate(self, attrs):
-        attrs['user'] = validate_activation_token(attrs['token'])
+        attrs["user"] = validate_activation_token(attrs["token"])
         return attrs
 
     def save(self):
-        user = self.validated_data['user']
+        user = self.validated_data["user"]
 
         user.is_active = True
         user.save()
@@ -126,7 +125,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_current_password(self, current_password):
         """Validate existing password."""
-        user = self.context.get('user')
+        user = self.context.get("user")
         if not user.check_password(current_password):
             raise serializers.ValidationError("Incorrect current password.")
 
@@ -134,15 +133,15 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_new_password(self, new_password):
         """Validate new password."""
-        user = self.context.get('user')
+        user = self.context.get("user")
         validate_password(new_password, user)
 
         return new_password
 
     def save(self):
         """Change the password."""
-        user = self.context.get('user')
-        user.set_password(self.validated_data['new_password'])
+        user = self.context.get("user")
+        user.set_password(self.validated_data["new_password"])
         user.save()
 
         Token.objects.expire_for_user(user)
@@ -156,11 +155,11 @@ class RequestPasswordResetSerializer(serializers.Serializer):
     def save(self):
         """Send the password reset email."""
         try:
-            user = User.objects.get(email=self.validated_data['email'])
+            user = User.objects.get(email=self.validated_data["email"])
         except User.DoesNotExist:
             raise exceptions.NotFound("User does not exist.")
 
-        send_reset_email(user, self.context.get('request'))
+        send_reset_email(user, self.context.get("request"))
 
 
 class PasswordResetSerializer(serializers.Serializer):
@@ -170,19 +169,19 @@ class PasswordResetSerializer(serializers.Serializer):
     new_password = serializers.CharField()
 
     def validate(self, attrs):
-        user = validate_reset_token(attrs['token'])
-        attrs['user'] = user
+        user = validate_reset_token(attrs["token"])
+        attrs["user"] = user
 
-        validate_password(attrs['new_password'], user)
+        validate_password(attrs["new_password"], user)
 
         return attrs
 
     def save(self):
-        user = self.validated_data['user']
+        user = self.validated_data["user"]
 
-        user.set_password(self.validated_data['new_password'])
+        user.set_password(self.validated_data["new_password"])
         # Increment password reset counter (invalidates all previous tokens).
-        user.password_reset_counter = F('password_reset_counter') + 1
+        user.password_reset_counter = F("password_reset_counter") + 1
         user.save()
 
         Token.objects.expire_for_user(user)
