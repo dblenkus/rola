@@ -1,6 +1,7 @@
 """Regression tests for public APIs using the host's custom user contract."""
 
 import io
+import zipfile
 from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -278,3 +279,21 @@ def test_submission_and_set_filters_are_applied(world):
         world.client.get('/api/submissionset/', {'contest': other_contest.pk}).data
         == []
     )
+
+
+def test_export_requires_organizer_and_includes_every_file(world):
+    item = submitted(world)
+    files = [photo(world.owner, 'first.jpg'), photo(world.owner, 'second.jpg')]
+    item.files.add(*files)
+    url = f'/core/contest/{world.contest.pk}/download'
+    world.client.force_login(world.owner)
+    assert world.client.get(url).status_code == 403
+    world.client.force_login(world.admin)
+    response = world.client.get(url)
+    assert response.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        members = [name for name in archive.namelist() if not name.endswith('/')]
+        assert len(members) == 2
+        assert len(set(members)) == 2
+        for name in members:
+            assert Image.open(io.BytesIO(archive.read(name))).size == (800, 600)

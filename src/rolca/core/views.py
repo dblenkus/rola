@@ -7,6 +7,7 @@ Core views
 .. autofunction:: rolca.core.views.upload
 
 """
+
 import io
 import json
 import logging
@@ -34,15 +35,17 @@ logger = logging.getLogger(__name__)
 def download_contest(request, contest_id):
     """Download all submissions of the contest as zip file."""
     contest = get_object_or_404(Contest, pk=contest_id)
+    if not (request.user.is_superuser or contest.user_id == request.user.pk):
+        return HttpResponseForbidden('Only the organizer can download this contest.')
 
     buffer = io.BytesIO()
     zip_archive = zipfile.ZipFile(buffer, mode='w')
 
     for theme in Theme.objects.filter(contest=contest):
-        # Create empty directory
-        zip_info = zipfile.ZipInfo(
-            os.path.join(slugify(contest.title), slugify(theme.title)) + "/"
+        theme_path = '/'.join(
+            [slugify(contest.title), f'{theme.pk}-{slugify(theme.title)}']
         )
+        zip_info = zipfile.ZipInfo(theme_path + '/')
         zip_archive.writestr(zip_info, '')
 
         no_title_count = 0
@@ -56,10 +59,15 @@ def download_contest(request, contest_id):
                     )
                 )
             )
-            zip_path = os.path.join(
-                slugify(contest.title), slugify(theme.title), zip_file_name
-            )
-            zip_archive.write(submission.photo.file.path, zip_path)
+            for file in submission.files.all():
+                zip_path = '/'.join(
+                    [
+                        theme_path,
+                        f'{submission.pk}-{file.pk}-{zip_file_name}',
+                    ]
+                )
+                with file.file.open('rb') as source:
+                    zip_archive.writestr(zip_path, source.read())
 
     zip_archive.close()
 
