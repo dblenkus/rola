@@ -8,16 +8,17 @@ Rating API serializers
     :members:
 
 """
+
+from django.utils import timezone
+
 from rest_framework import exceptions, serializers
 
-from rolca.core.api.serializers import (
-    AuthorSerializer as CoreAuthorSerializer,
-    BaseSerializer,
-    ContestSerializer as CoreContestSerializer,
-    FileSerializer,
-    SubmissionSerializer as CoreSubmissionSerializer,
-    ThemeSerializer as CoreThemeSerializer,
-)
+from rolca.core.api.serializers import AuthorSerializer as CoreAuthorSerializer
+from rolca.core.api.serializers import BaseSerializer
+from rolca.core.api.serializers import ContestSerializer as CoreContestSerializer
+from rolca.core.api.serializers import FileSerializer
+from rolca.core.api.serializers import SubmissionSerializer as CoreSubmissionSerializer
+from rolca.core.api.serializers import ThemeSerializer as CoreThemeSerializer
 from rolca.rating.models import Judge, Rating, SubmissionReward
 
 
@@ -31,6 +32,7 @@ class RatingSerializer(BaseSerializer):
         fields = BaseSerializer.Meta.fields + ['submission', 'rating']
 
     def create(self, validated_data):
+        """Create or replace the requesting judge's score."""
         submission = validated_data.pop('submission')
         try:
             user = self.context['request'].user
@@ -45,6 +47,28 @@ class RatingSerializer(BaseSerializer):
         )
 
         return rating
+
+    def validate(self, attrs):
+        """Keep a rating tied to its original submission and active judge."""
+        submission = attrs.get(
+            'submission', self.instance.submission if self.instance else None
+        )
+        if self.instance and submission.pk != self.instance.submission_id:
+            raise serializers.ValidationError(
+                {'submission': 'The submission cannot be changed.'}
+            )
+        if (
+            submission
+            and not Judge.objects.filter(
+                judge=self.context['request'].user,
+                contest=submission.theme.contest,
+                contest__publish_date__gt=timezone.now(),
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                'Only active judges can rate this contest.'
+            )
+        return attrs
 
 
 class ThemeSerializer(CoreThemeSerializer):
@@ -61,11 +85,13 @@ class ThemeSerializer(CoreThemeSerializer):
         ]
 
     def get_ratings_number(self, theme):
+        """Count ratings submitted by the requesting judge."""
         return Rating.objects.filter(
             user=self.context['request'].user, submission__theme=theme
         ).count()
 
     def get_submissions_number(self, theme):
+        """Count paid submissions available for judging."""
         return theme.submission_set.filter(submissionset__payment__paid=True).count()
 
 
@@ -92,13 +118,16 @@ class AuthorResultsSerializer(CoreAuthorSerializer):
         ]
 
     def get_country(self, author):
-        if not author.user.location:
+        """Return the optional country supplied by the host user model."""
+        if not author.user or not author.user.location:
             return None
 
         return author.user.location.country
 
 
 class SubmissionResultsSerializer(CoreSubmissionSerializer):
+    """Serialize published submission results and awards."""
+
     accepted = serializers.SerializerMethodField('get_accepted')
     reward_kind = serializers.SerializerMethodField('get_reward_kind')
     reward_label = serializers.CharField(source='reward.label')
@@ -115,6 +144,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
         ]
 
     def get_fields(self):
+        """Include result-specific author and file representations."""
         fields = super().get_fields()
         # The field from parent method needs to be overwriten here to tahe the effect.
         fields['files'] = serializers.SerializerMethodField('get_files')
@@ -132,9 +162,11 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
         return submission.rating_sum >= submission.theme.results.accepted_threshold
 
     def get_accepted(self, submission):
+        """Report whether the submission reached the acceptance threshold."""
         return self._is_accepted(submission)
 
     def get_files(self, submission):
+        """Expose files only for accepted submissions."""
         if not self._is_accepted(submission):
             return None
 
@@ -147,6 +179,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
         ).data
 
     def get_reward_kind(self, submission):
+        """Return the human-readable award kind when present."""
         mapping = dict(SubmissionReward.KIND_CHOICES)
         if hasattr(submission, 'reward'):
             return mapping[submission.reward.kind]
@@ -165,6 +198,7 @@ class ThemeResultsSerializer(CoreThemeSerializer):
         ]
 
     def get_submissions(self, theme):
+        """Serialize each submission against the theme acceptance threshold."""
         return SubmissionResultsSerializer(
             theme.submission_set.all(),
             many=True,

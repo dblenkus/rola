@@ -23,6 +23,8 @@ from rolca.core.models import (
     SubmissionSet,
     Theme,
 )
+from rolca.payment.models import Payment
+from rolca.rating.models import Judge, Rating, SubmissionReward, ThemeResults
 from tests.userapp.models import Email, User
 
 pytestmark = pytest.mark.django_db
@@ -297,3 +299,88 @@ def test_export_requires_organizer_and_includes_every_file(world):
         assert len(set(members)) == 2
         for name in members:
             assert Image.open(io.BytesIO(archive.read(name))).size == (800, 600)
+
+
+def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
+    judge = Judge.objects.create(judge=world.owner, contest=world.contest)
+    item = submitted(world, user=world.other, author=world.other_author)
+    group = SubmissionSet.objects.create(
+        user=world.other, author=world.other_author, contest=world.contest
+    )
+    group.submissions.add(item)
+    Payment.objects.create(submissionset=group, paid=True)
+    unpaid = submitted(world)
+    response = world.client.get('/api/judge/submission/')
+    assert response.status_code == 200, response.data
+    assert [row['id'] for row in response.data] == [item.pk]
+    other_theme = Theme.objects.create(contest=world.contest, title='Empty', n_photos=4)
+    assert (
+        world.client.get('/api/judge/submission/', {'theme': other_theme.pk}).data == []
+    )
+    for value in [3, 5]:
+        response = world.client.post(
+            '/api/rating/', {'submission': item.pk, 'rating': value}, format='json'
+        )
+        assert response.status_code == 201, response.data
+    assert Rating.objects.get(judge=judge, submission=item).rating == 5
+    assert world.client.get('/api/rating/', {'submission': unpaid.pk}).data == []
+
+
+def test_anonymous_judge_endpoint_denies_without_server_error(world):
+    response = APIClient().get('/api/judge/submission/')
+    assert response.status_code in (401, 403)
+
+
+def test_rating_updates_cannot_move_rating_to_another_contest(world):
+    Judge.objects.create(judge=world.owner, contest=world.contest)
+    item = submitted(world)
+    response = world.client.post(
+        '/api/rating/', {'submission': item.pk, 'rating': 3}, format='json'
+    )
+    assert response.status_code == 201
+    contest = Contest.objects.create(
+        title='Other contest',
+        start_date=world.contest.start_date,
+        end_date=world.contest.end_date,
+    )
+    theme = Theme.objects.create(contest=contest, title='Other', n_photos=4)
+    other = submitted(world, theme=theme)
+    response = world.client.patch(
+        f"/api/rating/{response.data['id']}/", {'submission': other.pk}, format='json'
+    )
+    assert response.status_code == 400
+
+
+def test_results_hide_before_publication_and_handle_optional_relations(world):
+    item = submitted(world)
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    Rating.objects.create(user=world.other, judge=judge, submission=item, rating=5)
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    SubmissionReward.objects.create(submission=item, kind=1, label='Gold')
+    public = APIClient()
+    assert public.get('/api/results/submission/').data == []
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    response = public.get('/api/results/submission/')
+    assert response.status_code == 200, response.data
+    assert response.data[0]['accepted'] is True
+    assert response.data[0]['author']['country'] is None
+    assert response.data[0]['author']['email'] is None
+    assert response.data[0]['reward_kind'] == 'Gold'
+
+
+@pytest.mark.parametrize('method', ['patch', 'delete'])
+def test_published_scores_are_immutable(world, method):
+    judge = Judge.objects.create(judge=world.owner, contest=world.contest)
+    item = submitted(world)
+    rating = Rating.objects.create(
+        judge=judge, user=world.owner, submission=item, rating=4
+    )
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    response = getattr(world.client, method)(
+        f'/api/rating/{rating.pk}/', {'rating': 1}, format='json'
+    )
+    assert response.status_code == 403
+    rating.refresh_from_db()
+    assert rating.rating == 4
