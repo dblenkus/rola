@@ -1,4 +1,5 @@
 """.. Ignore pydocstyle D400."""
+
 from rolca.rating.api.views import (
     ContestViewSet,
     RatingViewSet,

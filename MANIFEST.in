@@ -10,3 +10,5 @@ include tests/.env
 recursive-include tests *.py *.yml *.html
 include src/rolca/core/tests/*.py
 include conftest.py
+
+include .github/dependabot.yml

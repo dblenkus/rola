@@ -8,6 +8,7 @@ Payment API serializers
     :members:
 
 """
+
 from rolca.core.api.serializers import BaseSerializer
 from rolca.payment.models import Payment
 
@@ -23,6 +24,7 @@ class PaymentSerializer(BaseSerializer):
         extra_kwargs = {'submissionset': {'validators': []}}
 
     def create(self, validated_data):
+        """Create or update payment status for one submission set."""
         submissionset = validated_data.pop('submissionset')
         payment, _ = Payment.objects.update_or_create(
             submissionset=submissionset, defaults=validated_data

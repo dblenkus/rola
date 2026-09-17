@@ -1,4 +1,5 @@
 """.. Ignore pydocstyle D400."""
+
 from rest_framework import viewsets
 
 from rolca.core.api.permissions import IsSuperUser

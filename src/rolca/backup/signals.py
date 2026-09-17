@@ -5,6 +5,7 @@ Signal Handlers
 ===============
 
 """
+
 import logging
 
 from asgiref.sync import async_to_sync
@@ -14,8 +15,8 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from rolca.backup.protocol import CHANNEL_BACKUP, TYPE_FILE
 from rolca.backup.models import FileBackup
+from rolca.backup.protocol import CHANNEL_BACKUP, TYPE_FILE
 from rolca.core.models import File
 
 logger = logging.getLogger(__name__)

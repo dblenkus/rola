@@ -8,6 +8,7 @@ Payment models
     :members:
 
 """
+
 from django.db import models
 
 from rolca.core.models import BaseModel, SubmissionSet

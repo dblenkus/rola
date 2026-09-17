@@ -1,8 +1,11 @@
-import boto3
-from botocore.exceptions import ClientError
+"""Upload queued files to the configured S3 backup bucket."""
+
 import logging
 
+import boto3
+from botocore.exceptions import ClientError
 from channels.consumer import SyncConsumer
+
 from django.utils import timezone
 
 from rolca.backup import settings

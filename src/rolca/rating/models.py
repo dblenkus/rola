@@ -11,6 +11,7 @@ Rating models
     :members:
 
 """
+
 from django.conf import settings
 from django.db import models
 
@@ -30,7 +31,7 @@ class Judge(BaseModel):
 
 
 class Rating(BaseModel):
-    """Model for rating submissions"""
+    """Model for rating submissions."""
 
     judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name='ratings')
 

@@ -55,8 +55,9 @@ exclude = ["tests", "tests.*", "*.tests", "*.tests.*"]
 [tool.setuptools_scm]
 
 [tool.black]
-target-version = ["py38","py39","py310","py311"]
+target-version = ["py312"]
 skip-string-normalization = true
+extend-exclude = "/migrations/"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
@@ -65,3 +66,22 @@ addopts = "--import-mode=importlib"
 pythonpath = ["."]
 testpaths = ["src/rolca", "tests"]
 markers = ["redis: integration test requiring ROLCA_REDIS_URL"]
+
+[tool.isort]
+profile = "black"
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "DJANGOTHIRD", "FIRSTPARTY", "LOCALFOLDER"]
+known_django = ["django"]
+known_djangothird = ["rest_framework"]
+known_first_party = ["rolca", "tests"]
+skip_glob = ["*/migrations/*"]
+
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["**/migrations/**", "**/tests/**"]
+
+[tool.ruff.lint]
+select = ["D"]
+ignore = ["D202"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

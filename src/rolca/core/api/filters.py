@@ -5,6 +5,7 @@ Core API views
 ==============
 
 """
+
 from django_filters import rest_framework as filters
 
 from django.utils import timezone
@@ -25,6 +26,8 @@ class InstitutionFilter(filters.FilterSet):
     """Filter for Institutuion API endpoint."""
 
     class Meta:
+        """Configure supported institution lookups."""
+
         model = Institution
         fields = {
             "name": TEXT_LOOKUPS[:],
@@ -38,6 +41,8 @@ class SubmissionFilter(filters.FilterSet):
     contest = filters.CharFilter(field_name="theme__contest")
 
     class Meta:
+        """Configure submission filters."""
+
         model = Submission
         fields = ["theme"]
 
@@ -46,6 +51,8 @@ class SubmissionSetFilter(filters.FilterSet):
     """Filter for SubmissionSet API endpoint."""
 
     class Meta:
+        """Filter submission sets by contest."""
+
         model = SubmissionSet
         fields = ["contest"]
 

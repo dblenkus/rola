@@ -1,4 +1,5 @@
 """Rolca backup settings."""
+
 from django.conf import settings
 
 bucket_name = getattr(settings, 'BACKUP_AWS_BUCKET_NAME')
