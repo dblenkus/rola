@@ -2330,7 +2330,7 @@ components:
             $ref: '#/components/schemas/IdRelatedRequest'
     PatchedUserRequest:
       type: object
-      description: Expose a public profile with an embedded postal address.
+      description: Validate profile writes while retaining the flat account representation.
       properties:
         password:
           type: string
@@ -2352,20 +2352,20 @@ components:
           maxLength: 150
         address:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         city:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         postal_code:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         country:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
     Payment:
       type: object
       description: Serializer for Payment objects.
@@ -2758,7 +2758,7 @@ components:
       - postal_code
     UserRequest:
       type: object
-      description: Expose a public profile with an embedded postal address.
+      description: Validate profile writes while retaining the flat account representation.
       properties:
         password:
           type: string
@@ -2780,20 +2780,20 @@ components:
           maxLength: 150
         address:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         city:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         postal_code:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
         country:
           type: string
-          nullable: true
           minLength: 1
+          maxLength: 100
       required:
       - address
       - city

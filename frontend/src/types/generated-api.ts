@@ -867,17 +867,17 @@ export interface components {
             description?: string | null;
             files?: components["schemas"]["IdRelatedRequest"][];
         };
-        /** @description Expose a public profile with an embedded postal address. */
+        /** @description Validate profile writes while retaining the flat account representation. */
         PatchedUserRequest: {
             password?: string;
             /** Format: email */
             email?: string;
             first_name?: string | null;
             last_name?: string | null;
-            address?: string | null;
-            city?: string | null;
-            postal_code?: string | null;
-            country?: string | null;
+            address?: string;
+            city?: string;
+            postal_code?: string;
+            country?: string;
         };
         /** @description Serializer for Payment objects. */
         Payment: {
@@ -1031,17 +1031,17 @@ export interface components {
             postal_code: string | null;
             country: string | null;
         };
-        /** @description Expose a public profile with an embedded postal address. */
+        /** @description Validate profile writes while retaining the flat account representation. */
         UserRequest: {
             password: string;
             /** Format: email */
             email: string;
             first_name: string | null;
             last_name: string | null;
-            address: string | null;
-            city: string | null;
-            postal_code: string | null;
-            country: string | null;
+            address: string;
+            city: string;
+            postal_code: string;
+            country: string;
         };
     };
     responses: never;
