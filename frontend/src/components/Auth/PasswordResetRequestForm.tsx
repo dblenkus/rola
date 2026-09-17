@@ -2,8 +2,8 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { Button } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
 
 import InputField, { IInputChangeEvent } from '../Upload/InputField';
 
@@ -20,12 +20,12 @@ interface PasswordResetRequestFormProps {
   onSubmit: () => Promise<void>;
 }
 
-const useStyles = makeStyles(authStyles);
+const useStyles = makeStyles()(authStyles);
 
 const PasswordResetRequestForm: React.FC<PasswordResetRequestFormProps> = (
   props,
 ) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent) => {

@@ -2,9 +2,9 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { Button, Grid } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
-import { makeStyles } from '@material-ui/core/styles';
+import { Button, Grid } from '@mui/material';
+import { Alert } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
 
 import InputField, { IInputChangeEvent } from '../Upload/InputField';
 
@@ -32,7 +32,7 @@ export interface Errors {
   postal_code: null | Array<string>;
   country: null | Array<string>;
   non_field_errors: null | Array<string>;
-  [key: string]: any;
+  [key: string]: string[] | null;
 }
 
 interface RegisterFormProps {
@@ -42,15 +42,15 @@ interface RegisterFormProps {
   onSubmit: () => Promise<void>;
 }
 
-const useStyles = makeStyles(authStyles);
+const useStyles = makeStyles()(authStyles);
 
 const RegisterForm: React.FC<RegisterFormProps> = (props) => {
-  const classes = useStyles();
+  const { classes } = useStyles();
   const { t } = useTranslation();
   const { errors, fields, onChange, onSubmit } = props;
 
-  const getError = (field: string): string => {
-    return errors[field] ? errors[field].join(' ') : null;
+  const getError = (field: string): string | null => {
+    return errors[field]?.join(' ') ?? null;
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -61,7 +61,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
   return (
     <form onSubmit={handleSubmit}>
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <InputField
             name="first_name"
             label={t('first_name')}
@@ -73,7 +73,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <InputField
             name="last_name"
             label={t('last_name')}
@@ -84,7 +84,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="email"
             label={t('email')}
@@ -95,7 +95,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="password"
             label={t('password')}
@@ -107,7 +107,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="address"
             label={t('address')}
@@ -118,7 +118,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="city"
             label={t('city')}
@@ -129,7 +129,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="postal_code"
             label={t('postal_code')}
@@ -140,7 +140,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
             onChange={onChange}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <InputField
             name="country"
             label={t('country')}
