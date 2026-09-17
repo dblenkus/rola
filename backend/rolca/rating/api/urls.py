@@ -9,9 +9,9 @@ from rolca.rating.api.views import (
 )
 
 routeList = (
-    (r'rating', RatingViewSet),
-    (r'judge/contest', ContestViewSet),
-    (r'judge/submission', SubmissionViewSet),
-    (r'results/theme', ThemeResultsViewSet),
-    (r'results/submission', SubmissionResultsViewSet),
+    (r"rating", RatingViewSet),
+    (r"judge/contest", ContestViewSet),
+    (r"judge/submission", SubmissionViewSet),
+    (r"results/theme", ThemeResultsViewSet),
+    (r"results/submission", SubmissionResultsViewSet),
 )

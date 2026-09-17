@@ -6,9 +6,8 @@ Core API views
 
 """
 
-from django_filters import rest_framework as filters
-
 from django.utils import timezone
+from django_filters import rest_framework as filters
 
 from rolca.core.models import Institution, Submission, SubmissionSet
 
@@ -31,7 +30,7 @@ class InstitutionFilter(filters.FilterSet):
         model = Institution
         fields = {
             "name": TEXT_LOOKUPS[:],
-            "kind": ['exact'],
+            "kind": ["exact"],
         }
 
 
@@ -63,7 +62,7 @@ class ContestFilter(filters.FilterSet):
     def filter_is_active(self, queryset, name, value):
         """Return active contests."""
         now = timezone.now()
-        filters = {'start_date__lte': now, 'end_date__gte': now}
+        filters = {"start_date__lte": now, "end_date__gte": now}
         return queryset.filter(**filters) if value else queryset.exclude(**filters)
 
     def filter_submitted(self, queryset, name, value):
@@ -71,7 +70,7 @@ class ContestFilter(filters.FilterSet):
         if self.request.user.is_anonymous:
             return queryset.none() if value else queryset
 
-        filters = {'themes__submission__user': self.request.user}
+        filters = {"themes__submission__user": self.request.user}
         return queryset.filter(**filters) if value else queryset.exclude(**filters)
 
     is_active = filters.BooleanFilter(method="filter_is_active")
