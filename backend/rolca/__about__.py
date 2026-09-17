@@ -2,9 +2,9 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
-__title__ = "rolca"
+__title__ = "rola"
 __summary__ = "Open source platform for uploading photos"
-__url__ = "https://github.com/dblenkus/rolca"
+__url__ = "https://github.com/dblenkus/rola"
 
 try:
     __version__ = version(__title__)
