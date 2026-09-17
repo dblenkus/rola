@@ -59,7 +59,7 @@ class FileViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 class InstitutionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
-    filter_class = InstitutionFilter
+    filterset_class = InstitutionFilter
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
@@ -83,7 +83,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     serializer_class = SubmissionSerializer
     queryset = Submission.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
-    filter_class = SubmissionFilter
+    filterset_class = SubmissionFilter
 
     def get_queryset(self):
         """Return queryset for submissions that can be shown to user.
@@ -152,7 +152,7 @@ class SubmissionSetViewSet(
     queryset = SubmissionSet.objects.all()
     serializer_class = SubmissionSetSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_class = SubmissionSetFilter
+    filterset_class = SubmissionSetFilter
 
     def get_queryset(self):
         """Return queryset for submissions that can be shown to user.
@@ -187,4 +187,4 @@ class ContestViewSet(viewsets.ModelViewSet):
     queryset = Contest.objects.all()
     serializer_class = ContestSerializer
     permission_classes = (AdminOrReadOnly,)
-    filter_class = ContestFilter
+    filterset_class = ContestFilter

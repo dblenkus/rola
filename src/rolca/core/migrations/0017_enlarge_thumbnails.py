@@ -12,11 +12,10 @@ def enlarge_thumbnails(apps, schema_editor):
     File = apps.get_model("core", "File")
 
     for file_ in File.objects.all():
-        image = Image.open(file_.file)
-        image.thumbnail((400, 400), Image.ANTIALIAS)
-
         thumb = io.BytesIO()
-        image.save(thumb, format="jpeg", quality=80, optimize=True, progressive=True)
+        with file_.file.open('rb') as source, Image.open(source) as image:
+            image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+            image.save(thumb, format="jpeg", quality=80, optimize=True, progressive=True)
         file_.thumbnail = InMemoryUploadedFile(
             thumb, None, file_.file.name, 'image/jpeg', thumb.tell(), None
         )

@@ -24,7 +24,7 @@ class RatingViewSet(viewsets.ModelViewSet):
     queryset = Rating.objects.none()
     serializer_class = RatingSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    filter_class = RatingFilter
+    filterset_class = RatingFilter
 
     def get_queryset(self):
         return Rating.objects.filter(user=self.request.user)
@@ -33,7 +33,7 @@ class RatingViewSet(viewsets.ModelViewSet):
 class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    filter_class = SubmissionFilter
+    filterset_class = SubmissionFilter
     permission_classes = (IsActiveJudge,)
 
     def get_queryset(self):
@@ -56,7 +56,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Contest.objects.all()
     serializer_class = ContestSerializer
-    filter_class = ContestFilter
+    filterset_class = ContestFilter
     permission_classes = (IsActiveJudge,)
 
     def get_queryset(self):
@@ -108,7 +108,7 @@ class SubmissionResultsViewSet(
         .prefetch_related('files', 'reward')
     )
     serializer_class = SubmissionResultsSerializer
-    filter_class = SubmissionFilter
+    filterset_class = SubmissionFilter
     ordering_fields = ['rating_sum']
 
     def get_queryset(self):

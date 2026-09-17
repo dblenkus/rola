@@ -5,6 +5,8 @@
 
 # Virtual environment
 .venv/
+.venv-*/
+coverage.xml
 
 # Ignore project files
 *.pyproj

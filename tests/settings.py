@@ -2,15 +2,21 @@
 Django settings for running tests for rolca-core package.
 
 """
+
 import os
 
+import django
 from django.utils.translation import gettext_lazy as _
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 SECRET_KEY = 'secret'
 
-DEBUG = True
+DEBUG = False
+USE_TZ = True
+TIME_ZONE = 'UTC'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+AUTH_USER_MODEL = 'drf_user.User'
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -30,6 +36,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django_filters',
+    'rest_framework',
+    'tests.userapp',
     'rolca.backup',
     'rolca.core',
     'rolca.payment',
@@ -68,9 +76,10 @@ LOCALE_PATHS = (os.path.join(PROJECT_ROOT, 'locale'),)
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('ROLCA_POSTGRESQL_NAME', 'rolca'),
         'USER': os.environ.get('ROLCA_POSTGRESQL_USER', 'rolca'),
+        'PASSWORD': os.environ.get('ROLCA_POSTGRESQL_PASSWORD', ''),
         'HOST': os.environ.get('ROLCA_POSTGRESQL_HOST', 'localhost'),
         'PORT': int(os.environ.get('ROLCA_POSTGRESQL_PORT', 5432)),
     }
@@ -84,12 +93,20 @@ REST_FRAMEWORK = {
 
 CHANNEL_LAYERS = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
 
-ASGI_APPLICATION = 'rolca.tests.routing.application'
+ASGI_APPLICATION = 'tests.routing.application'
 
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
 STATIC_URL = '/static/'
 
-ROLCA_MAX_SIZE = 1048576
-ROLCA_MAX_LONG_EDGE = 2400
+ROLCA_MAX_UPLOAD_SIZE = 1048576
+ROLCA_MAX_UPLOAD_RESOLUTION = 2400
 ROLCA_ACCEPTED_FORMATS = ['JPEG']
+
+if django.VERSION >= (6, 1):
+    MAILERS = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+BACKUP_AWS_BUCKET_NAME = 'test-backups'
+BACKUP_AWS_ACCESS_KEY_ID = 'test-access-key'
+BACKUP_AWS_SECRET_ACCESS_KEY = 'test-secret-key'

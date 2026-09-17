@@ -1,4 +1,5 @@
 """Main project's urls."""
+
 from django.urls import include, path
 
 from rest_framework import routers
@@ -16,7 +17,7 @@ route_lists = [
 router = routers.DefaultRouter()
 for route_list in route_lists:
     for prefix, viewset in route_list:
-        router.register(prefix, viewset)
+        router.register(prefix, viewset, basename=prefix.replace('/', '-'))
 
 
 urlpatterns = [

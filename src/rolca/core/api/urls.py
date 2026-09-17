@@ -21,12 +21,13 @@ following code:
     router = routers.DefaultRouter()
     for route_list in route_lists:
         for prefix, viewset in route_list:
-            router.register(prefix, viewset)
+            router.register(prefix, viewset, basename=prefix.replace('/', '-'))
 
 For advanced configuration code can be accordingly changed to meet the
 needs.
 
 """
+
 from rolca.core.api.views import (
     AuthorViewSet,
     ContestViewSet,

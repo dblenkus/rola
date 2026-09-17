@@ -1,12 +1,13 @@
 import io
-from datetime import date, timedelta
+from datetime import timedelta
+from unittest.mock import MagicMock, Mock, patch
 
-from mock import MagicMock, Mock, patch
 from PIL import Image
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.utils import override_settings
+from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -171,7 +172,7 @@ class SubmissionViewSetTest(APITestCase):
         self.user1 = user_model.objects.create_user(username='user1')
         self.user2 = user_model.objects.create_user(username='user2')
 
-        today = date.today()
+        today = timezone.now()
         tomorrow = today + timedelta(days=1)
         self.contest = Contest.objects.create(
             user=self.creator, title='Test contest', start_date=today, end_date=tomorrow
@@ -227,7 +228,7 @@ class SubmissionViewSetTest(APITestCase):
         viewset_mock.request = Mock(user=self.user2)
         self.assertEqual(len(SubmissionViewSet.get_queryset(viewset_mock)), 2)
 
-        self.contest.publish_date = date.today() - timedelta(days=1)
+        self.contest.publish_date = timezone.now() - timedelta(days=1)
         self.contest.save()
 
         viewset_mock.request = Mock(user=self.user2)
@@ -277,7 +278,8 @@ class FileViewSetTest(APITestCase):
         resp = self.file_view(request)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(File.objects.count(), 1)
-        self.assertEqual(File.objects.first().file.read(), generate_photo().read())
+        with File.objects.first().file.open('rb') as source:
+            self.assertEqual(source.read(), generate_photo().read())
 
     @override_settings(ROLCA_MAX_UPLOAD_SIZE=10)
     def test_create_exceed_size(self):

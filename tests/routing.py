@@ -6,6 +6,6 @@ from rolca.backup.protocol import CHANNEL_BACKUP
 application = ProtocolTypeRouter(
     {
         # Background worker consumers.
-        'channel': ChannelNameRouter({CHANNEL_BACKUP: BackupConsumer}),
+        'channel': ChannelNameRouter({CHANNEL_BACKUP: BackupConsumer.as_asgi()}),
     }
 )

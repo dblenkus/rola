@@ -20,6 +20,7 @@ Core models
     :members:
 
 """
+
 import hashlib
 import io
 import os
@@ -34,8 +35,6 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
-from drf_user.models import Email
 
 
 class BaseModel(models.Model):
@@ -101,7 +100,7 @@ class Contest(BaseModel):
     confirmation_html = models.TextField(default='')
 
     confirmation_email = models.ForeignKey(
-        Email, null=True, blank=True, on_delete=models.SET_NULL
+        'drf_user.Email', null=True, blank=True, on_delete=models.SET_NULL
     )
 
     dob_required = models.BooleanField(default=False)
@@ -180,8 +179,15 @@ def _generate_filename(instance, filename, prefix):
     """Generate unique filename with given prefix."""
     md5 = hashlib.md5()
     md5.update(struct.pack('f', time.time()))
-    for chunk in instance.file.chunks():
-        md5.update(chunk)
+    was_closed = instance.file.closed
+    try:
+        if was_closed:
+            instance.file.open('rb')
+        for chunk in instance.file.chunks():
+            md5.update(chunk)
+    finally:
+        if was_closed:
+            instance.file.close()
     extension = os.path.splitext(filename)[1]
     return os.path.join(prefix, md5.hexdigest() + extension)
 
@@ -246,6 +252,7 @@ class Submission(BaseModel):
 
 
 def validate_image(file):
+    """Validate the upload size and longest image edge."""
     max_size = settings.ROLCA_MAX_UPLOAD_SIZE
     if file.size > max_size:
         raise ValidationError("Max size of file is {}B.".format(max_size))
@@ -287,13 +294,12 @@ class File(BaseModel):
     def save(self, *args, **kwargs):
         """Add photo thumbnail and save object."""
         if not self.pk:  # on create
-            image = Image.open(self.file)
-            image.thumbnail((400, 400), Image.ANTIALIAS)
-
             thumb = io.BytesIO()
-            image.save(
-                thumb, format="jpeg", quality=80, optimize=True, progressive=True
-            )
+            with Image.open(self.file) as image:
+                image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                image.save(
+                    thumb, format="jpeg", quality=80, optimize=True, progressive=True
+                )
             self.thumbnail = InMemoryUploadedFile(
                 thumb, None, self.file.name, 'image/jpeg', thumb.tell(), None
             )
@@ -321,6 +327,8 @@ class File(BaseModel):
 
 
 class Institution(BaseModel):
+    """Store a participating institution."""
+
     SCHOOL = 1
     KIND_CHOICES = [
         (SCHOOL, 'School'),
@@ -331,6 +339,8 @@ class Institution(BaseModel):
     name = models.CharField(max_length=100)
 
     class Meta:
+        """Keep institution names unique within each kind."""
+
         constraints = [
             models.UniqueConstraint(fields=['kind', 'name'], name='unique_name_kind'),
         ]
@@ -354,9 +364,6 @@ class Author(BaseModel):
 
     #: ``Author``'s email
     email = models.EmailField(_('Email'), null=True, blank=True)
-
-    #: mentor
-    mentor = models.CharField(_('Mentor'), max_length=60, null=True, blank=True)
 
     dob = models.DateField(null=True, blank=True)
 

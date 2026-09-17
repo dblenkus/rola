@@ -13,4 +13,4 @@ class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = (IsSuperUser,)
-    filter_class = PaymentFilter
+    filterset_class = PaymentFilter
