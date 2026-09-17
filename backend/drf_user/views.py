@@ -15,6 +15,7 @@ from .serializers import (
     RequestPasswordResetSerializer,
     TokenSerializer,
     UserSerializer,
+    UserWriteSerializer,
 )
 from .throttling import AccountThrottle, LoginThrottle
 
@@ -45,6 +46,12 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.select_related("location")
     serializer_class = UserSerializer
     permission_classes = [IsTargetUser | IsSuperUser]
+
+    def get_serializer_class(self):
+        """Use model validation for writes and nullable addresses for responses."""
+        if self.action in {"create", "update", "partial_update"}:
+            return UserWriteSerializer
+        return super().get_serializer_class()
 
     def get_queryset(self):
         """Limit account visibility before object lookup or serialization."""

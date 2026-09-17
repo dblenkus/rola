@@ -17,6 +17,16 @@ from .utils.signing import (
 )
 
 
+class LocationSerializer(serializers.ModelSerializer):
+    """Validate postal address fields against the location model."""
+
+    class Meta:
+        """Define the writable address fields."""
+
+        model = Location
+        fields = ["address", "city", "postal_code", "country"]
+
+
 class UserSerializer(serializers.ModelSerializer):
     """Expose a public profile with an embedded postal address."""
 
@@ -47,6 +57,22 @@ class UserSerializer(serializers.ModelSerializer):
             "password": {"write_only": True, "trim_whitespace": False},
         }
 
+
+class UserWriteSerializer(UserSerializer):
+    """Validate profile writes while retaining the flat account representation."""
+
+    def get_fields(self):
+        """Use model-derived address fields for profile input."""
+        fields = super().get_fields()
+        for name, field in LocationSerializer().fields.items():
+            field.source = f"location.{name}"
+            fields[name] = field
+        return fields
+
+    def to_representation(self, instance):
+        """Return nullable address fields through the profile response serializer."""
+        return UserSerializer(instance, context=self.context).data
+
     def validate(self, attrs):
         """Validate password context and complete address writes."""
         if self.instance is not None and "password" in attrs:
@@ -54,19 +80,8 @@ class UserSerializer(serializers.ModelSerializer):
                 {"password": "Use the change-password endpoint."}
             )
         location = attrs.get("location", {})
-        for field, value in location.items():
-            if value is None:
-                raise serializers.ValidationError(
-                    {field: "This field may not be null."}
-                )
         if self.instance is not None and self.instance.location_id is None and location:
-            missing = {
-                field: "This field is required."
-                for field in ("address", "city", "postal_code", "country")
-                if field not in location
-            }
-            if missing:
-                raise serializers.ValidationError(missing)
+            LocationSerializer(data=location).is_valid(raise_exception=True)
         if self.instance is None:
             user = User(
                 **{key: attrs.get(key) for key in ("email", "first_name", "last_name")}
