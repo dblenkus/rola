@@ -10,10 +10,10 @@ from django.urls import path
 
 from . import views
 
-app_name = 'rolca-core-api'
+app_name = "rolca-core-api"
 urlpatterns = [
     path(
-        'contest/<int:contest_id>/download',
+        "contest/<int:contest_id>/download",
         views.download_contest,
         name="download-contest",
     )

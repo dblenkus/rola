@@ -4,4 +4,4 @@ from rolca.payment.api.views import (
     PaymentViewSet,
 )
 
-routeList = ((r'payment', PaymentViewSet),)
+routeList = ((r"payment", PaymentViewSet),)

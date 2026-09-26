@@ -6,9 +6,9 @@ from django.apps import AppConfig
 class RolcaBackupConfig(AppConfig):
     """Application configuration."""
 
-    default_auto_field = 'django.db.models.AutoField'
+    default_auto_field = "django.db.models.AutoField"
 
-    name = 'rolca.backup'
+    name = "rolca.backup"
     verbose_name = "Rolca Backup"
 
     def ready(self):

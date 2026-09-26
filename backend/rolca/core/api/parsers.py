@@ -6,4 +6,4 @@ from rest_framework import parsers
 class ImageUploadParser(parsers.FileUploadParser):
     """Parse raw image upload requests."""
 
-    media_type = 'image/jpeg'
+    media_type = "image/jpeg"

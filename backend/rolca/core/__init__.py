@@ -12,4 +12,4 @@ Rolca core
 
 """
 
-default_app_config = 'rolca.core.apps.RolcaCoreConfig'
+default_app_config = "rolca.core.apps.RolcaCoreConfig"

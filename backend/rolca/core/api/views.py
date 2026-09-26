@@ -13,12 +13,10 @@ Core API views
 """
 
 import logging
-from functools import partial
 
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-
 from rest_framework import exceptions, mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
@@ -46,6 +44,7 @@ from rolca.core.models import (
     Submission,
     SubmissionSet,
 )
+from rolca.integration import schedule_submission_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ class FileViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 class InstitutionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List institutions with optional filters."""
 
-    queryset = Institution.objects.all()
+    queryset = Institution.objects.order_by("pk")
     serializer_class = InstitutionSerializer
     filterset_class = InstitutionFilter
 
@@ -100,7 +99,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
         """
         return Submission.objects.filter(
-            Q(user__id=self.request.user.id)
+            Q(user=self.request.user)
             | Q(theme__contest__publish_date__lte=timezone.now())
         )
 
@@ -118,19 +117,19 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             if serializer_kwargs
             else [serializer.validated_data]
         )
-        contest = items[0]['theme'].contest
-        if any(item['theme'].contest_id != contest.pk for item in items):
+        contest = items[0]["theme"].contest
+        if any(item["theme"].contest_id != contest.pk for item in items):
             raise exceptions.ValidationError(
-                'All submissions must belong to the same contest.'
+                "All submissions must belong to the same contest."
             )
-        if any(item['author'] != items[0]['author'] for item in items):
+        if any(item["author"] != items[0]["author"] for item in items):
             raise exceptions.ValidationError(
-                'All submissions must have the same author.'
+                "All submissions must have the same author."
             )
-        files = [file for item in items for file in item['files']]
+        files = [file for item in items for file in item["files"]]
         if len({file.pk for file in files}) != len(files):
             raise exceptions.ValidationError(
-                'Each file may only be used once in a submission set.'
+                "Each file may only be used once in a submission set."
             )
         self._lock_files(files)
         self.perform_create(serializer)
@@ -143,11 +142,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         )
         submission_set.submissions.add(*instances)
 
-        if contest.confirmation_email and request.user.email:
-            transaction.on_commit(
-                partial(contest.confirmation_email.send, request.user.email),
-                robust=True,
-            )
+        schedule_submission_confirmation(submission_set)
 
         headers = self.get_success_headers(serializer.data)
         return Response(
@@ -159,7 +154,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         locked = list(
             File.objects.select_for_update()
             .filter(pk__in=[file.pk for file in files])
-            .order_by('pk')
+            .order_by("pk")
         )
         if len(locked) != len(files) or any(
             file.user_id != self.request.user.pk
@@ -167,7 +162,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             for file in locked
         ):
             raise exceptions.ValidationError(
-                {'files': 'An upload is no longer available.'}
+                {"files": "An upload is no longer available."}
             )
 
     @transaction.atomic
@@ -177,8 +172,8 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         """Lock uploads before changing their submission relation."""
-        if 'files' in serializer.validated_data:
-            self._lock_files(serializer.validated_data['files'], serializer.instance.pk)
+        if "files" in serializer.validated_data:
+            self._lock_files(serializer.validated_data["files"], serializer.instance.pk)
         serializer.save()
 
     def destroy(self, request, *args, **kwargs):

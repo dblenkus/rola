@@ -5,7 +5,6 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 from channels.consumer import SyncConsumer
-
 from django.utils import timezone
 
 from rolca.backup import settings
@@ -21,7 +20,7 @@ class BackupConsumer(SyncConsumer):
         """Process backup for ~`rolca.core.models.File` object."""
         queryset = FileBackup.objects.filter(done__isnull=True)
 
-        file_backup_pk = message.get('file_backup_pk')
+        file_backup_pk = message.get("file_backup_pk")
         if file_backup_pk:
             queryset = queryset.filter(pk=file_backup_pk)
 
@@ -33,7 +32,7 @@ class BackupConsumer(SyncConsumer):
 
         for file_backup in queryset:
             file_name = file_backup.source.file.name
-            with file_backup.source.file.file.open('rb') as fh:
+            with file_backup.source.file.file.open("rb") as fh:
                 try:
                     s3client.upload_fileobj(fh, settings.bucket_name, file_name)
                 except ClientError:
