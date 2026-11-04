@@ -10,17 +10,19 @@ import { authStyles } from '../../styles/general';
 const useStyles = makeStyles(authStyles);
 
 const RegisterActivateFailed: React.FC = () => {
-    const classes = useStyles();
-    const { t } = useTranslation();
+  const classes = useStyles();
+  const { t } = useTranslation();
 
-    return (
-        <>
-            <Typography component="h3" variant="h6">
-                {t('activation_failed')}
-            </Typography>
-            <Typography className={classes.paragraph}>{t('invalid_token')}</Typography>
-        </>
-    );
+  return (
+    <>
+      <Typography component="h3" variant="h6">
+        {t('activation_failed')}
+      </Typography>
+      <Typography className={classes.paragraph}>
+        {t('invalid_token')}
+      </Typography>
+    </>
+  );
 };
 
 export default RegisterActivateFailed;

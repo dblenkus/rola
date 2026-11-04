@@ -38,105 +38,118 @@ import ThemeResultsView from './views/results/ThemeResults';
 import SelectResultsThemeView from './views/results/SelectTheme';
 import SubmissionResultsView from './views/results/SubmissionResults';
 
-Sentry.init({ dsn: 'https://0d870d17fdb1421b8545267fc711b19a@o84586.ingest.sentry.io/5272406' });
+Sentry.init({
+  dsn: 'https://0d870d17fdb1421b8545267fc711b19a@o84586.ingest.sentry.io/5272406',
+});
 
 const useStyles = makeStyles((theme) => ({
-    container: {
-        marginTop: theme.spacing(2),
-        marginBottom: theme.spacing(4),
-    },
-    root: {
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-    },
+  container: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(4),
+  },
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+  },
 }));
 
 const App = () => {
-    const classes = useStyles();
+  const classes = useStyles();
 
-    return (
-        <div className={classes.root}>
-            <Provider store={store}>
-                <AuthProvider>
-                    <BrowserRouter>
-                        <CssBaseline />
-                        <Notifications />
-                        <Header />
-                        <Container className={classes.container}>
-                            <Switch>
-                                <Route exact path="/" render={() => <Redirect to="/contests" />} />
-                                <Route path="/contests" component={ContestsListView} />
-                                <Route
-                                    path="/contest/:contestId/details"
-                                    component={ContestDetailsView}
-                                />
-                                <PrivateRoute
-                                    path="/contest/:contestId/upload"
-                                    component={UploadView}
-                                />
-                                <PrivateRoute
-                                    path="/contest/:contestId/confirm"
-                                    component={UploadConfirmView}
-                                />
-                                <PrivateRoute
-                                    path="/user/submissions"
-                                    component={EditSubmissionsList}
-                                />
-                                <Route path="/login" component={LoginView} />
-                                <Route exact path="/password-reset" component={PasswordResetView} />
-                                <Route
-                                    path="/password-reset/request"
-                                    component={PasswordResetRequestView}
-                                />
-                                <Route exact path="/register" component={RegisterView} />
-                                <Route path="/register/activate" component={RegisterActivateView} />
-                                <Route path="/results" component={ResultsListView} exact />
+  return (
+    <div className={classes.root}>
+      <Provider store={store}>
+        <AuthProvider>
+          <BrowserRouter>
+            <CssBaseline />
+            <Notifications />
+            <Header />
+            <Container className={classes.container}>
+              <Switch>
+                <Route
+                  exact
+                  path="/"
+                  render={() => <Redirect to="/contests" />}
+                />
+                <Route path="/contests" component={ContestsListView} />
+                <Route
+                  path="/contest/:contestId/details"
+                  component={ContestDetailsView}
+                />
+                <PrivateRoute
+                  path="/contest/:contestId/upload"
+                  component={UploadView}
+                />
+                <PrivateRoute
+                  path="/contest/:contestId/confirm"
+                  component={UploadConfirmView}
+                />
+                <PrivateRoute
+                  path="/user/submissions"
+                  component={EditSubmissionsList}
+                />
+                <Route path="/login" component={LoginView} />
+                <Route
+                  exact
+                  path="/password-reset"
+                  component={PasswordResetView}
+                />
+                <Route
+                  path="/password-reset/request"
+                  component={PasswordResetRequestView}
+                />
+                <Route exact path="/register" component={RegisterView} />
+                <Route
+                  path="/register/activate"
+                  component={RegisterActivateView}
+                />
+                <Route path="/results" component={ResultsListView} exact />
 
-                                <Route
-                                    path="/results/contest/:contestId/theme/:themeId/submission/:submissionId"
-                                    component={SubmissionResultsView}
-                                />
-                                <Route
-                                    path="/results/contest/:contestId/theme/:themeId"
-                                    component={ThemeResultsView}
-                                />
-                                <Route
-                                    path="/results/contest/:contestId"
-                                    component={SelectResultsThemeView}
-                                />
+                <Route
+                  path="/results/contest/:contestId/theme/:themeId/submission/:submissionId"
+                  component={SubmissionResultsView}
+                />
+                <Route
+                  path="/results/contest/:contestId/theme/:themeId"
+                  component={ThemeResultsView}
+                />
+                <Route
+                  path="/results/contest/:contestId"
+                  component={SelectResultsThemeView}
+                />
 
-                                <PrivateRoute exact path="/judge" component={SelectThemeView} />
-                                <PrivateRoute
-                                    exact
-                                    path="/judge/contest/:contestId/theme/:themeId"
-                                    component={ViewThemeView}
-                                />
-                                <PrivateRoute
-                                    path="/judge/contest/:contestId/theme/:themeId/rate"
-                                    component={RateSubmissionView}
-                                />
-                                <PrivateRoute
-                                    path="/judge/contest/:contestId/theme/:themeId/overview"
-                                    component={ThemeOverview}
-                                />
+                <PrivateRoute exact path="/judge" component={SelectThemeView} />
+                <PrivateRoute
+                  exact
+                  path="/judge/contest/:contestId/theme/:themeId"
+                  component={ViewThemeView}
+                />
+                <PrivateRoute
+                  path="/judge/contest/:contestId/theme/:themeId/rate"
+                  component={RateSubmissionView}
+                />
+                <PrivateRoute
+                  path="/judge/contest/:contestId/theme/:themeId/overview"
+                  component={ThemeOverview}
+                />
 
-                                <PrivateRoute
-                                    path="/admin/contest/:contestId/submissions"
-                                    component={AdminSubmissionSetList}
-                                />
-                                <PrivateRoute
-                                    path="/admin/contest/:contestId/submission/:submissionSetId"
-                                    component={AdminSubmissionSetView}
-                                />
-                            </Switch>
-                        </Container>
-                        <Footer />
-                    </BrowserRouter>
-                </AuthProvider>
-            </Provider>
-        </div>
-    );
+                <PrivateRoute
+                  path="/admin/contest/:contestId/submissions"
+                  component={AdminSubmissionSetList}
+                />
+                <PrivateRoute
+                  path="/admin/contest/:contestId/submission/:submissionSetId"
+                  component={AdminSubmissionSetView}
+                />
+              </Switch>
+            </Container>
+            <Footer />
+          </BrowserRouter>
+        </AuthProvider>
+      </Provider>
+    </div>
+  );
 };
 
 export default App;

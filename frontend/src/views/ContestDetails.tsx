@@ -11,53 +11,56 @@ import NoticeHtml from '../components/Upload/NoticeHtml';
 import UploadButton from '../components/Upload/UploadButton';
 
 interface RouteMatchParams {
-    contestId: string;
+  contestId: string;
 }
 
 interface ContestDetailsProps extends RouteComponentProps<RouteMatchParams> {}
 
 interface ContestDetailsState {
-    contest: Contest | null;
+  contest: Contest | null;
 }
 
-class ContestDetails extends React.Component<ContestDetailsProps, ContestDetailsState> {
-    state = {
-        contest: null,
-    };
+class ContestDetails extends React.Component<
+  ContestDetailsProps,
+  ContestDetailsState
+> {
+  state = {
+    contest: null,
+  };
 
-    async componentDidMount() {
-        const { contestId } = this.props.match.params;
-        const { data: contest } = await ContestService.getContest(contestId);
-        this.setState({ contest });
-    }
+  async componentDidMount() {
+    const { contestId } = this.props.match.params;
+    const { data: contest } = await ContestService.getContest(contestId);
+    this.setState({ contest });
+  }
 
-    render(): React.ReactNode {
-        const { contest } = this.state;
+  render(): React.ReactNode {
+    const { contest } = this.state;
 
-        if (contest === null) return null;
+    if (contest === null) return null;
 
-        const {
-            header_image: headerImage,
-            notice_html: noticeHtml,
-            title,
-            id: contestId,
-        } = (contest as unknown) as Contest;
+    const {
+      header_image: headerImage,
+      notice_html: noticeHtml,
+      title,
+      id: contestId,
+    } = contest as unknown as Contest;
 
-        return (
-            <>
-                {headerImage ? (
-                    <HeaderImage src={headerImage} />
-                ) : (
-                    <Typography align="center" variant="h2">
-                        {title}
-                    </Typography>
-                )}
-                <UploadButton contestId={contestId} />
-                <NoticeHtml notice={noticeHtml} />
-                <UploadButton contestId={contestId} />
-            </>
-        );
-    }
+    return (
+      <>
+        {headerImage ? (
+          <HeaderImage src={headerImage} />
+        ) : (
+          <Typography align="center" variant="h2">
+            {title}
+          </Typography>
+        )}
+        <UploadButton contestId={contestId} />
+        <NoticeHtml notice={noticeHtml} />
+        <UploadButton contestId={contestId} />
+      </>
+    );
+  }
 }
 
 export default withRouter(ContestDetails);
