@@ -1,33 +1,40 @@
-import logging
+"""Check that the configured databases and the cache table accept queries."""
 
-from django.core.management.base import BaseCommand
+from django.core.cache import cache
+from django.core.management.base import BaseCommand, CommandError
 from django.db import connections
-
-logger = logging.getLogger(__name__)
+from django.db.utils import DatabaseError
 
 
 def check_database():
-    """Check connections to all databases."""
+    """Query every configured database and close its cursor."""
+    for name in connections:
+        try:
+            with connections[name].cursor() as cursor:
+                cursor.execute("SELECT 1")
+                if cursor.fetchone() != (1,):
+                    raise CommandError(f"Database {name} returned an invalid response.")
+        except DatabaseError as error:
+            raise CommandError(f"Database {name} is unavailable: {error}") from error
+
+
+def check_cache():
+    """Read from the database cache, which needs its own table."""
     try:
-        for name in connections:
-            cursor = connections[name].cursor()
-            cursor.execute("SELECT 1;")
-            row = cursor.fetchone()
-            if row is None:
-                raise RuntimeError("db: Invalid response.")
-    except Exception as ex:
-        logger.exception(ex)
-        raise RuntimeError("db: Cannot connect to database.") from None
+        cache.get("readinesscheck")
+    except DatabaseError as error:
+        raise CommandError(
+            "The cache table is unavailable (if it is missing, run createcachetable "
+            f"after migrate): {error}"
+        ) from error
 
 
 class Command(BaseCommand):
-    """Readiness check for Django application."""
+    """Run the database and cache readiness checks."""
 
-    help = "Readiness check for Django application."
+    help = "Check database and cache readiness."
 
     def handle(self, *args, **options):
-        """Comand handle."""
-        try:
-            check_database()
-        except RuntimeError as ex:
-            raise SystemExit(ex) from None
+        """Fail when a database or the cache table cannot answer a query."""
+        check_database()
+        check_cache()
