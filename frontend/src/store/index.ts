@@ -6,13 +6,12 @@ import {
   type UnknownAction,
 } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
-import contests from './contests/reducer';
 import notifications from './notifications/reducer';
 import upload from './upload/reducer';
 import { AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST } from './upload/types';
 import jury from './jury/reducer';
 
-const rootReducer = combineReducers({ contests, notifications, upload, jury });
+const rootReducer = combineReducers({ notifications, upload, jury });
 export type AppState = ReturnType<typeof rootReducer>;
 export type AppThunk<R = void> = ThunkAction<
   R,

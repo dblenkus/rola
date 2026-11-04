@@ -1,75 +1,59 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
-import { Typography } from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 
 import ContestService from '../services/ContestService';
-import { Contest } from '../types/api';
+import { reportUnexpected } from '../services/errors';
+import type { Contest } from '../types/api';
 
 import HeaderImage from '../components/Layout/HeaderImage';
+import LoadingProgress from '../components/LoadingProgress';
 import NoticeHtml from '../components/Upload/NoticeHtml';
 import UploadButton from '../components/Upload/UploadButton';
 
-interface RouteMatchParams {
-  contestId: string;
-}
-
-interface ContestDetailsProps {
-  match: { params: RouteMatchParams };
-}
-
-interface ContestDetailsState {
-  contest: Contest | null;
-}
-
-class ContestDetails extends React.Component<
-  ContestDetailsProps,
-  ContestDetailsState
-> {
-  state = {
-    contest: null,
-  };
-
-  async componentDidMount() {
-    const { contestId } = this.props.match.params;
-    const { data: contest } = await ContestService.getContest(contestId);
-    this.setState({ contest });
-  }
-
-  render(): React.ReactNode {
-    const { contest } = this.state;
-
-    if (contest === null) return null;
-
-    const {
-      header_image: headerImage,
-      notice_html: noticeHtml,
-      title,
-      id: contestId,
-    } = contest as unknown as Contest;
-
-    return (
-      <>
-        {headerImage ? (
-          <HeaderImage src={headerImage} />
-        ) : (
-          <Typography align="center" variant="h2">
-            {title}
-          </Typography>
-        )}
-        <UploadButton contestId={contestId} />
-        <NoticeHtml notice={noticeHtml ?? ''} />
-        <UploadButton contestId={contestId} />
-      </>
-    );
-  }
-}
-
-export default function RouteView() {
-  const params = useParams();
-  const contestId = params.contestId;
+export default function ContestDetails() {
+  const { contestId } = useParams();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
   }
-  return <ContestDetails match={{ params: { contestId } }} />;
+  const [contest, setContest] = useState<Contest | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setContest(null);
+    setFailed(false);
+    ContestService.getContest(contestId)
+      .then(({ data }) => {
+        if (active) setContest(data);
+      })
+      .catch((error: unknown) => {
+        reportUnexpected(error);
+        if (active) setFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [contestId]);
+
+  if (failed) {
+    return <Alert severity="error">Could not load this contest.</Alert>;
+  }
+  if (!contest) return <LoadingProgress />;
+
+  return (
+    <>
+      {contest.header_image ? (
+        <HeaderImage src={contest.header_image} />
+      ) : (
+        <Typography align="center" variant="h2">
+          {contest.title}
+        </Typography>
+      )}
+      <UploadButton contestId={contest.id} />
+      <NoticeHtml notice={contest.notice_html ?? ''} />
+      <UploadButton contestId={contest.id} />
+    </>
+  );
 }

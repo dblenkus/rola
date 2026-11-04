@@ -22,6 +22,86 @@ function open(path: string): void {
   render(<App />);
 }
 
+describe('contest pages', () => {
+  it('lists every page of active contests', async () => {
+    serveApi({
+      'GET /contest': (_config, url) =>
+        url.searchParams.get('page') === '2'
+          ? page([{ ...contest, id: 3, title: 'Winter photographs' }])
+          : {
+              ...page([contest]),
+              next: '/api/v1/contest?is_active=true&page=2',
+            },
+    });
+    open('/contests');
+    expect(
+      await screen.findByRole('heading', { name: 'Winter photographs' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: contest.title }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows that no contest is active', async () => {
+    serveApi({ 'GET /contest': () => page([]) });
+    open('/contests');
+    expect(await screen.findByText('No active contests.')).toBeInTheDocument();
+  });
+
+  it('shows a failed contest list', async () => {
+    serveApi({
+      'GET /contest': (config) => {
+        throw httpError(config, 503);
+      },
+    });
+    open('/contests');
+    expect(
+      await screen.findByText('Could not load contests. Please try again.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('shows the contest notice', async () => {
+    serveApi({ 'GET /contest/1': () => contest });
+    open('/contest/1/details');
+    expect(await screen.findByText('Contest instructions')).toBeInTheDocument();
+  });
+
+  it('shows a failed contest', async () => {
+    serveApi({
+      'GET /contest/1': (config) => {
+        throw httpError(config, 404);
+      },
+    });
+    open('/contest/1/details');
+    expect(
+      await screen.findByText('Could not load this contest.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('counts submissions from every page in the edit list', async () => {
+    signIn();
+    serveApi({
+      'GET /contest': () => page([contest]),
+      'GET /submission': (_config, url) =>
+        url.searchParams.get('page') === '2'
+          ? page([submission(12, 'Second')])
+          : {
+              ...page([submission(11, 'First')]),
+              next: '/api/v1/submission?contest=1&page=2',
+            },
+    });
+    open('/user/submissions');
+    const row = await screen.findByRole('row', { name: /Ana Novak/ });
+    expect(
+      within(row)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual([contest.title, 'Ana Novak', '1', '2', 'EditDelete']);
+  });
+});
+
 describe('failed page requests', () => {
   it.each([
     '/contest/1/upload',

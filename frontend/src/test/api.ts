@@ -4,21 +4,26 @@ import {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { vi } from 'vitest';
-import { apiClient } from '../services/Base';
+import { apiBaseURL, apiClient } from '../services/Base';
 import type { PaginatedResponse } from '../types/api';
 
-type Handler = (config: InternalAxiosRequestConfig) => unknown;
+type Handler = (config: InternalAxiosRequestConfig, url: URL) => unknown;
 
 // Answers API requests by "METHOD /path", where the path is relative to the
-// API base and excludes query parameters. Any other request fails.
+// API base and excludes the query, which handlers read from `url`. Any other
+// request fails.
 export function serveApi(handlers: Record<string, Handler>) {
   const adapter = vi.fn<AxiosAdapter>(async (config) => {
-    const request = `${config.method?.toUpperCase()} ${config.url}`;
+    const url = new URL(apiClient.getUri(config), window.location.origin);
+    const path = url.pathname.startsWith(`${apiBaseURL}/`)
+      ? url.pathname.slice(apiBaseURL.length)
+      : url.pathname;
+    const request = `${config.method?.toUpperCase()} ${path}`;
     const handler = handlers[request];
     if (!handler) {
       throw new Error(`Unexpected request: ${request}`);
     }
-    const data = await handler(config);
+    const data = await handler(config, url);
     return { config, data, status: 200, statusText: 'OK', headers: {} };
   });
   apiClient.defaults.adapter = adapter;

@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 
 import ConfirmDialog from '../components/Notifications/ConfirmDialog';
+import LoadingProgress from '../components/LoadingProgress';
 
 import { editListStyles } from '../styles/general';
 import ContestService from '../services/ContestService';
@@ -27,6 +28,7 @@ import SubmissionService from '../services/SubmissionService';
 import { requestError } from '../services/errors';
 import { Author, Contest, Submission } from '../types/api';
 import { asyncMap } from '../utils/async';
+import fetchAll from '../utils/fetchAll';
 
 type StyleProps = {
   classes?: Record<keyof ReturnType<typeof editListStyles>, string>;
@@ -39,7 +41,7 @@ interface EditSubmissionsListState {
   // A failed delete keeps the list so the participant can try again.
   deleteError: string | null;
   contests: Contest[];
-  submissions: Submission[];
+  submissions: Submission[] | null;
   showDialog: boolean;
   pendingSubmissions: Submission[];
 }
@@ -60,7 +62,7 @@ class EditSubmissionsList extends React.Component<
     error: null,
     deleteError: null,
     contests: [],
-    submissions: [],
+    submissions: null,
     showDialog: false,
     pendingSubmissions: [],
   };
@@ -68,14 +70,10 @@ class EditSubmissionsList extends React.Component<
   async fetchSubmissions() {
     this.setState({ error: null });
     try {
-      const getContestSubmissions = async (contest: Contest) => {
-        const submissionsResp = await SubmissionService.getSubmissionsByContest(
-          contest.id,
-        );
-        return submissionsResp.data.results;
-      };
+      const getContestSubmissions = (contest: Contest) =>
+        fetchAll(() => SubmissionService.getSubmissionsByContest(contest.id));
 
-      const contests = (await ContestService.getActiveContests()).data.results;
+      const contests = await fetchAll(ContestService.getActiveContests);
       const submissions = (
         await asyncMap(contests, getContestSubmissions)
       ).flat();
@@ -90,9 +88,12 @@ class EditSubmissionsList extends React.Component<
     await this.fetchSubmissions();
   }
 
-  getSubmissionsForContest = (contest: Contest): Submission[] => {
+  getSubmissionsForContest = (
+    contest: Contest,
+    submissions: Submission[],
+  ): Submission[] => {
     const themeIds = contest.themes.map((theme) => theme.id);
-    return this.state.submissions.filter((submission) =>
+    return submissions.filter((submission) =>
       themeIds.includes(submission.theme),
     );
   };
@@ -119,12 +120,13 @@ class EditSubmissionsList extends React.Component<
   };
 
   render() {
-    if (this.state.error)
-      return <Alert severity="error">{this.state.error}</Alert>;
+    const { error, submissions: allSubmissions } = this.state;
+    if (error) return <Alert severity="error">{error}</Alert>;
+    if (!allSubmissions) return <LoadingProgress />;
     const { t } = this.props;
     const classes = withStyles.getClasses(this.props);
 
-    if (!this.state.submissions.length)
+    if (!allSubmissions.length)
       return (
         <Typography align="center" variant="h3">
           You don't have any active submission to edit.
@@ -133,7 +135,10 @@ class EditSubmissionsList extends React.Component<
 
     const groupedSubmissions: GroupedSubmissions[] = [];
     this.state.contests.forEach((contest) => {
-      const contestSubmissions = this.getSubmissionsForContest(contest);
+      const contestSubmissions = this.getSubmissionsForContest(
+        contest,
+        allSubmissions,
+      );
       const submissionsByAuthor = groupBy(contestSubmissions, 'author.id');
 
       for (const submissions of Object.values(submissionsByAuthor)) {
