@@ -8,10 +8,10 @@ import axios, {
 import store from '../store/index';
 import { addNotificationError } from '../store/notifications/actions';
 
-const baseURL = '/api/v1';
+export const apiBaseURL = '/api/v1';
 
 const config: AxiosRequestConfig = {
-  baseURL,
+  baseURL: apiBaseURL,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
