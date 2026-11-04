@@ -29,7 +29,6 @@ AUTH_USER_MODEL = 'drf_user.User'
 # Application definition
 
 INSTALLED_APPS = [
-    "channels",
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    # 'rolca.backup',
     'rolca.core',
     'rolca.payment',
     'rolca.rating',
@@ -151,17 +149,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 500,
 }
 
-# Django channels.
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [redis_url]},
-    },
-}
-
-ASGI_APPLICATION = "rola.routing.application"
-
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/
 
@@ -240,10 +227,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10_485_760  # 10 MB
 # Rolca.
 ROLCA_MAX_UPLOAD_SIZE = 5_242_880  # 5MB
 ROLCA_MAX_UPLOAD_RESOLUTION = 3500
-
-BACKUP_AWS_BUCKET_NAME = config('ROLA_BACKUP_AWS_BUCKET_NAME', default='')
-BACKUP_AWS_ACCESS_KEY_ID = config('ROLA_BACKUP_AWS_ACCESS_KEY_ID', default='')
-BACKUP_AWS_SECRET_ACCESS_KEY = config('ROLA_BACKUP_AWS_SECRET_ACCESS_KEY', default='')
 
 
 DRF_USER_APP_NAME = config('ROLA_APP_NAME', default="Rola")
