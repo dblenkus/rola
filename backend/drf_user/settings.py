@@ -1,4 +1,4 @@
-"""Settings for DFR User application."""
+"""Settings for DRF User application."""
 
 from datetime import timedelta
 
@@ -10,30 +10,21 @@ class DrfUserSettings:
 
     @property
     def TOKEN_EXPIRES_SECONDS(self) -> timedelta:
-        """Return the allowed lifespan of a authentication token as timedelta.
-
-        Defaults to 48 hours.
-        """
+        """Return the allowed lifespan of an authentication token."""
         seconds = getattr(settings, "DRF_USER_TOKEN_EXPIRES_SECONDS", 172_800)
 
         return timedelta(seconds=seconds)
 
     @property
     def RESET_TOKEN_EXPIRES_SECONDS(self) -> timedelta:
-        """Return the allowed lifespan of a password reset token as timedelta.
-
-        Defaults to 24 hours.
-        """
+        """Return the allowed lifespan of a password reset token."""
         seconds = getattr(settings, "DRF_USER_RESET_TOKEN_EXPIRES_SECONDS", 86_400)
 
         return timedelta(seconds=seconds)
 
     @property
     def ACTIVATION_TOKEN_EXPIRES_SECONDS(self) -> timedelta:
-        """Return the allowed lifespan of a password reset token as timedelta.
-
-        Defaults to 7 days.
-        """
+        """Return the allowed lifespan of an account activation token."""
         seconds = getattr(
             settings, "DRF_USER_ACTIVATION_TOKEN_EXPIRES_SECONDS", 302_400
         )

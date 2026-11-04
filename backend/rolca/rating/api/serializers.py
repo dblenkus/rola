@@ -38,7 +38,7 @@ class RatingSerializer(BaseSerializer):
         except Judge.DoesNotExist:
             raise exceptions.NotAuthenticated(
                 "You don't have permission to rate this contest."
-            )
+            ) from None
 
         rating, _ = Rating.objects.update_or_create(
             submission=submission, judge=judge, defaults=validated_data
@@ -144,7 +144,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
     def get_fields(self):
         """Include result-specific author and file representations."""
         fields = super().get_fields()
-        # The field from parent method needs to be overwriten here to tahe the effect.
+        # The parent's get_fields replaces these, so class attributes have no effect.
         fields["files"] = serializers.SerializerMethodField("get_files")
         fields["author"] = AuthorResultsSerializer()
 

@@ -17,7 +17,7 @@ def check_database():
                 raise RuntimeError("db: Invalid response.")
     except Exception as ex:
         logger.exception(ex)
-        raise RuntimeError("db: Cannot connect to database.")
+        raise RuntimeError("db: Cannot connect to database.") from None
 
 
 class Command(BaseCommand):
@@ -30,4 +30,4 @@ class Command(BaseCommand):
         try:
             check_database()
         except RuntimeError as ex:
-            raise SystemExit(ex)
+            raise SystemExit(ex) from None

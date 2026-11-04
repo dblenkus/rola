@@ -126,5 +126,5 @@ class SubmissionResultsViewSet(
     ordering_fields = ["rating_sum"]
 
     def get_queryset(self):
-        """Return queryset of published themes."""
+        """Return accepted submissions of published contests."""
         return self.queryset.filter(theme__contest__publish_date__lte=timezone.now())

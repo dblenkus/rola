@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==============
-DRF User Admin
-==============
-
-"""
+"""Register host-managed email templates."""
 
 from django.contrib import admin
 

@@ -156,7 +156,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
         try:
             user = User.objects.get(email=self.validated_data["email"])
         except User.DoesNotExist:
-            raise exceptions.NotFound("User does not exist.")
+            raise exceptions.NotFound("User does not exist.") from None
 
         send_reset_email(user, self.context.get("request"))
 

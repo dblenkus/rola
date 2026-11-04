@@ -112,7 +112,7 @@ def validate_activation_token(token):
         )
         user = User.objects.get(email=email, is_active=False)
     except signing.BadSignature, User.DoesNotExist:
-        raise exceptions.ValidationError("Bad token.")
+        raise exceptions.ValidationError("Bad token.") from None
 
     return user
 
@@ -130,7 +130,7 @@ def validate_reset_token(token):
             password_reset_counter=data["counter"],
         )
     except signing.BadSignature, User.DoesNotExist:
-        raise exceptions.ValidationError("Bad token.")
+        raise exceptions.ValidationError("Bad token.") from None
 
     if not user.is_active:
         raise exceptions.ValidationError("Account is not activated, contact support.")

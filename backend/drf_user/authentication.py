@@ -19,7 +19,7 @@ class TokenAuthentication(authentication.TokenAuthentication):
         except self.model.DoesNotExist:
             message = "Invalid token"
             logger.debug("Authentication failed: %s", message)
-            raise exceptions.AuthenticationFailed(message)
+            raise exceptions.AuthenticationFailed(message) from None
 
         if not token.user.is_active:
             message = "User inactive or deleted"
