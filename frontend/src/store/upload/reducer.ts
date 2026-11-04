@@ -1,7 +1,6 @@
 import {
   UPLOAD_INIT,
   UPLOAD_SET_CONTEST,
-  UPLOAD_SET_REDIRECT,
   UPLOAD_SET_UPLOADING,
   UPLOAD_UNSET_UPLOADING,
   UploadActionTypes,
@@ -14,7 +13,6 @@ import { themeInit } from './actions';
 
 const initialState: UploadState = {
   contest: getEmptyContest(),
-  redirect: false,
   uploading: false,
 };
 
@@ -48,9 +46,6 @@ const reducer = (
     }
     case UPLOAD_SET_CONTEST: {
       return { ...state, contest: action.payload };
-    }
-    case UPLOAD_SET_REDIRECT: {
-      return { ...state, redirect: true };
     }
     case UPLOAD_SET_UPLOADING: {
       return { ...state, uploading: true };

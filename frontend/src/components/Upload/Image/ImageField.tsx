@@ -35,6 +35,11 @@ class ImageField extends React.Component<ImageFieldProps> {
 
   handleRemove = (): void => {
     this._updateImage(undefined);
+    // Otherwise the input keeps the file, and choosing the same photograph
+    // again fires no change event.
+    if (this.imageRef.current) {
+      this.imageRef.current.value = '';
+    }
   };
 
   render(): React.ReactNode {

@@ -9,13 +9,11 @@ import {
 
 export interface UploadState {
   contest: ContestModel;
-  redirect: boolean;
   uploading: boolean;
 }
 
 export const UPLOAD_INIT = 'UPLOAD_INIT';
 export const UPLOAD_SET_CONTEST = 'UPLOAD_SET_CONTEST';
-export const UPLOAD_SET_REDIRECT = 'UPLOAD_SET_REDIRECT';
 export const UPLOAD_SET_UPLOADING = 'UPLOAD_SET_UPLOADING';
 export const UPLOAD_UNSET_UPLOADING = 'UPLOAD_UNSET_UPLOADING';
 export const AUTHOR_UPDATE = 'AUTHOR_UPDATE';
@@ -33,10 +31,6 @@ type UploadInitAction = {
 type UploadSetContestAction = {
   type: typeof UPLOAD_SET_CONTEST;
   payload: ContestModel;
-};
-
-type UploadSetRedirectAction = {
-  type: typeof UPLOAD_SET_REDIRECT;
 };
 
 type UploadStartUploadingAction = {
@@ -85,7 +79,6 @@ type ImageStoreAction = {
 export type UploadActionTypes =
   | UploadInitAction
   | UploadSetContestAction
-  | UploadSetRedirectAction
   | UploadStartUploadingAction
   | UploadStopUploadingAction
   | AuthorUpdateAction

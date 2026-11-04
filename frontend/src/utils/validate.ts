@@ -135,7 +135,18 @@ export default async (
 ): Promise<ContestModel> => {
   const author = validateAuthor(contest.author, initial, contest);
   const themes = await asyncMap(contest.themes, validateTheme);
-  const errors = { hasError: hasError(themes) || hasError(author) };
+  const missingImage =
+    !initial &&
+    !themes.some((theme) =>
+      theme.submissions.some((submission) => anyImage(submission.images)),
+    );
+  const firstImage = themes[0]?.submissions[0]?.images[0];
+  if (missingImage && firstImage) {
+    firstImage.errors = { file: 'Select at least one image.', hasError: true };
+  }
+  const errors = {
+    hasError: hasError(themes) || hasError(author) || missingImage,
+  };
 
   return { meta: contest.meta, author, themes, errors };
 };

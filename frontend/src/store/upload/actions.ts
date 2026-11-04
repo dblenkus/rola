@@ -1,4 +1,7 @@
+import axios from 'axios';
+
 import { AppThunk } from '..';
+import { addNotificationError } from '../notifications/actions';
 
 import { Contest, Theme } from '../../types/api';
 import {
@@ -20,7 +23,6 @@ import {
   SUBMISSION_UPDATE,
   UPLOAD_INIT,
   UPLOAD_SET_CONTEST,
-  UPLOAD_SET_REDIRECT,
   UPLOAD_SET_UPLOADING,
   UPLOAD_UNSET_UPLOADING,
   UploadActionTypes,
@@ -32,30 +34,34 @@ export const uploadInit = (payload: Contest): UploadActionTypes => ({
   payload,
 });
 
+// Resolves to whether the photographs were uploaded.
 export const uploadSubmit =
-  (): AppThunk<Promise<void>> => async (dispatch, getState) => {
+  (): AppThunk<Promise<boolean>> => async (dispatch, getState) => {
     const { contest } = getState().upload;
 
     dispatch(uploadSetUploading());
-
-    const newContest = await validate(contest);
-    if (!newContest.errors.hasError) {
+    try {
+      const newContest = await validate(contest);
+      if (newContest.errors.hasError) {
+        dispatch(uploadSetContest(newContest));
+        return false;
+      }
       await upload(contest);
-      dispatch(uploadSetRedirect());
-    } else {
-      dispatch(uploadSetContest(newContest));
+      return true;
+    } catch (error) {
+      if (!axios.isAxiosError(error)) {
+        throw error;
+      }
+      dispatch(addNotificationError('Upload failed. Please try again.'));
+      return false;
+    } finally {
+      dispatch(uploadUnsetUploading());
     }
-
-    dispatch(uploadUnsetUploading());
   };
 
 export const uploadSetContest = (payload: ContestModel): UploadActionTypes => ({
   type: UPLOAD_SET_CONTEST,
   payload,
-});
-
-export const uploadSetRedirect = (): UploadActionTypes => ({
-  type: UPLOAD_SET_REDIRECT,
 });
 
 export const uploadSetUploading = (): UploadActionTypes => ({

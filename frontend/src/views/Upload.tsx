@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 
-import { Navigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import { Alert } from '@mui/material';
 
@@ -28,6 +28,7 @@ interface RouteMatchParams {
 
 interface UploadViewProps extends PropsFromRedux {
   match: { params: RouteMatchParams };
+  onUploaded: () => void;
 }
 
 interface UploadViewState {
@@ -48,6 +49,12 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
     }
   }
 
+  submit = async (): Promise<void> => {
+    if (await this.props.handleSubmit()) {
+      this.props.onUploaded();
+    }
+  };
+
   render(): React.ReactNode {
     if (this.state.error)
       return <Alert severity="error">{this.state.error}</Alert>;
@@ -56,15 +63,8 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
       handleAuthorChange,
       handleSubmissionChange,
       handleImageChange,
-      handleSubmit,
-      redirect,
       uploading,
     } = this.props;
-    const { contestId } = this.props.match.params;
-
-    if (redirect) {
-      return <Navigate to={`/contest/${contestId}/confirm`} replace />;
-    }
 
     return (
       <ContestField
@@ -72,7 +72,7 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
         handleAuthorChange={handleAuthorChange}
         handleSubmissionChange={handleSubmissionChange}
         handleImageChange={handleImageChange}
-        handleSubmit={handleSubmit}
+        handleSubmit={this.submit}
         uploading={uploading}
       />
     );
@@ -107,9 +107,17 @@ type PropsFromRedux = ConnectedProps<typeof connector>;
 const RoutedView = connector(UploadView);
 export default function RouteView() {
   const params = useParams();
+  const navigate = useNavigate();
   const contestId = params.contestId;
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
   }
-  return <RoutedView match={{ params: { contestId } }} />;
+  return (
+    <RoutedView
+      match={{ params: { contestId } }}
+      onUploaded={() =>
+        navigate(`/contest/${contestId}/confirm`, { replace: true })
+      }
+    />
+  );
 }
