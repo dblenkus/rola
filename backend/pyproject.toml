@@ -72,5 +72,5 @@ convention = "pep257"
 
 [tool.mypy]
 python_version = "3.14"
-files = ["rola/environment.py", "drf_user/settings.py"]
+files = ["rola/environment.py", "drf_user/settings.py", "drf_user/throttling.py"]
 strict = true

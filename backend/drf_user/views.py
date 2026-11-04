@@ -1,6 +1,6 @@
-import logging
+"""Account management endpoints."""
 
-from rest_framework import views, viewsets
+from rest_framework import permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -17,22 +17,27 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
-
-logger = logging.getLogger(__name__)
+from .throttling import (
+    ActivationThrottle,
+    LoginThrottle,
+    RecoveryThrottle,
+    RegistrationThrottle,
+)
 
 
 class LoginView(views.APIView):
-    permission_classes = ()
-    serializer_class = TokenSerializer
+    """Issue a token for valid account credentials."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    throttle_classes = [LoginThrottle]
 
     def post(self, request):
+        """Validate credentials and return a token with its expiration."""
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data["user"]
-        token = Token.objects.create_token(user=user)
-
-        return Response(self.serializer_class(token).data)
+        token = Token.objects.create_token(user=serializer.validated_data["user"])
+        return Response(TokenSerializer(token).data)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -63,54 +68,63 @@ class UserViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(pk=user.pk)
         return self.queryset
 
-    @action(detail=False, methods=["post"])
+    def get_throttles(self):
+        """Rate-limit password checks, registration and recovery by caller address."""
+        if self.action == "change_password":
+            return [LoginThrottle()]
+        if self.action == "create":
+            return [RegistrationThrottle()]
+        if self.action == "activate_account":
+            return [ActivationThrottle()]
+        if self.action in {"request_password_reset", "password_reset"}:
+            return [RecoveryThrottle()]
+        return super().get_throttles()
+
+    @action(
+        detail=False,
+        methods=["post"],
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+    )
     def activate_account(self, request):
-        """Activate user account."""
+        """Activate an account using its email token."""
         serializer = ActivationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response()
 
     @action(detail=True, methods=["post"])
     def change_password(self, request, **kwargs):
-        """Change user password."""
-        user = self.get_object()
-
+        """Change the caller's password and expire previous tokens."""
         serializer = ChangePasswordSerializer(
-            data=request.data, context={"user": user, "request": request}
+            data=request.data, context={"user": self.get_object(), "request": request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response()
 
-    @action(detail=False, methods=["post"])
+    @action(
+        detail=False,
+        methods=["post"],
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+    )
     def request_password_reset(self, request):
-        """Request user password reset."""
-        serializer = RequestPasswordResetSerializer(
-            data=request.data, context={"request": request}
-        )
+        """Request an account recovery email."""
+        serializer = RequestPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response()
 
-    @action(detail=False, methods=["post"])
+    @action(
+        detail=False,
+        methods=["post"],
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+    )
     def password_reset(self, request):
-        """Reset user password."""
-        serializer = PasswordResetSerializer(
-            data=request.data, context={"user": request.user}
-        )
+        """Consume a recovery token and set a new password."""
+        serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response()
-
-    # @action(detail=False, methods=['post'])
-    # def validate_password(self, request):
-    #     """Validate user password."""
-    #     serializer = ValidatePasswordSerializer(data=request.data, context={'user': request.user})
-    #     serializer.is_valid()
-
-    #     return Response(serializer.errors)

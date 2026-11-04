@@ -74,6 +74,9 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "rola_cache",
+        # A full cache culls a third of its unexpired keys in name order, login
+        # throttle histories first, which would reset their limits.
+        "OPTIONS": {"MAX_ENTRIES": 100_000},
     }
 }
 
@@ -97,6 +100,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rola.pagination.PageNumberPagination",
     "PAGE_SIZE": 500,
     "NUM_PROXIES": int(os.environ.get("ROLA_NUM_PROXIES", "0")),
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "30/minute",
+        "registration": "60/hour",
+        "activation": "60/hour",
+        "recovery": "30/hour",
+    },
 }
 
 LANGUAGE_CODE = "en-us"

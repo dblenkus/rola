@@ -17,26 +17,17 @@ USER_ACTIVATION_SALT = "user_activation"
 PASSWORD_RESET_SALT = "password_reset"
 
 
-def _generate_token(token_generator, user, salt):
-    # Create a signed token, containing the user identifier and timestamp.
-    return signing.dumps(obj=token_generator(user), salt=salt)
+def generate_activation_token(user: User) -> str:
+    """Sign the address of an account awaiting activation."""
+    return signing.dumps(user.email, salt=USER_ACTIVATION_SALT)
 
 
-def generate_activation_token(user):
-    def token_generator(user):
-        return user.email
-
-    return _generate_token(token_generator, user, USER_ACTIVATION_SALT)
-
-
-def generate_reset_token(user):
-    def token_generator(user):
-        return {
-            "email": user.email,
-            "counter": user.password_reset_counter,
-        }
-
-    return _generate_token(token_generator, user, PASSWORD_RESET_SALT)
+def generate_reset_token(user: User) -> str:
+    """Sign the account address and current recovery generation."""
+    return signing.dumps(
+        {"email": user.email, "counter": user.password_reset_counter},
+        salt=PASSWORD_RESET_SALT,
+    )
 
 
 def _send_user_email(user, template, path, token):
@@ -54,8 +45,8 @@ def _send_user_email(user, template, path, token):
     html_body = render_to_string(f"drf_user/{template}/email_body.html", context)
     try:
         user.email_user(subject, body, html_message=html_body)
-    except Exception:
-        logger.exception(f"Error while sending e-mail for user '{user.email}'.")
+    except Exception as error:
+        logger.error("Unable to send account email (%s).", type(error).__name__)
 
 
 def send_activation_email(user):
@@ -72,39 +63,45 @@ def send_reset_email(user):
     )
 
 
-def validate_activation_token(token):
-    """Validate activation token and return referenced user."""
+def validate_activation_token(token: str, *, lock: bool = False) -> User:
+    """Return the inactive account referenced by a valid activation token."""
     try:
         email = signing.loads(
             token,
             salt=USER_ACTIVATION_SALT,
             max_age=drf_user_settings.ACTIVATION_TOKEN_EXPIRES_SECONDS.total_seconds(),
         )
-        user = User.objects.get(
+        if not isinstance(email, str):
+            raise ValueError("Invalid token payload.")
+        users = User.objects.select_for_update() if lock else User.objects
+        return users.get(
             email__iexact=User.objects.normalize_email(email), is_active=False
         )
-    except signing.BadSignature, User.DoesNotExist:
-        raise exceptions.ValidationError("Bad token.") from None
-
-    return user
+    except (signing.BadSignature, User.DoesNotExist, ValueError) as error:
+        raise exceptions.ValidationError("Bad token.") from error
 
 
-def validate_reset_token(token):
-    """Validate password reset token and return referenced user."""
+def validate_reset_token(token: str, *, lock: bool = False) -> User:
+    """Return an active account if the recovery generation still matches."""
     try:
         data = signing.loads(
             token,
             salt=PASSWORD_RESET_SALT,
             max_age=drf_user_settings.RESET_TOKEN_EXPIRES_SECONDS.total_seconds(),
         )
-        user = User.objects.get(
+        if (
+            not isinstance(data, dict)
+            or not isinstance(data.get("email"), str)
+            or type(data.get("counter")) is not int
+        ):
+            raise ValueError("Invalid token payload.")
+        users = User.objects.select_for_update() if lock else User.objects
+        user = users.get(
             email__iexact=User.objects.normalize_email(data["email"]),
             password_reset_counter=data["counter"],
         )
-    except signing.BadSignature, User.DoesNotExist:
-        raise exceptions.ValidationError("Bad token.") from None
-
+    except (signing.BadSignature, User.DoesNotExist, ValueError) as error:
+        raise exceptions.ValidationError("Bad token.") from error
     if not user.is_active:
         raise exceptions.ValidationError("Account is not activated, contact support.")
-
     return user

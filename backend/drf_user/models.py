@@ -1,8 +1,7 @@
 """User models."""
 
-import binascii
 import logging
-import os
+import secrets
 import uuid
 
 from django.conf import settings
@@ -85,8 +84,8 @@ class Email(models.Model):
 
         try:
             send_mail(subject, self.body, None, [address], **email_kwargs)
-        except Exception:
-            logger.exception(f"Error while sending e-mail for user '{address}'.")
+        except Exception as error:
+            logger.error("Unable to send contest email (%s).", type(error).__name__)
 
 
 class Location(models.Model):
@@ -170,6 +169,7 @@ class TokenManager(models.Manager):
     """Manager for Token model."""
 
     def create_token(self, **kwargs):
+        """Issue a token using the configured expiry unless explicitly supplied."""
         if "expires" not in kwargs:
             kwargs["expires"] = now() + drf_user_settings.TOKEN_EXPIRES_SECONDS
 
@@ -198,13 +198,14 @@ class Token(models.Model):
     def save(self, *args, **kwargs):
         """Generate the key if it doesn't exist and save the model."""
         if not self.key:
-            self.key = binascii.hexlify(os.urandom(20)).decode()
+            self.key = secrets.token_hex(20)
         return super().save(*args, **kwargs)
 
     @property
     def is_expired(self):
-        return self.expires < now()
+        """Return whether the token has reached its expiry."""
+        return self.expires <= now()
 
     def __str__(self):
-        """Return string representation of the model."""
-        return self.key
+        """Describe the token without revealing its key."""
+        return f"Token issued {self.created}"

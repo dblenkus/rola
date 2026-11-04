@@ -1,16 +1,37 @@
 """Exercise credential and account isolation boundaries."""
 
+import queue
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from django.core import mail
-from django.db import IntegrityError, transaction
+from django.conf import settings
+from django.core import mail, signing
+from django.core.cache import cache
+from django.db import IntegrityError, connection, transaction
 from django.test import override_settings
 from django.urls import reverse
+from django.utils.timezone import now
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from drf_user.models import Location, Token, User
-from drf_user.utils.signing import generate_activation_token, generate_reset_token
+from drf_user.serializers import ActivationSerializer, PasswordResetSerializer
+from drf_user.throttling import (
+    ActivationThrottle,
+    LoginThrottle,
+    RecoveryThrottle,
+    RegistrationThrottle,
+)
+from drf_user.utils.signing import (
+    PASSWORD_RESET_SALT,
+    USER_ACTIVATION_SALT,
+    generate_activation_token,
+    generate_reset_token,
+)
 
 
 @pytest.fixture
@@ -236,10 +257,13 @@ def test_activation_email_links_to_the_configured_frontend(
 
 
 @override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
-def test_recovery_email_links_to_the_configured_frontend(account):
-    response = APIClient().post(
-        reverse("user-request-password-reset"), {"email": account.email}
-    )
+def test_recovery_email_links_to_the_configured_frontend(
+    account, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        response = APIClient().post(
+            reverse("user-request-password-reset"), {"email": account.email}
+        )
     assert response.status_code == 200
     link = first_link(mail.outbox[0])
     assert link.startswith("https://photos.example.com/password-reset?")
@@ -385,7 +409,9 @@ def test_account_manager_normalizes_email(db, method):
 @pytest.mark.parametrize(
     "email", ["person@example.com", "Person@Example.com", "PERSON@EXAMPLE.COM"]
 )
-def test_login_and_recovery_ignore_email_case(account, email):
+def test_login_and_recovery_ignore_email_case(
+    account, email, django_capture_on_commit_callbacks
+):
     client = APIClient()
     response = client.post(
         reverse("login"), {"email": email, "password": "Original!73"}
@@ -393,7 +419,8 @@ def test_login_and_recovery_ignore_email_case(account, email):
     assert response.status_code == 200
     assert Token.objects.get(key=response.data["token"]).user_id == account.pk
 
-    response = client.post(reverse("user-request-password-reset"), {"email": email})
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(reverse("user-request-password-reset"), {"email": email})
     assert response.status_code == 200
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [account.email]
@@ -421,3 +448,334 @@ def test_email_links_survive_address_normalization(account, active):
     assert account.is_active
     if active:
         assert account.check_password("Replacement!73")
+
+
+def test_password_change_revokes_login_and_recovery_tokens(client, account):
+    reset_token = generate_reset_token(account)
+    response = client.post(
+        reverse("user-change-password", kwargs={"id": account.id}),
+        {"current_password": "Original!73", "new_password": "Replacement!73"},
+    )
+    assert response.status_code == 200
+    assert all(token.is_expired for token in account.auth_tokens.all())
+    assert client.get(reverse("user-list")).status_code == 401
+    response = APIClient().post(
+        reverse("user-password-reset"),
+        {"token": reset_token, "new_password": "Another!73"},
+    )
+    assert response.status_code == 400
+
+
+def test_password_reset_revokes_login_tokens(client, account):
+    response = APIClient().post(
+        reverse("user-password-reset"),
+        {"token": generate_reset_token(account), "new_password": "Replacement!73"},
+    )
+    assert response.status_code == 200
+    assert all(token.is_expired for token in account.auth_tokens.all())
+    assert client.get(reverse("user-list")).status_code == 401
+
+
+def test_validated_recovery_token_cannot_be_replayed(account):
+    data = {"token": generate_reset_token(account), "new_password": "Replacement!73"}
+    first = PasswordResetSerializer(data=data)
+    second = PasswordResetSerializer(data=data)
+    first.is_valid(raise_exception=True)
+    second.is_valid(raise_exception=True)
+    first.save()
+
+    with pytest.raises(ValidationError, match="Bad token"):
+        second.save()
+    account.refresh_from_db()
+    assert account.check_password("Replacement!73")
+
+
+def wait_until_blocked_by_this_connection(pid):
+    """Wait until database backend ``pid`` waits for a lock this connection holds."""
+    deadline = time.monotonic() + 10
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_backend_pid()")
+        (own_pid,) = cursor.fetchone()
+        while True:
+            cursor.execute("SELECT pg_blocking_pids(%s)", [pid])
+            if own_pid in cursor.fetchone()[0]:
+                return
+            if time.monotonic() > deadline:
+                pytest.fail("The other connection never waited for this one.")
+            time.sleep(0.01)
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("flow", ["activation", "password-reset"])
+def test_concurrent_token_redemptions_succeed_once(flow):
+    user = User.objects.create_user(
+        email="person@example.com",
+        password="Original!73",
+        is_active=flow == "password-reset",
+    )
+    if flow == "activation":
+        serializer_class = ActivationSerializer
+        data = {"token": generate_activation_token(user)}
+    else:
+        serializer_class = PasswordResetSerializer
+        data = {"token": generate_reset_token(user), "new_password": "Replacement!73"}
+    first = serializer_class(data=data)
+    second = serializer_class(data=data)
+    first.is_valid(raise_exception=True)
+    second.is_valid(raise_exception=True)
+    backend_pids = queue.SimpleQueue()
+
+    def redeem_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return second.save()
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with transaction.atomic():
+            first.save()
+            redemption = executor.submit(redeem_on_another_connection)
+            wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+        with pytest.raises(ValidationError, match="Bad token"):
+            redemption.result(timeout=10)
+
+    user.refresh_from_db()
+    assert user.is_active
+    assert user.password_reset_counter == (0 if flow == "activation" else 1)
+
+
+def test_recovery_does_not_reveal_unknown_or_inactive_accounts(
+    account, django_capture_on_commit_callbacks
+):
+    client = APIClient()
+    with django_capture_on_commit_callbacks(execute=True):
+        active = client.post(
+            reverse("user-request-password-reset"), {"email": account.email}
+        )
+        unknown = client.post(
+            reverse("user-request-password-reset"), {"email": "unknown@example.com"}
+        )
+        account.is_active = False
+        account.save(update_fields=["is_active"])
+        inactive = client.post(
+            reverse("user-request-password-reset"), {"email": account.email}
+        )
+    assert active.status_code == unknown.status_code == inactive.status_code == 200
+    assert active.data == unknown.data == inactive.data
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.parametrize(
+    "payload", [None, {}, {"email": [], "counter": 0}, {"email": "x", "counter": True}]
+)
+def test_signed_malformed_recovery_payload_returns_validation_error(db, payload):
+    response = APIClient().post(
+        reverse("user-password-reset"),
+        {
+            "token": signing.dumps(payload, salt=PASSWORD_RESET_SALT),
+            "new_password": "Replacement!73",
+        },
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize("payload", [None, {"email": "person@example.com"}, ["x"]])
+def test_signed_malformed_activation_payload_returns_validation_error(db, payload):
+    response = APIClient().post(
+        reverse("user-activate-account"),
+        {"token": signing.dumps(payload, salt=USER_ACTIVATION_SALT)},
+    )
+    assert response.status_code == 400
+
+
+def test_expired_login_tokens_are_rejected(account):
+    token = Token.objects.create_token(
+        user=account, expires=now() - timedelta(seconds=1)
+    )
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+    assert client.get(reverse("user-list")).status_code == 401
+    account.is_active = False
+    account.save(update_fields=["is_active"])
+    token.expires = now() + timedelta(days=1)
+    token.save(update_fields=["expires"])
+    assert client.get(reverse("user-list")).status_code == 401
+
+
+def test_token_description_does_not_reveal_its_key(account):
+    token = Token.objects.create_token(user=account)
+    assert token.key not in str(token)
+
+
+def test_login_is_rate_limited(db):
+    client = APIClient()
+    credentials = {"email": "nobody@example.com", "password": "wrong"}
+    with patch.object(LoginThrottle, "rate", "1/hour", create=True):
+        assert client.post(reverse("login"), credentials).status_code == 400
+        assert client.post(reverse("login"), credentials).status_code == 429
+
+
+def test_login_limit_survives_a_full_cache(db):
+    client = APIClient()
+    credentials = {"email": "nobody@example.com", "password": "wrong"}
+    with patch.object(LoginThrottle, "rate", "1/hour", create=True):
+        assert client.post(reverse("login"), credentials).status_code == 400
+        assert client.post(reverse("login"), credentials).status_code == 429
+        for i in range(400):
+            cache.set(f"throttle_registration_{i}", [time.time()], 3600)
+        assert client.post(reverse("login"), credentials).status_code == 429
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Advisory locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+def test_concurrent_checks_for_one_address_share_its_budget(rf):
+    request = rf.post(reverse("login"))
+    backend_pids = queue.SimpleQueue()
+
+    def check_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return LoginThrottle().allow_request(request, None)
+        finally:
+            connection.close()
+
+    try:
+        with (
+            patch.object(LoginThrottle, "rate", "1/minute", create=True),
+            ThreadPoolExecutor(max_workers=1) as executor,
+        ):
+            with transaction.atomic():
+                assert LoginThrottle().allow_request(request, None)
+                check = executor.submit(check_on_another_connection)
+                wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+            assert check.result(timeout=10) is False
+    finally:
+        # Transactional tests flush model tables only, not the cache table.
+        cache.clear()
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_unthrottled_session_login_is_not_served(account, method):
+    response = getattr(APIClient(), method)(
+        "/api-auth/login/", {"username": account.email, "password": "Original!73"}
+    )
+    assert response.status_code == 404
+
+
+def registration(email, address):
+    """Return a valid registration request for a new account."""
+    return {
+        "email": email,
+        "password": "Original!73",
+        "first_name": "New",
+        "last_name": "Account",
+        **address,
+    }
+
+
+def test_registration_and_recovery_have_separate_limits(account, address):
+    client = APIClient()
+    recovery = {"email": account.email}
+
+    with (
+        patch.object(RegistrationThrottle, "rate", "1/hour", create=True),
+        patch.object(RecoveryThrottle, "rate", "1/hour", create=True),
+    ):
+        reset_url = reverse("user-request-password-reset")
+        assert client.post(reset_url, recovery).status_code == 200
+        assert client.post(reset_url, recovery).status_code == 429
+        response = client.post(
+            reverse("user-list"),
+            registration("first@example.com", address),
+            format="json",
+        )
+        assert response.status_code == 201
+        response = client.post(
+            reverse("user-list"),
+            registration("second@example.com", address),
+            format="json",
+        )
+        assert response.status_code == 429
+
+
+def test_registration_and_activation_have_separate_limits(db, address):
+    User.objects.create_user(email="pending@example.com", password="Original!73")
+
+    def register(client, email):
+        return client.post(
+            reverse("user-list"), registration(email, address), format="json"
+        )
+
+    def activate(client, email):
+        token = generate_activation_token(User.objects.get(email=email))
+        return client.post(reverse("user-activate-account"), {"token": token})
+
+    with (
+        patch.object(RegistrationThrottle, "rate", "1/hour", create=True),
+        patch.object(ActivationThrottle, "rate", "1/hour", create=True),
+    ):
+        # Budgets are per client address, so each direction gets its own.
+        client = APIClient(REMOTE_ADDR="198.51.100.1")
+        assert register(client, "first@example.com").status_code == 201
+        assert register(client, "second@example.com").status_code == 429
+        assert activate(client, "first@example.com").status_code == 200
+
+        client = APIClient(REMOTE_ADDR="198.51.100.2")
+        assert activate(client, "pending@example.com").status_code == 200
+        assert activate(client, "pending@example.com").status_code == 429
+        assert register(client, "third@example.com").status_code == 201
+
+    assert User.objects.get(email="first@example.com").is_active
+    assert User.objects.get(email="pending@example.com").is_active
+
+
+def test_password_change_shares_the_login_limit(client, account):
+    url = reverse("user-change-password", kwargs={"id": account.id})
+    with patch.object(LoginThrottle, "rate", "2/hour", create=True):
+        login = APIClient().post(
+            reverse("login"), {"email": account.email, "password": "wrong"}
+        )
+        wrong = client.post(
+            url, {"current_password": "wrong", "new_password": "Replacement!73"}
+        )
+        response = client.post(
+            url, {"current_password": "Original!73", "new_password": "Replacement!73"}
+        )
+    assert login.status_code == 400
+    assert wrong.status_code == 400
+    assert response.status_code == 429
+    assert 0 < int(response.headers["Retry-After"]) <= 3600
+    account.refresh_from_db()
+    assert account.check_password("Original!73")
+
+
+@pytest.mark.parametrize(("num_proxies", "second_status"), [(0, 429), (1, 400)])
+def test_login_limit_counts_forwarded_clients_only_behind_trusted_proxies(
+    db, num_proxies, second_status
+):
+    client = APIClient()
+    credentials = {"email": "nobody@example.com", "password": "wrong"}
+    with (
+        override_settings(
+            REST_FRAMEWORK={**settings.REST_FRAMEWORK, "NUM_PROXIES": num_proxies}
+        ),
+        patch.object(LoginThrottle, "rate", "1/hour", create=True),
+    ):
+        first = client.post(
+            reverse("login"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.1"
+        )
+        second = client.post(
+            reverse("login"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.2"
+        )
+    assert first.status_code == 400
+    assert second.status_code == second_status
