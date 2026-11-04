@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams, Navigate } from 'react-router';
 import { connect, ConnectedProps } from 'react-redux';
 import _ from 'lodash';
@@ -38,7 +38,22 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   previousSubmission,
 }: PropsFromRedux) => {
   const [error, setError] = useState<string | null>(null);
-  const [rating, setRating] = useState(0);
+  // A failed rating load is kept with its submission and leaves the rater
+  // usable; the rating is fetched again when the judge returns to it.
+  const [loadError, setLoadError] = useState<{
+    submissionId: number;
+    message: string;
+  } | null>(null);
+  // Kept with its submission, so another submission never shows it.
+  const [rating, setRating] = useState<{
+    submissionId: number;
+    value: number;
+  } | null>(null);
+  // A failed save keeps the rater on screen so the judge can try again.
+  const [saveError, setSaveError] = useState<{
+    submissionId: number;
+    message: string;
+  } | null>(null);
   const [close, setClose] = useState(false);
 
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
@@ -55,23 +70,27 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     Number(new URLSearchParams(location.search).get('submission')) || undefined,
   );
 
-  const fetchRaiting = useCallback(async (): Promise<void> => {
-    if (!submission) return;
-    const { data: ratings } = await RatingService.getForSubmission(
-      submission.id,
-    );
-    setRating(ratings.results[0]?.rating || 0);
+  // The submission on screen, for saves that finish after the judge moved on.
+  const shownId = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    shownId.current = submission?.id;
   }, [submission]);
 
   const updateRating = async (newRating: number): Promise<void> => {
     if (!submission) return;
+    const ratedId = submission.id;
+    setSaveError(null);
     try {
-      await RatingService.updateForSubmission(submission.id, newRating);
-      setRating(newRating);
-      if (isNext) nextSubmission();
+      await RatingService.updateForSubmission(ratedId, newRating);
     } catch (error) {
-      setError(requestError(error));
+      setSaveError({ submissionId: ratedId, message: requestError(error) });
+      return;
     }
+    // A judge who moved on stays where they are; the rating is fetched again
+    // when they return.
+    if (shownId.current !== ratedId) return;
+    setRating({ submissionId: ratedId, value: newRating });
+    if (isNext) nextSubmission();
   };
 
   // Initialize the store.
@@ -89,11 +108,37 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     }
   }, [navigate, submission]);
 
+  const currentId = submission?.id;
   useEffect(() => {
-    fetchRaiting().catch((error: unknown) => setError(requestError(error)));
-  }, [fetchRaiting]);
+    if (currentId === undefined) return;
+    // Judges move on before slow responses arrive; drop the ones they left.
+    let active = true;
+    RatingService.getForSubmission(currentId)
+      .then(({ data: ratings }) => {
+        if (active) {
+          setRating({
+            submissionId: currentId,
+            value: ratings.results[0]?.rating ?? 0,
+          });
+          setLoadError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLoadError({
+            submissionId: currentId,
+            message: requestError(error),
+          });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [currentId]);
 
   useKeyPress((value: string) => {
+    // Without a loaded theme the rater is hidden; keys must not rate it.
+    if (error) return;
     const parsedNumber = parseInt(value, 10);
     if (!_.isNaN(parsedNumber)) {
       updateRating(parsedNumber || 10);
@@ -115,9 +160,12 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
 
   return (
     <div style={{ position: 'absolute', width: '100%', left: 0, right: 0 }}>
+      {saveError?.submissionId === submission.id && (
+        <Alert severity="error">{saveError.message}</Alert>
+      )}
       <SubmissionRater
         submission={submission}
-        rating={rating}
+        rating={rating?.submissionId === submission.id ? rating.value : 0}
         isSeries={theme?.is_series || false}
         close={handleClose}
         isPrevious={isPrevious}
@@ -126,6 +174,11 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         nextSubmission={nextSubmission}
         updateRating={updateRating}
       />
+      {/* A rating saved since the failed load replaces the missing one. */}
+      {loadError?.submissionId === submission.id &&
+        rating?.submissionId !== submission.id && (
+          <Alert severity="error">{loadError.message}</Alert>
+        )}
     </div>
   );
 };
