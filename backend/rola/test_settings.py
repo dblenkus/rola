@@ -8,6 +8,7 @@ os.environ.setdefault("ROLA_FRONTEND_URL", "https://photos.example.org")
 from rola.environment import boolean  # noqa: E402
 from rola.settings import *  # noqa: E402,F403
 
+SECURE_SSL_REDIRECT = False
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 if not boolean("ROLA_TEST_POSTGRESQL"):
     DATABASES = {

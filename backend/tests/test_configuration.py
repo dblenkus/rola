@@ -7,7 +7,7 @@ import runpy
 from unittest.mock import patch
 
 import pytest
-from django.test import Client
+from django.test import Client, override_settings
 
 import rola.settings
 from rola.environment import boolean
@@ -89,6 +89,71 @@ def test_ses_sends_from_the_configured_sender_over_ssl(load_settings):
         "use_ssl": True,
         "timeout": 10,
     }
+
+
+def test_production_requires_https_and_distrusts_proxy_headers(load_settings):
+    loaded = load_settings(REQUIRED_ENVIRONMENT)
+    assert loaded["SECURE_SSL_REDIRECT"] is True
+    assert loaded["SESSION_COOKIE_SECURE"] is True
+    assert loaded["CSRF_COOKIE_SECURE"] is True
+    assert loaded["SECURE_HSTS_SECONDS"] == 31_536_000
+    assert "SECURE_PROXY_SSL_HEADER" not in loaded
+    assert loaded["USE_X_FORWARDED_HOST"] is False
+    assert loaded["REST_FRAMEWORK"]["NUM_PROXIES"] == 0
+    assert loaded["CSRF_TRUSTED_ORIGINS"] == []
+
+
+def test_debug_serves_plain_http(load_settings):
+    loaded = load_settings(REQUIRED_ENVIRONMENT | {"ROLA_DEBUG": "true"})
+    assert loaded["SECURE_SSL_REDIRECT"] is False
+    assert loaded["SESSION_COOKIE_SECURE"] is False
+    assert loaded["CSRF_COOKIE_SECURE"] is False
+    assert loaded["SECURE_HSTS_SECONDS"] == 0
+
+
+def test_proxy_trust_is_configured_explicitly(load_settings):
+    loaded = load_settings(
+        REQUIRED_ENVIRONMENT
+        | {
+            "ROLA_TRUST_PROXY": "true",
+            "ROLA_USE_X_FORWARDED_HOST": "true",
+            "ROLA_NUM_PROXIES": "2",
+            "ROLA_CSRF_TRUSTED_ORIGINS": "https://photos.example.org, "
+            "https://admin.example.org",
+        }
+    )
+    assert loaded["SECURE_PROXY_SSL_HEADER"] == ("HTTP_X_FORWARDED_PROTO", "https")
+    assert loaded["USE_X_FORWARDED_HOST"] is True
+    assert loaded["REST_FRAMEWORK"]["NUM_PROXIES"] == 2
+    assert loaded["CSRF_TRUSTED_ORIGINS"] == [
+        "https://photos.example.org",
+        "https://admin.example.org",
+    ]
+
+
+def test_settings_reject_an_empty_proxy_count(load_settings):
+    with pytest.raises(ValueError, match="invalid literal for int"):
+        load_settings(REQUIRED_ENVIRONMENT | {"ROLA_NUM_PROXIES": ""})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("trust_proxy", [False, True])
+def test_forwarded_https_counts_only_behind_a_trusted_proxy(load_settings, trust_proxy):
+    loaded = load_settings(
+        REQUIRED_ENVIRONMENT | {"ROLA_TRUST_PROXY": str(trust_proxy).lower()}
+    )
+    with override_settings(
+        SECURE_SSL_REDIRECT=loaded["SECURE_SSL_REDIRECT"],
+        SECURE_HSTS_SECONDS=loaded["SECURE_HSTS_SECONDS"],
+        SECURE_PROXY_SSL_HEADER=loaded.get("SECURE_PROXY_SSL_HEADER"),
+    ):
+        response = Client().get("/api/v1/contest", HTTP_X_FORWARDED_PROTO="https")
+    if trust_proxy:
+        assert response.status_code == 200
+        assert response["Strict-Transport-Security"] == "max-age=31536000"
+    else:
+        assert response.status_code == 301
+        assert response["Location"] == "https://testserver/api/v1/contest"
 
 
 def test_settings_reject_an_empty_boolean(load_settings):

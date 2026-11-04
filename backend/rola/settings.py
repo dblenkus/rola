@@ -96,6 +96,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rola.pagination.PageNumberPagination",
     "PAGE_SIZE": 500,
+    "NUM_PROXIES": int(os.environ.get("ROLA_NUM_PROXIES", "0")),
 }
 
 LANGUAGE_CODE = "en-us"
@@ -141,7 +142,14 @@ LOGGING = {
     },
 }
 
-USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_HOST = boolean("ROLA_USE_X_FORWARDED_HOST")
+if boolean("ROLA_TRUST_PROXY"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 0 if DEBUG else 31_536_000
+CSRF_TRUSTED_ORIGINS = comma_separated("ROLA_CSRF_TRUSTED_ORIGINS")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("ROLA_MEDIA_ROOT", BASE_DIR / "media"))
