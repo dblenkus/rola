@@ -1,11 +1,16 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from 'axios';
 
 import store from '../store/index';
 import { addNotificationError } from '../store/notifications/actions';
 
-const baseURL = `${process.env.REACT_APP_BASE_URL || ''}/api/v1`;
+const baseURL = '/api/v1';
 
-let config: AxiosRequestConfig = {
+const config: AxiosRequestConfig = {
   baseURL,
   headers: {
     Accept: 'application/json',
@@ -15,11 +20,13 @@ let config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config);
 
-const authInterceptor = (config: AxiosRequestConfig): AxiosRequestConfig => {
+const authInterceptor = (
+  config: InternalAxiosRequestConfig,
+): InternalAxiosRequestConfig => {
   const tokenString = localStorage.getItem('token');
   if (tokenString) {
     const token: { token: string; expires: string } = JSON.parse(tokenString);
-    if (!!token) {
+    if (token) {
       config.headers['Authorization'] = `Token ${token['token']}`;
     }
   }

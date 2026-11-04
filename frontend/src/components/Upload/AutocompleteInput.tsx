@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import { CircularProgress, TextField } from '@material-ui/core';
+import Autocomplete from '@mui/material/Autocomplete';
+import { CircularProgress, TextField } from '@mui/material';
 
 import { InputChange } from '../../types/models';
 import { Institution } from '../../types/api';
@@ -31,13 +31,9 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
   const loading = open && options.length === 0;
 
   const handleChange = (
-    event: React.ChangeEvent<{}>,
+    event: React.SyntheticEvent,
     institution: Institution | null,
   ): void => {
-    console.log('>', institution, {
-      name,
-      value: institution ? institution.name : '',
-    });
     onChange({ name, value: institution ? institution.name : '' });
   };
 
@@ -58,15 +54,9 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
     };
   }, [loading]);
 
-  React.useEffect(() => {
-    if (!open) {
-      setOptions([]);
-    }
-  }, [open]);
-
   return (
     <Autocomplete<Institution>
-      value={options.find((institution) => institution.name === value)}
+      value={options.find((institution) => institution.name === value) ?? null}
       open={open}
       onOpen={(): void => {
         setOpen(true);
@@ -74,7 +64,7 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
       onClose={(): void => {
         setOpen(false);
       }}
-      getOptionSelected={(option, selected): boolean =>
+      isOptionEqualToValue={(option, selected): boolean =>
         option.name === selected.name
       }
       getOptionLabel={(option): string => option.name}
@@ -93,14 +83,17 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
           autoFocus={autoFocus}
           error={error !== null}
           helperText={error || ''}
-          InputProps={{
-            ...params.InputProps,
-            endAdornment: (
-              <>
-                {loading && <CircularProgress color="inherit" size={20} />}
-                {params.InputProps.endAdornment}
-              </>
-            ),
+          slotProps={{
+            ...params.slotProps,
+            input: {
+              ...params.slotProps.input,
+              endAdornment: (
+                <>
+                  {loading && <CircularProgress color="inherit" size={20} />}
+                  {params.slotProps.input.endAdornment}
+                </>
+              ),
+            },
           }}
         />
       )}

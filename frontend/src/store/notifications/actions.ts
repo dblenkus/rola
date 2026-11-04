@@ -1,5 +1,3 @@
-import { AppThunk } from '..';
-
 import {
   ADD_NOTIFICATION,
   DELETE_NOTIFICATION,
@@ -37,11 +35,3 @@ export const deleteMessage = (
   type: DELETE_NOTIFICATION,
   meta: { notificationId },
 });
-
-export const deleteMessageWithDelay =
-  (notificationId: number): AppThunk =>
-  (dispatch) => {
-    setTimeout(() => {
-      dispatch(deleteMessage(notificationId));
-    }, 5000);
-  };

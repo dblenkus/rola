@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Redirect, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 import { connect, ConnectedProps } from 'react-redux';
 
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 
 import { AppState, AppDispatch } from '../../store';
 
@@ -27,7 +27,13 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 }: PropsFromRedux) => {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [redirect, setRedirect] = useState<string | null>(null);
-  const { contestId, themeId } = useParams<RouteMatchParams>();
+  const { contestId, themeId } = useParams<keyof RouteMatchParams>();
+  if (!contestId) {
+    throw new Error('Missing contestId route parameter');
+  }
+  if (!themeId) {
+    throw new Error('Missing themeId route parameter');
+  }
 
   // Initialize the store.
   useEffect(() => {
@@ -44,7 +50,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
     fetchRatings();
   }, [themeId]);
 
-  if (redirect) return <Redirect to={redirect} push />;
+  if (redirect) return <Navigate to={redirect} />;
 
   const handleClick = (submissionId: number): void => {
     setSubmission(submissionId);
@@ -57,7 +63,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 
   return (
     <>
-      <Typography variant="h3" align="center" paragraph>
+      <Typography variant="h3" align="center" sx={{ marginBottom: 2 }}>
         {theme?.title}
       </Typography>
       <ThemeGallery
@@ -73,7 +79,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 const mapStateToProps = (state: AppState) => ({ ...state.jury });
 
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  initialize: (contestId: string, themeId: string): void =>
+  initialize: (contestId: string, themeId: string): Promise<void> =>
     dispatch(initializeStore(contestId, themeId, undefined)),
   setSubmission: (submissionId: number): void => {
     dispatch(setSubmission(submissionId));

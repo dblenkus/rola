@@ -6,25 +6,25 @@ export interface Notification {
   severity: SeverityLevels;
 }
 
-export type NotificationsState = Array<Notification>;
+export type NotificationsState = Notification | null;
 
 export const ADD_NOTIFICATION = 'ADD_NOTIFICATION';
 export const DELETE_NOTIFICATION = 'DELETE_NOTIFICATION';
 
-interface AddNotificationAction {
+type AddNotificationAction = {
   type: typeof ADD_NOTIFICATION;
   payload: {
     message: string;
     severity: SeverityLevels;
   };
-}
+};
 
-interface DeleteNotificationAction {
+type DeleteNotificationAction = {
   type: typeof DELETE_NOTIFICATION;
   meta: {
     notificationId: number;
   };
-}
+};
 
 export type NotificationsActionTypes =
   AddNotificationAction | DeleteNotificationAction;

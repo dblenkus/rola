@@ -1,7 +1,7 @@
 import React from 'react';
-import { withRouter, RouteComponentProps } from 'react-router';
+import { useParams } from 'react-router';
 
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 
 import ContestService from '../services/ContestService';
 import { Contest } from '../types/api';
@@ -14,7 +14,9 @@ interface RouteMatchParams {
   contestId: string;
 }
 
-interface ContestDetailsProps extends RouteComponentProps<RouteMatchParams> {}
+interface ContestDetailsProps {
+  match: { params: RouteMatchParams };
+}
 
 interface ContestDetailsState {
   contest: Contest | null;
@@ -56,11 +58,18 @@ class ContestDetails extends React.Component<
           </Typography>
         )}
         <UploadButton contestId={contestId} />
-        <NoticeHtml notice={noticeHtml} />
+        <NoticeHtml notice={noticeHtml ?? ''} />
         <UploadButton contestId={contestId} />
       </>
     );
   }
 }
 
-export default withRouter(ContestDetails);
+export default function RouteView() {
+  const params = useParams();
+  const contestId = params.contestId;
+  if (!contestId) {
+    throw new Error('Missing contestId route parameter');
+  }
+  return <ContestDetails match={{ params: { contestId } }} />;
+}

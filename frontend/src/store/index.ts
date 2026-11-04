@@ -1,34 +1,42 @@
-import { Action, createStore, combineReducers, applyMiddleware } from 'redux';
-import thunkMiddleware, { ThunkAction, ThunkDispatch } from 'redux-thunk';
-import { composeWithDevTools } from 'redux-devtools-extension';
-
+import {
+  configureStore,
+  combineReducers,
+  isImmutableDefault,
+  type ThunkAction,
+  type UnknownAction,
+} from '@reduxjs/toolkit';
+import { useDispatch, useSelector } from 'react-redux';
 import contests from './contests/reducer';
 import notifications from './notifications/reducer';
 import upload from './upload/reducer';
+import { AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST } from './upload/types';
 import jury from './jury/reducer';
 
-const rootReducer = combineReducers({
-  contests,
-  notifications,
-  upload,
-  jury,
-});
-
+const rootReducer = combineReducers({ contests, notifications, upload, jury });
 export type AppState = ReturnType<typeof rootReducer>;
+export type AppThunk<R = void> = ThunkAction<
+  R,
+  AppState,
+  unknown,
+  UnknownAction
+>;
 
-export type AppThunk = ThunkAction<void, AppState, unknown, Action<string>>;
-export type AppDispatch = ThunkDispatch<AppState, unknown, Action<string>>;
-
-const configureStore = () => {
-  const middlewares = [thunkMiddleware];
-  const middleWareEnhancer = applyMiddleware(...middlewares);
-
-  const store = createStore(
-    rootReducer,
-    composeWithDevTools(middleWareEnhancer),
-  );
-
-  return store;
-};
-
-export default configureStore();
+const store = configureStore({
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      immutableCheck: {
+        // Browser File metadata getters can return new objects on every access.
+        isImmutable: (value: unknown) =>
+          value instanceof File || isImmutableDefault(value),
+      },
+      serializableCheck: {
+        ignoredActions: [AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST],
+        ignoredPaths: ['upload.contest'],
+      },
+    }),
+});
+export type AppDispatch = typeof store.dispatch;
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+export const useAppSelector = useSelector.withTypes<AppState>();
+export default store;

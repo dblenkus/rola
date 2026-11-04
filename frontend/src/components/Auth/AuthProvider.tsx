@@ -8,13 +8,18 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+interface Token {
+  token: string;
+  expires: string;
+}
+
 interface AuthProviderState {
-  user: {} | { token: string; expires: string };
+  user: Record<string, never> | Token;
 }
 
 export const userContext = React.createContext({
   user: {},
-  login: (payload: LoginPayload) => {},
+  login: (_payload: LoginPayload) => {},
   logout: () => {},
   isLoggedIn: (): boolean => {
     return false;
@@ -35,7 +40,7 @@ class AuthProvider extends React.Component<
     this.state = { user: this.loadData() };
   }
 
-  saveData = (data: any) => {
+  saveData = (data: Token) => {
     localStorage.setItem('token', JSON.stringify(data));
   };
 

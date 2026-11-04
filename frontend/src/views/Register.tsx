@@ -1,18 +1,19 @@
+import type { InputChange } from '../types/models';
+import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid, Link } from '@material-ui/core';
+import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
 import RegisterForm, { Errors, Fields } from '../components/Auth/RegisterForm';
 import RegisterConfirm from '../components/Auth/RegisterConfirm';
-import { IInputChangeEvent } from '../components/Upload/InputField';
 
 import UserService from '../services/UserService';
 
-interface RegisterViewProps extends WithTranslation {}
+type RegisterViewProps = WithTranslation;
 
 interface RegisterViewState {
   fields: Fields;
@@ -49,7 +50,7 @@ class RegisterView extends React.Component<
     done: false,
   };
 
-  handleChange = ({ name, value }: IInputChangeEvent): void => {
+  handleChange = ({ name, value }: InputChange): void => {
     this.setState((state) => {
       const fields: Fields = Object.assign({}, state.fields);
       const errors: Errors = Object.assign({}, state.errors);
@@ -66,6 +67,9 @@ class RegisterView extends React.Component<
       await UserService.register(fields);
       this.setState({ done: true });
     } catch (error) {
+      if (!axios.isAxiosError<Errors>(error) || !error.response) {
+        throw error;
+      }
       this.setState({ errors: error.response.data });
     }
   };
@@ -75,12 +79,12 @@ class RegisterView extends React.Component<
     const { t } = this.props;
 
     return (
-      <Grid container justify="center">
-        <Grid item xs={12} sm={6} md={4}>
+      <Grid container sx={{ justifyContent: 'center' }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardHeader
               title={t('register')}
-              titleTypographyProps={{ align: 'center' }}
+              slotProps={{ title: { align: 'center' } }}
             />
             <CardContent>
               {done ? (
@@ -93,8 +97,8 @@ class RegisterView extends React.Component<
                     onChange={this.handleChange}
                     onSubmit={this.handleSubmit}
                   />
-                  <Grid container justify="flex-end">
-                    <Grid item>
+                  <Grid container sx={{ justifyContent: 'flex-end' }}>
+                    <Grid>
                       <Link component={RouterLink} to="/login" variant="body2">
                         {t('already_have_account')}
                       </Link>

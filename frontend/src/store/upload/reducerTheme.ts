@@ -14,10 +14,10 @@ const reducer = (
   action: UploadActionTypes,
 ): ThemeModel => {
   switch (action.type) {
-    case THEME_INIT:
+    case THEME_INIT: {
       const {
         id,
-        is_series: isSeries,
+        is_series: isSeries = false,
         n_photos: imageNumber,
         title,
       } = action.payload;
@@ -44,7 +44,8 @@ const reducer = (
           ),
         ),
       };
-    default:
+    }
+    default: {
       if ('submission_id' in action) {
         const submissions = state.submissions.map((submission) => {
           return submission.meta.id === action.submission_id
@@ -54,6 +55,7 @@ const reducer = (
         return { ...state, submissions };
       }
       return state;
+    }
   }
 };
 

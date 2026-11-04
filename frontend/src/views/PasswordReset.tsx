@@ -1,24 +1,26 @@
+import type { InputChange } from '../types/models';
+import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
 import { isString } from 'lodash';
 
-import { Redirect, RouteComponentProps, withRouter } from 'react-router-dom';
-import { parse } from 'query-string';
+import { Navigate, useLocation, type Location } from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid } from '@material-ui/core';
+import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 
 import PasswordResetForm, {
   Errors,
   Fields,
 } from '../components/Auth/PasswordResetForm';
 import PasswordResetSuccess from '../components/Auth/PasswordResetSuccess';
-import { IInputChangeEvent } from '../components/Upload/InputField';
 
 import UserService from '../services/UserService';
 
-interface PasswordResetProps extends RouteComponentProps, WithTranslation {}
+interface PasswordResetProps extends WithTranslation {
+  location: Location;
+}
 
 interface PasswordResetState {
   fields: Fields;
@@ -43,7 +45,7 @@ class PasswordResetView extends React.Component<
     redirect: false,
   };
 
-  handleChange = ({ name, value }: IInputChangeEvent): void => {
+  handleChange = ({ name, value }: InputChange): void => {
     this.setState((state) => {
       const fields: Fields = Object.assign({}, state.fields);
       const errors: Errors = Object.assign({}, state.errors);
@@ -57,12 +59,15 @@ class PasswordResetView extends React.Component<
   handleSubmit = async (): Promise<void> => {
     const { fields } = this.state;
     const { location } = this.props;
-    const token = parse(location.search)['token'] || '';
+    const token = new URLSearchParams(location.search).get('token') || '';
     if (isString(token)) {
       try {
         await UserService.passwordReset({ ...fields, token });
         this.setState({ done: true });
       } catch (error) {
+        if (!axios.isAxiosError<Errors>(error) || !error.response) {
+          throw error;
+        }
         this.setState({ errors: error.response.data });
       }
     } else {
@@ -79,16 +84,16 @@ class PasswordResetView extends React.Component<
     const { t } = this.props;
 
     if (redirect) {
-      return <Redirect to="/login" />;
+      return <Navigate to="/login" replace />;
     }
 
     return (
-      <Grid container justify="center">
-        <Grid item xs={12} sm={6} md={4}>
+      <Grid container sx={{ justifyContent: 'center' }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardHeader
               title={t('password_reset')}
-              titleTypographyProps={{ align: 'center' }}
+              slotProps={{ title: { align: 'center' } }}
             />
             <CardContent>
               {done ? (
@@ -109,4 +114,8 @@ class PasswordResetView extends React.Component<
   }
 }
 
-export default withTranslation()(withRouter(PasswordResetView));
+const RoutedView = withTranslation()(PasswordResetView);
+export default function RouteView() {
+  const location = useLocation();
+  return <RoutedView location={location} />;
+}

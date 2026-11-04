@@ -1,21 +1,24 @@
+import type { InputChange } from '../types/models';
+import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
 import {
   Link as RouterLink,
-  Redirect,
-  RouteComponentProps,
-  withRouter,
-} from 'react-router-dom';
+  Navigate,
+  useLocation,
+  type Location,
+} from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid, Link } from '@material-ui/core';
+import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
 import { userContext } from '../components/Auth/AuthProvider';
 import LoginForm, { Errors, Fields } from '../components/Auth/LoginForm';
-import { IInputChangeEvent } from '../components/Upload/InputField';
 
-interface LoginViewProps extends RouteComponentProps, WithTranslation {}
+interface LoginViewProps extends WithTranslation {
+  location: Location;
+}
 
 interface LoginViewState {
   fields: Fields;
@@ -29,6 +32,7 @@ interface LocationState {
 
 class LoginView extends React.Component<LoginViewProps, LoginViewState> {
   static contextType = userContext;
+  declare context: React.ContextType<typeof userContext>;
 
   state = {
     fields: {
@@ -43,7 +47,7 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
     redirect: false,
   };
 
-  handleChange = ({ name, value }: IInputChangeEvent): void => {
+  handleChange = ({ name, value }: InputChange): void => {
     this.setState((state) => {
       const fields: Fields = Object.assign({}, state.fields);
       const errors: Errors = Object.assign({}, state.errors);
@@ -59,6 +63,9 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
       await this.context.login(this.state.fields);
       this.setState({ redirect: true });
     } catch (error) {
+      if (!axios.isAxiosError<Errors>(error) || !error.response) {
+        throw error;
+      }
       this.setState({ errors: error.response.data });
     }
   };
@@ -69,18 +76,18 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
       const { location } = this.props;
       const state = location.state as LocationState;
       const from = state?.from?.pathname || '/';
-      return <Redirect to={from} />;
+      return <Navigate to={from} replace />;
     }
 
     const { t } = this.props;
 
     return (
-      <Grid container justify="center">
-        <Grid item xs={12} sm={6} md={4}>
+      <Grid container sx={{ justifyContent: 'center' }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card>
             <CardHeader
               title={t('login')}
-              titleTypographyProps={{ align: 'center' }}
+              slotProps={{ title: { align: 'center' } }}
             />
             <CardContent>
               <LoginForm
@@ -90,7 +97,7 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
                 onSubmit={this.handleSubmit}
               />
               <Grid container>
-                <Grid item xs>
+                <Grid size="grow">
                   <Link
                     component={RouterLink}
                     to="/password-reset/request"
@@ -99,7 +106,7 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
                     {t('forgot_password')}
                   </Link>
                 </Grid>
-                <Grid item>
+                <Grid>
                   <Link component={RouterLink} to="/register" variant="body2">
                     {t('new_registration')}
                   </Link>
@@ -113,4 +120,8 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
   }
 }
 
-export default withTranslation()(withRouter(LoginView));
+const RoutedView = withTranslation()(LoginView);
+export default function RouteView() {
+  const location = useLocation();
+  return <RoutedView location={location} />;
+}

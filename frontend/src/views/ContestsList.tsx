@@ -2,14 +2,14 @@ import React from 'react';
 
 import { connect, ConnectedProps } from 'react-redux';
 
-import { Grid } from '@material-ui/core';
+import { Grid } from '@mui/material';
 
 import ContestCard from '../components/Upload/ContestCard';
 
-import { AppState } from '../store';
+import { AppDispatch, AppState } from '../store';
 import { loadContests } from '../store/contests/actions';
 
-interface ContestsListViewProps extends PropsFromRedux {}
+type ContestsListViewProps = PropsFromRedux;
 
 class ContestsListView extends React.Component<ContestsListViewProps> {
   async componentDidMount() {
@@ -22,7 +22,7 @@ class ContestsListView extends React.Component<ContestsListViewProps> {
     return (
       <Grid container spacing={2}>
         {contests.map((contest) => (
-          <Grid key={contest.id} item xs={12} sm={6} md={4}>
+          <Grid key={contest.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <ContestCard contest={contest} />
           </Grid>
         ))}
@@ -35,7 +35,7 @@ const mapStateToProps = (state: AppState) => ({
   contests: state.contests,
 });
 
-const mapDispatchToProps = (dispatch: any) => {
+const mapDispatchToProps = (dispatch: AppDispatch) => {
   return {
     loadContests: () => dispatch(loadContests()),
   };
