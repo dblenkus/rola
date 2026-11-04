@@ -3,15 +3,13 @@
 import pytest
 from PIL import Image
 
-from drf_user.models import User
-from tests.test_workflows import PASSWORD, photo
+from tests.factories import create_user, photo
 
 pytestmark = pytest.mark.django_db
 
 
 def test_upload_creates_jpeg_thumbnail():
-    user = User.objects.create_user("photographer@example.org", PASSWORD)
-    image = photo(user)
+    image = photo(create_user("photographer"))
     with image.thumbnail.open("rb") as source, Image.open(source) as thumb:
         assert thumb.size == (400, 300)
         assert thumb.format == "JPEG"

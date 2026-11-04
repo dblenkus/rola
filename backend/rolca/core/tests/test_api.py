@@ -13,6 +13,7 @@ from rest_framework.test import APIRequestFactory, APITestCase, force_authentica
 
 from rolca.core.api.views import ContestViewSet, FileViewSet, SubmissionViewSet
 from rolca.core.models import Author, Contest, File, Submission, Theme
+from tests.factories import create_user
 
 
 def generate_photo():
@@ -165,16 +166,9 @@ class ContestApiTest(APITestCase):
 
 class SubmissionViewSetTest(APITestCase):
     def setUp(self):
-        user_model = get_user_model()
-        self.creator = user_model.objects.create_user(
-            "creator@example.org", "test-only-passphrase-A9!"
-        )
-        self.user1 = user_model.objects.create_user(
-            "user1@example.org", "test-only-passphrase-A9!"
-        )
-        self.user2 = user_model.objects.create_user(
-            "user2@example.org", "test-only-passphrase-A9!"
-        )
+        self.creator = create_user("creator")
+        self.user1 = create_user("user1")
+        self.user2 = create_user("user2")
 
         today = timezone.now()
         tomorrow = today + timedelta(days=1)
@@ -244,10 +238,7 @@ class SubmissionViewSetTest(APITestCase):
 class FileViewSetTest(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        user_model = get_user_model()
-        cls.user = user_model.objects.create_user(
-            "user@example.org", "test-only-passphrase-A9!"
-        )
+        cls.user = create_user("user")
 
     def setUp(self):
         self.factory = APIRequestFactory()
