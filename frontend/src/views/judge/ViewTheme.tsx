@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { connect, ConnectedProps } from 'react-redux';
 
-import { Typography } from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 
 import { AppState, AppDispatch } from '../../store';
 
@@ -10,6 +10,7 @@ import { initializeStore, setSubmission } from '../../store/jury/actions';
 import LoadingProgress from '../../components/LoadingProgress';
 import ThemeGallery from '../../components/Jury/ThemeGallery';
 import RatingService from '../../services/RatingService';
+import { requestError } from '../../services/errors';
 import { Rating } from '../../types/api';
 import fetchAll from '../../utils/fetchAll';
 
@@ -25,6 +26,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   isLoading,
   submissions,
 }: PropsFromRedux) => {
+  const [error, setError] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [redirect, setRedirect] = useState<string | null>(null);
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
@@ -37,7 +39,9 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 
   // Initialize the store.
   useEffect(() => {
-    initialize(contestId, themeId);
+    initialize(contestId, themeId).catch((error: unknown) =>
+      setError(requestError(error)),
+    );
   }, [contestId, themeId, initialize]);
 
   // Fetch ratings.
@@ -47,7 +51,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
         RatingService.getForTheme(parseInt(themeId, 10));
       setRatings(await fetchAll(ratingResource));
     };
-    fetchRatings();
+    fetchRatings().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
   if (redirect) return <Navigate to={redirect} />;
@@ -58,6 +62,8 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
       `/judge/contest/${contestId}/theme/${themeId}/rate?submission=${submissionId}`,
     );
   };
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   if (isLoading || !submissions) return <LoadingProgress />;
 

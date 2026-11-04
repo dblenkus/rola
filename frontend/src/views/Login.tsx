@@ -1,5 +1,4 @@
 import type { InputChange } from '../types/models';
-import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -15,6 +14,7 @@ import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
 import { userContext } from '../components/Auth/AuthProvider';
 import LoginForm, { Errors, Fields } from '../components/Auth/LoginForm';
+import { formErrors } from '../services/errors';
 
 interface LoginViewProps extends WithTranslation {
   location: Location;
@@ -27,7 +27,7 @@ interface LoginViewState {
 }
 
 interface LocationState {
-  from?: { pathname: string };
+  from?: Location;
 }
 
 class LoginView extends React.Component<LoginViewProps, LoginViewState> {
@@ -63,20 +63,15 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
       await this.context.login(this.state.fields);
       this.setState({ redirect: true });
     } catch (error) {
-      if (!axios.isAxiosError<Errors>(error) || !error.response) {
-        throw error;
-      }
-      this.setState({ errors: error.response.data });
+      this.setState({ errors: { ...this.state.errors, ...formErrors(error) } });
     }
   };
 
   render() {
     const { errors, fields, redirect } = this.state;
     if (redirect) {
-      const { location } = this.props;
-      const state = location.state as LocationState;
-      const from = state?.from?.pathname || '/';
-      return <Navigate to={from} replace />;
+      const state: LocationState | null = this.props.location.state;
+      return <Navigate to={state?.from ?? '/'} replace />;
     }
 
     const { t } = this.props;

@@ -3,6 +3,7 @@ import { Navigate, useParams } from 'react-router';
 import _ from 'lodash';
 
 import {
+  Alert,
   Paper,
   Table,
   TableBody,
@@ -15,6 +16,7 @@ import {
 import ContestService from '../../services/ContestService';
 import LoadingProgress from '../../components/LoadingProgress';
 import ResultsThemeService from '../../services/ResultsThemeService';
+import { requestError } from '../../services/errors';
 import { Contest, ResultsAuthor, ResultsSubmission } from '../../types/api';
 
 interface RouteMatchParams {
@@ -23,9 +25,10 @@ interface RouteMatchParams {
 }
 
 const ThemeResults: React.FC = () => {
+  const [error, setError] = useState<string | null>(null);
   const [submissionsByAuthor, setSubmissionsByAuthor] = useState<
-    ResultsSubmission[][]
-  >([]);
+    ResultsSubmission[][] | null
+  >(null);
   const [contest, setContest] = useState<Contest | null>(null);
   const [redirect, setRedirect] = useState<null | number>(null);
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
@@ -47,7 +50,7 @@ const ThemeResults: React.FC = () => {
           .value(),
       );
     };
-    fetch();
+    fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
   useEffect(() => {
@@ -55,7 +58,7 @@ const ThemeResults: React.FC = () => {
       const { data } = await ContestService.getContest(contestId);
       setContest(data);
     };
-    fetchContest();
+    fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
   const getAuthor = (submissions: ResultsSubmission[]): ResultsAuthor => {
@@ -123,7 +126,10 @@ const ThemeResults: React.FC = () => {
       />
     );
 
-  if (!submissionsByAuthor.length || !contest) return <LoadingProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!submissionsByAuthor || !contest) return <LoadingProgress />;
+  if (!submissionsByAuthor.length)
+    return <Typography>No published results.</Typography>;
 
   return (
     <>

@@ -3,7 +3,7 @@ import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import { Card, CardContent, CardHeader, Grid } from '@mui/material';
+import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
 
 import PasswordResetRequestForm, {
   Fields,
@@ -11,10 +11,12 @@ import PasswordResetRequestForm, {
 import PasswordResetRequestConfirm from '../components/Auth/PasswordResetRequestConfirm';
 
 import UserService from '../services/UserService';
+import { requestError } from '../services/errors';
 
 type PasswordResetRequestViewProps = WithTranslation;
 
 interface PasswordResetRequestViewState {
+  error: string | null;
   done: boolean;
   fields: Fields;
 }
@@ -23,7 +25,8 @@ class PasswordResetRequestView extends React.Component<
   PasswordResetRequestViewProps,
   PasswordResetRequestViewState
 > {
-  state = {
+  state: PasswordResetRequestViewState = {
+    error: null,
     done: false,
     fields: {
       email: '',
@@ -40,16 +43,17 @@ class PasswordResetRequestView extends React.Component<
 
   handleSubmit = async (): Promise<void> => {
     const { fields } = this.state;
+    this.setState({ error: null });
     try {
       await UserService.requestPasswordReset(fields);
       this.setState({ done: true });
-    } catch {
-      // TODO: Handle error.
+    } catch (error) {
+      this.setState({ error: requestError(error) });
     }
   };
 
   render() {
-    const { done, fields } = this.state;
+    const { done, error, fields } = this.state;
     const { t } = this.props;
 
     return (
@@ -61,6 +65,7 @@ class PasswordResetRequestView extends React.Component<
               slotProps={{ title: { align: 'center' } }}
             />
             <CardContent>
+              {error && <Alert severity="error">{error}</Alert>}
               {done ? (
                 <PasswordResetRequestConfirm email={fields.email} />
               ) : (

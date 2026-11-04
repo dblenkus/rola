@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
-import { Grid, Typography } from '@mui/material';
+import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../components/LoadingProgress';
 import ResultsSubmissionService from '../../services/ResultsSubmissionService';
+import { requestError } from '../../services/errors';
 import { ResultsSubmission } from '../../types/api';
 
 interface RouteMatchParams {
@@ -18,6 +19,7 @@ const ThemeOverview: React.FC = () => {
   }
 
   const [submissions, setSubmissions] = useState<null | ResultsSubmission[]>();
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize the state.
   useEffect(() => {
@@ -25,9 +27,10 @@ const ThemeOverview: React.FC = () => {
       const { data } = await ResultsSubmissionService.getOverview(themeId);
       setSubmissions(data.results);
     };
-    fetch();
+    fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
+  if (error) return <Alert severity="error">{error}</Alert>;
   if (!submissions) return <LoadingProgress />;
 
   return (

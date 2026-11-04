@@ -1,12 +1,8 @@
-import axios, {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosError,
-  InternalAxiosRequestConfig,
-} from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 import store from '../store/index';
 import { addNotificationError } from '../store/notifications/actions';
+import { loadToken, rejectToken } from './token';
 
 export const apiBaseURL = '/api/v1';
 
@@ -20,28 +16,31 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config);
 
-const authInterceptor = (
-  config: InternalAxiosRequestConfig,
-): InternalAxiosRequestConfig => {
-  const tokenString = localStorage.getItem('token');
-  if (tokenString) {
-    const token: { token: string; expires: string } = JSON.parse(tokenString);
-    if (token) {
-      config.headers['Authorization'] = `Token ${token['token']}`;
-    }
+apiClient.interceptors.request.use((config) => {
+  const token = loadToken();
+  if (token) {
+    config.headers.set('Authorization', `Token ${token.token}`);
   }
   return config;
-};
+});
 
-const notificationsInterceptor = (error: AxiosError) => {
-  store.dispatch(addNotificationError('Network error occurred.'));
-  return Promise.reject(error);
-};
-
-apiClient.interceptors.request.use(authInterceptor);
+// Views show client errors in place; only failures they cannot explain
+// (no response, server errors) also raise a global notification.
 apiClient.interceptors.response.use(
   (response) => response,
-  notificationsInterceptor,
+  (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      rejectToken(error.config?.headers.get('Authorization'));
+    }
+    if (
+      !axios.isAxiosError(error) ||
+      !error.response ||
+      error.response.status >= 500
+    ) {
+      store.dispatch(addNotificationError('Network error occurred.'));
+    }
+    return Promise.reject(error);
+  },
 );
 
 export { apiClient };

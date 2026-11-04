@@ -1,17 +1,17 @@
 import { useParams } from 'react-router';
 import React from 'react';
-import { AxiosPromise } from 'axios';
 
 import { withStyles } from 'tss-react/mui';
 
-import { Grid, Typography } from '@mui/material';
+import { Alert, Grid, Typography } from '@mui/material';
 
 import ConfirmDialog from '../../components/Notifications/ConfirmDialog';
 
 import { editListStyles } from '../../styles/general';
 import SubmissionSetService from '../../services/SubmissionSetService';
 import ContestService from '../../services/ContestService';
-import { Contest, PaginatedResponse, SubmissionSet } from '../../types/api';
+import { requestError } from '../../services/errors';
+import { Contest, SubmissionSet } from '../../types/api';
 import SubmissionSetTable from '../../components/SubmissionSetTable/SubmissionSetTable';
 import LoadingProgress from '../../components/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
@@ -25,9 +25,13 @@ interface RouteMatchParams {
 }
 
 interface SubmissionSetListState {
+  error: string | null;
+  // A failed delete keeps the table so the admin can try again.
+  deleteError: string | null;
   contest: Contest | null;
   pendingSubmissionSet: SubmissionSet | null;
   showDialog: boolean;
+  reloadKey: number;
 }
 
 interface SubmissionSetListProps extends StyleProps, WithTranslation {
@@ -42,9 +46,12 @@ class SubmissionSetList extends React.Component<
     super(props);
 
     this.state = {
+      error: null,
+      deleteError: null,
       contest: null,
       pendingSubmissionSet: null,
       showDialog: false,
+      reloadKey: 0,
     };
   }
 
@@ -53,15 +60,20 @@ class SubmissionSetList extends React.Component<
   }
 
   fetchData = async (): Promise<void> => {
-    const {
-      match: {
-        params: { contestId },
-      },
-    } = this.props;
+    this.setState({ error: null });
+    try {
+      const {
+        match: {
+          params: { contestId },
+        },
+      } = this.props;
 
-    const { data: contest } = await ContestService.getContest(contestId);
+      const { data: contest } = await ContestService.getContest(contestId);
 
-    this.setState({ contest });
+      this.setState({ contest });
+    } catch (error) {
+      this.setState({ error: requestError(error) });
+    }
   };
 
   handleDelete = (pendingSubmissionSet: SubmissionSet): void => {
@@ -75,21 +87,21 @@ class SubmissionSetList extends React.Component<
     const { pendingSubmissionSet } = this.state;
     if (!pendingSubmissionSet) return;
 
-    await SubmissionSetService.deleteSubmissionSet(pendingSubmissionSet.id);
-    await this.fetchData();
+    this.setState({ deleteError: null });
+    try {
+      await SubmissionSetService.deleteSubmissionSet(pendingSubmissionSet.id);
+      this.setState(({ reloadKey }) => ({ reloadKey: reloadKey + 1 }));
+    } catch (error) {
+      this.setState({ deleteError: requestError(error) });
+    }
   };
 
   render(): React.ReactNode {
-    const { contest, showDialog } = this.state;
+    const { contest, deleteError, error, reloadKey, showDialog } = this.state;
     const { t } = this.props;
 
+    if (error) return <Alert severity="error">{error}</Alert>;
     if (!contest) return <LoadingProgress />;
-
-    const dataSource = (
-      page: number,
-      pageSize: number,
-    ): AxiosPromise<PaginatedResponse<SubmissionSet>> =>
-      SubmissionSetService.getByContest(contest.id.toString(), page, pageSize);
 
     return (
       <>
@@ -97,10 +109,11 @@ class SubmissionSetList extends React.Component<
           {contest?.title}
         </Typography>
 
+        {deleteError && <Alert severity="error">{deleteError}</Alert>}
         <Grid size={{ xs: 12 }}>
           <SubmissionSetTable
-            contestId={contest ? contest.id : 0}
-            dataSource={dataSource}
+            contestId={contest.id}
+            reloadKey={reloadKey}
             onDelete={this.handleDelete}
           />
         </Grid>

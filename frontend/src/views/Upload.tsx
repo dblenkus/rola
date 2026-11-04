@@ -3,6 +3,8 @@ import { connect, ConnectedProps } from 'react-redux';
 
 import { Navigate, useParams } from 'react-router';
 
+import { Alert } from '@mui/material';
+
 import type { AppDispatch, AppState } from '../store';
 import {
   authorUpdate,
@@ -13,6 +15,7 @@ import {
 } from '../store/upload/actions';
 
 import ContestService from '../services/ContestService';
+import { requestError } from '../services/errors';
 
 import { DateChange, InputChange } from '../types/models';
 import { Contest } from '../types/api';
@@ -27,16 +30,27 @@ interface UploadViewProps extends PropsFromRedux {
   match: { params: RouteMatchParams };
 }
 
-class UploadView extends React.Component<UploadViewProps> {
+interface UploadViewState {
+  error: string | null;
+}
+
+class UploadView extends React.Component<UploadViewProps, UploadViewState> {
+  state: UploadViewState = { error: null };
+
   async componentDidMount() {
     const { uploadInit } = this.props;
     const { contestId } = this.props.match.params;
-    const { data: contest } = await ContestService.getContest(contestId);
-
-    uploadInit(contest);
+    try {
+      const { data: contest } = await ContestService.getContest(contestId);
+      uploadInit(contest);
+    } catch (error) {
+      this.setState({ error: requestError(error) });
+    }
   }
 
   render(): React.ReactNode {
+    if (this.state.error)
+      return <Alert severity="error">{this.state.error}</Alert>;
     const {
       contest,
       handleAuthorChange,

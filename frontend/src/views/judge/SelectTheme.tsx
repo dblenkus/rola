@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import {
+  Alert,
   Button,
   Paper,
   Table,
@@ -12,10 +13,12 @@ import {
 } from '@mui/material';
 
 import JudgeContestService from '../../services/JudgeContestService';
+import { requestError } from '../../services/errors';
 import { JuryContest } from '../../types/api';
 
 const SelectTheme: React.FC = () => {
   const [contests, setContests] = useState<JuryContest[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -23,8 +26,10 @@ const SelectTheme: React.FC = () => {
       const { data } = await JudgeContestService.getContests();
       setContests(data.results);
     };
-    fetchContests();
+    fetchContests().catch((error: unknown) => setError(requestError(error)));
   }, []);
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
     <TableContainer component={Paper}>

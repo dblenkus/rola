@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AxiosPromise } from 'axios';
 import _ from 'lodash';
 
 import {
+  Alert,
   LabelDisplayedRowsArgs,
   Paper,
   Table,
@@ -16,34 +16,44 @@ import {
   TableRow,
 } from '@mui/material';
 
-import { PaginatedResponse, Payment, SubmissionSet } from '../../types/api';
+import { Payment, SubmissionSet } from '../../types/api';
 import SubmissionSetTableRow from './SubmissionSetTableRow';
+import LoadingProgress from '../LoadingProgress';
 import usePagination from '../../services/usePagination';
+import { requestError } from '../../services/errors';
 import PaymentService from '../../services/PaymentService';
+import SubmissionSetService from '../../services/SubmissionSetService';
 
 interface SubmissionSetTableProps {
   contestId: number;
-  dataSource: (
-    page: number,
-    pageSize: number,
-  ) => AxiosPromise<PaginatedResponse<SubmissionSet>>;
+  reloadKey: number;
   onDelete: (submissionSet: SubmissionSet) => void;
 }
 
 const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   contestId,
-  dataSource,
+  reloadKey,
   onDelete,
 }: SubmissionSetTableProps) => {
+  const [error, setError] = useState<string | null>(null);
+  // A failed payment update keeps the table so the admin can try again.
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const source = useCallback(
+    (page: number, pageSize: number) =>
+      SubmissionSetService.getByContest(contestId.toString(), page, pageSize),
+    [contestId],
+  );
   const {
+    error: paginationError,
+    isLoading,
     data: submissionSets,
     count,
     page,
     pageSize,
     changePage,
     changePageSize,
-  } = usePagination<SubmissionSet>({ source: dataSource });
+  } = usePagination<SubmissionSet>({ source, reloadKey });
   const { t } = useTranslation();
 
   const fetchPayments = useCallback(async (): Promise<void> => {
@@ -58,7 +68,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   }, [submissionSets]);
 
   useEffect(() => {
-    fetchPayments();
+    fetchPayments().catch((error: unknown) => setError(requestError(error)));
   }, [fetchPayments]);
 
   const handlePageChange = (
@@ -78,8 +88,13 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     submissionSetId: number,
     paid: boolean,
   ): Promise<void> => {
-    await PaymentService.updatePayment(submissionSetId, paid);
-    await fetchPayments();
+    setPaymentError(null);
+    try {
+      await PaymentService.updatePayment(submissionSetId, paid);
+      await fetchPayments();
+    } catch (error) {
+      setPaymentError(requestError(error));
+    }
   };
 
   const getLabelDisplayedRows = ({
@@ -90,8 +105,13 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     return t('displayed_rows', { from, to, total });
   };
 
+  if (error || paginationError)
+    return <Alert severity="error">{error || paginationError}</Alert>;
+  if (isLoading) return <LoadingProgress />;
+
   return (
     <>
+      {paymentError && <Alert severity="error">{paymentError}</Alert>}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>

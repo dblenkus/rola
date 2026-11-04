@@ -1,8 +1,9 @@
-import { Grid, Typography } from '@mui/material';
+import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import LoadingProgress from '../components/LoadingProgress';
 import ContestService from '../services/ContestService';
+import { requestError } from '../services/errors';
 import { Contest } from '../types/api';
 
 import ConfirmationHtml from '../components/Upload/ConfirmationHtml';
@@ -14,6 +15,7 @@ interface RouteMatchParams {
 
 const UploadConfirmView: React.FC = () => {
   const [contest, setContest] = useState<Contest | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { contestId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
@@ -24,9 +26,10 @@ const UploadConfirmView: React.FC = () => {
       const { data } = await ContestService.getContest(contestId);
       setContest(data);
     };
-    fetchContest();
+    fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
+  if (error) return <Alert severity="error">{error}</Alert>;
   if (!contest) return <LoadingProgress />;
 
   return (

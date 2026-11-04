@@ -1,5 +1,4 @@
 import type { InputChange } from '../types/models';
-import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -12,6 +11,7 @@ import RegisterForm, { Errors, Fields } from '../components/Auth/RegisterForm';
 import RegisterConfirm from '../components/Auth/RegisterConfirm';
 
 import UserService from '../services/UserService';
+import { formErrors } from '../services/errors';
 
 type RegisterViewProps = WithTranslation;
 
@@ -67,10 +67,7 @@ class RegisterView extends React.Component<
       await UserService.register(fields);
       this.setState({ done: true });
     } catch (error) {
-      if (!axios.isAxiosError<Errors>(error) || !error.response) {
-        throw error;
-      }
-      this.setState({ errors: error.response.data });
+      this.setState({ errors: { ...this.state.errors, ...formErrors(error) } });
     }
   };
 

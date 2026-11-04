@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
 
 import {
+  Alert,
   Button,
   Paper,
   Table,
@@ -13,6 +14,7 @@ import {
 } from '@mui/material';
 
 import ContestService from '../../services/ContestService';
+import { requestError } from '../../services/errors';
 import { Contest } from '../../types/api';
 import LoadingProgress from '../../components/LoadingProgress';
 
@@ -22,6 +24,7 @@ interface RouteMatchParams {
 
 const SelectTheme: React.FC = () => {
   const [contest, setContest] = useState<null | Contest>(null);
+  const [error, setError] = useState<string | null>(null);
   const { contestId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
@@ -34,9 +37,10 @@ const SelectTheme: React.FC = () => {
       const { data } = await ContestService.getContest(contestId);
       setContest(data);
     };
-    fetchContest();
+    fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
+  if (error) return <Alert severity="error">{error}</Alert>;
   if (!contest) return <LoadingProgress />;
 
   return (

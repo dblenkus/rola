@@ -3,12 +3,13 @@ import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import { Card, Grid } from '@mui/material';
+import { Alert, Card, Grid } from '@mui/material';
 
 import { Contest, SubmissionSet } from '../../types/api';
 
 import SubmissionSetService from '../../services/SubmissionSetService';
 import ContestService from '../../services/ContestService';
+import { requestError } from '../../services/errors';
 
 interface RouteMatchParams {
   contestId: string;
@@ -20,6 +21,7 @@ interface SubmissionListProps extends WithTranslation {
 }
 
 interface SubmissionListState {
+  error: string | null;
   contest: Contest | null;
   submissionSet: SubmissionSet | null;
 }
@@ -32,6 +34,7 @@ class SubmissionList extends React.Component<
     super(props);
 
     this.state = {
+      error: null,
       contest: null,
       submissionSet: null,
     };
@@ -59,13 +62,19 @@ class SubmissionList extends React.Component<
       },
     } = this.props;
 
-    const { data: contest } = await ContestService.getContest(contestId);
-    const { data: submissionSet } =
-      await SubmissionSetService.getSubmissionSet(submissionSetId);
-    this.setState({ contest, submissionSet });
+    try {
+      const { data: contest } = await ContestService.getContest(contestId);
+      const { data: submissionSet } =
+        await SubmissionSetService.getSubmissionSet(submissionSetId);
+      this.setState({ contest, submissionSet });
+    } catch (error) {
+      this.setState({ error: requestError(error) });
+    }
   }
 
   render(): React.ReactNode {
+    if (this.state.error)
+      return <Alert severity="error">{this.state.error}</Alert>;
     const { contest, submissionSet } = this.state;
     const { t } = this.props;
 

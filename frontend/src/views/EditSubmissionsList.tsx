@@ -6,6 +6,7 @@ import { WithTranslation, withTranslation } from 'react-i18next';
 import { withStyles } from 'tss-react/mui';
 
 import {
+  Alert,
   Button,
   Paper,
   Table,
@@ -23,6 +24,7 @@ import ConfirmDialog from '../components/Notifications/ConfirmDialog';
 import { editListStyles } from '../styles/general';
 import ContestService from '../services/ContestService';
 import SubmissionService from '../services/SubmissionService';
+import { requestError } from '../services/errors';
 import { Author, Contest, Submission } from '../types/api';
 import { asyncMap } from '../utils/async';
 
@@ -33,6 +35,9 @@ type StyleProps = {
 interface EditSubmissionListProps extends StyleProps, WithTranslation {}
 
 interface EditSubmissionsListState {
+  error: string | null;
+  // A failed delete keeps the list so the participant can try again.
+  deleteError: string | null;
   contests: Contest[];
   submissions: Submission[];
   showDialog: boolean;
@@ -52,6 +57,8 @@ class EditSubmissionsList extends React.Component<
   EditSubmissionsListState
 > {
   state: EditSubmissionsListState = {
+    error: null,
+    deleteError: null,
     contests: [],
     submissions: [],
     showDialog: false,
@@ -59,19 +66,24 @@ class EditSubmissionsList extends React.Component<
   };
 
   async fetchSubmissions() {
-    const getContestSubmissions = async (contest: Contest) => {
-      const submissionsResp = await SubmissionService.getSubmissionsByContest(
-        contest.id,
-      );
-      return submissionsResp.data.results;
-    };
+    this.setState({ error: null });
+    try {
+      const getContestSubmissions = async (contest: Contest) => {
+        const submissionsResp = await SubmissionService.getSubmissionsByContest(
+          contest.id,
+        );
+        return submissionsResp.data.results;
+      };
 
-    const contests = (await ContestService.getActiveContests()).data.results;
-    const submissions = (
-      await asyncMap(contests, getContestSubmissions)
-    ).flat();
+      const contests = (await ContestService.getActiveContests()).data.results;
+      const submissions = (
+        await asyncMap(contests, getContestSubmissions)
+      ).flat();
 
-    this.setState({ contests, submissions });
+      this.setState({ contests, submissions });
+    } catch (error) {
+      this.setState({ error: requestError(error) });
+    }
   }
 
   async componentDidMount() {
@@ -92,13 +104,23 @@ class EditSubmissionsList extends React.Component<
   closeDialog = () => this.setState({ showDialog: false });
 
   processDelete = async () => {
-    await asyncMap(this.state.pendingSubmissions, (submission) =>
-      SubmissionService.deleteSubmission(submission.id),
-    );
-    this.fetchSubmissions();
+    const { pendingSubmissions } = this.state;
+    this.setState({ deleteError: null });
+    // One at a time, so a failure leaves no request running and the reload
+    // below shows exactly which photographs are left.
+    try {
+      for (const submission of pendingSubmissions) {
+        await SubmissionService.deleteSubmission(submission.id);
+      }
+    } catch (error) {
+      this.setState({ deleteError: requestError(error) });
+    }
+    await this.fetchSubmissions();
   };
 
   render() {
+    if (this.state.error)
+      return <Alert severity="error">{this.state.error}</Alert>;
     const { t } = this.props;
     const classes = withStyles.getClasses(this.props);
 
@@ -136,6 +158,9 @@ class EditSubmissionsList extends React.Component<
 
     return (
       <>
+        {this.state.deleteError && (
+          <Alert severity="error">{this.state.deleteError}</Alert>
+        )}
         <TableContainer component={Paper}>
           <Table>
             <TableHead>

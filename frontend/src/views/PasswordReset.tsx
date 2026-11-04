@@ -1,10 +1,7 @@
 import type { InputChange } from '../types/models';
-import axios from 'axios';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
-
-import { isString } from 'lodash';
 
 import { Navigate, useLocation, type Location } from 'react-router';
 
@@ -17,6 +14,7 @@ import PasswordResetForm, {
 import PasswordResetSuccess from '../components/Auth/PasswordResetSuccess';
 
 import UserService from '../services/UserService';
+import { formErrors } from '../services/errors';
 
 interface PasswordResetProps extends WithTranslation {
   location: Location;
@@ -59,16 +57,15 @@ class PasswordResetView extends React.Component<
   handleSubmit = async (): Promise<void> => {
     const { fields } = this.state;
     const { location } = this.props;
-    const token = new URLSearchParams(location.search).get('token') || '';
-    if (isString(token)) {
+    const token = new URLSearchParams(location.search).get('token');
+    if (token) {
       try {
         await UserService.passwordReset({ ...fields, token });
         this.setState({ done: true });
       } catch (error) {
-        if (!axios.isAxiosError<Errors>(error) || !error.response) {
-          throw error;
-        }
-        this.setState({ errors: error.response.data });
+        this.setState({
+          errors: { ...this.state.errors, ...formErrors(error) },
+        });
       }
     } else {
       const errors: Errors = Object.assign({}, this.state.errors);

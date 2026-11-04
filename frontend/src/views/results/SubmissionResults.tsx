@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
-import { Typography } from '@mui/material';
+import { Alert, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 
 import LoadingProgress from '../../components/LoadingProgress';
 import ResultsSubmissionService from '../../services/ResultsSubmissionService';
+import { requestError } from '../../services/errors';
 import { ResultsSubmission } from '../../types/api';
 
 interface RouteMatchParams {
@@ -32,6 +33,7 @@ const SubmissionResults: React.FC = () => {
   const { classes } = useStyles();
 
   const [submission, setSubmission] = useState<null | ResultsSubmission>(null);
+  const [error, setError] = useState<string | null>(null);
   const { submissionId } = useParams<keyof RouteMatchParams>();
   if (!submissionId) {
     throw new Error('Missing submissionId route parameter');
@@ -42,9 +44,10 @@ const SubmissionResults: React.FC = () => {
       const { data } = await ResultsSubmissionService.get(submissionId);
       setSubmission(data);
     };
-    fetch();
+    fetch().catch((error: unknown) => setError(requestError(error)));
   }, [submissionId]);
 
+  if (error) return <Alert severity="error">{error}</Alert>;
   if (!submission) return <LoadingProgress />;
 
   const { title, author } = submission;
