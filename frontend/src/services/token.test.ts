@@ -8,6 +8,7 @@ describe('persisted authentication', () => {
     const token = {
       token: 'test-token',
       expires: new Date(Date.now() + 60_000).toISOString(),
+      email: 'ana@example.com',
     };
     localStorage.setItem('token', JSON.stringify(token));
     expect(loadToken()).toEqual(token);
@@ -20,6 +21,7 @@ describe('persisted authentication', () => {
     JSON.stringify({ token: '', expires: '2999-01-01' }),
     JSON.stringify({ token: 'expired', expires: '2000-01-01' }),
     JSON.stringify({ token: 'invalid', expires: 'never' }),
+    JSON.stringify({ token: 'no-account', expires: '2999-01-01' }),
   ])('discards invalid or expired credentials: %s', (stored) => {
     const announced = vi.fn();
     window.addEventListener(sessionChanged, announced);
@@ -43,14 +45,22 @@ describe('rejected sessions', () => {
   it('clears the session that sent the rejected request', () => {
     localStorage.setItem(
       'token',
-      JSON.stringify({ token: 'current', expires: '2999-01-01' }),
+      JSON.stringify({
+        token: 'current',
+        expires: '2999-01-01',
+        email: 'ana@example.com',
+      }),
     );
     rejectToken('Token current');
     expect(loadToken()).toBeNull();
   });
 
   it('keeps a newer login when an older request is rejected', () => {
-    const token = { token: 'new-session', expires: '2999-01-01' };
+    const token = {
+      token: 'new-session',
+      expires: '2999-01-01',
+      email: 'ana@example.com',
+    };
     localStorage.setItem('token', JSON.stringify(token));
     rejectToken('Token old-session');
     expect(loadToken()).toEqual(token);

@@ -1,8 +1,13 @@
 import axios from 'axios';
 
 import { AppThunk } from '..';
-import { addNotificationError } from '../notifications/actions';
+import {
+  addNotificationError,
+  addNotificationSuccess,
+  addNotificationWarning,
+} from '../notifications/actions';
 
+import { loadToken, rejectToken } from '../../services/token';
 import { Contest, Theme } from '../../types/api';
 import {
   ContestModel,
@@ -21,7 +26,9 @@ import {
   THEME_INIT,
   SUBMISSION_INIT,
   SUBMISSION_UPDATE,
+  UPLOAD_COMPLETE,
   UPLOAD_INIT,
+  UPLOAD_RESET,
   UPLOAD_SET_CONTEST,
   UPLOAD_SET_UPLOADING,
   UPLOAD_UNSET_UPLOADING,
@@ -29,39 +36,92 @@ import {
   IMAGE_STORE,
 } from './types';
 
-export const uploadInit = (payload: Contest): UploadActionTypes => ({
+export const uploadInit = (
+  contest: Contest,
+  owner: string,
+): UploadActionTypes => ({
   type: UPLOAD_INIT,
-  payload,
+  payload: { contest, owner, uploadKey: crypto.randomUUID() },
 });
+
+// Tokens are never extended, and the photographs sent before a token
+// expires mid-upload stay stored without a submission. An upload therefore
+// starts only with a session that should outlast it.
+const uploadSessionMargin = 60 * 60_000;
 
 // Resolves to whether the photographs were uploaded.
 export const uploadSubmit =
   (): AppThunk<Promise<boolean>> => async (dispatch, getState) => {
-    const { contest } = getState().upload;
+    const { contest, uploadKey } = getState().upload;
+    if (uploadKey === null) {
+      throw new Error('No upload form is open');
+    }
+    // Without a session the view sends the user to the login page, which
+    // returns to this form.
+    const session = loadToken();
+    if (!session) {
+      return false;
+    }
+    if (Date.parse(session.expires) - Date.now() < uploadSessionMargin) {
+      rejectToken(`Token ${session.token}`);
+      dispatch(
+        addNotificationWarning(
+          'Your session is about to expire. Please log in again.',
+        ),
+      );
+      return false;
+    }
+    // The user may open another form while this one uploads; the outcome
+    // of this upload must leave that form alone.
+    const current = () => getState().upload.uploadKey === uploadKey;
 
     dispatch(uploadSetUploading());
     try {
       const newContest = await validate(contest);
       if (newContest.errors.hasError) {
-        dispatch(uploadSetContest(newContest));
+        if (current()) {
+          dispatch(uploadSetContest(newContest));
+        }
         return false;
       }
       await upload(contest);
+      if (current()) {
+        dispatch(uploadComplete(uploadKey));
+      }
+      // The form's view may have been left or replaced during the upload.
+      dispatch(
+        addNotificationSuccess(
+          `Your photographs for ${contest.meta.title} were uploaded.`,
+        ),
+      );
       return true;
     } catch (error) {
       if (!axios.isAxiosError(error)) {
         throw error;
       }
-      dispatch(addNotificationError('Upload failed. Please try again.'));
+      if (current()) {
+        dispatch(addNotificationError('Upload failed. Please try again.'));
+      }
       return false;
     } finally {
-      dispatch(uploadUnsetUploading());
+      if (current()) {
+        dispatch(uploadUnsetUploading());
+      }
     }
   };
 
 export const uploadSetContest = (payload: ContestModel): UploadActionTypes => ({
   type: UPLOAD_SET_CONTEST,
   payload,
+});
+
+export const uploadReset = (): UploadActionTypes => ({
+  type: UPLOAD_RESET,
+});
+
+export const uploadComplete = (uploadKey: string): UploadActionTypes => ({
+  type: UPLOAD_COMPLETE,
+  payload: { uploadKey },
 });
 
 export const uploadSetUploading = (): UploadActionTypes => ({

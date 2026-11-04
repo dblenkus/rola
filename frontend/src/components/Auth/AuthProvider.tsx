@@ -8,14 +8,10 @@ import {
 } from 'react';
 
 import UserService, { type LoginPayload } from '../../services/UserService';
-import {
-  loadToken,
-  sessionChanged,
-  type AuthToken,
-} from '../../services/token';
+import { loadToken, sessionChanged, type Session } from '../../services/token';
 
 interface AuthContext {
-  user: AuthToken | null;
+  user: Session | null;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => void;
   isLoggedIn: () => boolean;
@@ -48,8 +44,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (payload: LoginPayload) => {
     const { data } = await UserService.login(payload);
-    localStorage.setItem('token', JSON.stringify(data));
-    setUser(data);
+    // Normalized as the backend matches accounts, so that logging in again
+    // with other capitalization keeps the upload form of the same account.
+    const session = { ...data, email: payload.email.trim().toLowerCase() };
+    localStorage.setItem('token', JSON.stringify(session));
+    setUser(session);
   }, []);
 
   const logout = useCallback(() => {

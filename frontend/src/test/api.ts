@@ -49,9 +49,9 @@ export function page<T>(results: T[]): PaginatedResponse<T> {
   return { count: results.length, next: null, previous: null, results };
 }
 
-export function signIn(token = 'signed-in'): void {
+export function signIn(token = 'signed-in', email = 'ana@example.com'): void {
   localStorage.setItem(
     'token',
-    JSON.stringify({ token, expires: '2999-01-01T00:00:00Z' }),
+    JSON.stringify({ token, expires: '2999-01-01T00:00:00Z', email }),
   );
 }

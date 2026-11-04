@@ -8,6 +8,8 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { makeStyles } from 'tss-react/mui';
 
+import { useAppDispatch } from '../../store';
+import { uploadReset } from '../../store/upload/actions';
 import { userContext } from '../Auth/AuthProvider';
 
 const useStyles = makeStyles()({
@@ -19,6 +21,7 @@ const useStyles = makeStyles()({
 
 const Dropdown: React.FC = () => {
   const user = React.useContext(userContext);
+  const dispatch = useAppDispatch();
   const location = useLocation();
   const { t } = useTranslation();
 
@@ -34,6 +37,9 @@ const Dropdown: React.FC = () => {
   };
 
   const logOut = (): void => {
+    // The next account on this device must not get the upload form; a
+    // forced re-login after a rejected token keeps it.
+    dispatch(uploadReset());
     user.logout();
     setAnchorEl(null);
   };

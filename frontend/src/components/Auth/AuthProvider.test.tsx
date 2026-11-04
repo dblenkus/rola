@@ -9,6 +9,7 @@ import AuthProvider, { userContext } from './AuthProvider';
 import PrivateRoute from './PrivateRoute';
 
 const token = { token: 'example-token', expires: '2999-01-01T00:00:00Z' };
+const session = { ...token, email: 'user@example.com' };
 
 beforeEach(() => {
   localStorage.clear();
@@ -25,7 +26,7 @@ function Session() {
       <span>{auth.isLoggedIn() ? 'Signed in' : 'Signed out'}</span>
       <button
         onClick={() =>
-          auth.login({ email: 'user@example.com', password: 'example' })
+          auth.login({ email: ' User@Example.com', password: 'example' })
         }
       >
         Log in
@@ -51,25 +52,12 @@ describe('authentication flows', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Log in' }));
     expect(await screen.findByText('Signed in')).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('token') ?? 'null')).toEqual(token);
+    expect(JSON.parse(localStorage.getItem('token') ?? 'null')).toEqual(
+      session,
+    );
     await user.click(screen.getByRole('button', { name: 'Log out' }));
     expect(screen.getByText('Signed out')).toBeInTheDocument();
     expect(localStorage.getItem('token')).toBeNull();
-  });
-
-  it('follows a logout in another tab', () => {
-    localStorage.setItem('token', JSON.stringify(token));
-    render(
-      <AuthProvider>
-        <Session />
-      </AuthProvider>,
-    );
-    expect(screen.getByText('Signed in')).toBeInTheDocument();
-    localStorage.removeItem('token');
-    act(() => {
-      window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
-    });
-    expect(screen.getByText('Signed out')).toBeInTheDocument();
   });
 
   it('signs out when a request finds the session expired', () => {
@@ -79,6 +67,7 @@ describe('authentication flows', () => {
       JSON.stringify({
         token: 'expiring',
         expires: new Date(now + 60_000).toISOString(),
+        email: 'user@example.com',
       }),
     );
     render(
@@ -91,6 +80,21 @@ describe('authentication flows', () => {
     // The API client reads the session before every request.
     act(() => {
       loadToken();
+    });
+    expect(screen.getByText('Signed out')).toBeInTheDocument();
+  });
+
+  it('follows a logout in another tab', () => {
+    localStorage.setItem('token', JSON.stringify(session));
+    render(
+      <AuthProvider>
+        <Session />
+      </AuthProvider>,
+    );
+    expect(screen.getByText('Signed in')).toBeInTheDocument();
+    localStorage.removeItem('token');
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
     });
     expect(screen.getByText('Signed out')).toBeInTheDocument();
   });

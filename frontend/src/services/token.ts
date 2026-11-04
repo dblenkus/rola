@@ -2,9 +2,12 @@ import type { components } from '../types/generated-api';
 
 export type AuthToken = components['schemas']['Token'];
 
+// The email the session was opened with names its account.
+export type Session = AuthToken & { email: string };
+
 export const sessionChanged = 'rola:session-changed';
 
-export function loadToken(): AuthToken | null {
+export function loadToken(): Session | null {
   const stored = localStorage.getItem('token');
   if (!stored) {
     return null;
@@ -19,9 +22,12 @@ export function loadToken(): AuthToken | null {
       value.token &&
       'expires' in value &&
       typeof value.expires === 'string' &&
-      Date.parse(value.expires) > Date.now()
+      Date.parse(value.expires) > Date.now() &&
+      'email' in value &&
+      typeof value.email === 'string' &&
+      value.email
     ) {
-      return { token: value.token, expires: value.expires };
+      return { token: value.token, expires: value.expires, email: value.email };
     }
   } catch {
     // Unreadable credentials are discarded below, like expired ones.
