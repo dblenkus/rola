@@ -98,7 +98,7 @@ class Location(models.Model):
 class User(AbstractBaseUser, PermissionsMixin):
     """User model."""
 
-    internal_id = models.AutoField(primary_key=True)
+    internal_id = models.BigAutoField(primary_key=True)
 
     id = models.UUIDField(
         unique=True, default=uuid.uuid4, editable=False, db_index=True

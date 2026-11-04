@@ -33,6 +33,15 @@ class Judge(BaseModel):
 class Rating(BaseModel):
     """Model for rating submissions."""
 
+    class Meta:
+        """Rating Meta options."""
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["judge", "submission"], name="rating_unique_judge_submission"
+            )
+        ]
+
     judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name="ratings")
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)

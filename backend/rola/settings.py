@@ -9,7 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = boolean("ROLA_DEBUG")
 SECRET_KEY = os.environ["ROLA_SECRET_KEY"]
 ALLOWED_HOSTS = comma_separated("ALLOWED_HOSTS")
-DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 AUTH_USER_MODEL = "drf_user.User"
 
 INSTALLED_APPS = [
