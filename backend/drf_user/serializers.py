@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -120,6 +121,7 @@ class UserWriteSerializer(UserSerializer):
         return super().update(instance, validated_data)
 
 
+@extend_schema_serializer(component_name="User")
 class UserRegistrationSerializer(UserWriteSerializer):
     """Validate a new account, including its required password."""
 
