@@ -7,15 +7,15 @@ from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from PIL import Image
 
+from drf_user.models import User
 from rolca.core.models import File
-from tests.test_workflows import photo
-from tests.userapp.models import User
+from tests.test_workflows import PASSWORD, photo
 
 pytestmark = pytest.mark.django_db
 
 
 def test_upload_creates_jpeg_thumbnail():
-    user = User.objects.create_user(username="photographer")
+    user = User.objects.create_user("photographer@example.org", PASSWORD)
     image = photo(user)
     with image.thumbnail.open("rb") as source, Image.open(source) as thumb:
         assert thumb.size == (400, 300)
@@ -23,7 +23,7 @@ def test_upload_creates_jpeg_thumbnail():
 
 
 def test_historical_thumbnail_migration_handles_existing_media():
-    image = photo(User.objects.create_user(username="photographer"))
+    image = photo(User.objects.create_user("photographer@example.org", PASSWORD))
     state = MigrationLoader(connection).project_state(
         [("core", "0016_submissionset_update_3")]
     )

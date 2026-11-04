@@ -48,7 +48,7 @@ exclude = ["*.tests", "*.tests.*"]
 "drf_user" = ["templates/**/*.txt", "templates/**/*.html"]
 
 [tool.pytest]
-DJANGO_SETTINGS_MODULE = "rola.settings"
+DJANGO_SETTINGS_MODULE = "rola.test_settings"
 django_find_project = false
 addopts = ["--import-mode=importlib"]
 pythonpath = ["."]
@@ -72,5 +72,5 @@ convention = "pep257"
 
 [tool.mypy]
 python_version = "3.14"
-files = ["drf_user/settings.py"]
+files = ["rola/environment.py", "drf_user/settings.py"]
 strict = true

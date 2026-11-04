@@ -12,6 +12,7 @@ from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
 
+from drf_user.models import Email, User
 from rolca.core.models import (
     Author,
     Contest,
@@ -23,18 +24,16 @@ from rolca.core.models import (
 )
 from rolca.payment.models import Payment
 from rolca.rating.models import Judge, Rating, SubmissionReward, ThemeResults
-from tests.userapp.models import Email, User
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.urls("tests.urls")]
+PASSWORD = "test-only-passphrase-A9!"
 
 
 @pytest.fixture
 def world():
-    owner = User.objects.create_user(username="owner", email="owner@example.org")
-    other = User.objects.create_user(username="other", email="other@example.org")
-    admin = User.objects.create_superuser(
-        username="admin", email="admin@example.org", password="secret"
-    )
+    owner = User.objects.create_user("owner@example.org", PASSWORD, is_active=True)
+    other = User.objects.create_user("other@example.org", PASSWORD, is_active=True)
+    admin = User.objects.create_superuser("admin@example.org", PASSWORD)
     now = timezone.now()
     contest = Contest.objects.create(
         user=admin,
@@ -93,7 +92,7 @@ def submitted(world, **changes):
 def test_author_list_is_scoped_to_requesting_user(world):
     response = world.client.get("/api/author/")
     assert response.status_code == 200
-    assert [item["id"] for item in response.data] == [world.author.pk]
+    assert [item["id"] for item in response.data["results"]] == [world.author.pk]
 
 
 @pytest.mark.parametrize("batch", [False, True])
@@ -256,13 +255,11 @@ def test_contest_and_institution_filters_are_applied(world):
         end_date=timezone.now() - timedelta(days=2),
     )
     response = world.client.get("/api/contest/", {"is_active": "true"})
-    assert [item["id"] for item in response.data] == [world.contest.pk]
+    assert [item["id"] for item in response.data["results"]] == [world.contest.pk]
     desired = Institution.objects.create(kind=1, name="School")
     Institution.objects.create(kind=1, name="Elsewhere")
-    assert [
-        item["id"]
-        for item in world.client.get("/api/institution/", {"name": "School"}).data
-    ] == [desired.pk]
+    response = world.client.get("/api/institution/", {"name": "School"})
+    assert [item["id"] for item in response.data["results"]] == [desired.pk]
 
 
 def test_submission_and_set_filters_are_applied(world):
@@ -271,16 +268,15 @@ def test_submission_and_set_filters_are_applied(world):
         user=world.owner, author=world.author, contest=world.contest
     )
     group.submissions.add(item)
-    assert world.client.get("/api/submission/", {"contest": 999999}).data == []
+    response = world.client.get("/api/submission/", {"contest": 999999})
+    assert response.data["results"] == []
     other_contest = Contest.objects.create(
         title="Empty",
         start_date=world.contest.start_date,
         end_date=world.contest.end_date,
     )
-    assert (
-        world.client.get("/api/submissionset/", {"contest": other_contest.pk}).data
-        == []
-    )
+    response = world.client.get("/api/submissionset/", {"contest": other_contest.pk})
+    assert response.data["results"] == []
 
 
 def test_export_requires_organizer_and_includes_every_file(world):
@@ -313,7 +309,7 @@ def test_payment_permissions_upsert_and_filter(world):
     assert world.client.post("/api/payment/", data, format="json").status_code == 201
     assert Payment.objects.count() == 1
     assert not Payment.objects.get().paid
-    assert world.client.get("/api/payment/", {"paid": "true"}).data == []
+    assert world.client.get("/api/payment/", {"paid": "true"}).data["results"] == []
 
 
 def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
@@ -327,18 +323,18 @@ def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
     unpaid = submitted(world)
     response = world.client.get("/api/judge/submission/")
     assert response.status_code == 200, response.data
-    assert [row["id"] for row in response.data] == [item.pk]
+    assert [row["id"] for row in response.data["results"]] == [item.pk]
     other_theme = Theme.objects.create(contest=world.contest, title="Empty", n_photos=4)
-    assert (
-        world.client.get("/api/judge/submission/", {"theme": other_theme.pk}).data == []
-    )
+    response = world.client.get("/api/judge/submission/", {"theme": other_theme.pk})
+    assert response.data["results"] == []
     for value in [3, 5]:
         response = world.client.post(
             "/api/rating/", {"submission": item.pk, "rating": value}, format="json"
         )
         assert response.status_code == 201, response.data
     assert Rating.objects.get(judge=judge, submission=item).rating == 5
-    assert world.client.get("/api/rating/", {"submission": unpaid.pk}).data == []
+    response = world.client.get("/api/rating/", {"submission": unpaid.pk})
+    assert response.data["results"] == []
 
 
 def test_anonymous_judge_endpoint_denies_without_server_error(world):
@@ -373,15 +369,16 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
     SubmissionReward.objects.create(submission=item, kind=1, label="Gold")
     public = APIClient()
-    assert public.get("/api/results/submission/").data == []
+    assert public.get("/api/results/submission/").data["results"] == []
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
     response = public.get("/api/results/submission/")
     assert response.status_code == 200, response.data
-    assert response.data[0]["accepted"] is True
-    assert response.data[0]["author"]["country"] is None
-    assert response.data[0]["author"]["email"] is None
-    assert response.data[0]["reward_kind"] == "Gold"
+    result = response.data["results"][0]
+    assert result["accepted"] is True
+    assert result["author"]["country"] is None
+    assert result["author"]["email"] is None
+    assert result["reward_kind"] == "Gold"
 
 
 @pytest.mark.parametrize("method", ["patch", "delete"])

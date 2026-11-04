@@ -52,7 +52,7 @@ class ContestApiTest(APITestCase):
 
         # public user
         resp = self.contest_list_view(request)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(contest_create_mock.call_count, 0)
 
         # normal user
@@ -106,7 +106,7 @@ class ContestApiTest(APITestCase):
 
         # public user
         resp = self.contest_detail_view(request, pk=1)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(contest_update_mock.call_count, 0)
 
         # normal user
@@ -127,7 +127,7 @@ class ContestApiTest(APITestCase):
 
         # public user
         resp = self.contest_detail_view(request, pk=1)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(contest_update_mock.call_count, 0)
 
         # normal user
@@ -148,7 +148,7 @@ class ContestApiTest(APITestCase):
 
         # public user
         resp = self.contest_detail_view(request, pk=1)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(contest_destroy_mock.call_count, 0)
 
         # normal user
@@ -166,9 +166,15 @@ class ContestApiTest(APITestCase):
 class SubmissionViewSetTest(APITestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.creator = user_model.objects.create_user(username="creator")
-        self.user1 = user_model.objects.create_user(username="user1")
-        self.user2 = user_model.objects.create_user(username="user2")
+        self.creator = user_model.objects.create_user(
+            "creator@example.org", "test-only-passphrase-A9!"
+        )
+        self.user1 = user_model.objects.create_user(
+            "user1@example.org", "test-only-passphrase-A9!"
+        )
+        self.user2 = user_model.objects.create_user(
+            "user2@example.org", "test-only-passphrase-A9!"
+        )
 
         today = timezone.now()
         tomorrow = today + timedelta(days=1)
@@ -239,7 +245,9 @@ class FileViewSetTest(APITestCase):
     @classmethod
     def setUpTestData(cls):
         user_model = get_user_model()
-        cls.user = user_model.objects.create_user(username="user")
+        cls.user = user_model.objects.create_user(
+            "user@example.org", "test-only-passphrase-A9!"
+        )
 
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -261,7 +269,7 @@ class FileViewSetTest(APITestCase):
 
         # Public user.
         resp = self.file_view(request)
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(file_create_mock.call_count, 0)
 
         # Admin user.
