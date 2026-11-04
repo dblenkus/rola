@@ -3,7 +3,6 @@
 from django.db.models import CharField, F, Prefetch, Sum, Value
 from django.db.models.functions import SHA1, Cast, Concat
 from django.utils import timezone
-
 from rest_framework import mixins, permissions, viewsets
 
 from rolca.core.api.filters import ContestFilter, SubmissionFilter
@@ -45,7 +44,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         """Return queryset for submissions that can be shown to judge."""
         judge_qs = Judge.objects.filter(judge=self.request.user)
         theme_qs = Theme.objects.filter(
-            contest__in=judge_qs.values('contest'),
+            contest__in=judge_qs.values("contest"),
             contest__publish_date__gte=timezone.now(),
         )
         return (
@@ -74,7 +73,7 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         """Return queryset for contests that can be shown to judge."""
         judge_qs = Judge.objects.filter(judge=self.request.user)
         return Contest.objects.filter(
-            pk__in=judge_qs.values('contest'),
+            pk__in=judge_qs.values("contest"),
             publish_date__gte=timezone.now(),
         )
 
@@ -83,18 +82,18 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Retrieve published results for a theme."""
 
     submission_qs = (
-        Submission.objects.annotate(rating_sum=Sum('rating__rating'))
+        Submission.objects.annotate(rating_sum=Sum("rating__rating"))
         .select_related(
-            'author',
-            'author__user',
-            'author__user__location',
-            'author__reward',
+            "author",
+            "author__user",
+            "author__user__location",
+            "author__reward",
         )
-        .prefetch_related('files', 'reward')
+        .prefetch_related("files", "reward")
     )
 
     queryset = Theme.objects.prefetch_related(
-        Prefetch('submission_set', queryset=submission_qs)
+        Prefetch("submission_set", queryset=submission_qs)
     )
     serializer_class = ThemeResultsSerializer
 
@@ -108,23 +107,23 @@ class SubmissionResultsViewSet(
 ):
     """List and retrieve accepted submissions after publication."""
 
-    author_qs = Author.objects.select_related('user', 'user__location', 'reward')
+    author_qs = Author.objects.select_related("user", "user__location", "reward")
 
     queryset = (
-        Submission.objects.annotate(rating_sum=Sum('rating__rating'))
-        .filter(rating_sum__gte=F('theme__results__accepted_threshold'))
+        Submission.objects.annotate(rating_sum=Sum("rating__rating"))
+        .filter(rating_sum__gte=F("theme__results__accepted_threshold"))
         .select_related(
-            'theme__results',
-            'author',
-            'author__user',
-            'author__user__location',
-            'author__reward',
+            "theme__results",
+            "author",
+            "author__user",
+            "author__user__location",
+            "author__reward",
         )
-        .prefetch_related('files', 'reward')
+        .prefetch_related("files", "reward")
     )
     serializer_class = SubmissionResultsSerializer
     filterset_class = SubmissionFilter
-    ordering_fields = ['rating_sum']
+    ordering_fields = ["rating_sum"]
 
     def get_queryset(self):
         """Return queryset of published themes."""

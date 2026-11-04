@@ -27,14 +27,13 @@ import os
 import struct
 import time
 
-from PIL import Image
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from PIL import Image
 
 
 class BaseModel(models.Model):
@@ -68,39 +67,39 @@ class Contest(BaseModel):
     class Meta:
         """Contest Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('contest')
-        verbose_name_plural = _('contests')
+        ordering = ["id"]
+        verbose_name = _("contest")
+        verbose_name_plural = _("contests")
 
     #: title of the contest
-    title = models.CharField(_('Title'), max_length=100)
+    title = models.CharField(_("Title"), max_length=100)
 
     #: description of the contest
-    description = models.TextField(_('Description'), null=True, blank=True)
+    description = models.TextField(_("Description"), null=True, blank=True)
 
     #: date when contest starts
-    start_date = models.DateTimeField(_('Start date'))
+    start_date = models.DateTimeField(_("Start date"))
 
     #: date when contest ends
-    end_date = models.DateTimeField(_('End date'))
+    end_date = models.DateTimeField(_("End date"))
 
     #: date when results will be published
-    publish_date = models.DateTimeField(_('Publish date'), blank=True)
+    publish_date = models.DateTimeField(_("Publish date"), blank=True)
 
     #: indicate if user must be logged-in to participate in contest
-    login_required = models.BooleanField(_('Login required'), default=False)
+    login_required = models.BooleanField(_("Login required"), default=False)
 
     #: header image of the contest
     header_image = models.ImageField(null=True, blank=True)
 
     #: notice in HTML form
-    notice_html = models.TextField(default='')
+    notice_html = models.TextField(default="")
 
     #: confirmation in HTML form
-    confirmation_html = models.TextField(default='')
+    confirmation_html = models.TextField(default="")
 
     confirmation_email = models.ForeignKey(
-        'drf_user.Email', null=True, blank=True, on_delete=models.SET_NULL
+        "drf_user.Email", null=True, blank=True, on_delete=models.SET_NULL
     )
 
     dob_required = models.BooleanField(default=False)
@@ -128,15 +127,15 @@ class Contest(BaseModel):
         """Check if contest is active."""
         return self.start_date <= timezone.now() <= self.end_date
 
-    is_active.admin_order_field = 'end_date'
+    is_active.admin_order_field = "end_date"
     is_active.boolean = True
-    is_active.short_description = _('active')
+    is_active.short_description = _("active")
 
     def number_of_photos(self):
         """Return number of photos submitted to the current contest."""
         return Submission.objects.filter(theme__contest=self).count()
 
-    number_of_photos.short_description = _('number of submissons')
+    number_of_photos.short_description = _("number of submissons")
 
 
 class Theme(BaseModel):
@@ -145,30 +144,30 @@ class Theme(BaseModel):
     class Meta:
         """Theme Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('theme')
-        verbose_name_plural = _('themes')
+        ordering = ["id"]
+        verbose_name = _("theme")
+        verbose_name_plural = _("themes")
 
     #: title of the theme
-    title = models.CharField(_('Title'), max_length=100)
+    title = models.CharField(_("Title"), max_length=100)
 
     #: contest that theme belongs to
     contest = models.ForeignKey(
-        Contest, related_name='themes', on_delete=models.CASCADE
+        Contest, related_name="themes", on_delete=models.CASCADE
     )
 
     #: indicates whether the theme is a series or not
     is_series = models.BooleanField(default=False)
 
     #: number of photos that can be submited to theme
-    n_photos = models.IntegerField(_('Number of photos'))
+    n_photos = models.IntegerField(_("Number of photos"))
 
     def save(self, *args, **kwargs):
         """Save Theme instance."""
-        if getattr(self, 'user', None) is None:
+        if getattr(self, "user", None) is None:
             self.user = self.contest.user
 
-        super(Theme, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         """Return theme's title."""
@@ -178,11 +177,11 @@ class Theme(BaseModel):
 def _generate_filename(instance, filename, prefix):
     """Generate unique filename with given prefix."""
     md5 = hashlib.md5()
-    md5.update(struct.pack('f', time.time()))
+    md5.update(struct.pack("f", time.time()))
     was_closed = instance.file.closed
     try:
         if was_closed:
-            instance.file.open('rb')
+            instance.file.open("rb")
         for chunk in instance.file.chunks():
             md5.update(chunk)
     finally:
@@ -194,12 +193,12 @@ def _generate_filename(instance, filename, prefix):
 
 def generate_file_filename(instance, filename):
     """Generate filename for uploaded photo."""
-    return _generate_filename(instance, filename, 'photos')
+    return _generate_filename(instance, filename, "photos")
 
 
 def generate_thumb_filename(instance, filename):
     """Generate filename for thumbnails of uploaded photos."""
-    return _generate_filename(instance, filename, 'thumbs')
+    return _generate_filename(instance, filename, "thumbs")
 
 
 class SubmissionSet(BaseModel):
@@ -208,24 +207,24 @@ class SubmissionSet(BaseModel):
     class Meta:
         """SubmissionSet Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('submission set')
-        verbose_name_plural = _('submission sets')
+        ordering = ["id"]
+        verbose_name = _("submission set")
+        verbose_name_plural = _("submission sets")
 
-    submissions = models.ManyToManyField('Submission')
+    submissions = models.ManyToManyField("Submission")
 
     contest = models.ForeignKey(
-        Contest, on_delete=models.CASCADE, related_name='submission_sets'
+        Contest, on_delete=models.CASCADE, related_name="submission_sets"
     )
 
-    author = models.ForeignKey('Author', on_delete=models.CASCADE)
+    author = models.ForeignKey("Author", on_delete=models.CASCADE)
 
     def __str__(self):
         """Return string representation of SubmissionSet object."""
 
         first_submission = self.submissions.first()
-        author = first_submission.author if first_submission else '/'
-        return "{} submissions by {}".format(self.submissions.count(), author)
+        author = first_submission.author if first_submission else "/"
+        return f"{self.submissions.count()} submissions by {author}"
 
 
 class Submission(BaseModel):
@@ -234,15 +233,15 @@ class Submission(BaseModel):
     class Meta:
         """Submission Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('submission')
-        verbose_name_plural = _('submissions')
+        ordering = ["id"]
+        verbose_name = _("submission")
+        verbose_name_plural = _("submissions")
 
-    title = models.CharField(_('Title'), max_length=100, null=True, blank=True)
+    title = models.CharField(_("Title"), max_length=100, null=True, blank=True)
 
     description = models.TextField(null=True, blank=True)
 
-    author = models.ForeignKey('Author', on_delete=models.CASCADE)
+    author = models.ForeignKey("Author", on_delete=models.CASCADE)
 
     theme = models.ForeignKey(Theme, on_delete=models.PROTECT)
 
@@ -255,11 +254,11 @@ def validate_image(file):
     """Validate the upload size and longest image edge."""
     max_size = settings.ROLCA_MAX_UPLOAD_SIZE
     if file.size > max_size:
-        raise ValidationError("Max size of file is {}B.".format(max_size))
+        raise ValidationError(f"Max size of file is {max_size}B.")
 
     max_res = settings.ROLCA_MAX_UPLOAD_RESOLUTION
     if max(file.image.size) > max_res:
-        raise ValidationError("Max photo resolution is {}px.".format(max_res))
+        raise ValidationError(f"Max photo resolution is {max_res}px.")
 
 
 class File(BaseModel):
@@ -275,12 +274,12 @@ class File(BaseModel):
     class Meta:
         """File Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('file')
-        verbose_name_plural = _('files')
+        ordering = ["id"]
+        verbose_name = _("file")
+        verbose_name_plural = _("files")
 
     submission = models.ForeignKey(
-        Submission, related_name='files', null=True, on_delete=models.CASCADE
+        Submission, related_name="files", null=True, on_delete=models.CASCADE
     )
 
     #: uploaded file
@@ -301,17 +300,17 @@ class File(BaseModel):
                     thumb, format="jpeg", quality=80, optimize=True, progressive=True
                 )
             self.thumbnail = InMemoryUploadedFile(
-                thumb, None, self.file.name, 'image/jpeg', thumb.tell(), None
+                thumb, None, self.file.name, "image/jpeg", thumb.tell(), None
             )
 
-        super(File, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """Delete attached images and actual object."""
         self.file.delete(save=False)
         self.thumbnail.delete(save=False)
 
-        super(File, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
     def get_long_edge(self):
         """Return longer edge of the image."""
@@ -319,11 +318,9 @@ class File(BaseModel):
 
     def __str__(self):
         """Return string representation of File object."""
-        submission_title = self.submission.title if self.submission else '?'
-        submission_id = self.submission.pk if self.submission else '?'
-        return "id: {}, filename: {}, submission id: {}, submission title: {}".format(
-            self.pk, self.file.name, submission_id, submission_title
-        )
+        submission_title = self.submission.title if self.submission else "?"
+        submission_id = self.submission.pk if self.submission else "?"
+        return f"id: {self.pk}, filename: {self.file.name}, submission id: {submission_id}, submission title: {submission_title}"
 
 
 class Institution(BaseModel):
@@ -331,7 +328,7 @@ class Institution(BaseModel):
 
     SCHOOL = 1
     KIND_CHOICES = [
-        (SCHOOL, 'School'),
+        (SCHOOL, "School"),
     ]
 
     kind = models.SmallIntegerField(choices=KIND_CHOICES)
@@ -342,7 +339,7 @@ class Institution(BaseModel):
         """Keep institution names unique within each kind."""
 
         constraints = [
-            models.UniqueConstraint(fields=['kind', 'name'], name='unique_name_kind'),
+            models.UniqueConstraint(fields=["kind", "name"], name="unique_name_kind"),
         ]
 
 
@@ -352,18 +349,18 @@ class Author(BaseModel):
     class Meta:
         """Author Meta options."""
 
-        ordering = ['id']
-        verbose_name = _('author')
-        verbose_name_plural = _('authors')
+        ordering = ["id"]
+        verbose_name = _("author")
+        verbose_name_plural = _("authors")
 
     #: ``Author``'s first name
-    first_name = models.CharField(_('First name'), max_length=30)
+    first_name = models.CharField(_("First name"), max_length=30)
 
     #: ``Author``'s last name
-    last_name = models.CharField(_('Last name'), max_length=30)
+    last_name = models.CharField(_("Last name"), max_length=30)
 
     #: ``Author``'s email
-    email = models.EmailField(_('Email'), null=True, blank=True)
+    email = models.EmailField(_("Email"), null=True, blank=True)
 
     dob = models.DateField(null=True, blank=True)
 
@@ -377,4 +374,4 @@ class Author(BaseModel):
 
     def __str__(self):
         """Return string representation of Author object."""
-        return "{} {}".format(self.first_name, self.last_name)
+        return f"{self.first_name} {self.last_name}"

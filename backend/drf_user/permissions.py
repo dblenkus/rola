@@ -1,4 +1,5 @@
 """Permissions classes."""
+
 from rest_framework import permissions
 
 

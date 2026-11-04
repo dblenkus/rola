@@ -15,23 +15,23 @@ class TokenAuthentication(authentication.TokenAuthentication):
     def authenticate_credentials(self, key):
         """Attempt token authentication using the provided key."""
         try:
-            token = self.model.objects.select_related('user').get(key=key)
+            token = self.model.objects.select_related("user").get(key=key)
         except self.model.DoesNotExist:
-            message = 'Invalid token'
-            logger.debug('Authentication failed: %s', message)
+            message = "Invalid token"
+            logger.debug("Authentication failed: %s", message)
             raise exceptions.AuthenticationFailed(message)
 
         if not token.user.is_active:
-            message = 'User inactive or deleted'
+            message = "User inactive or deleted"
             logger.debug(
-                'Authentication failed: %s', message, extra={'user': token.user}
+                "Authentication failed: %s", message, extra={"user": token.user}
             )
             raise exceptions.AuthenticationFailed(message)
 
         if token.is_expired:
-            message = 'Token has expired'
+            message = "Token has expired"
             logger.debug(
-                'Authentication failed: %s', message, extra={'user': token.user}
+                "Authentication failed: %s", message, extra={"user": token.user}
             )
             raise exceptions.AuthenticationFailed(message)
 

@@ -6,4 +6,4 @@ Rolca payment
 
 """
 
-default_app_config = 'rolca.payment.apps.RolcaPaymentConfig'
+default_app_config = "rolca.payment.apps.RolcaPaymentConfig"

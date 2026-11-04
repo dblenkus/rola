@@ -6,4 +6,4 @@ Rolca rating
 
 """
 
-default_app_config = 'rolca.rating.apps.RolcaRatingConfig'
+default_app_config = "rolca.rating.apps.RolcaRatingConfig"

@@ -22,18 +22,18 @@ class Judge(BaseModel):
     """Model for assigning judges to contests."""
 
     contest = models.ForeignKey(
-        Contest, on_delete=models.CASCADE, related_name='judges'
+        Contest, on_delete=models.CASCADE, related_name="judges"
     )
 
     judge = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+'
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
     )
 
 
 class Rating(BaseModel):
     """Model for rating submissions."""
 
-    judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name='ratings')
+    judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name="ratings")
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
 
@@ -44,7 +44,7 @@ class ThemeResults(BaseModel):
     """Model for theme results."""
 
     theme = models.OneToOneField(
-        Theme, on_delete=models.CASCADE, related_name='results'
+        Theme, on_delete=models.CASCADE, related_name="results"
     )
 
     accepted_threshold = models.SmallIntegerField()
@@ -58,14 +58,14 @@ class SubmissionReward(BaseModel):
     BRONZE = 3
     HONORABLE_MENTION = 4
     KIND_CHOICES = [
-        (GOLD, 'Gold'),
-        (SILVER, 'Silver'),
-        (BRONZE, 'Bronze'),
-        (HONORABLE_MENTION, 'Honorable Mention'),
+        (GOLD, "Gold"),
+        (SILVER, "Silver"),
+        (BRONZE, "Bronze"),
+        (HONORABLE_MENTION, "Honorable Mention"),
     ]
 
     submission = models.OneToOneField(
-        Submission, on_delete=models.CASCADE, related_name='reward'
+        Submission, on_delete=models.CASCADE, related_name="reward"
     )
 
     kind = models.SmallIntegerField(choices=KIND_CHOICES)
@@ -77,11 +77,11 @@ class AuthorReward(BaseModel):
     """Model for submission rewards."""
 
     author = models.OneToOneField(
-        Author, on_delete=models.CASCADE, related_name='reward'
+        Author, on_delete=models.CASCADE, related_name="reward"
     )
 
     theme = models.ForeignKey(
-        Theme, on_delete=models.CASCADE, related_name='author_reward'
+        Theme, on_delete=models.CASCADE, related_name="author_reward"
     )
 
     label = models.CharField(max_length=100)
