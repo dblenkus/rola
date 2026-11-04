@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from rola.environment import boolean, comma_separated
+from rola.environment import absolute_url, boolean, comma_separated
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = boolean("ROLA_DEBUG")
@@ -179,3 +179,4 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10_485_760
 ROLCA_MAX_UPLOAD_SIZE = 5_242_880
 ROLCA_MAX_UPLOAD_RESOLUTION = 3500
 DRF_USER_APP_NAME = os.environ.get("ROLA_APP_NAME", "Rola")
+ROLA_FRONTEND_URL = absolute_url("ROLA_FRONTEND_URL")

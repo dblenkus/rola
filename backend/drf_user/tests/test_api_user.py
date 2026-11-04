@@ -1,6 +1,7 @@
 import re
 import time
 from unittest.mock import Mock, patch
+from urllib.parse import unquote
 
 from django.core import mail
 from django.db.models import F
@@ -39,6 +40,10 @@ class UserManagementTest(APITestCase):
             "last_name": "Novak",
             "email": "janez@example.com",
             "password": "p4ssWord123",
+            "address": "Test Street 1",
+            "city": "Ljubljana",
+            "postal_code": "1000",
+            "country": "SI",
         }
 
         cls.list_url = reverse("user-list")
@@ -59,7 +64,19 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.data["count"], 1)
 
         result = response.data["results"][0]
-        self.assertCountEqual(result.keys(), ["id", "first_name", "last_name", "email"])
+        self.assertCountEqual(
+            result.keys(),
+            [
+                "id",
+                "first_name",
+                "last_name",
+                "email",
+                "address",
+                "city",
+                "postal_code",
+                "country",
+            ],
+        )
         self.assertEqual(result["id"], str(self.user.id))
         self.assertEqual(result["email"], self.user.email)
         self.assertEqual(result["first_name"], self.user.first_name)
@@ -114,7 +131,8 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.data["id"], str(self.admin.id))
 
     def test_create_user(self):
-        response = self.client.post(self.list_url, self.post_data, format="json")
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.list_url, self.post_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         user = User.objects.get(id=response.data["id"])
@@ -126,8 +144,8 @@ class UserManagementTest(APITestCase):
         match = re.search(
             r"(?P<url>https?://.*\?token=(?P<token>.*))$", mail.outbox[0].body
         )
-        token = match.group("token")
-        self.assertIn(self.activate_account_url, match.group("url"))
+        token = unquote(match.group("token"))
+        self.assertIn("/register/activate?", match.group("url"))
 
         response = self.client.post(
             self.activate_account_url, {"token": token}, format="json"
@@ -300,11 +318,12 @@ class ResetPasswordTest(APITestCase):
     def test_reset_password(self):
         new_password = "n3wp4ss!"
 
-        response = self.client.post(
-            self.request_reset_password_url,
-            {"email": self.USER_EMAIL},
-            format="json",
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.request_reset_password_url,
+                {"email": self.USER_EMAIL},
+                format="json",
+            )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(len(mail.outbox), 1)
@@ -312,8 +331,8 @@ class ResetPasswordTest(APITestCase):
         match = re.search(
             r"(?P<url>https?://.*\?token=(?P<token>.*))$", mail.outbox[0].body
         )
-        token = match.group("token")
-        self.assertIn(self.reset_password_url, match.group("url"))
+        token = unquote(match.group("token"))
+        self.assertIn("/password-reset?", match.group("url"))
 
         response = self.client.post(
             self.reset_password_url,

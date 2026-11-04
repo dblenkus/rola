@@ -3,6 +3,7 @@
 import os
 
 os.environ.setdefault("ROLA_SECRET_KEY", "test-only-secret-key-never-use-in-production")
+os.environ.setdefault("ROLA_FRONTEND_URL", "https://photos.example.org")
 
 from rola.environment import boolean  # noqa: E402
 from rola.settings import *  # noqa: E402,F403

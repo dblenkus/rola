@@ -26,9 +26,12 @@ class UserManager(BaseUserManager):
 
     def _create_user(self, email, password, **extra_fields):
         """Create and save a user with the given email, and password."""
+        if not email:
+            raise ValueError("An email address is required.")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        validate_password(password, user)
+        if password is not None:
+            validate_password(password, user)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -135,15 +138,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     def clean(self):
         """Clean the model."""
         super().clean()
-        self.email = self.objects.normalize_email(self.email)
+        self.email = type(self).objects.normalize_email(self.email)
 
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""
-        return f"{self.first_name} {self.last_name}".strip()
+        return " ".join(filter(None, (self.first_name, self.last_name)))
 
     def get_short_name(self):
         """Return the short name for the user."""
-        return self.first_name.strip()
+        return (self.first_name or "").strip()
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""

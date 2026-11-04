@@ -12,8 +12,11 @@ from django.test import Client
 import rola.settings
 from rola.environment import boolean
 
-SES_ENVIRONMENT = {
+REQUIRED_ENVIRONMENT = {
     "ROLA_SECRET_KEY": "test-only-secret-key",
+    "ROLA_FRONTEND_URL": "https://photos.example.org",
+}
+SES_ENVIRONMENT = REQUIRED_ENVIRONMENT | {
     "ROLA_USE_SES": "true",
     "ROLA_SES_ACCESS_KEY_ID": "test-access-key-id",
     "ROLA_SES_SECRET_ACCESS_KEY": "test-secret-access-key",
@@ -32,6 +35,38 @@ def load_settings(monkeypatch):
         return runpy.run_path(rola.settings.__file__)
 
     return load
+
+
+def test_account_email_links_require_the_frontend_url(load_settings):
+    with pytest.raises(KeyError, match="ROLA_FRONTEND_URL"):
+        load_settings({"ROLA_SECRET_KEY": "test-only-secret-key"})
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "photos.example.org",
+        "/password-reset",
+        "https://",
+        "ftp://example.org",
+        "https://photos.example.org/?lang=sl",
+        "https://photos.example.org#top",
+        "https://user@photos.example.org",
+        "https://photos.example.org ",
+        " https://photos.example.org",
+    ],
+)
+def test_account_email_links_require_an_absolute_frontend_url(load_settings, value):
+    with pytest.raises(ValueError, match="ROLA_FRONTEND_URL"):
+        load_settings(REQUIRED_ENVIRONMENT | {"ROLA_FRONTEND_URL": value})
+
+
+def test_account_email_links_accept_a_plain_http_frontend(load_settings):
+    loaded = load_settings(
+        REQUIRED_ENVIRONMENT | {"ROLA_FRONTEND_URL": "http://localhost:8080"}
+    )
+    assert loaded["ROLA_FRONTEND_URL"] == "http://localhost:8080"
 
 
 def test_ses_requires_a_sender_address(load_settings):
@@ -58,7 +93,7 @@ def test_ses_sends_from_the_configured_sender_over_ssl(load_settings):
 
 def test_settings_reject_an_empty_boolean(load_settings):
     with pytest.raises(ValueError, match="ROLA_DEBUG"):
-        load_settings({"ROLA_SECRET_KEY": "test-only-secret-key", "ROLA_DEBUG": ""})
+        load_settings(REQUIRED_ENVIRONMENT | {"ROLA_DEBUG": ""})
 
 
 @pytest.mark.parametrize(

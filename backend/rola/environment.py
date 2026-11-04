@@ -1,6 +1,31 @@
 """Read typed application environment variables."""
 
 import os
+from urllib.parse import urlsplit
+
+
+def absolute_url(name: str) -> str:
+    """Read a required absolute http or https URL that paths can be appended to.
+
+    :raises KeyError: If the variable is unset.
+    :raises ValueError: If the value is not an absolute http or https URL, or
+        has surrounding whitespace, credentials, a query or a fragment.
+    """
+    value = os.environ[name]
+    url = urlsplit(value)
+    if (
+        url.scheme not in {"http", "https"}
+        or not url.hostname
+        or value != value.strip()
+        or "@" in url.netloc
+        or "?" in value
+        or "#" in value
+    ):
+        raise ValueError(
+            f"{name} must be an absolute http or https URL without "
+            "credentials, a query or a fragment."
+        )
+    return value
 
 
 def boolean(name: str) -> bool:
