@@ -80,7 +80,9 @@ def validate_activation_token(token):
             salt=USER_ACTIVATION_SALT,
             max_age=drf_user_settings.ACTIVATION_TOKEN_EXPIRES_SECONDS.total_seconds(),
         )
-        user = User.objects.get(email=email, is_active=False)
+        user = User.objects.get(
+            email__iexact=User.objects.normalize_email(email), is_active=False
+        )
     except signing.BadSignature, User.DoesNotExist:
         raise exceptions.ValidationError("Bad token.") from None
 
@@ -96,7 +98,7 @@ def validate_reset_token(token):
             max_age=drf_user_settings.RESET_TOKEN_EXPIRES_SECONDS.total_seconds(),
         )
         user = User.objects.get(
-            email=data["email"],
+            email__iexact=User.objects.normalize_email(data["email"]),
             password_reset_counter=data["counter"],
         )
     except signing.BadSignature, User.DoesNotExist:
