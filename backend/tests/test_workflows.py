@@ -1,8 +1,10 @@
 """Regression tests for public APIs using the host's custom user contract."""
 
 import io
+import logging
 import zipfile
 from datetime import timedelta
+from smtplib import SMTPException
 from unittest.mock import patch
 
 import pytest
@@ -24,11 +26,11 @@ from rolca.payment.models import Payment
 from rolca.rating.models import Judge, Rating, SubmissionReward, ThemeResults
 from tests.factories import payload, photo, submitted
 
-pytestmark = [pytest.mark.django_db, pytest.mark.urls("tests.urls")]
+pytestmark = pytest.mark.django_db
 
 
 def test_author_list_is_scoped_to_requesting_user(world):
-    response = world.client.get("/api/author/")
+    response = world.client.get("/api/v1/author")
     assert response.status_code == 200
     assert [item["id"] for item in response.data["results"]] == [world.author.pk]
 
@@ -45,7 +47,7 @@ def test_submission_creates_set_and_sends_one_confirmation_after_commit(
     if batch:
         data = [data, payload(world)]
     with django_capture_on_commit_callbacks(execute=True):
-        response = world.client.post("/api/submission/", data, format="json")
+        response = world.client.post("/api/v1/submission", data, format="json")
         assert not mailoutbox
     assert response.status_code == 201, response.data
     assert isinstance(response.data, list) == batch
@@ -56,6 +58,43 @@ def test_submission_creates_set_and_sends_one_confirmation_after_commit(
     assert group.submissions.count() == (2 if batch else 1)
     assert len(mailoutbox) == 1
     assert mailoutbox[0].to == [world.owner.email]
+
+
+def test_rejected_submission_sends_no_confirmation(
+    world, mailoutbox, django_capture_on_commit_callbacks
+):
+    world.contest.confirmation_email = Email.objects.create(
+        subject="Thank you", body="Submitted"
+    )
+    world.contest.save()
+    with django_capture_on_commit_callbacks(execute=True) as callbacks:
+        response = world.client.post(
+            "/api/v1/submission", payload(world, files=[{"id": 999999}]), format="json"
+        )
+    assert response.status_code == 400, response.data
+    assert not callbacks
+    assert not mailoutbox
+    assert not Submission.objects.exists()
+
+
+def test_confirmation_failure_keeps_the_committed_submission(
+    world, caplog, django_capture_on_commit_callbacks
+):
+    world.contest.confirmation_email = Email.objects.create(
+        subject="Thank you", body="Submitted"
+    )
+    world.contest.save()
+    with (
+        patch("drf_user.models.send_mail", side_effect=SMTPException("unavailable")),
+        django_capture_on_commit_callbacks(execute=True) as callbacks,
+    ):
+        response = world.client.post(
+            "/api/v1/submission", payload(world), format="json"
+        )
+    assert response.status_code == 201, response.data
+    assert len(callbacks) == 1
+    assert SubmissionSet.objects.get().submissions.count() == 1
+    assert [record.levelno for record in caplog.records] == [logging.ERROR]
 
 
 @pytest.mark.parametrize(
@@ -104,7 +143,7 @@ def test_invalid_submission_leaves_no_partial_records(world, case):
     elif case == "reused_batch_file":
         data = [data, dict(data)]
     before = Submission.objects.count()
-    response = world.client.post("/api/submission/", data, format="json")
+    response = world.client.post("/api/v1/submission", data, format="json")
     assert response.status_code == 400, response.data
     assert Submission.objects.count() == before
     assert SubmissionSet.objects.count() == 0
@@ -122,7 +161,7 @@ def test_submission_database_failure_rolls_back_files_and_records(
         ),
         pytest.raises(RuntimeError, match="database failure"),
     ):
-        world.client.post("/api/submission/", data, format="json")
+        world.client.post("/api/v1/submission", data, format="json")
     assert not callbacks
     assert not Submission.objects.exists()
     assert File.objects.get(pk=data["files"][0]["id"]).submission_id is None
@@ -134,7 +173,7 @@ def test_published_foreign_submission_cannot_be_modified(world, method):
     world.contest.save()
     item = submitted(world, user=world.other, author=world.other_author)
     response = getattr(world.client, method)(
-        f"/api/submission/{item.pk}/", {"title": "Changed"}, format="json"
+        f"/api/v1/submission/{item.pk}", {"title": "Changed"}, format="json"
     )
     assert response.status_code == 403
     item.refresh_from_db()
@@ -149,7 +188,7 @@ def test_owner_can_patch_submission_and_replace_own_files(world):
     old.save()
     new = photo(world.owner)
     response = world.client.patch(
-        f"/api/submission/{item.pk}/",
+        f"/api/v1/submission/{item.pk}",
         {"title": "Edited", "files": [{"id": new.pk}]},
         format="json",
     )
@@ -163,11 +202,11 @@ def test_owner_can_patch_submission_and_replace_own_files(world):
 
 
 def test_submission_cannot_change_contest_or_author_after_grouping(world):
-    response = world.client.post("/api/submission/", payload(world), format="json")
+    response = world.client.post("/api/v1/submission", payload(world), format="json")
     assert response.status_code == 201
     author = Author.objects.create(user=world.owner, first_name="Another")
     response = world.client.patch(
-        f"/api/submission/{response.data['id']}/",
+        f"/api/v1/submission/{response.data['id']}",
         {"author": {"id": author.pk}},
         format="json",
     )
@@ -180,7 +219,7 @@ def test_owner_cannot_change_published_submission(world):
     world.contest.save()
     assert (
         world.client.patch(
-            f"/api/submission/{item.pk}/", {"title": "Late"}, format="json"
+            f"/api/v1/submission/{item.pk}", {"title": "Late"}, format="json"
         ).status_code
         == 403
     )
@@ -192,11 +231,11 @@ def test_contest_and_institution_filters_are_applied(world):
         start_date=timezone.now() - timedelta(days=4),
         end_date=timezone.now() - timedelta(days=2),
     )
-    response = world.client.get("/api/contest/", {"is_active": "true"})
+    response = world.client.get("/api/v1/contest", {"is_active": "true"})
     assert [item["id"] for item in response.data["results"]] == [world.contest.pk]
     desired = Institution.objects.create(kind=1, name="School")
     Institution.objects.create(kind=1, name="Elsewhere")
-    response = world.client.get("/api/institution/", {"name": "School"})
+    response = world.client.get("/api/v1/institution", {"name": "School"})
     assert [item["id"] for item in response.data["results"]] == [desired.pk]
 
 
@@ -206,14 +245,14 @@ def test_submission_and_set_filters_are_applied(world):
         user=world.owner, author=world.author, contest=world.contest
     )
     group.submissions.add(item)
-    response = world.client.get("/api/submission/", {"contest": 999999})
+    response = world.client.get("/api/v1/submission", {"contest": 999999})
     assert response.data["results"] == []
     other_contest = Contest.objects.create(
         title="Empty",
         start_date=world.contest.start_date,
         end_date=world.contest.end_date,
     )
-    response = world.client.get("/api/submissionset/", {"contest": other_contest.pk})
+    response = world.client.get("/api/v1/submissionset", {"contest": other_contest.pk})
     assert response.data["results"] == []
 
 
@@ -240,14 +279,14 @@ def test_payment_permissions_upsert_and_filter(world):
         user=world.owner, author=world.author, contest=world.contest
     )
     data = {"submissionset": group.pk, "paid": True}
-    assert world.client.post("/api/payment/", data, format="json").status_code == 403
+    assert world.client.post("/api/v1/payment", data, format="json").status_code == 403
     world.client.force_authenticate(world.admin)
-    assert world.client.post("/api/payment/", data, format="json").status_code == 201
+    assert world.client.post("/api/v1/payment", data, format="json").status_code == 201
     data["paid"] = False
-    assert world.client.post("/api/payment/", data, format="json").status_code == 201
+    assert world.client.post("/api/v1/payment", data, format="json").status_code == 201
     assert Payment.objects.count() == 1
     assert not Payment.objects.get().paid
-    assert world.client.get("/api/payment/", {"paid": "true"}).data["results"] == []
+    assert world.client.get("/api/v1/payment", {"paid": "true"}).data["results"] == []
 
 
 def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
@@ -259,32 +298,32 @@ def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
     group.submissions.add(item)
     Payment.objects.create(submissionset=group, paid=True)
     unpaid = submitted(world)
-    response = world.client.get("/api/judge/submission/")
+    response = world.client.get("/api/v1/judge/submission")
     assert response.status_code == 200, response.data
     assert [row["id"] for row in response.data["results"]] == [item.pk]
     other_theme = Theme.objects.create(contest=world.contest, title="Empty", n_photos=4)
-    response = world.client.get("/api/judge/submission/", {"theme": other_theme.pk})
+    response = world.client.get("/api/v1/judge/submission", {"theme": other_theme.pk})
     assert response.data["results"] == []
     for value in [3, 5]:
         response = world.client.post(
-            "/api/rating/", {"submission": item.pk, "rating": value}, format="json"
+            "/api/v1/rating", {"submission": item.pk, "rating": value}, format="json"
         )
         assert response.status_code == 201, response.data
     assert Rating.objects.get(judge=judge, submission=item).rating == 5
-    response = world.client.get("/api/rating/", {"submission": unpaid.pk})
+    response = world.client.get("/api/v1/rating", {"submission": unpaid.pk})
     assert response.data["results"] == []
 
 
 def test_anonymous_judge_endpoint_denies_without_server_error(world):
-    response = APIClient().get("/api/judge/submission/")
-    assert response.status_code in (401, 403)
+    response = APIClient().get("/api/v1/judge/submission")
+    assert response.status_code == 401
 
 
 def test_rating_updates_cannot_move_rating_to_another_contest(world):
     Judge.objects.create(judge=world.owner, contest=world.contest)
     item = submitted(world)
     response = world.client.post(
-        "/api/rating/", {"submission": item.pk, "rating": 3}, format="json"
+        "/api/v1/rating", {"submission": item.pk, "rating": 3}, format="json"
     )
     assert response.status_code == 201
     contest = Contest.objects.create(
@@ -295,7 +334,7 @@ def test_rating_updates_cannot_move_rating_to_another_contest(world):
     theme = Theme.objects.create(contest=contest, title="Other", n_photos=4)
     other = submitted(world, theme=theme)
     response = world.client.patch(
-        f"/api/rating/{response.data['id']}/", {"submission": other.pk}, format="json"
+        f"/api/v1/rating/{response.data['id']}", {"submission": other.pk}, format="json"
     )
     assert response.status_code == 400
 
@@ -307,10 +346,10 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
     SubmissionReward.objects.create(submission=item, kind=1, label="Gold")
     public = APIClient()
-    assert public.get("/api/results/submission/").data["results"] == []
+    assert public.get("/api/v1/results/submission").data["results"] == []
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
-    response = public.get("/api/results/submission/")
+    response = public.get("/api/v1/results/submission")
     assert response.status_code == 200, response.data
     result = response.data["results"][0]
     assert result["accepted"] is True
@@ -329,7 +368,7 @@ def test_published_scores_are_immutable(world, method):
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
     response = getattr(world.client, method)(
-        f"/api/rating/{rating.pk}/", {"rating": 1}, format="json"
+        f"/api/v1/rating/{rating.pk}", {"rating": 1}, format="json"
     )
     assert response.status_code == 403
     rating.refresh_from_db()
