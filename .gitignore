@@ -13,6 +13,11 @@ sftp-config.json
 # Python virtual environment.
 /.venv/
 
+# Python packaging output.
+*.egg-info/
+build/
+dist/
+
 # Test files.
 .pytest_cache/
 
@@ -20,13 +25,6 @@ sftp-config.json
 *.py[cod]
 *.so
 *.dll
-
-# Tox files
-.tox/
-
-# ignore Coverage.py files
-.coverage
-htmlcov/
 
 # Media and static directories.
 /media/

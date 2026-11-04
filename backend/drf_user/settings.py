@@ -8,7 +8,7 @@ class DrfUserSettings(object):
     """Provides settings as defaults."""
 
     @property
-    def TOKEN_EXPIRES_SECONDS(self):
+    def TOKEN_EXPIRES_SECONDS(self) -> timedelta:
         """Return the allowed lifespan of a authentication token as timedelta.
 
         Defaults to 48 hours.
@@ -18,7 +18,7 @@ class DrfUserSettings(object):
         return timedelta(seconds=seconds)
 
     @property
-    def RESET_TOKEN_EXPIRES_SECONDS(self):
+    def RESET_TOKEN_EXPIRES_SECONDS(self) -> timedelta:
         """Return the allowed lifespan of a password reset token as timedelta.
 
         Defaults to 24 hours.
@@ -28,7 +28,7 @@ class DrfUserSettings(object):
         return timedelta(seconds=seconds)
 
     @property
-    def ACTIVATION_TOKEN_EXPIRES_SECONDS(self):
+    def ACTIVATION_TOKEN_EXPIRES_SECONDS(self) -> timedelta:
         """Return the allowed lifespan of a password reset token as timedelta.
 
         Defaults to 7 days.
@@ -40,9 +40,9 @@ class DrfUserSettings(object):
         return timedelta(seconds=seconds)
 
     @property
-    def APP_NAME(self):
+    def APP_NAME(self) -> str:
         """Return name of the app."""
-        return getattr(settings, 'DRF_USER_APP_NAME', "DRF User")
+        return str(getattr(settings, 'DRF_USER_APP_NAME', "DRF User"))
 
 
 drf_user_settings = DrfUserSettings()

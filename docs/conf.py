@@ -2,6 +2,7 @@
 
 import os
 import sys
+from importlib.metadata import version as package_version
 from pathlib import Path
 
 import django
@@ -10,13 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
 django.setup()
 
-from rolca import __about__ as about
-
-project = about.__title__
-version = about.__version__
-release = version
-author = about.__author__
-copyright = about.__copyright__
+project = 'Rola'
+release = package_version('rola')
+version = release
+author = 'Domen Blenkuš'
+copyright = 'Domen Blenkuš'
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.viewcode']
 source_suffix = {'.rst': 'restructuredtext'}
 master_doc = 'index'
