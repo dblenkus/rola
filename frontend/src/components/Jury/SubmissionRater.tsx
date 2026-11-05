@@ -82,6 +82,7 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
           >
             {files.slice(0, 3).map((file) => (
               <Box
+                key={file.id}
                 component="img"
                 sx={sx.image}
                 src={file.file}
@@ -98,6 +99,7 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
           >
             {files.slice(3, 6).map((file) => (
               <Box
+                key={file.id}
                 component="img"
                 sx={sx.image}
                 src={file.file}
