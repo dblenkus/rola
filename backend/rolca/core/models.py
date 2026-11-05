@@ -23,17 +23,23 @@ Core models
 
 import hashlib
 import io
+import logging
 import os
 import struct
 import time
+from functools import partial
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import models
+from django.db import models, transaction
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(models.Model):
@@ -305,13 +311,6 @@ class File(BaseModel):
 
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        """Delete attached images and actual object."""
-        self.file.delete(save=False)
-        self.thumbnail.delete(save=False)
-
-        super().delete(*args, **kwargs)
-
     def get_long_edge(self):
         """Return longer edge of the image."""
         return max(self.file.width, self.file.height)
@@ -321,6 +320,35 @@ class File(BaseModel):
         submission_title = self.submission.title if self.submission else "?"
         submission_id = self.submission.pk if self.submission else "?"
         return f"id: {self.pk}, filename: {self.file.name}, submission id: {submission_id}, submission title: {submission_title}"
+
+
+def _delete_unreferenced_images(images):
+    """Delete each stored image that no remaining file references.
+
+    A storage error on one image does not stop the others. Once the delete
+    has committed, no row names the image any more, so the log holds the
+    only record of what is left in storage.
+    """
+    for image in images:
+        referenced = models.Q(file=image.name) | models.Q(thumbnail=image.name)
+        if File.objects.filter(referenced).exists():
+            continue
+        try:
+            image.storage.delete(image.name)
+        except Exception:
+            logger.exception("Unable to delete stored image %s.", image.name)
+
+
+@receiver(post_delete, sender=File)
+def delete_stored_images(sender, instance, **kwargs):
+    """Delete a removed file's photograph and thumbnail once the delete commits.
+
+    Deleting a submission or a submission set removes its files by cascade,
+    which calls no model ``delete`` method, so the cleanup listens for the
+    signal. A rolled-back delete keeps the images.
+    """
+    images = [image for image in (instance.file, instance.thumbnail) if image.name]
+    transaction.on_commit(partial(_delete_unreferenced_images, images), robust=True)
 
 
 class Institution(BaseModel):

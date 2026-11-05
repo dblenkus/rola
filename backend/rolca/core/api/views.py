@@ -16,7 +16,7 @@ import logging
 from functools import partial
 
 from django.db import transaction
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
 from rest_framework import exceptions, mixins, permissions, status, viewsets
 from rest_framework.response import Response
@@ -84,6 +84,33 @@ class AuthorViewSet(viewsets.ModelViewSet):
             return queryset
 
         return queryset.filter(user=self.request.user)
+
+    def perform_update(self, serializer):
+        """Refuse to change an author with entries in a closed contest."""
+        self._refuse_closed_entries(serializer.instance)
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        """Refuse to delete an author with entries in a closed contest."""
+        self._refuse_closed_entries(instance)
+        super().perform_destroy(instance)
+
+    def _refuse_closed_entries(self, author):
+        """Keep the entries that judging and results show unchanged.
+
+        Deleting an author deletes its submissions and their photographs,
+        and the results show the author's name.
+        """
+        now = timezone.now()
+        # Publishing the results closes the entries before the end date.
+        closed = author.submission_set.filter(
+            Q(theme__contest__end_date__lt=now)
+            | Q(theme__contest__publish_date__lte=now)
+        )
+        if closed.exists():
+            raise exceptions.PermissionDenied(
+                "Entries in a closed contest can no longer be changed."
+            )
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):

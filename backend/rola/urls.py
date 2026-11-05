@@ -7,10 +7,11 @@ from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 from drf_user import views as user_views
+from rola.views import UserViewSet
 from rolca.urls import route_lists
 
 router = SimpleRouter(trailing_slash=False)
-router.register("user", user_views.UserViewSet, basename="user")
+router.register("user", UserViewSet, basename="user")
 
 for route_list in route_lists:
     for prefix, viewset in route_list:
