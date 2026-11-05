@@ -47,11 +47,6 @@ def test_counts_and_acceptance_are_typed(components):
         ("Author", "email", {"type": "string", "nullable": True, "readOnly": True}),
         (
             "AuthorResults",
-            "email",
-            {"type": "string", "nullable": True, "readOnly": True},
-        ),
-        (
-            "AuthorResults",
             "country",
             {"type": "string", "nullable": True, "readOnly": True},
         ),
@@ -96,6 +91,19 @@ def test_optional_result_fields_are_nullable(components, component, field, expec
     schema = dict(components[component]["properties"][field])
     schema.pop("description", None)
     assert schema == expected
+
+
+def test_result_authors_have_only_public_fields(components):
+    assert set(components["AuthorResults"]["properties"]) == {
+        "id",
+        "first_name",
+        "last_name",
+        "school",
+        "club",
+        "country",
+        "reward",
+        "reward_theme",
+    }
 
 
 def test_theme_results_list_submission_results(components):

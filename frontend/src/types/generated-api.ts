@@ -508,23 +508,13 @@ export interface components {
             club?: string | null;
             distinction?: string | null;
         };
-        /** @description Serializer for Theme objects. */
+        /** @description Serialize the author details that published results show to anyone. */
         AuthorResults: {
             readonly id: number;
-            /** Format: date-time */
-            readonly created: string;
-            /** Format: date-time */
-            readonly modified: string;
             first_name: string;
             last_name: string;
-            /** @description Return author's email for superusers, ``None`` field otherwise. */
-            readonly email: string | null;
-            /** Format: date */
-            dob?: string | null;
             school?: string | null;
-            mentor?: string | null;
             club?: string | null;
-            distinction?: string | null;
             readonly reward: string | null;
             readonly reward_theme: number | null;
             /** @description Return the optional country supplied by the host user model. */

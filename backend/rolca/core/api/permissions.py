@@ -17,7 +17,7 @@ class IsSubmissionOwnerOrReadOnly(permissions.BasePermission):
     """Allow writes only by the owner before publication."""
 
     def has_object_permission(self, request, view, obj):
-        """Separate visibility of published submissions from write access."""
+        """Allow reads, and writes by the owner before publication."""
         if request.method in permissions.SAFE_METHODS:
             return True
         return (

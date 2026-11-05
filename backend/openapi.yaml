@@ -1600,18 +1600,10 @@ components:
       - last_name
     AuthorResults:
       type: object
-      description: Serializer for Theme objects.
+      description: Serialize the author details that published results show to anyone.
       properties:
         id:
           type: integer
-          readOnly: true
-        created:
-          type: string
-          format: date-time
-          readOnly: true
-        modified:
-          type: string
-          format: date-time
           readOnly: true
         first_name:
           type: string
@@ -1619,28 +1611,11 @@ components:
         last_name:
           type: string
           maxLength: 30
-        email:
-          type: string
-          nullable: true
-          description: Return author's email for superusers, ``None`` field otherwise.
-          readOnly: true
-        dob:
-          type: string
-          format: date
-          nullable: true
         school:
           type: string
           nullable: true
           maxLength: 100
-        mentor:
-          type: string
-          nullable: true
-          maxLength: 100
         club:
-          type: string
-          nullable: true
-          maxLength: 100
-        distinction:
           type: string
           nullable: true
           maxLength: 100
@@ -1659,12 +1634,9 @@ components:
           readOnly: true
       required:
       - country
-      - created
-      - email
       - first_name
       - id
       - last_name
-      - modified
       - reward
       - reward_theme
     ChangePasswordRequest:

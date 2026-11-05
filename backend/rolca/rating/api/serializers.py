@@ -13,11 +13,11 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import exceptions, serializers
 
-from rolca.core.api.serializers import AuthorSerializer as CoreAuthorSerializer
 from rolca.core.api.serializers import BaseSerializer, FileSerializer
 from rolca.core.api.serializers import ContestSerializer as CoreContestSerializer
 from rolca.core.api.serializers import SubmissionSerializer as CoreSubmissionSerializer
 from rolca.core.api.serializers import ThemeSerializer as CoreThemeSerializer
+from rolca.core.models import Author
 from rolca.rating.models import Judge, Rating, SubmissionReward
 
 
@@ -101,8 +101,8 @@ class JudgeContestSerializer(CoreContestSerializer):
     themes = JudgeThemeSerializer(many=True, read_only=True)
 
 
-class AuthorResultsSerializer(CoreAuthorSerializer):
-    """Serializer for Theme objects."""
+class AuthorResultsSerializer(serializers.ModelSerializer):
+    """Serialize the author details that published results show to anyone."""
 
     reward = serializers.CharField(
         source="reward.label", read_only=True, allow_null=True
@@ -112,10 +112,16 @@ class AuthorResultsSerializer(CoreAuthorSerializer):
     )
     country = serializers.SerializerMethodField("get_country")
 
-    class Meta(CoreAuthorSerializer.Meta):
+    class Meta:
         """Serializer configuration."""
 
-        fields = CoreAuthorSerializer.Meta.fields + [
+        model = Author
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "school",
+            "club",
             "reward",
             "reward_theme",
             "country",

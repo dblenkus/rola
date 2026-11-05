@@ -16,7 +16,7 @@ import logging
 from functools import partial
 
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Prefetch
 from django.utils import timezone
 from rest_framework import exceptions, mixins, permissions, status, viewsets
 from rest_framework.response import Response
@@ -95,17 +95,13 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     filterset_class = SubmissionFilter
 
     def get_queryset(self):
-        """Return queryset for submissions that can be shown to user.
+        """Return the requester's own submissions.
 
-        Return:
-        * all submissions for already finished contests
-        * user's submissions
-
+        Published submissions of other accounts are available only through
+        the results endpoints, which show public author details and only the
+        photographs of accepted submissions.
         """
-        queryset = Submission.objects.filter(
-            Q(user=self.request.user)
-            | Q(theme__contest__publish_date__lte=timezone.now())
-        )
+        queryset = Submission.objects.filter(user=self.request.user)
         if self.action in ("list", "retrieve"):
             return with_submission_details(queryset)
         return queryset

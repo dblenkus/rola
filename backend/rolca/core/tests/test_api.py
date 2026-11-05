@@ -230,7 +230,7 @@ class SubmissionViewSetTest(APITestCase):
         self.contest.publish_date = timezone.now() - timedelta(days=1)
         self.contest.save()
 
-        self.assertEqual(len(viewset.get_queryset()), 3)
+        self.assertEqual(len(viewset.get_queryset()), 2)
 
 
 @override_settings(ROLCA_MAX_UPLOAD_SIZE=1024**2)

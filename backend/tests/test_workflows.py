@@ -183,7 +183,7 @@ def test_published_foreign_submission_cannot_be_modified(world, method):
     response = getattr(world.client, method)(
         f"/api/v1/submission/{item.pk}", {"title": "Changed"}, format="json"
     )
-    assert response.status_code == 403
+    assert response.status_code == 404
     item.refresh_from_db()
     assert item.title == "Original"
     assert item.user == world.other
@@ -399,7 +399,6 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     result = response.data["results"][0]
     assert result["accepted"] is True
     assert result["author"]["country"] is None
-    assert result["author"]["email"] is None
     assert result["author"]["reward"] is None
     assert result["author"]["reward_theme"] is None
     assert result["reward_kind"] == "Gold"
@@ -431,6 +430,55 @@ def test_results_identify_the_rewarded_theme_by_id(world):
     author = response.json()["results"][0]["author"]
     assert author["reward"] == "Best author"
     assert author["reward_theme"] == world.theme.pk
+
+
+def test_results_show_only_the_public_author_details(world):
+    Author.objects.filter(pk=world.author.pk).update(
+        email="alice@example.org",
+        dob="2012-03-04",
+        school="Primary school",
+        mentor="Teacher Name",
+        club="Photo club",
+        distinction="Distinction",
+    )
+    accepted = submitted(world)
+    submitted(world, title="Not accepted")
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    Rating.objects.create(user=world.other, judge=judge, submission=accepted, rating=5)
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    public = APIClient()
+    theme = public.get(f"/api/v1/results/theme/{world.theme.pk}").json()
+    listing = public.get("/api/v1/results/submission").json()["results"]
+    authors = [row["author"] for row in theme["submissions"] + listing]
+    assert len(authors) == 3
+    for author in authors:
+        assert author == {
+            "id": world.author.pk,
+            "first_name": "Alice",
+            "last_name": "Photographer",
+            "school": "Primary school",
+            "club": "Photo club",
+            "country": None,
+            "reward": None,
+            "reward_theme": None,
+        }
+
+
+def test_published_submissions_stay_private_to_their_owner(world):
+    item = submitted(world)
+    item.files.add(photo(world.owner))
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    for account in [world.other, world.admin]:
+        world.client.force_authenticate(account)
+        assert world.client.get("/api/v1/submission").data["results"] == []
+        response = world.client.get(f"/api/v1/submission/{item.pk}")
+        assert response.status_code == 404
+    world.client.force_authenticate(world.owner)
+    response = world.client.get("/api/v1/submission")
+    assert [row["id"] for row in response.data["results"]] == [item.pk]
 
 
 @pytest.mark.parametrize("method", ["patch", "delete"])
