@@ -1,7 +1,7 @@
-Hello {{ first_name }}!
+{% autoescape off %}Hello {{ first_name }}!
 
 Welcome to {{ app_name }}.
 
 To activate your account, please follow the link below:
 
-{{ url }}
+{{ url }}{% endautoescape %}

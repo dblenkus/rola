@@ -1,1 +1,1 @@
-Welcome to {{ app_name }}
+{% autoescape off %}Welcome to {{ app_name }}{% endautoescape %}

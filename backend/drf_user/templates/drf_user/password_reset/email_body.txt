@@ -1,7 +1,7 @@
-Hello {{ first_name }}!
+{% autoescape off %}Hello {{ first_name }}!
 
 Someone (probably you) has requested a password reset for your account.
 
 To reset your password, please follow the link below:
 
-{{ url }}
+{{ url }}{% endautoescape %}

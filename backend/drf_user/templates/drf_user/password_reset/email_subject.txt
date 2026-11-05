@@ -1,1 +1,1 @@
-{{ app_name }} password reset
+{% autoescape off %}{{ app_name }} password reset{% endautoescape %}
