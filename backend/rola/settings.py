@@ -177,7 +177,8 @@ if boolean("ROLA_USE_S3"):
         "access_key": os.environ.get("ROLA_AWS_ACCESS_KEY_ID"),
         "secret_key": os.environ.get("ROLA_AWS_SECRET_ACCESS_KEY"),
         "endpoint_url": os.environ.get("ROLA_AWS_S3_ENDPOINT_URL"),
-        "region_name": os.environ.get("ROLA_AWS_REGION_NAME"),
+        "region_name": os.environ["ROLA_AWS_REGION_NAME"],
+        "signature_version": "s3v4",
         "default_acl": None,
         "object_parameters": {"CacheControl": "max-age=86400"},
     }

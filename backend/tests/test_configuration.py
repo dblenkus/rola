@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 from django.test import Client, override_settings
+from django.utils.module_loading import import_string
 
 import rola.settings
 from rola.environment import boolean
@@ -20,6 +21,15 @@ SES_ENVIRONMENT = REQUIRED_ENVIRONMENT | {
     "ROLA_USE_SES": "true",
     "ROLA_SES_ACCESS_KEY_ID": "test-access-key-id",
     "ROLA_SES_SECRET_ACCESS_KEY": "test-secret-access-key",
+}
+
+S3_ENVIRONMENT = REQUIRED_ENVIRONMENT | {
+    "ROLA_USE_S3": "true",
+    "ROLA_AWS_ACCESS_KEY_ID": "test-access-key-id",
+    "ROLA_AWS_SECRET_ACCESS_KEY": "test-secret-access-key",
+    "ROLA_AWS_REGION_NAME": "eu-west-1",
+    "ROLA_AWS_MEDIA_STORAGE_BUCKET_NAME": "rola-media",
+    "ROLA_AWS_STATIC_STORAGE_BUCKET_NAME": "rola-static",
 }
 
 
@@ -89,6 +99,24 @@ def test_ses_sends_from_the_configured_sender_over_ssl(load_settings):
         "use_ssl": True,
         "timeout": 10,
     }
+
+
+def test_s3_requires_a_signing_region(load_settings):
+    environment = dict(S3_ENVIRONMENT)
+    del environment["ROLA_AWS_REGION_NAME"]
+    with pytest.raises(KeyError, match="ROLA_AWS_REGION_NAME"):
+        load_settings(environment)
+
+
+@pytest.mark.parametrize("alias", ["default", "staticfiles"])
+def test_s3_urls_are_signed_with_sigv4(load_settings, monkeypatch, tmp_path, alias):
+    # Keep local AWS configuration files from changing the signer.
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "config"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "credentials"))
+    storage = load_settings(S3_ENVIRONMENT)["STORAGES"][alias]
+    url = import_string(storage["BACKEND"])(**storage["OPTIONS"]).url("photo.jpg")
+    assert "X-Amz-Algorithm=AWS4-HMAC-SHA256" in url
+    assert "%2Feu-west-1%2Fs3%2Faws4_request" in url
 
 
 def test_production_requires_https_and_distrusts_proxy_headers(load_settings):
