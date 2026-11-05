@@ -8,6 +8,8 @@ from smtplib import SMTPException
 from unittest.mock import patch
 
 import pytest
+from django.test import Client
+from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
@@ -30,7 +32,7 @@ from rolca.rating.models import (
     SubmissionReward,
     ThemeResults,
 )
-from tests.factories import payload, photo, submitted
+from tests.factories import PASSWORD, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
 
@@ -296,6 +298,25 @@ def test_export_requires_organizer_and_includes_every_file(world):
         assert len(set(members)) == 2
         for name in members:
             assert Image.open(io.BytesIO(archive.read(name))).size == (800, 600)
+
+
+def test_export_sends_a_logged_out_organizer_to_the_admin_login(world):
+    item = submitted(world)
+    item.files.add(photo(world.owner))
+    url = f"/core/contest/{world.contest.pk}/download"
+    browser = Client()
+    response = browser.get(url)
+    login_url = f"{reverse('admin:login')}?next={url}"
+    assert response.status_code == 302
+    assert response.headers["Location"] == login_url
+    response = browser.post(
+        login_url, {"username": world.admin.email, "password": PASSWORD, "next": url}
+    )
+    assert response.status_code == 302
+    assert response.headers["Location"] == url
+    response = browser.get(url)
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "application/x-zip-compressed"
 
 
 def test_payment_permissions_upsert_and_filter(world):
