@@ -366,6 +366,17 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     assert result["reward_kind"] == "Gold"
 
 
+def test_published_theme_without_results_returns_not_found(world):
+    submitted(world)
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    assert response.status_code == 404
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    assert response.status_code == 200, response.data
+
+
 def test_results_identify_the_rewarded_theme_by_id(world):
     item = submitted(world)
     judge = Judge.objects.create(judge=world.other, contest=world.contest)

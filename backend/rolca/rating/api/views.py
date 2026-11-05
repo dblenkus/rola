@@ -127,8 +127,10 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ThemeResultsSerializer
 
     def get_queryset(self):
-        """Return queryset of published themes."""
-        return self.queryset.filter(contest__publish_date__lte=timezone.now())
+        """Return published themes that have results."""
+        return self.queryset.filter(
+            contest__publish_date__lte=timezone.now(), results__isnull=False
+        )
 
 
 class SubmissionResultsViewSet(
