@@ -24,9 +24,8 @@ interface RouteMatchParams {
   themeId: string;
 }
 
-// Orders by UTF-16 code units, not by locale.
-const compareText = (a: string, b: string): number =>
-  a < b ? -1 : a > b ? 1 : 0;
+// Results list Slovenian names, whatever the browser's locale.
+const nameCollator = new Intl.Collator('sl');
 
 const ThemeResults: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +48,8 @@ const ThemeResults: React.FC = () => {
       setSubmissionsByAuthor(
         groupBy(data.submissions, (submission) => submission.author.id).sort(
           ([a], [b]) =>
-            compareText(a.author.last_name, b.author.last_name) ||
-            compareText(a.author.first_name, b.author.first_name),
+            nameCollator.compare(a.author.last_name, b.author.last_name) ||
+            nameCollator.compare(a.author.first_name, b.author.first_name),
         ),
       );
     };

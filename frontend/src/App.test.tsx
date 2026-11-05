@@ -754,4 +754,44 @@ describe('theme results', () => {
       'Fog',
     ]);
   });
+
+  it('sorts author names by Slovenian collation', async () => {
+    const [nature] = contest.themes;
+    if (!nature) {
+      throw new Error('The contest fixture has no theme');
+    }
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /results/theme/2': () => ({
+        ...nature,
+        submissions: [
+          result(31, 'Bridge', 1, ['Žan', 'Žagar']),
+          result(32, 'Field', 2, ['Ana', 'Zupan']),
+          result(33, 'Forest', 3, ['Dana', 'Novak']),
+          result(34, 'River', 4, ['Ema', 'Šuštar']),
+          result(35, 'Sea', 5, ['Ana', 'Sever']),
+          result(36, 'Street', 6, ['Črt', 'Novak']),
+          result(37, 'Tower', 7, ['Iva', 'Čeh']),
+          result(38, 'Valley', 8, ['Tine', 'Cerar']),
+        ],
+      }),
+    });
+    open('/results/contest/1/theme/2');
+    await screen.findByText('Bridge');
+    expect(
+      screen
+        .getAllByRole('row')
+        .map((row) => row.textContent)
+        .filter((text) => text.endsWith('(SI)')),
+    ).toEqual([
+      'Cerar, Tine (SI)',
+      'Čeh, Iva (SI)',
+      'Novak, Črt (SI)',
+      'Novak, Dana (SI)',
+      'Sever, Ana (SI)',
+      'Šuštar, Ema (SI)',
+      'Zupan, Ana (SI)',
+      'Žagar, Žan (SI)',
+    ]);
+  });
 });
