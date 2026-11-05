@@ -2,91 +2,213 @@ name: build
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+    branches: [main]
   pull_request:
   schedule:
-    - cron: "30 2 * * *"
+    - cron: "0 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_PYTHON_PREFERENCE: only-managed
 
 jobs:
-  test:
-    runs-on: ubuntu-18.04
-
+  backend:
+    name: backend (Python ${{ matrix.python }})
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
-        tox-env: [py38, linters, packaging, migrations]
-
-    services:
-      postgres:
-        image: postgres:11
+        python: ["3.14", "3.15"]
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      ROLA_SECRET_KEY: ci-only-fake-secret-key
+      ROLA_FRONTEND_URL: http://localhost:8080
+      ROLA_POSTGRESQL_HOST: 127.0.0.1
+      ROLA_POSTGRESQL_PORT: "55432"
+      ROLA_POSTGRESQL_PASSWORD: rola
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: ${{ matrix.python }}
+          working-directory: backend
+      - name: Start PostgreSQL
+        run: docker compose -f ../compose.yaml up -d --wait db
+      - run: uv sync --locked --all-groups
+      - name: Test on SQLite
+        run: uv run pytest
+      - name: Test on PostgreSQL
+        run: uv run pytest
         env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_USER: rola
-          POSTGRES_DB: rola
-        ports:
-          - 5432/tcp
-        # Needed because the postgres container does not provide a healthcheck.
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+          ROLA_TEST_POSTGRESQL: "true"
+      - run: uv run python manage.py check
+      - run: uv run python manage.py makemigrations --check --dry-run
+      - name: Migrate an empty PostgreSQL database
+        run: |
+          uv run python manage.py migrate --noinput
+          uv run python manage.py createcachetable
+          uv run python manage.py readinesscheck
 
-      redis:
-        image: redis:5
-        ports:
-          - 6379/tcp
-
+  quality:
+    runs-on: ubuntu-26.04
+    defaults:
+      run:
+        working-directory: backend
     steps:
-      - uses: actions/checkout@v1
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: 3.8
-      - name: Install Tox
-        run: python -m pip install --user tox
-      # - name: Run Tox
-      #   run: python -m tox -e ${{ matrix.tox-env }} --skip-missing-interpreters false
-      #   env:
-      #     # Get randomly assigned published ports.
-      #     ROLA_POSTGRESQL_PORT: ${{ job.services.postgres.ports[5432] }}
-      #     ROLA_REDIS_PORT: ${{ job.services.redis.ports[6379] }}
-      # - name: Upload coverage to Codecov
-      #   if: matrix.tox-env == 'py38'
-      #   uses: codecov/codecov-action@v1
-      #   with:
-      #     token: ${{ secrets.codecov_token }}
-      #     file: .coverage
+          version: "0.13.6"
+          python-version: "3.14"
+          working-directory: backend
+      - run: uv lock --check
+      - run: uv sync --locked --all-groups
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - name: Lint docs/conf.py with the backend configuration
+        run: |
+          uv run ruff check --config pyproject.toml ../docs/conf.py
+          uv run ruff format --check --config pyproject.toml ../docs/conf.py
+      - run: uv run mypy
+      - name: Build the documentation
+        run: uv run sphinx-build -W --keep-going -b html ../docs "$RUNNER_TEMP/docs"
+      - name: Check the wheel in a clean environment
+        run: |
+          uv build --wheel --out-dir "$RUNNER_TEMP/dist"
+          uv export --frozen --no-dev --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+          uv venv "$RUNNER_TEMP/venv"
+          uv pip install --python "$RUNNER_TEMP/venv" -r "$RUNNER_TEMP/requirements.txt"
+          uv pip install --python "$RUNNER_TEMP/venv" --no-deps "$RUNNER_TEMP"/dist/*.whl
+          cd "$RUNNER_TEMP"
+          DJANGO_SETTINGS_MODULE=rola.test_settings venv/bin/python -I - <<'PY'
+          import django
+          from django.core.management import call_command
+          from django.template.loader import get_template
+          from django.utils import translation
 
-  build:
-    runs-on: ubuntu-18.04
+          django.setup()
 
-    needs: test
+          from rolca.core.models import Contest
 
+          call_command("check")
+          call_command("migrate", verbosity=0)
+          Contest.objects.exists()
+          with translation.override("sl"):
+              assert str(Contest._meta.verbose_name) == "natečaj"
+          for purpose in ("registration", "password_reset"):
+              for name in ("email_subject.txt", "email_body.txt", "email_body.html"):
+                  get_template(f"drf_user/{purpose}/{name}")
+          PY
+      - name: Audit the locked runtime dependencies
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project -o "$RUNNER_TEMP/audit.txt"
+          uvx --exclude-newer "7 days" --from pip-audit==2.10.1 pip-audit -r "$RUNNER_TEMP/audit.txt" --no-deps --disable-pip
+
+  frontend:
+    runs-on: ubuntu-26.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm ls --all
+      - run: npm audit --omit=dev
+
+  api-contract:
+    runs-on: ubuntu-26.04
+    env:
+      ROLA_SECRET_KEY: ci-only-fake-secret-key
+      ROLA_FRONTEND_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.6"
+          python-version: "3.14"
+          working-directory: backend
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+        working-directory: backend
+      - name: Generate the OpenAPI schema with the PostgreSQL backend
+        run: uv run python manage.py spectacular --file openapi.yaml --validate --fail-on-warn
+        working-directory: backend
+      - run: git diff --exit-code -- backend/openapi.yaml
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run api:generate
+        working-directory: frontend
+      - run: git diff --exit-code -- frontend/src/types/generated-api.ts
+
+  images:
+    name: images (${{ matrix.component }})
+    runs-on: ubuntu-26.04
     strategy:
+      fail-fast: false
       matrix:
-        image-name: [backend, frontend, nginx]
-        include:
-          - image-name: backend
-            workdir: "."
-            dockerfile: Dockerfile
-          - image-name: frontend
-            workdir: frontend
-            dockerfile: Dockerfile
-          - image-name: nginx
-            workdir: docker/nginx
-            dockerfile: Dockerfile
-
+        component: [backend, frontend]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v4.4.1
+      - name: Build the development image
+        uses: docker/build-push-action@v7.4.0
         with:
-          submodules: true
-      - name: Publish Docker Image to GPR
-        uses: elgohr/Publish-Docker-Github-Action@master
+          context: ${{ matrix.component }}
+          target: development
+      - name: Build the production image
+        uses: docker/build-push-action@v7.4.0
         with:
-          name: dblenkus/rola/${{ matrix.image-name }}
-          username: dblenkus
-          password: ${{ secrets.GITHUB_TOKEN }}
-          workdir: ${{ matrix.workdir }}
-          dockerfile: ${{ matrix.dockerfile }}
-          tag_names: true
-          registry: docker.pkg.github.com
+          context: ${{ matrix.component }}
+          target: production
+          build-args: |
+            VITE_PAYPAL_CLIENT_ID=ci-fake-paypal-client-id
+            VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
+
+  compose:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: docker compose -f compose.yaml config --quiet
+      - name: Check compose.production.yaml with fake settings
+        run: |
+          cp .env.example .env
+          cat >> .env <<'EOF'
+          ROLA_SECRET_KEY=ci-only-fake-secret-key
+          ALLOWED_HOSTS=localhost
+          ROLA_FRONTEND_URL=https://localhost
+          ROLA_POSTGRESQL_PASSWORD=ci-only-fake-password
+          ROLA_NUM_PROXIES=2
+          VITE_PAYPAL_CLIENT_ID=ci-fake-paypal-client-id
+          VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
+          EOF
+          docker compose -f compose.production.yaml config --quiet
+
+  github-config:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Lint the workflows
+        run: docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:1.7.12
