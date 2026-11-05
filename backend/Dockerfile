@@ -1,34 +1,47 @@
-FROM python:3.8-alpine as common
+FROM ghcr.io/astral-sh/uv:0.13.6 AS uv
+
+FROM python:3.14.10-slim-trixie AS base
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_LINK_MODE=copy \
+    PATH=/opt/venv/bin:$PATH \
+    ROLA_MEDIA_ROOT=/storage/media \
+    ROLA_STATIC_ROOT=/storage/static
+RUN useradd --uid 1000 --user-group rola \
+    && mkdir -p /storage/media /storage/static \
+    && chown -R rola:rola /storage
 WORKDIR /app
 EXPOSE 8000
-RUN addgroup -g 1000 python && \
-    adduser -u 1000 -G python -s /bin/sh -D python && \
-    apk add --update --no-cache postgresql-dev jpeg-dev
 
-FROM common as builder
-WORKDIR /install
-COPY requirements.txt requirements.dev.txt /
-RUN apk add --update --no-cache \
-    build-base \
-    rust \
-    cargo \
-    git \
-    libffi-dev \
-    openssl-dev \
-    zlib-dev && \
-    pip install --upgrade pip && \
-    CRYPTOGRAPHY_DONT_BUILD_RUST=1 pip install --prefix=/install --no-warn-script-location \
-    -r /requirements.txt \
-    daphne==2.4.0 \
-    ipython \
-    jedi==0.17
+FROM base AS builder
+ENV UV_COMPILE_BYTECODE=1
+WORKDIR /build
+COPY pyproject.toml uv.lock ./
+RUN --mount=from=uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --no-editable --no-install-project
+COPY . .
+RUN --mount=from=uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --no-editable
 
-FROM common
-COPY --from=builder /install /usr/local
-COPY rola rola
-COPY utils utils
-COPY drf_user drf_user
-COPY manage.py LICENSE ./
-RUN python -m compileall rola
-USER python
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "rola.asgi:application"]
+FROM base AS development
+COPY pyproject.toml uv.lock ./
+RUN --mount=from=uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-install-project
+USER rola
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+FROM base AS production
+ENV WEB_CONCURRENCY=2
+COPY --from=builder /opt/venv /opt/venv
+COPY manage.py ./
+USER rola
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--no-control-socket", \
+    "--timeout", "120", \
+    "--access-logfile", "-", \
+    "--access-logformat", "%(h)s %(l)s %(u)s %(t)s \"%(m)s %(U)s %(H)s\" %(s)s %(b)s \"%(a)s\"", \
+    "rola.wsgi:application"]
