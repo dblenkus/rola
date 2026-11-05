@@ -36,10 +36,27 @@ function usePagination<R extends BaseResource>({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  useEffect(() => {
-    let active = true;
+  // A change of inputs starts a new request in the effect below. Resetting
+  // its state here, during render, keeps the previous result off screen.
+  const [requested, setRequested] = useState({
+    source,
+    reloadKey,
+    page,
+    pageSize,
+  });
+  if (
+    requested.source !== source ||
+    requested.reloadKey !== reloadKey ||
+    requested.page !== page ||
+    requested.pageSize !== pageSize
+  ) {
+    setRequested({ source, reloadKey, page, pageSize });
     setError(null);
     setLoading(true);
+  }
+
+  useEffect(() => {
+    let active = true;
     source(page, pageSize)
       .then(({ data: responseData }) => {
         if (!active) return;

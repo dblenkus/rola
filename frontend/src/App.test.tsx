@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
@@ -8,7 +8,11 @@ import store from './store';
 import { deleteMessage } from './store/notifications/actions';
 import { httpError, page, serveApi, signIn } from './test/api';
 import { author, contest, submission, submissionSet } from './test/fixtures';
-import type { ResultsSubmission } from './types/api';
+import type {
+  PaginatedResponse,
+  Payment,
+  ResultsSubmission,
+} from './types/api';
 
 beforeEach(() => {
   localStorage.clear();
@@ -21,6 +25,15 @@ beforeEach(() => {
 function open(path: string): void {
   window.history.replaceState(null, '', path);
   render(<App />);
+}
+
+// Moves the rendered app to another location, as the browser's back and
+// forward buttons do, so the current view stays mounted.
+function travel(path: string): void {
+  act(() => {
+    window.history.pushState(null, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
 }
 
 describe('contest pages', () => {
@@ -79,6 +92,47 @@ describe('contest pages', () => {
       await screen.findByText('Could not load this contest.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('shows loading, not the previous contest, while another contest loads', async () => {
+    let releaseSecond = () => {};
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /contest/2': () =>
+        new Promise((resolve) => {
+          releaseSecond = () =>
+            resolve({ ...contest, id: 2, notice_html: '<p>Second notice</p>' });
+        }),
+    });
+    open('/contest/1/details');
+    await screen.findByText('Contest instructions');
+
+    travel('/contest/2/details');
+    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+    expect(screen.queryByText('Contest instructions')).not.toBeInTheDocument();
+    releaseSecond();
+    expect(await screen.findByText('Second notice')).toBeInTheDocument();
+  });
+
+  it('loads another contest after a failed one', async () => {
+    serveApi({
+      'GET /contest/1': (config) => {
+        throw httpError(config, 404);
+      },
+      'GET /contest/2': () => ({
+        ...contest,
+        id: 2,
+        notice_html: '<p>Second notice</p>',
+      }),
+    });
+    open('/contest/1/details');
+    await screen.findByText('Could not load this contest.');
+
+    travel('/contest/2/details');
+    expect(await screen.findByText('Second notice')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Could not load this contest.'),
+    ).not.toBeInTheDocument();
   });
 
   it('counts submissions from every page in the edit list', async () => {
@@ -375,6 +429,47 @@ describe('admin submission list', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('shows stored payments and reloads them after a change', async () => {
+    signIn();
+    let paid = true;
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /submissionset': () => page([submissionSet]),
+      'GET /payment': (): PaginatedResponse<Payment> =>
+        page([
+          {
+            id: 8,
+            created: '2026-01-01T00:00:00Z',
+            modified: '2026-01-01T00:00:00Z',
+            submissionset: submissionSet.id,
+            paid,
+          },
+        ]),
+      'POST /payment': (config) => {
+        paid = JSON.parse(config.data).paid;
+        return {};
+      },
+    });
+    const user = userEvent.setup();
+    open('/admin/contest/1/submissions');
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked());
+
+    await user.click(screen.getByRole('checkbox'));
+    await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked());
+    expect(paid).toBe(false);
+  });
+
+  it('requests no payments for an empty list', async () => {
+    signIn();
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /submissionset': () => page([]),
+    });
+    open('/admin/contest/1/submissions');
+    expect(await screen.findByText('0-0 of 0')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('keeps the table after a failed payment update', async () => {
     signIn();
     let attempts = 0;
@@ -434,6 +529,54 @@ describe('admin submission list', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+  });
+
+  it('keeps the table when a payments request for a left page fails', async () => {
+    signIn();
+    const sets = Array.from({ length: 21 }, (_, index) => ({
+      ...submissionSet,
+      id: index + 1,
+    }));
+    let failFirstPage: (() => void) | undefined;
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /submissionset': (config) => {
+        const pageNumber: number = config.params.page;
+        const pageSize: number = config.params.page_size;
+        return {
+          ...page(
+            sets.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+          ),
+          count: sets.length,
+        };
+      },
+      'GET /payment': (config) =>
+        config.params.submissionset__in === '21'
+          ? page<Payment>([
+              {
+                id: 8,
+                created: '2026-01-01T00:00:00Z',
+                modified: '2026-01-01T00:00:00Z',
+                submissionset: 21,
+                paid: true,
+              },
+            ])
+          : new Promise((_resolve, reject) => {
+              failFirstPage = () => reject(httpError(config, 400));
+            }),
+    });
+    const user = userEvent.setup();
+    open('/admin/contest/1/submissions');
+    await waitFor(() => expect(failFirstPage).toBeDefined());
+
+    await user.click(screen.getByRole('button', { name: 'Go to next page' }));
+    expect(await screen.findByText('21-21 of 21')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked());
+    await act(async () => failFirstPage?.());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('21-21 of 21')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(1);
   });
 });
 

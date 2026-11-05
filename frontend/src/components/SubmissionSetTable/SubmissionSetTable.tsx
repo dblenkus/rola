@@ -55,19 +55,29 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   } = usePagination<SubmissionSet>({ source, reloadKey });
   const { t } = useTranslation();
 
-  const fetchPayments = useCallback(async (): Promise<void> => {
-    if (submissionSets.length === 0) {
-      setPayments([]);
-      return;
-    }
+  const fetchPayments = useCallback(async (): Promise<Payment[]> => {
+    if (submissionSets.length === 0) return [];
 
     const submissionSetIds = submissionSets.map(({ id }) => id);
     const { data } = await PaymentService.getBySubmissionSets(submissionSetIds);
-    setPayments(data.results);
+    return data.results;
   }, [submissionSets]);
 
   useEffect(() => {
-    fetchPayments().catch((error: unknown) => setError(requestError(error)));
+    // A request for rows the table no longer shows must not replace them.
+    let active = true;
+    fetchPayments()
+      .then((loaded) => {
+        if (!active) return;
+        setPayments(loaded);
+        setError(null);
+      })
+      .catch((error: unknown) => {
+        if (active) setError(requestError(error));
+      });
+    return () => {
+      active = false;
+    };
   }, [fetchPayments]);
 
   const handlePageChange = (
@@ -90,7 +100,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     setPaymentError(null);
     try {
       await PaymentService.updatePayment(submissionSetId, paid);
-      await fetchPayments();
+      setPayments(await fetchPayments());
     } catch (error) {
       setPaymentError(requestError(error));
     }

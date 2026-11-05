@@ -17,13 +17,17 @@ export default function ContestDetails() {
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
   }
+  // The key gives each contest its own state, so a route change to another
+  // contest starts from loading.
+  return <ContestPage key={contestId} contestId={contestId} />;
+}
+
+function ContestPage({ contestId }: { contestId: string }) {
   const [contest, setContest] = useState<Contest | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    setContest(null);
-    setFailed(false);
     ContestService.getContest(contestId)
       .then(({ data }) => {
         if (active) setContest(data);

@@ -10,9 +10,8 @@ export default defineConfig(
   tseslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
-    plugins: { 'react-hooks': reactHooks },
+    extends: [reactHooks.configs.flat.recommended],
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
