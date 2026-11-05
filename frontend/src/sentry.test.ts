@@ -1,29 +1,71 @@
 import * as Sentry from '@sentry/react';
 import { AxiosError, AxiosHeaders } from 'axios';
-import { afterEach, expect, it, vi } from 'vitest';
-import { sentryOptions } from './sentry';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 
-afterEach(async () => {
-  await Sentry.close();
-  vi.unstubAllGlobals();
-  window.history.replaceState(null, '', '/');
-});
+const dsn = 'https://public@sentry.example.invalid/1';
 
-it('sends error events without credentials or URL tokens', async () => {
-  const payloads: string[] = [];
+// The options read the build environment when the module loads.
+async function importSentryOptions(): Promise<Sentry.BrowserOptions> {
+  vi.resetModules();
+  const { sentryOptions } = await import('./sentry');
+  return sentryOptions;
+}
+
+function recordPayloads(
+  payloads: string[],
+): NonNullable<Sentry.BrowserOptions['transport']> {
+  return (options) =>
+    Sentry.createTransport(options, async ({ body }) => {
+      payloads.push(
+        typeof body === 'string' ? body : new TextDecoder().decode(body),
+      );
+      return { statusCode: 200 };
+    });
+}
+
+// Sentry wraps fetch once, at the first init, so the stub must come first.
+beforeAll(() => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async () => new Response(null, { status: 500 })),
   );
+});
+
+afterEach(async () => {
+  await Sentry.close();
+  vi.unstubAllEnvs();
+  window.history.replaceState(null, '', '/');
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
+
+it('reports to the DSN from the build environment', async () => {
+  vi.stubEnv('VITE_SENTRY_DSN', dsn);
+  expect((await importSentryOptions()).dsn).toBe(dsn);
+});
+
+it('sends nothing without a DSN', async () => {
+  vi.stubEnv('VITE_SENTRY_DSN', '');
+  const payloads: string[] = [];
   Sentry.init({
-    ...sentryOptions,
-    transport: (options) =>
-      Sentry.createTransport(options, async ({ body }) => {
-        payloads.push(
-          typeof body === 'string' ? body : new TextDecoder().decode(body),
-        );
-        return { statusCode: 200 };
-      }),
+    ...(await importSentryOptions()),
+    transport: recordPayloads(payloads),
+  });
+
+  Sentry.captureException(new Error('Request failed'));
+  await Sentry.flush(2000);
+
+  expect(payloads).toEqual([]);
+});
+
+it('sends error events without credentials or URL tokens', async () => {
+  vi.stubEnv('VITE_SENTRY_DSN', dsn);
+  const payloads: string[] = [];
+  Sentry.init({
+    ...(await importSentryOptions()),
+    transport: recordPayloads(payloads),
   });
   // The default integrations send no request headers; failed-request events
   // from this integration do.

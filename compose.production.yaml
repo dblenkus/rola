@@ -68,6 +68,7 @@ services:
       target: production
       args:
         VITE_PAYPAL_CLIENT_ID: ${VITE_PAYPAL_CLIENT_ID:?Set VITE_PAYPAL_CLIENT_ID in .env.}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:?Set VITE_SENTRY_DSN in .env.}
     ports:
       - 127.0.0.1:8080:8080
     volumes:
