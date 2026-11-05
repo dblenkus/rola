@@ -723,6 +723,30 @@ describe('theme results', () => {
     expect(screen.queryByText('Best young author')).not.toBeInTheDocument();
   });
 
+  const rewardHighlight = { backgroundColor: 'rgb(254, 225, 1, 0.5)' };
+
+  function authorCells(): HTMLElement[] {
+    return within(
+      screen.getByRole('row', { name: /^Zupan, Ana/ }),
+    ).getAllByRole('cell');
+  }
+
+  it('highlights an author rewarded in this theme', async () => {
+    openWithAuthorReward(2);
+    await screen.findByText('Hills');
+    for (const cell of authorCells()) {
+      expect(cell).toHaveStyle(rewardHighlight);
+    }
+  });
+
+  it('does not highlight an author rewarded in another theme', async () => {
+    openWithAuthorReward(3);
+    await screen.findByText('Hills');
+    for (const cell of authorCells()) {
+      expect(cell).not.toHaveStyle(rewardHighlight);
+    }
+  });
+
   it('groups results by author, sorted by last and first name', async () => {
     const [nature] = contest.themes;
     if (!nature) {

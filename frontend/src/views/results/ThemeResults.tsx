@@ -80,7 +80,7 @@ const ThemeResults: React.FC = () => {
   const getAuthorStyle = (author: ResultsAuthor): CSSProperties => {
     const style: CSSProperties = {};
 
-    if (author.reward) {
+    if (getAuthorReward(author)) {
       style.backgroundColor = 'rgb(254, 225, 1, 0.5)';
     }
 
