@@ -2,9 +2,10 @@ import type { InputChange } from '../../types/models';
 import React from 'react';
 
 import { TextField } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 export interface InputFieldProps {
-  className: string;
+  sx: SxProps<Theme>;
   name: string;
   label: string;
   value: string;
@@ -19,7 +20,7 @@ export interface InputFieldProps {
 
 class InputField extends React.Component<InputFieldProps> {
   static defaultProps = {
-    className: '',
+    sx: {},
     type: 'text',
     value: '',
     error: null,
@@ -38,7 +39,6 @@ class InputField extends React.Component<InputFieldProps> {
     const {
       autoComplete,
       autoFocus,
-      className,
       label,
       name,
       required,
@@ -46,11 +46,12 @@ class InputField extends React.Component<InputFieldProps> {
       type,
       value,
       error,
+      sx,
     } = this.props;
 
     return (
       <TextField
-        className={className}
+        sx={sx}
         name={name}
         variant="outlined"
         margin="normal"

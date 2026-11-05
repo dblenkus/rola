@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { WithTranslation, withTranslation } from 'react-i18next';
-import { withStyles } from 'tss-react/mui';
 
 import {
   Alert,
@@ -20,7 +19,7 @@ import {
 import ConfirmDialog from '../components/Notifications/ConfirmDialog';
 import LoadingProgress from '../components/LoadingProgress';
 
-import { editListStyles } from '../styles/general';
+import { tableButtonSx } from '../styles/general';
 import ContestService from '../services/ContestService';
 import SubmissionService from '../services/SubmissionService';
 import { requestError } from '../services/errors';
@@ -29,11 +28,7 @@ import { asyncMap } from '../utils/async';
 import fetchAll from '../utils/fetchAll';
 import groupBy from '../utils/groupBy';
 
-type StyleProps = {
-  classes?: Record<keyof ReturnType<typeof editListStyles>, string>;
-};
-
-interface EditSubmissionListProps extends StyleProps, WithTranslation {}
+type EditSubmissionListProps = WithTranslation;
 
 interface EditSubmissionsListState {
   error: string | null;
@@ -123,7 +118,6 @@ class EditSubmissionsList extends React.Component<
     if (error) return <Alert severity="error">{error}</Alert>;
     if (!allSubmissions) return <LoadingProgress />;
     const { t } = this.props;
-    const classes = withStyles.getClasses(this.props);
 
     if (!allSubmissions.length)
       return (
@@ -188,18 +182,14 @@ class EditSubmissionsList extends React.Component<
                   <TableCell align="right">
                     <Tooltip title="Not jet available." placement="top">
                       <span>
-                        <Button
-                          variant="text"
-                          className={classes.button}
-                          disabled
-                        >
+                        <Button variant="text" sx={tableButtonSx} disabled>
                           {t('edit')}
                         </Button>
                       </span>
                     </Tooltip>
                     <Button
                       variant="text"
-                      className={classes.button}
+                      sx={tableButtonSx}
                       color="secondary"
                       onClick={this.openDialog(group.submissions)}
                     >
@@ -224,6 +214,4 @@ class EditSubmissionsList extends React.Component<
   }
 }
 
-export default withTranslation()(
-  withStyles(EditSubmissionsList, editListStyles),
-);
+export default withTranslation()(EditSubmissionsList);

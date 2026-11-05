@@ -3,14 +3,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Typography } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
-import { authStyles } from '../../styles/general';
-
-const useStyles = makeStyles()(authStyles);
+import { authSx } from '../../styles/general';
 
 const RegisterActivateFailed: React.FC = () => {
-  const { classes } = useStyles();
   const { t } = useTranslation();
 
   return (
@@ -18,9 +14,7 @@ const RegisterActivateFailed: React.FC = () => {
       <Typography component="h3" variant="h6">
         {t('activation_failed')}
       </Typography>
-      <Typography className={classes.paragraph}>
-        {t('invalid_token')}
-      </Typography>
+      <Typography sx={authSx.paragraph}>{t('invalid_token')}</Typography>
     </>
   );
 };

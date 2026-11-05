@@ -2,8 +2,6 @@ import React from 'react';
 
 import { WithTranslation, withTranslation } from 'react-i18next';
 
-import { withStyles } from 'tss-react/mui';
-
 import {
   Alert,
   Button,
@@ -12,17 +10,12 @@ import {
   Typography,
 } from '@mui/material';
 
-import { uploadFormStyles } from '../../../styles/general';
 import { InputChange, ContestModel, DateChange } from '../../../types/models';
 
 import AuthorField from '../Author/AuthorField';
 import ThemeField from '../Theme/ThemeField';
 
-type StyleProps = {
-  classes?: Record<keyof ReturnType<typeof uploadFormStyles>, string>;
-};
-
-interface ContestFieldProps extends StyleProps, WithTranslation {
+interface ContestFieldProps extends WithTranslation {
   contest: ContestModel;
   handleAuthorChange: (payload: InputChange | DateChange) => void;
   handleSubmissionChange: (
@@ -43,7 +36,6 @@ interface ContestFieldProps extends StyleProps, WithTranslation {
 class ContestField extends React.Component<ContestFieldProps> {
   render(): React.ReactNode {
     const { t } = this.props;
-    const classes = withStyles.getClasses(this.props);
 
     const {
       contest,
@@ -110,7 +102,7 @@ class ContestField extends React.Component<ContestFieldProps> {
               );
             })}
             {contest.errors.hasError && (
-              <Alert className={classes.errorAlert} severity="error">
+              <Alert sx={{ mb: 2 }} severity="error">
                 {t('fix_errors')}
               </Alert>
             )}
@@ -124,7 +116,7 @@ class ContestField extends React.Component<ContestFieldProps> {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submitButton}
+                sx={{ p: 2 }}
               >
                 {t('upload')}
               </Button>
@@ -136,4 +128,4 @@ class ContestField extends React.Component<ContestFieldProps> {
   }
 }
 
-export default withTranslation()(withStyles(ContestField, uploadFormStyles));
+export default withTranslation()(ContestField);

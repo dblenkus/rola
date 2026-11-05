@@ -2,22 +2,16 @@ import React from 'react';
 
 import { WithTranslation, withTranslation } from 'react-i18next';
 
-import { withStyles } from 'tss-react/mui';
-
 import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 
 import InputField from '../InputField';
 
-import { uploadFormStyles } from '../../../styles/general';
+import { formCardSx } from '../../../styles/general';
 import { AuthorModel, DateChange, InputChange } from '../../../types/models';
 import DatePicker from '../DatePicker';
 import AutocompleteField from '../AutocompleteInput';
 
-type StyleProps = {
-  classes?: Record<keyof ReturnType<typeof uploadFormStyles>, string>;
-};
-
-interface AuthorFieldProps extends StyleProps, WithTranslation {
+interface AuthorFieldProps extends WithTranslation {
   author: AuthorModel;
   showDob: boolean;
   showClub: boolean;
@@ -40,9 +34,8 @@ class AuthorField extends React.Component<AuthorFieldProps> {
       t,
     } = this.props;
 
-    const classes = withStyles.getClasses(this.props);
     return (
-      <Card className={classes.themeCard} raised>
+      <Card sx={formCardSx} raised>
         <CardHeader
           title={t('author')}
           slotProps={{
@@ -155,4 +148,4 @@ class AuthorField extends React.Component<AuthorFieldProps> {
   }
 }
 
-export default withTranslation()(withStyles(AuthorField, uploadFormStyles));
+export default withTranslation()(AuthorField);

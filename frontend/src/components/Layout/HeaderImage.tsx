@@ -1,21 +1,15 @@
 import React from 'react';
 
-import { makeStyles } from 'tss-react/mui';
+import { Box } from '@mui/material';
 
 interface HeaderImageProps {
   src: string;
 }
 
-const useStyles = makeStyles()({
-  image: {
-    maxWidth: '100%',
-  },
-});
-
 const HeaderImage: React.FC<HeaderImageProps> = ({ src }) => {
-  const { classes } = useStyles();
-
-  return <img src={src} alt="Header" className={classes.image} />;
+  return (
+    <Box component="img" src={src} alt="Header" sx={{ maxWidth: '100%' }} />
+  );
 };
 
 export default HeaderImage;

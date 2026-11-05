@@ -1,25 +1,28 @@
 import React from 'react';
 
-import { makeStyles } from 'tss-react/mui';
-
-import { uploadFormStyles } from '../../../styles/general';
+import { Box } from '@mui/material';
 
 export interface ShowImageProps {
   src: string | undefined;
   error: boolean;
 }
 
-const useStyles = makeStyles()(uploadFormStyles);
-
 const ShowImage: React.FC<ShowImageProps> = (props) => {
-  const { classes } = useStyles();
   const { error, src } = props;
 
-  let className = classes.image;
-  if (error) className += ` ${classes.error}`;
-
   return (
-    <img className={className} src={src || '/img/no-photo.png'} alt="Missing" />
+    <Box
+      component="img"
+      sx={{
+        border: error ? '1px solid #f00' : '1px solid #ddd',
+        borderRadius: '4px',
+        maxHeight: '100%',
+        padding: '5px',
+        width: '100%',
+      }}
+      src={src || '/img/no-photo.png'}
+      alt="Missing"
+    />
   );
 };
 

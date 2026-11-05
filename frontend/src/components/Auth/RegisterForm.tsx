@@ -4,11 +4,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Alert, Button, Grid } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
 import InputField from '../Upload/InputField';
 
-import { authStyles } from '../../styles/general';
+import { authSx } from '../../styles/general';
 
 export interface Fields {
   first_name: string;
@@ -42,10 +41,7 @@ interface RegisterFormProps {
   onSubmit: () => Promise<void>;
 }
 
-const useStyles = makeStyles()(authStyles);
-
 const RegisterForm: React.FC<RegisterFormProps> = (props) => {
-  const { classes } = useStyles();
   const { t } = useTranslation();
   const { errors, fields, onChange, onSubmit } = props;
 
@@ -153,7 +149,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
         </Grid>
       </Grid>
       {getError('non_field_errors') !== null ? (
-        <Alert severity="error" className={classes.alert}>
+        <Alert severity="error" sx={authSx.alert}>
           {getError('non_field_errors')}
         </Alert>
       ) : (
@@ -164,7 +160,7 @@ const RegisterForm: React.FC<RegisterFormProps> = (props) => {
         fullWidth
         variant="contained"
         color="primary"
-        className={classes.submit}
+        sx={authSx.submit}
       >
         {t('register')}
       </Button>

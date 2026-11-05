@@ -1,40 +1,29 @@
 import React from 'react';
 
-import { makeStyles } from 'tss-react/mui';
-
 import { Link } from 'react-router';
 
 import { Button, Grid } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 interface UploadButtonProps {
   contestId: number;
 }
 
-const useStyles = makeStyles()(({ spacing }) => ({
-  button: {
-    margin: spacing(2),
-    padding: spacing(2, 4),
-  },
-  link: {
-    textDecoration: 'none',
-  },
-}));
+const UploadLink = styled(Link)({ textDecoration: 'none' });
 
 const UploadButton: React.FC<UploadButtonProps> = ({ contestId }) => {
-  const { classes } = useStyles();
-
   return (
     <Grid container sx={{ justifyContent: 'center' }}>
-      <Link to={`/contest/${contestId}/upload`} className={classes.link}>
+      <UploadLink to={`/contest/${contestId}/upload`}>
         <Button
-          className={classes.button}
+          sx={{ m: 2, py: 2, px: 4 }}
           color="primary"
           size="large"
           variant="contained"
         >
           Upload Photos
         </Button>
-      </Link>
+      </UploadLink>
     </Grid>
   );
 };

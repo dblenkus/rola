@@ -5,18 +5,16 @@ import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { IconButton, Menu, MenuItem } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import { makeStyles } from 'tss-react/mui';
 
 import { useAppDispatch } from '../../store';
 import { uploadReset } from '../../store/upload/actions';
 import { userContext } from '../Auth/AuthProvider';
 
-const useStyles = makeStyles()({
-  menuItem: {
-    textDecoration: 'none',
-    color: 'inherit',
-  },
+const MenuLink = styled(Link)({
+  textDecoration: 'none',
+  color: 'inherit',
 });
 
 const Dropdown: React.FC = () => {
@@ -25,7 +23,6 @@ const Dropdown: React.FC = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const { classes } = useStyles();
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
 
   const openMenu = (event: React.MouseEvent): void => {
@@ -45,23 +42,17 @@ const Dropdown: React.FC = () => {
   };
 
   const publicMenu = [
-    <Link
-      to="/register"
-      className={classes.menuItem}
-      onClick={closeMenu}
-      key="link-1"
-    >
+    <MenuLink to="/register" onClick={closeMenu} key="link-1">
       <MenuItem>{t('register')}</MenuItem>
-    </Link>,
-    <Link
+    </MenuLink>,
+    <MenuLink
       to="/login"
       state={{ from: location }}
-      className={classes.menuItem}
       onClick={closeMenu}
       key="link-2"
     >
       <MenuItem>{t('login')}</MenuItem>
-    </Link>,
+    </MenuLink>,
   ];
 
   const privateMenu = [

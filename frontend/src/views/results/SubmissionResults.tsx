@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
-import { Alert, Typography } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
+import { Alert, Box, Typography } from '@mui/material';
 
 import LoadingProgress from '../../components/LoadingProgress';
 import ResultsSubmissionService from '../../services/ResultsSubmissionService';
@@ -13,25 +12,7 @@ interface RouteMatchParams {
   submissionId: string;
 }
 
-const useStyles = makeStyles()({
-  flex: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    maxWidth: '100%',
-    maxHeight: '90vh',
-  },
-  title: {
-    paddingTop: '0.5em',
-  },
-});
-
 const SubmissionResults: React.FC = () => {
-  const { classes } = useStyles();
-
   const [submission, setSubmission] = useState<null | ResultsSubmission>(null);
   const [error, setError] = useState<string | null>(null);
   const { submissionId } = useParams<keyof RouteMatchParams>();
@@ -55,7 +36,14 @@ const SubmissionResults: React.FC = () => {
 
   return (
     <>
-      <div className={classes.flex}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -96,7 +84,7 @@ const SubmissionResults: React.FC = () => {
             />
           ))}
         </div>
-        <div className={classes.title}>
+        <Box sx={{ paddingTop: '0.5em' }}>
           <Typography align="center">
             <b>{title}</b>, {author.first_name} {author.last_name} (
             {author.country})
@@ -113,8 +101,8 @@ const SubmissionResults: React.FC = () => {
               </>
             )}
           </Typography>
-        </div>
-      </div>
+        </Box>
+      </Box>
     </>
   );
 };

@@ -4,21 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { AppBar, Button, Toolbar, Typography } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
 import Dropdown from './Dropdown';
 
-const useStyles = makeStyles()((theme) => ({
-  menuButton: {
-    marginRight: theme.spacing(2),
-  },
-  title: {
-    flexGrow: 1,
-  },
-}));
-
 const Header: React.FC = () => {
-  const { classes } = useStyles();
   const { i18n, t } = useTranslation();
 
   const handleLanguageChange = (
@@ -30,31 +19,21 @@ const Header: React.FC = () => {
   return (
     <AppBar position="sticky">
       <Toolbar>
-        <Typography variant="h6" className={classes.title}>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Rolca
         </Typography>
-        <Button
-          to="/contests"
-          component={Link}
-          className={classes.menuButton}
-          color="inherit"
-        >
+        <Button to="/contests" component={Link} sx={{ mr: 2 }} color="inherit">
           {t('active_contests')}
         </Button>
         <Button
           to="/user/submissions"
           component={Link}
-          className={classes.menuButton}
+          sx={{ mr: 2 }}
           color="inherit"
         >
           {t('edit_submissions')}
         </Button>
-        <Button
-          to="/results"
-          component={Link}
-          className={classes.menuButton}
-          color="inherit"
-        >
+        <Button to="/results" component={Link} sx={{ mr: 2 }} color="inherit">
           {t('results')}
         </Button>
 

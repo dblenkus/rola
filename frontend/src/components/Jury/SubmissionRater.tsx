@@ -2,8 +2,8 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { IconButton } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
+import { Box, IconButton } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { Close, NavigateBefore, NavigateNext } from '@mui/icons-material';
 
 import { Submission } from '../../types/api';
@@ -32,7 +32,7 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
   nextSubmission,
   updateRating,
 }: SubmissionRaterProps) => {
-  const useStyles = makeStyles()({
+  const sx = {
     mainFlex: {
       display: 'flex',
       flexDirection: 'column',
@@ -61,15 +61,14 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
       flexDirection: 'column',
       alignItems: 'center',
     },
-  });
+  } satisfies Record<string, SxProps<Theme>>;
 
-  const { classes } = useStyles();
   const { t } = useTranslation();
   const { description, files, title } = submission;
 
   return (
-    <div className={classes.mainFlex}>
-      <div className={classes.imageFlex}>
+    <Box sx={sx.mainFlex}>
+      <Box sx={sx.imageFlex}>
         <IconButton disabled={!isPrevious} onClick={() => previousSubmission()}>
           <NavigateBefore />
         </IconButton>
@@ -82,8 +81,9 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
             }}
           >
             {files.slice(0, 3).map((file) => (
-              <img
-                className={classes.image}
+              <Box
+                component="img"
+                sx={sx.image}
                 src={file.file}
                 alt={title ?? ''}
               />
@@ -97,15 +97,16 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
             }}
           >
             {files.slice(3, 6).map((file) => (
-              <img
-                className={classes.image}
+              <Box
+                component="img"
+                sx={sx.image}
                 src={file.file}
                 alt={title ?? ''}
               />
             ))}
           </div>
         </div>
-        <div className={classes.iconsFlex}>
+        <Box sx={sx.iconsFlex}>
           <IconButton onClick={() => close()}>
             <Close />
           </IconButton>
@@ -113,19 +114,19 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
             <NavigateNext />
           </IconButton>
           {/* Placeholder to match the alignment. */}
-          <IconButton className={classes.invisibleIcon}>
+          <IconButton sx={sx.invisibleIcon}>
             <Close />
           </IconButton>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className={classes.textFlex}>
+      <Box sx={sx.textFlex}>
         <div>
           <b>{t('title')}:</b> {title}
         </div>
         <b>{t('description')}:</b>
         {description}
-      </div>
+      </Box>
       <div>
         <Rating
           max={10}
@@ -133,7 +134,7 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
           onChange={(value) => updateRating(value)}
         />
       </div>
-    </div>
+    </Box>
   );
 };
 

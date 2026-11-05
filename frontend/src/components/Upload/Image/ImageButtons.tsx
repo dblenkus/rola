@@ -2,10 +2,7 @@ import React, { ReactNode } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { makeStyles } from 'tss-react/mui';
-
 import { Button, Grid } from '@mui/material';
-import { uploadFormStyles } from '../../../styles/general';
 
 export interface ImageButtonsProps {
   handleChange: () => void;
@@ -18,15 +15,12 @@ interface StyledButtonProps {
   children: ReactNode;
 }
 
-const useStyles = makeStyles()(uploadFormStyles);
-
 const StyledButton: React.FC<StyledButtonProps> = (props) => {
-  const { classes } = useStyles();
   const { onClick, children } = props;
 
   return (
     <Button
-      className={classes.button}
+      sx={{ mt: 1, p: 1 }}
       fullWidth
       variant="outlined"
       color="primary"

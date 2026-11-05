@@ -4,11 +4,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
 import InputField from '../Upload/InputField';
 
-import { authStyles } from '../../styles/general';
+import { authSx } from '../../styles/general';
 
 export interface Fields {
   email: string;
@@ -21,12 +20,9 @@ interface PasswordResetRequestFormProps {
   onSubmit: () => Promise<void>;
 }
 
-const useStyles = makeStyles()(authStyles);
-
 const PasswordResetRequestForm: React.FC<PasswordResetRequestFormProps> = (
   props,
 ) => {
-  const { classes } = useStyles();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -50,7 +46,7 @@ const PasswordResetRequestForm: React.FC<PasswordResetRequestFormProps> = (
         fullWidth
         variant="contained"
         color="primary"
-        className={classes.submit}
+        sx={authSx.submit}
       >
         {t('send_reset_link')}
       </Button>

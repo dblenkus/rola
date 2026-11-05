@@ -1,11 +1,10 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { Provider } from 'react-redux';
 
-import { CssBaseline, Container } from '@mui/material';
+import { Box, CssBaseline, Container } from '@mui/material';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import { makeStyles } from 'tss-react/mui';
 
 import ContestsListView from './views/ContestsList';
 import ContestDetailsView from './views/ContestDetails';
@@ -34,30 +33,16 @@ import ThemeResultsView from './views/results/ThemeResults';
 import SelectResultsThemeView from './views/results/SelectTheme';
 import SubmissionResultsView from './views/results/SubmissionResults';
 
-const useStyles = makeStyles()((theme) => ({
-  container: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(4),
-  },
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh',
-  },
-}));
-
 const App = () => {
-  const { classes } = useStyles();
-
   return (
-    <div className={classes.root}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Provider store={store}>
         <AuthProvider>
           <BrowserRouter>
             <CssBaseline />
             <Notifications />
             <Header />
-            <Container className={classes.container}>
+            <Container sx={{ mt: 2, mb: 4 }}>
               <Routes>
                 <Route path="/" element={<Navigate to="/contests" replace />} />
                 <Route path="/contests" element={<ContestsListView />} />
@@ -170,7 +155,7 @@ const App = () => {
           </BrowserRouter>
         </AuthProvider>
       </Provider>
-    </div>
+    </Box>
   );
 };
 

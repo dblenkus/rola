@@ -4,11 +4,10 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Checkbox, TableCell, TableRow } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 
-import { editListStyles } from '../../styles/general';
+import { tableButtonSx } from '../../styles/general';
 import { Payment, SubmissionSet } from '../../types/api';
 
 interface SubmissionSetTableRowProps {
@@ -31,8 +30,6 @@ const getViewLink = (
   return `/admin/contest/${contestId}/submission/${submissionSet.id}`;
 };
 
-const useStyles = makeStyles()(editListStyles);
-
 const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
   contestId,
   submissionSet,
@@ -40,7 +37,6 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
   onPaidChange,
   onDelete,
 }: SubmissionSetTableRowProps) => {
-  const { classes } = useStyles();
   const { t } = useTranslation();
 
   const handlePaidChange = (
@@ -73,14 +69,14 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
         <Button
           component={Link}
           to={getViewLink(contestId, submissionSet)}
-          className={classes.button}
+          sx={tableButtonSx}
           color="primary"
         >
           {t('view')}
         </Button>
         <Button
           variant="text"
-          className={classes.button}
+          sx={tableButtonSx}
           color="secondary"
           onClick={(): void => {
             onDelete(submissionSet);

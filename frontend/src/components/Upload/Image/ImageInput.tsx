@@ -1,23 +1,19 @@
 import React from 'react';
 
-import { makeStyles } from 'tss-react/mui';
-
-import { uploadFormStyles } from '../../../styles/general';
+import { styled } from '@mui/material/styles';
 
 export interface ImageButtonsProps {
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   imageRef: React.RefObject<HTMLInputElement | null>;
 }
 
-const useStyles = makeStyles()(uploadFormStyles);
+const FileInput = styled('input')({ display: 'none' });
 
 const ImageButtons: React.FC<ImageButtonsProps> = (props) => {
-  const { classes } = useStyles();
   const { handleChange, imageRef } = props;
 
   return (
-    <input
-      className={classes.fileInput}
+    <FileInput
       type="file"
       aria-label="Select photograph"
       accept="image/jpeg"

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Grid } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
+import { Box, Card, Grid } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 import { Rating as RatingModel, Submission } from '../../types/api';
 import Rating from './Rating';
@@ -18,7 +18,7 @@ const ThemeGallery: React.FC<ThemeGalleryProps> = ({
   ratings,
   handleClick,
 }: ThemeGalleryProps) => {
-  const useStyles = makeStyles()({
+  const sx = {
     card: { cursor: 'pointer' },
     wrapOut: {
       width: '100%',
@@ -34,18 +34,15 @@ const ThemeGallery: React.FC<ThemeGalleryProps> = ({
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      minWidth: '0',
+      minWidth: 0,
     },
     image: {
       maxHeight: '100%',
       maxWidth: '100%',
       padding: '5px',
     },
-    title: { textAlign: 'center' },
-    rating: { textAlign: 'center' },
-  });
-
-  const { classes } = useStyles();
+    centered: { textAlign: 'center' },
+  } satisfies Record<string, SxProps<Theme>>;
 
   return (
     <Grid container spacing={2}>
@@ -53,66 +50,60 @@ const ThemeGallery: React.FC<ThemeGalleryProps> = ({
         const rating = ratings.find((r) => r.submission === id);
         return isSeries ? (
           <Grid key={id} size={{ xs: 12 }}>
-            <Card
-              raised
-              className={classes.card}
-              onClick={() => handleClick(id)}
-            >
-              <div className={classes.wrapOut}>
-                <div className={classes.wrapIn}>
+            <Card raised sx={sx.card} onClick={() => handleClick(id)}>
+              <Box sx={sx.wrapOut}>
+                <Box sx={sx.wrapIn}>
                   {files.map((file) => (
-                    <img
+                    <Box
+                      component="img"
                       key={file.id}
-                      className={classes.image}
+                      sx={sx.image}
                       src={file.thumbnail || file.file}
                       alt={title ?? ''}
                     />
                   ))}
-                </div>
-              </div>
-              <div className={classes.title}>
+                </Box>
+              </Box>
+              <Box sx={sx.centered}>
                 <b>{title}</b>
-              </div>
-              <div className={classes.rating}>
+              </Box>
+              <Box sx={sx.centered}>
                 <Rating
                   max={10}
                   value={rating?.rating || 0}
                   size="small"
                   disabled
                 />
-              </div>
+              </Box>
             </Card>
           </Grid>
         ) : (
           <Grid key={id} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
-            <Card
-              raised
-              className={classes.card}
-              onClick={() => handleClick(id)}
-            >
-              <div className={classes.wrapOut}>
-                <div className={classes.wrapIn}>
+            <Card raised sx={sx.card} onClick={() => handleClick(id)}>
+              <Box sx={sx.wrapOut}>
+                <Box sx={sx.wrapIn}>
                   {files.map((file) => (
-                    <img
+                    <Box
+                      component="img"
                       key={file.id}
-                      className={classes.image}
+                      sx={sx.image}
                       src={file.thumbnail || file.file}
                       alt={title ?? ''}
                     />
                   ))}
-                </div>
-              </div>
-              <div className={classes.title}>
+                </Box>
+              </Box>
+              <Box sx={sx.centered}>
                 <b>{title}</b>
-              </div>
-              <div className={classes.rating}>
+              </Box>
+              <Box sx={sx.centered}>
                 <Rating
                   max={10}
                   value={rating?.rating || 0}
                   size="small"
                   disabled
                 />
-              </div>
+              </Box>
             </Card>
           </Grid>
         );

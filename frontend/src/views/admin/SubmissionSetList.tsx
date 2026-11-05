@@ -1,13 +1,10 @@
 import { useParams } from 'react-router';
 import React from 'react';
 
-import { withStyles } from 'tss-react/mui';
-
 import { Alert, Grid, Typography } from '@mui/material';
 
 import ConfirmDialog from '../../components/Notifications/ConfirmDialog';
 
-import { editListStyles } from '../../styles/general';
 import SubmissionSetService from '../../services/SubmissionSetService';
 import ContestService from '../../services/ContestService';
 import { requestError } from '../../services/errors';
@@ -15,10 +12,6 @@ import { Contest, SubmissionSet } from '../../types/api';
 import SubmissionSetTable from '../../components/SubmissionSetTable/SubmissionSetTable';
 import LoadingProgress from '../../components/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
-
-type StyleProps = {
-  classes?: Record<keyof ReturnType<typeof editListStyles>, string>;
-};
 
 interface RouteMatchParams {
   contestId: string;
@@ -34,7 +27,7 @@ interface SubmissionSetListState {
   reloadKey: number;
 }
 
-interface SubmissionSetListProps extends StyleProps, WithTranslation {
+interface SubmissionSetListProps extends WithTranslation {
   match: { params: RouteMatchParams };
 }
 
@@ -131,9 +124,7 @@ class SubmissionSetList extends React.Component<
   }
 }
 
-const RoutedView = withTranslation()(
-  withStyles(SubmissionSetList, editListStyles),
-);
+const RoutedView = withTranslation()(SubmissionSetList);
 export default function RouteView() {
   const params = useParams();
   const contestId = params.contestId;

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import { makeStyles } from 'tss-react/mui';
 import { Star } from '@mui/icons-material';
 
 interface RatingProps {
@@ -11,17 +10,6 @@ interface RatingProps {
   onChange?: (value: number) => void;
 }
 
-const useStyles = makeStyles()({
-  filledStar: {
-    cursor: 'pointer',
-    color: '#ffb400',
-  },
-  emptyStar: {
-    cursor: 'pointer',
-    color: '#bebebe',
-  },
-});
-
 const Rating: React.FC<RatingProps> = ({
   max,
   value,
@@ -29,8 +17,6 @@ const Rating: React.FC<RatingProps> = ({
   disabled = false,
   onChange,
 }: RatingProps) => {
-  const { classes } = useStyles();
-
   const [displayValue, setDisplayValue] = useState<number | null>(null);
 
   const handleMouseOver = (newValue: number): void => {
@@ -49,9 +35,10 @@ const Rating: React.FC<RatingProps> = ({
         <Star
           key={i}
           fontSize={size}
-          className={
-            i < (displayValue || value) ? classes.filledStar : classes.emptyStar
-          }
+          sx={{
+            cursor: 'pointer',
+            color: i < (displayValue || value) ? '#ffb400' : '#bebebe',
+          }}
           onMouseOver={() => handleMouseOver(i)}
           onFocus={() => handleMouseOver(i)}
           onMouseLeave={() => handleMouseLeave()}

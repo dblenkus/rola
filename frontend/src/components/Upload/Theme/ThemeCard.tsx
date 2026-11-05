@@ -1,23 +1,19 @@
 import React, { ReactNode } from 'react';
 
 import { Card, CardContent, CardHeader, Grid } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
-import { uploadFormStyles } from '../../../styles/general';
+import { formCardSx } from '../../../styles/general';
 
 export interface ThemeCardProps {
   title: string;
   children: ReactNode;
 }
 
-const useStyles = makeStyles()(uploadFormStyles);
-
 const ThemeCard: React.FC<ThemeCardProps> = (props) => {
-  const { classes } = useStyles();
   const { title, children } = props;
 
   return (
-    <Card className={classes.themeCard} raised>
+    <Card sx={formCardSx} raised>
       <CardHeader
         title={title}
         slotProps={{

@@ -4,11 +4,10 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Alert, Button } from '@mui/material';
-import { makeStyles } from 'tss-react/mui';
 
 import InputField from '../Upload/InputField';
 
-import { authStyles } from '../../styles/general';
+import { authSx } from '../../styles/general';
 
 export interface Fields {
   new_password: string;
@@ -28,10 +27,7 @@ interface PasswordReserFormProps {
   onSubmit: () => Promise<void>;
 }
 
-const useStyles = makeStyles()(authStyles);
-
 const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
-  const { classes } = useStyles();
   const { t } = useTranslation();
   const { errors, fields, onChange, onSubmit } = props;
 
@@ -57,7 +53,7 @@ const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
         onChange={onChange}
       />
       {getError('non_field_errors') !== null ? (
-        <Alert severity="error" className={classes.alert}>
+        <Alert severity="error" sx={authSx.alert}>
           {getError('non_field_errors')}
         </Alert>
       ) : (
@@ -68,7 +64,7 @@ const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
         fullWidth
         variant="contained"
         color="primary"
-        className={classes.submit}
+        sx={authSx.submit}
       >
         {t('password_reset')}
       </Button>
