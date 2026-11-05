@@ -245,6 +245,24 @@ def test_contest_and_institution_filters_are_applied(world):
     assert [item["id"] for item in response.data["results"]] == [desired.pk]
 
 
+def test_submitted_contest_filter_lists_each_contest_once(world):
+    for _ in range(3):
+        submitted(world)
+    other = Contest.objects.create(
+        title="Other",
+        start_date=world.contest.start_date,
+        end_date=world.contest.end_date,
+    )
+    other_theme = Theme.objects.create(contest=other, title="City", n_photos=4)
+    submitted(world, user=world.other, author=world.other_author, theme=other_theme)
+    response = world.client.get("/api/v1/contest", {"submitted": "true"})
+    assert response.data["count"] == 1
+    assert [item["id"] for item in response.data["results"]] == [world.contest.pk]
+    response = world.client.get("/api/v1/contest", {"submitted": "false"})
+    assert response.data["count"] == 1
+    assert [item["id"] for item in response.data["results"]] == [other.pk]
+
+
 def test_submission_and_set_filters_are_applied(world):
     item = submitted(world)
     group = SubmissionSet.objects.create(

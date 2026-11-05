@@ -70,8 +70,12 @@ class ContestFilter(filters.FilterSet):
         if self.request.user.is_anonymous:
             return queryset.none() if value else queryset
 
-        filters = {"themes__submission__user": self.request.user}
-        return queryset.filter(**filters) if value else queryset.exclude(**filters)
+        contests = Submission.objects.filter(user=self.request.user).values(
+            "theme__contest"
+        )
+        if value:
+            return queryset.filter(pk__in=contests)
+        return queryset.exclude(pk__in=contests)
 
     is_active = filters.BooleanFilter(method="filter_is_active")
     submitted = filters.BooleanFilter(method="filter_submitted")
