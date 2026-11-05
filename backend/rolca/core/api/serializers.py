@@ -94,7 +94,7 @@ class AuthorSerializer(BaseSerializer):
             "distinction",
         ]
 
-    def get_email(self, author):
+    def get_email(self, author) -> str | None:
         """Return author's email for superusers, ``None`` field otherwise."""
         if not self.context["request"].user.is_superuser:
             return None
@@ -229,7 +229,7 @@ class ThemeSerializer(BaseSerializer):
             "submissions_number",
         ]
 
-    def get_submissions_number(self, theme):
+    def get_submissions_number(self, theme) -> int:
         """Count submissions in this theme."""
         return theme.submission_set.count()
 

@@ -23,7 +23,13 @@ from rolca.core.models import (
     Theme,
 )
 from rolca.payment.models import Payment
-from rolca.rating.models import Judge, Rating, SubmissionReward, ThemeResults
+from rolca.rating.models import (
+    AuthorReward,
+    Judge,
+    Rating,
+    SubmissionReward,
+    ThemeResults,
+)
 from tests.factories import payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
@@ -355,7 +361,26 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     assert result["accepted"] is True
     assert result["author"]["country"] is None
     assert result["author"]["email"] is None
+    assert result["author"]["reward"] is None
+    assert result["author"]["reward_theme"] is None
     assert result["reward_kind"] == "Gold"
+
+
+def test_results_identify_the_rewarded_theme_by_id(world):
+    item = submitted(world)
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    Rating.objects.create(user=world.other, judge=judge, submission=item, rating=5)
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    AuthorReward.objects.create(
+        author=world.author, theme=world.theme, label="Best author"
+    )
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    response = APIClient().get("/api/v1/results/submission")
+    assert response.status_code == 200, response.data
+    author = response.json()["results"][0]["author"]
+    assert author["reward"] == "Best author"
+    assert author["reward_theme"] == world.theme.pk
 
 
 @pytest.mark.parametrize("method", ["patch", "delete"])

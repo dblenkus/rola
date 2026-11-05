@@ -10,6 +10,7 @@ Rating API serializers
 """
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import exceptions, serializers
 
 from rolca.core.api.serializers import AuthorSerializer as CoreAuthorSerializer
@@ -69,7 +70,7 @@ class RatingSerializer(BaseSerializer):
         return attrs
 
 
-class ThemeSerializer(CoreThemeSerializer):
+class JudgeThemeSerializer(CoreThemeSerializer):
     """Serializer for Theme objects."""
 
     ratings_number = serializers.SerializerMethodField("get_ratings_number")
@@ -82,28 +83,32 @@ class ThemeSerializer(CoreThemeSerializer):
             "ratings_number",
         ]
 
-    def get_ratings_number(self, theme):
+    def get_ratings_number(self, theme) -> int:
         """Count ratings submitted by the requesting judge."""
         return Rating.objects.filter(
             user=self.context["request"].user, submission__theme=theme
         ).count()
 
-    def get_submissions_number(self, theme):
+    def get_submissions_number(self, theme) -> int:
         """Count paid submissions available for judging."""
         return theme.submission_set.filter(submissionset__payment__paid=True).count()
 
 
-class ContestSerializer(CoreContestSerializer):
+class JudgeContestSerializer(CoreContestSerializer):
     """Serializer for Contest objects."""
 
-    themes = ThemeSerializer(many=True, read_only=True)
+    themes = JudgeThemeSerializer(many=True, read_only=True)
 
 
 class AuthorResultsSerializer(CoreAuthorSerializer):
     """Serializer for Theme objects."""
 
-    reward = serializers.CharField(source="reward.label")
-    reward_theme = serializers.CharField(source="reward.theme_id")
+    reward = serializers.CharField(
+        source="reward.label", read_only=True, allow_null=True
+    )
+    reward_theme = serializers.IntegerField(
+        source="reward.theme_id", read_only=True, allow_null=True
+    )
     country = serializers.SerializerMethodField("get_country")
 
     class Meta(CoreAuthorSerializer.Meta):
@@ -115,7 +120,7 @@ class AuthorResultsSerializer(CoreAuthorSerializer):
             "country",
         ]
 
-    def get_country(self, author):
+    def get_country(self, author) -> str | None:
         """Return the optional country supplied by the host user model."""
         if not author.user or not author.user.location:
             return None
@@ -128,8 +133,12 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
 
     accepted = serializers.SerializerMethodField("get_accepted")
     reward_kind = serializers.SerializerMethodField("get_reward_kind")
-    reward_label = serializers.CharField(source="reward.label")
-    rating = serializers.IntegerField(source="rating_sum")
+    reward_label = serializers.CharField(
+        source="reward.label", read_only=True, allow_null=True
+    )
+    rating = serializers.IntegerField(
+        source="rating_sum", read_only=True, allow_null=True
+    )
 
     class Meta(CoreSubmissionSerializer.Meta):
         """Serializer configuration."""
@@ -159,10 +168,11 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
 
         return submission.rating_sum >= submission.theme.results.accepted_threshold
 
-    def get_accepted(self, submission):
+    def get_accepted(self, submission) -> bool:
         """Report whether the submission reached the acceptance threshold."""
         return self._is_accepted(submission)
 
+    @extend_schema_field(FileSerializer(many=True, allow_null=True))
     def get_files(self, submission):
         """Expose files only for accepted submissions."""
         if not self._is_accepted(submission):
@@ -176,7 +186,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
             },
         ).data
 
-    def get_reward_kind(self, submission):
+    def get_reward_kind(self, submission) -> str | None:
         """Return the human-readable award kind when present."""
         mapping = dict(SubmissionReward.KIND_CHOICES)
         if hasattr(submission, "reward"):
@@ -195,6 +205,7 @@ class ThemeResultsSerializer(CoreThemeSerializer):
             "submissions",
         ]
 
+    @extend_schema_field(SubmissionResultsSerializer(many=True))
     def get_submissions(self, theme):
         """Serialize each submission against the theme acceptance threshold."""
         return SubmissionResultsSerializer(

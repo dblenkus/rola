@@ -11,7 +11,7 @@ from rolca.core.models import Author, Contest, Submission, Theme
 from rolca.rating.api.filters import RatingFilter
 from rolca.rating.api.permissions import CanModifyRating, IsActiveJudge
 from rolca.rating.api.serializers import (
-    ContestSerializer,
+    JudgeContestSerializer,
     RatingSerializer,
     SubmissionResultsSerializer,
     ThemeResultsSerializer,
@@ -65,7 +65,7 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List contests assigned to the requesting judge."""
 
     queryset = Contest.objects.all()
-    serializer_class = ContestSerializer
+    serializer_class = JudgeContestSerializer
     filterset_class = ContestFilter
     permission_classes = (IsActiveJudge,)
 
