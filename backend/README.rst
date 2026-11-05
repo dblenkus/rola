@@ -1,28 +1,35 @@
-=====
-Rolca
-=====
+====
+Rola
+====
 
-|build| |coverage| |docs|
+The backend of Rola, a platform for photography contests. The ``rola``
+distribution holds the Django project ``rola``, the account app
+``drf_user``, the contest, judging and payment apps under ``rolca``, and
+``utils`` with the ``readinesscheck`` command.
 
-.. |build| image:: https://github.com/dblenkus/rolca/workflows/build/badge.svg?branch=master
-    :target: https://github.com/dblenkus/rolca/actions?query=workflow%3Abuild
-    :alt: Build Status
+Development
+===========
 
-.. |coverage| image:: https://codecov.io/gh/dblenkus/rolca/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/dblenkus/rolca
-    :alt: Coverage Status
+The backend needs Python 3.14 or later and the uv version that the
+repository's ``docs/contributing.rst`` names; uv downloads the Python version
+it needs. From this directory:
 
-.. |docs| image:: https://readthedocs.org/projects/rolca/badge/?version=latest
-    :target: http://rolca.readthedocs.io/
-    :alt: Documentation Status
+.. code-block:: shell
 
-Open source platform for organising photography contests.
+   uv sync --locked --all-groups
+   uv run pytest
+   uv run ruff check .
+   uv run ruff format --check .
+   uv run mypy
 
+pytest runs on an in-memory SQLite database unless ``ROLA_TEST_POSTGRESQL``
+is set. The repository's ``docs/contributing.rst`` describes the tests on
+PostgreSQL, the remaining checks, migrations, the API contract and dependency
+updates; ``docs/deployment.rst`` describes the production stack.
 
-Development and upgrades
-========================
+Licences
+========
 
-Requires Python 3.12–3.14 and Django 6.1. See ``docs/contributing.rst`` for
-installation and tests, and ``docs/upgrading.rst`` for integration and migration
-requirements. Rolca relies on the host application's ``drf_user`` models; the
-unrelated PyPI package with that name is not a substitute.
+The apps under ``rolca`` are licensed under Apache-2.0 (``LICENSE``),
+``drf_user`` under BSD-3-Clause (``drf_user/LICENSE``), and the rest under
+AGPL-3.0-only (``LICENSE-AGPL``).

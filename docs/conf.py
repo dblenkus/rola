@@ -1,4 +1,4 @@
-"""Sphinx configuration using the documented test host contract."""
+"""Sphinx configuration for the Rola documentation."""
 
 import os
 import sys

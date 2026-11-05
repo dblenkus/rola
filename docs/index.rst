@@ -1,16 +1,19 @@
 .. _index:
 
-=====
-Rolca
-=====
+====
+Rola
+====
 
-Contents
-========
+Rola runs photography contests: entrants register and upload photographs,
+juries rate them, and the results are published. These pages cover
+development, deployment and the one-off transfer of the data from the
+previous deployment.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   reference
+   architecture
    contributing
-   upgrading
-   validation
+   deployment
+   transfer
+   reference

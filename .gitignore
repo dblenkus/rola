@@ -21,14 +21,17 @@ dist/
 # Test files.
 .pytest_cache/
 
+# Documentation build output.
+/docs/_build/
+
 # Ignore binaries.
 *.py[cod]
 *.so
 *.dll
 
 # Media and static directories.
-/media/
-/static/
+/backend/media/
+/backend/static/
 
 # Deployment settings.
 /.env
