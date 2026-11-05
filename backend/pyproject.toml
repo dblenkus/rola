@@ -54,7 +54,11 @@ addopts = ["--import-mode=importlib"]
 pythonpath = ["."]
 testpaths = ["drf_user/tests", "rolca", "tests"]
 strict = true
-filterwarnings = ["error::DeprecationWarning", "error::PendingDeprecationWarning"]
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
+    "error::django.core.paginator.UnorderedObjectListWarning",
+]
 
 [tool.ruff]
 extend-exclude = ["**/migrations/**"]

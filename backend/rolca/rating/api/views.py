@@ -29,7 +29,7 @@ class RatingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Restrict ratings to the requesting user."""
-        return Rating.objects.filter(user=self.request.user)
+        return Rating.objects.filter(user=self.request.user).order_by("pk")
 
 
 class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -90,6 +90,7 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             "author__reward",
         )
         .prefetch_related("files", "reward")
+        .order_by("pk")
     )
 
     queryset = Theme.objects.prefetch_related(
@@ -120,6 +121,7 @@ class SubmissionResultsViewSet(
             "author__reward",
         )
         .prefetch_related("files", "reward")
+        .order_by("pk")
     )
     serializer_class = SubmissionResultsSerializer
     filterset_class = SubmissionFilter
