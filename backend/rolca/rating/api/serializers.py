@@ -83,15 +83,16 @@ class JudgeThemeSerializer(CoreThemeSerializer):
             "ratings_number",
         ]
 
+    # The judging contest queryset annotates both counts. Reading them
+    # directly fails loudly if a queryset loses the annotations, instead of
+    # counting each theme again.
     def get_ratings_number(self, theme) -> int:
         """Count ratings submitted by the requesting judge."""
-        return Rating.objects.filter(
-            user=self.context["request"].user, submission__theme=theme
-        ).count()
+        return theme.rating_count
 
     def get_submissions_number(self, theme) -> int:
         """Count paid submissions available for judging."""
-        return theme.submission_set.filter(submissionset__payment__paid=True).count()
+        return theme.submission_count
 
 
 class JudgeContestSerializer(CoreContestSerializer):
