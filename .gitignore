@@ -29,3 +29,6 @@ dist/
 # Media and static directories.
 /media/
 /static/
+
+# Deployment settings.
+/.env

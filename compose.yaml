@@ -1,0 +1,70 @@
+name: rola-development
+
+x-backend: &backend
+  build:
+    context: backend
+    target: development
+  environment:
+    ROLA_DEBUG: "true"
+    ROLA_SECRET_KEY: development-only-secret-key
+    ROLA_FRONTEND_URL: http://localhost:8080
+    ROLA_POSTGRESQL_HOST: db
+    ROLA_POSTGRESQL_PASSWORD: rola
+  volumes:
+    - ./backend:/app
+    - media:/storage/media
+
+services:
+  db:
+    image: postgres:18.6-alpine3.24
+    environment:
+      POSTGRES_USER: rola
+      POSTGRES_PASSWORD: rola
+      POSTGRES_DB: rola
+    ports:
+      - 127.0.0.1:55432:5432
+    volumes:
+      - db:/var/lib/postgresql
+    healthcheck:
+      test: [CMD, pg_isready, --host=127.0.0.1, --username=rola, --dbname=rola]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    <<: *backend
+    command:
+      - sh
+      - -c
+      - python manage.py migrate --noinput && python manage.py createcachetable
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, manage.py, readinesscheck]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: frontend
+      target: development
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+      VITE_PAYPAL_CLIENT_ID: ${VITE_PAYPAL_CLIENT_ID:-}
+    ports:
+      - 127.0.0.1:8080:5173
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  db:
+  media:
