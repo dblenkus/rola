@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams, Navigate } from 'react-router';
 import { connect, ConnectedProps } from 'react-redux';
-import _ from 'lodash';
 
 import { Alert } from '@mui/material';
 
@@ -140,7 +139,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     // Without a loaded theme the rater is hidden; keys must not rate it.
     if (error) return;
     const parsedNumber = parseInt(value, 10);
-    if (!_.isNaN(parsedNumber)) {
+    if (!Number.isNaN(parsedNumber)) {
       updateRating(parsedNumber || 10);
     } else if (value === 'ArrowRight' && isNext) {
       nextSubmission();

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import _ from 'lodash';
 
 import {
   Alert,
@@ -62,7 +61,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
       return;
     }
 
-    const submissionSetIds = _.map(submissionSets, 'id');
+    const submissionSetIds = submissionSets.map(({ id }) => id);
     const { data } = await PaymentService.getBySubmissionSets(submissionSetIds);
     setPayments(data.results);
   }, [submissionSets]);
@@ -126,8 +125,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
           </TableHead>
           <TableBody>
             {submissionSets.map((submissionSet) => {
-              const payment = _.find(
-                payments,
+              const payment = payments.find(
                 (p) => p.submissionset === submissionSet.id,
               );
               return (

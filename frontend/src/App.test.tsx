@@ -7,7 +7,8 @@ import { apiClient } from './services/Base';
 import store from './store';
 import { deleteMessage } from './store/notifications/actions';
 import { httpError, page, serveApi, signIn } from './test/api';
-import { contest, submission, submissionSet } from './test/fixtures';
+import { author, contest, submission, submissionSet } from './test/fixtures';
+import type { ResultsSubmission } from './types/api';
 
 beforeEach(() => {
   localStorage.clear();
@@ -471,5 +472,143 @@ describe('submissions edit list', () => {
           .map((cell) => cell.textContent),
       ).toEqual([contest.title, 'Ana Novak', '1', '1', 'EditDelete']),
     );
+  });
+
+  it('lists one row per author in the order the authors were created', async () => {
+    signIn();
+    const [nature] = contest.themes;
+    if (!nature) {
+      throw new Error('The contest fixture has no theme');
+    }
+    const twoThemes = {
+      ...contest,
+      themes: [nature, { ...nature, id: 3, title: 'City' }],
+    };
+    const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
+    serveApi({
+      'GET /contest': () => page([twoThemes]),
+      'GET /submission': () =>
+        page([
+          { ...submission(11, 'Forest'), author: mia },
+          submission(12, 'River'),
+          { ...submission(13, 'Street'), author: mia, theme: 3 },
+          { ...submission(14, 'Bridge'), author: mia, theme: 3 },
+        ]),
+    });
+    open('/user/submissions');
+    await screen.findByRole('row', { name: /Mia Zupan/ });
+    expect(
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) =>
+          within(row)
+            .getAllByRole('cell')
+            .map((cell) => cell.textContent),
+        ),
+    ).toEqual([
+      [contest.title, 'Ana Novak', '1', '1', 'EditDelete'],
+      [contest.title, 'Mia Zupan', '2', '3', 'EditDelete'],
+    ]);
+  });
+});
+
+describe('theme results', () => {
+  function result(
+    id: number,
+    title: string,
+    authorId: number,
+    [first_name, last_name]: [string, string],
+  ): ResultsSubmission {
+    return {
+      id,
+      created: '2026-01-01T00:00:00Z',
+      modified: '2026-01-01T00:00:00Z',
+      author: {
+        ...author,
+        id: authorId,
+        first_name,
+        last_name,
+        reward: null,
+        reward_theme: null,
+        country: 'SI',
+      },
+      theme: 2,
+      title,
+      files: null,
+      accepted: false,
+      rating: null,
+      reward_kind: null,
+      reward_label: null,
+    };
+  }
+
+  function openWithAuthorReward(rewardTheme: number): void {
+    const [nature] = contest.themes;
+    if (!nature) {
+      throw new Error('The contest fixture has no theme');
+    }
+    const hills = result(21, 'Hills', 3, ['Ana', 'Zupan']);
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /results/theme/2': () => ({
+        ...nature,
+        submissions: [
+          {
+            ...hills,
+            author: {
+              ...hills.author,
+              reward: 'Best young author',
+              reward_theme: rewardTheme,
+            },
+          },
+        ],
+      }),
+    });
+    open('/results/contest/1/theme/2');
+  }
+
+  it('shows an author reward in the theme it was given for', async () => {
+    openWithAuthorReward(2);
+    await screen.findByText('Hills');
+    expect(screen.getByText('Best young author')).toBeInTheDocument();
+  });
+
+  it('hides an author reward given for another theme', async () => {
+    openWithAuthorReward(3);
+    await screen.findByText('Hills');
+    expect(screen.queryByText('Best young author')).not.toBeInTheDocument();
+  });
+
+  it('groups results by author, sorted by last and first name', async () => {
+    const [nature] = contest.themes;
+    if (!nature) {
+      throw new Error('The contest fixture has no theme');
+    }
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /results/theme/2': () => ({
+        ...nature,
+        submissions: [
+          result(21, 'Hills', 3, ['Ana', 'Zupan']),
+          result(22, 'Lake', 7, ['Mia', 'Novak']),
+          result(23, 'Fog', 3, ['Ana', 'Zupan']),
+          result(24, 'Snow', 9, ['Ana', 'Novak']),
+          result(25, 'Rain', 7, ['Mia', 'Novak']),
+        ],
+      }),
+    });
+    open('/results/contest/1/theme/2');
+    await screen.findByText('Hills');
+    expect(screen.getAllByRole('row').map((row) => row.textContent)).toEqual([
+      'Novak, Ana (SI)',
+      'Snow',
+      'Novak, Mia (SI)',
+      'Lake',
+      'Rain',
+      'Zupan, Ana (SI)',
+      'Hills',
+      'Fog',
+    ]);
   });
 });

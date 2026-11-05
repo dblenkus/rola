@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { groupBy, sum } from 'lodash';
-
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { withStyles } from 'tss-react/mui';
 
@@ -29,6 +27,7 @@ import { requestError } from '../services/errors';
 import { Author, Contest, Submission } from '../types/api';
 import { asyncMap } from '../utils/async';
 import fetchAll from '../utils/fetchAll';
+import groupBy from '../utils/groupBy';
 
 type StyleProps = {
   classes?: Record<keyof ReturnType<typeof editListStyles>, string>;
@@ -139,16 +138,16 @@ class EditSubmissionsList extends React.Component<
         contest,
         allSubmissions,
       );
-      const submissionsByAuthor = groupBy(contestSubmissions, 'author.id');
-
-      for (const submissions of Object.values(submissionsByAuthor)) {
-        const author = submissions[0]?.author;
-        if (!author) {
-          continue;
-        }
-        const submissions_n = Object.keys(groupBy(submissions, 'theme')).length;
-        const photos_n = sum(
-          submissions.map((submission) => submission.files.length),
+      for (const submissions of groupBy(
+        contestSubmissions,
+        (submission) => submission.author.id,
+      )) {
+        const { author } = submissions[0];
+        const submissions_n = new Set(submissions.map(({ theme }) => theme))
+          .size;
+        const photos_n = submissions.reduce(
+          (total, submission) => total + submission.files.length,
+          0,
         );
 
         groupedSubmissions.push({

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import _ from 'lodash';
 
 import { makeStyles } from 'tss-react/mui';
 import { Star } from '@mui/icons-material';
@@ -46,7 +45,7 @@ const Rating: React.FC<RatingProps> = ({
 
   return (
     <>
-      {_.range(max).map((i) => (
+      {Array.from({ length: max }, (_, i) => (
         <Star
           key={i}
           fontSize={size}

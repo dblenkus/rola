@@ -1,6 +1,5 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
-import _ from 'lodash';
 
 import {
   Alert,
@@ -18,11 +17,16 @@ import LoadingProgress from '../../components/LoadingProgress';
 import ResultsThemeService from '../../services/ResultsThemeService';
 import { requestError } from '../../services/errors';
 import { Contest, ResultsAuthor, ResultsSubmission } from '../../types/api';
+import groupBy from '../../utils/groupBy';
 
 interface RouteMatchParams {
   contestId: string;
   themeId: string;
 }
+
+// Orders by UTF-16 code units, not by locale.
+const compareText = (a: string, b: string): number =>
+  a < b ? -1 : a > b ? 1 : 0;
 
 const ThemeResults: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
@@ -43,11 +47,11 @@ const ThemeResults: React.FC = () => {
     const fetch = async (): Promise<void> => {
       const { data } = await ResultsThemeService.getResults(themeId);
       setSubmissionsByAuthor(
-        _.chain(data.submissions)
-          .groupBy('author.id')
-          .values()
-          .orderBy(['0.author.last_name', '0.author.first_name'])
-          .value(),
+        groupBy(data.submissions, (submission) => submission.author.id).sort(
+          ([a], [b]) =>
+            compareText(a.author.last_name, b.author.last_name) ||
+            compareText(a.author.first_name, b.author.first_name),
+        ),
       );
     };
     fetch().catch((error: unknown) => setError(requestError(error)));

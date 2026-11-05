@@ -1,5 +1,3 @@
-import { range } from 'lodash';
-
 import { SubmissionModel } from '../../types/models';
 
 import { imageInit } from './actions';
@@ -28,7 +26,7 @@ const reducer = (
       return {
         ...state,
         meta: action.payload,
-        images: range(imageNumber).map((image_id) =>
+        images: Array.from({ length: imageNumber }, (_, image_id) =>
           imageReducer(undefined, imageInit({ ...imageMeta, id: image_id })),
         ),
       };

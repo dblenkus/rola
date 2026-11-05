@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 import {
   JuryActionTypes,
   JuryState,
@@ -24,8 +22,9 @@ const reducer = (state = initialState, action: JuryActionTypes): JuryState => {
     case SET_SUBMISSION: {
       const { submissions } = state;
       const { submissionId } = action.payload;
-      const newIndex = _.findIndex(submissions, (s) => s.id === submissionId);
-      return { ...state, currentIndex: _.max([newIndex, 0]) as number };
+      const newIndex =
+        submissions?.findIndex((s) => s.id === submissionId) ?? -1;
+      return { ...state, currentIndex: Math.max(newIndex, 0) };
     }
     case SET_PREVIOUS_SUBMISSION:
       return { ...state, currentIndex: state.currentIndex - 1 };

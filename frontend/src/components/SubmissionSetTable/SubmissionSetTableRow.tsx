@@ -1,5 +1,4 @@
 import React from 'react';
-import _ from 'lodash';
 import { Link } from 'react-router';
 
 import { useTranslation } from 'react-i18next';
@@ -50,7 +49,9 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
     onPaidChange(submissionSet.id, event.target.checked);
   };
 
-  const themeNumber = _(submissionSet.submissions).groupBy('theme').size();
+  const themeNumber = new Set(
+    submissionSet.submissions.map(({ theme }) => theme),
+  ).size;
 
   return (
     <TableRow>

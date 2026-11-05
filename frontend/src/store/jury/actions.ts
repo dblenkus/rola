@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { AppState, AppThunk } from '..';
 import ContestService from '../../services/ContestService';
 import JudgeSubmissionService from '../../services/JudgeSubmissionService';
@@ -50,7 +49,7 @@ export const initializeStore =
 
     let currentIndex = 0;
     if (submissionId) {
-      currentIndex = _.findIndex(submissions, (s) => s.id === submissionId);
+      currentIndex = submissions.findIndex((s) => s.id === submissionId);
       if (currentIndex === -1) currentIndex = 0;
     }
 

@@ -1,5 +1,3 @@
-import { range } from 'lodash';
-
 import { ThemeModel } from '../../types/models';
 
 import { submissionInit } from './actions';
@@ -37,7 +35,7 @@ const reducer = (
           id,
           title,
         },
-        submissions: range(submissionNumber).map((id) =>
+        submissions: Array.from({ length: submissionNumber }, (_, id) =>
           submissionReducer(
             undefined,
             submissionInit({ ...submissionMeta, id }),
