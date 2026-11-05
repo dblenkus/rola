@@ -12,7 +12,7 @@ ALLOWED_HOSTS = comma_separated("ALLOWED_HOSTS")
 AUTH_USER_MODEL = "drf_user.User"
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "rola.apps.RolaAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
