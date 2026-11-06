@@ -166,11 +166,11 @@ Deployment changes
   request after 120 seconds; Daphne had no time limit.
 * The frontend reports errors to the Sentry DSN given at build time and sends
   no headers, cookies, request bodies or query strings with them.
-* The contest download in the Django admin builds its archive in memory, so
-  the serving worker needs about as much memory as the archive. nginx waits
-  120 seconds for it, the TLS terminator must wait as long, and nginx keeps
-  up to 4 GiB of it on disk, so a slow browser does not hold a Gunicorn
-  worker.
+* The contest download in the Django admin builds its archive in a
+  temporary file instead of in memory, so the backend needs as much free
+  disk as the archive instead of as much memory. nginx waits 120 seconds for
+  it, the TLS terminator must wait as long, and nginx keeps up to 4 GiB of it
+  on disk, so a slow browser does not hold a Gunicorn worker.
 * CI no longer publishes images; they are built on the server.
 
 Fixes

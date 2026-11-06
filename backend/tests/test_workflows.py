@@ -2,15 +2,19 @@
 
 import io
 import logging
+import os
+import tracemalloc
 import zipfile
-from datetime import timedelta
+from datetime import datetime, timedelta
 from smtplib import SMTPException
 from unittest.mock import patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from PIL import Image
 from rest_framework.test import APIClient
 
@@ -292,12 +296,15 @@ def test_export_requires_organizer_and_includes_every_file(world):
     world.client.force_login(world.admin)
     response = world.client.get(url)
     assert response.status_code == 200
-    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+    with zipfile.ZipFile(io.BytesIO(response.getvalue())) as archive:
         members = [name for name in archive.namelist() if not name.endswith("/")]
         assert len(members) == 2
         assert len(set(members)) == 2
         for name in members:
             assert Image.open(io.BytesIO(archive.read(name))).size == (800, 600)
+            # Photographs carry the time of the download, in local time.
+            written = datetime(*archive.getinfo(name).date_time)
+            assert abs(written - datetime.now()) < timedelta(minutes=5)
 
 
 def test_export_sends_a_logged_out_organizer_to_the_admin_login(world):
@@ -317,6 +324,47 @@ def test_export_sends_a_logged_out_organizer_to_the_admin_login(world):
     response = browser.get(url)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "application/x-zip-compressed"
+
+
+def test_export_builds_the_archive_without_holding_it_in_memory(world):
+    noise = Image.frombytes("RGB", (1000, 1000), os.urandom(3_000_000))
+    data = io.BytesIO()
+    noise.save(data, "JPEG", quality=95)
+    item = submitted(world)
+    item.files.add(
+        *[
+            File.objects.create(
+                user=world.owner,
+                file=SimpleUploadedFile(
+                    f"noise-{index}.jpg", data.getvalue(), content_type="image/jpeg"
+                ),
+            )
+            for index in range(12)
+        ]
+    )
+    world.client.force_login(world.admin)
+    url = f"/core/contest/{world.contest.pk}/download"
+    # The first request imports and compiles modules, which tracing would count.
+    world.client.get(url).getvalue()
+    tracemalloc.start()
+    try:
+        response = world.client.get(url)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert response.status_code == 200
+    size = int(response.headers["Content-Length"])
+    assert size > 12 * len(data.getvalue())
+    # An archive built in memory needs more than its own size.
+    assert peak < size / 4
+    assert response.headers["Content-Disposition"] == (
+        f'attachment; filename="{slugify(world.contest.title)}.zip"'
+    )
+    content = response.getvalue()
+    assert len(content) == size
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        assert archive.testzip() is None
+        assert len([name for name in archive.namelist() if name.endswith(".jpg")]) == 12
 
 
 def test_payment_permissions_upsert_and_filter(world):

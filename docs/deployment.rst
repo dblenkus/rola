@@ -240,17 +240,28 @@ Contest downloads
 
 The contest download in the Django admin is the longest request: the
 120-second limits of Gunicorn, nginx and the TLS terminator are set for it.
-Size the server for the largest contest as well. The zip archive is not
-compressed, so it is as large as the contest's photographs together, and a
-backend worker builds it in memory. For 300 photographs of 3 MB, the archive
-was 901 MB and the worker peaked at 939 MiB.
+The zip archive is not compressed, so it is as large as the contest's
+photographs together. A backend worker reads every photograph from storage
+and writes the archive to a temporary file in the backend container, so its
+memory does not grow with the contest, but the server needs as much free
+disk as the archive while the download runs. For 300 photographs of 3 MB,
+the archive was 901 MB, and the worker's peak memory grew by 4 MiB with the
+photographs on disk and by 35 MiB with them in S3. Gunicorn sends the file
+with ``sendfile`` and logs the download with 0 bytes; nginx's access log
+has its size.
 
-nginx keeps up to 4 GiB of the response in a temporary file, so the worker
-is free again before a slow browser has the whole archive, and the server
-needs that much free disk until the download completes. An archive larger
-than 4 GiB holds the worker at the browser's pace until the download is
-almost complete, and Gunicorn cuts it off if that takes longer than 120
-seconds. Each download that runs at the same time needs as much memory and
+Gunicorn cuts the download off if building the archive and passing it to
+nginx takes longer than 120 seconds. With ``ROLA_USE_S3`` on, the worker
+reads each photograph from the bucket, so the time depends on the
+connection to S3: download the largest contest once after the first start
+or the transfer, and check that it completes.
+
+nginx keeps up to 4 GiB of the response in a temporary file of its own, so
+the worker is free again before a slow browser has the whole archive, and
+the server needs that much free disk again until the download completes. An
+archive larger than 4 GiB holds the worker at the browser's pace until the
+download is almost complete, and Gunicorn cuts it off if that takes longer
+than 120 seconds. Each download that runs at the same time needs as much
 disk again.
 
 Workers
