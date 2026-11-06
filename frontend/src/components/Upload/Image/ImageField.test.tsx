@@ -41,4 +41,23 @@ describe('photograph field', () => {
       screen.queryByRole('button', { name: 'Remove' }),
     ).not.toBeInTheDocument();
   });
+
+  it('describes the preview by whether a photograph is selected', async () => {
+    const user = userEvent.setup();
+    render(<Field />);
+    expect(
+      screen.getByRole('img', { name: 'No photograph selected' }),
+    ).toBeInTheDocument();
+
+    const photo = new File(['jpeg'], 'photo.jpg', { type: 'image/jpeg' });
+    await user.upload(screen.getByLabelText('Select photograph'), photo);
+    expect(
+      screen.getByRole('img', { name: 'Selected photograph' }),
+    ).toHaveAttribute('src', 'blob:photo.jpg');
+
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(
+      screen.getByRole('img', { name: 'No photograph selected' }),
+    ).toBeInTheDocument();
+  });
 });

@@ -194,6 +194,9 @@ Fixes
   open in another window keep their ``target`` and get
   ``rel="noopener noreferrer"``.
 * Photograph file names with quotes or non-ASCII letters upload correctly.
+* Screen readers hear the upload form's photograph preview as "Selected
+  photograph" or "No photograph selected" instead of "Missing", and the
+  preview and the file input are named in the interface language.
 * Activation and reset emails show names and the application name as
   written instead of with HTML escapes such as ``&amp;``.
 * Theme results sort names in Slovenian alphabetical order and highlight an

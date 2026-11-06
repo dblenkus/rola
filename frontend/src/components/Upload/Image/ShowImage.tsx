@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 import { Box } from '@mui/material';
 
 export interface ShowImageProps {
@@ -9,6 +11,7 @@ export interface ShowImageProps {
 
 const ShowImage: React.FC<ShowImageProps> = (props) => {
   const { error, src } = props;
+  const { t } = useTranslation();
 
   return (
     <Box
@@ -21,7 +24,7 @@ const ShowImage: React.FC<ShowImageProps> = (props) => {
         width: '100%',
       }}
       src={src || '/img/no-photo.png'}
-      alt="Missing"
+      alt={src ? t('selected_photo') : t('no_photo_selected')}
     />
   );
 };
