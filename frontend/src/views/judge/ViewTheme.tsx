@@ -23,10 +23,12 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   initialize,
   setSubmission,
   theme,
-  isLoading,
   submissions,
 }: PropsFromRedux) => {
   const [error, setError] = useState<string | null>(null);
+  // Until this view's own initialization has stored its theme, the store
+  // holds the theme opened before, or this one as it was.
+  const [loaded, setLoaded] = useState(false);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [redirect, setRedirect] = useState<string | null>(null);
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
@@ -39,9 +41,9 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 
   // Initialize the store.
   useEffect(() => {
-    initialize(contestId, themeId).catch((error: unknown) =>
-      setError(requestError(error)),
-    );
+    initialize(contestId, themeId)
+      .then(setLoaded)
+      .catch((error: unknown) => setError(requestError(error)));
   }, [contestId, themeId, initialize]);
 
   // Fetch ratings.
@@ -65,7 +67,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 
   if (error) return <Alert severity="error">{error}</Alert>;
 
-  if (isLoading || !submissions) return <LoadingProgress />;
+  if (!loaded || !submissions) return <LoadingProgress />;
 
   return (
     <>
@@ -85,7 +87,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 const mapStateToProps = (state: AppState) => ({ ...state.jury });
 
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  initialize: (contestId: string, themeId: string): Promise<void> =>
+  initialize: (contestId: string, themeId: string): Promise<boolean> =>
     dispatch(initializeStore(contestId, themeId, undefined)),
   setSubmission: (submissionId: number): void => {
     dispatch(setSubmission(submissionId));
@@ -96,4 +98,12 @@ const connector = connect(mapStateToProps, mapDispatchToProps);
 
 type PropsFromRedux = ConnectedProps<typeof connector>;
 
-export default connector(ViewTheme);
+const ConnectedViewTheme = connector(ViewTheme);
+
+// Another theme gets a new view, so no state of the previous one stays.
+const ViewThemeRoute: React.FC = () => {
+  const { contestId, themeId } = useParams<keyof RouteMatchParams>();
+  return <ConnectedViewTheme key={`${contestId}/${themeId}`} />;
+};
+
+export default ViewThemeRoute;

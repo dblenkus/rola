@@ -1,13 +1,23 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes } from 'react-router';
-import { expect, it } from 'vitest';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+} from 'react-router';
+import { beforeEach, expect, it } from 'vitest';
 import '../../i18n/config';
-import store from '../../store';
+import { createAppStore, type AppStore } from '../../store';
 import { httpError, page, serveApi } from '../../test/api';
 import { contest, jurySubmission } from '../../test/fixtures';
-import type { PaginatedResponse, Rating } from '../../types/api';
+import type {
+  JurySubmission,
+  PaginatedResponse,
+  Rating,
+} from '../../types/api';
 import RateSubmission from './RateSubmission';
 
 interface PendingRating {
@@ -16,6 +26,12 @@ interface PendingRating {
 }
 
 const pending: PendingRating[] = [];
+let store: AppStore;
+
+beforeEach(() => {
+  pending.length = 0;
+  store = createAppStore();
+});
 
 function ratings(submissionId: number, value: number) {
   return page([
@@ -49,12 +65,10 @@ async function answerRating(submissionId: number, value: number) {
   await settle();
 }
 
-function renderRater() {
+function renderRater(path = '/judge/contest/1/theme/2/rate?submission=11') {
   render(
     <Provider store={store}>
-      <MemoryRouter
-        initialEntries={['/judge/contest/1/theme/2/rate?submission=11']}
-      >
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route
             path="/judge/contest/:contestId/theme/:themeId/rate"
@@ -248,4 +262,153 @@ it('keeps the rater after a failed save', async () => {
   expect(
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
+});
+
+const twoThemes = {
+  ...contest,
+  themes: [...contest.themes, { ...contest.themes[0]!, id: 3, title: 'City' }],
+};
+
+it('shows nothing from the previous theme while another theme loads', async () => {
+  serveApi({
+    'GET /contest/1': () => twoThemes,
+    'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
+    'GET /rating': () => page([]),
+  });
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  cleanup();
+
+  const saves: unknown[] = [];
+  const ratingLoads: unknown[] = [];
+  let answer: (data: PaginatedResponse<JurySubmission>) => void = () => {};
+  serveApi({
+    'GET /contest/1': () => twoThemes,
+    'GET /judge/submission': () =>
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    'GET /rating': ({ params }) => {
+      ratingLoads.push(params.submission);
+      return page([]);
+    },
+    'POST /rating': (config) => {
+      saves.push(JSON.parse(String(config.data)));
+      return {};
+    },
+  });
+  const user = userEvent.setup();
+  renderRater('/judge/contest/1/theme/3/rate');
+  expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  await user.keyboard('7');
+  await settle();
+  expect(saves).toEqual([]);
+  expect(ratingLoads).toEqual([]);
+
+  answer(page([jurySubmission(21, 'Street')]));
+  expect(await screen.findByRole('img', { name: 'Street' })).toBeVisible();
+  // The rating is requested by an effect after the photograph renders.
+  await waitFor(() => expect(ratingLoads).toEqual([21]));
+});
+
+it('keeps the latest theme when an earlier load finishes last', async () => {
+  const answers = new Map<
+    string,
+    (data: PaginatedResponse<JurySubmission>) => void
+  >();
+  serveApi({
+    'GET /contest/1': () => twoThemes,
+    'GET /judge/submission': ({ params }) =>
+      new Promise((resolve) => answers.set(String(params.theme), resolve)),
+    'GET /rating': () => page([]),
+  });
+  renderRater('/judge/contest/1/theme/2/rate');
+  await waitFor(() => expect(answers.has('2')).toBe(true));
+  cleanup();
+  renderRater('/judge/contest/1/theme/3/rate');
+  await waitFor(() => expect(answers.has('3')).toBe(true));
+
+  answers.get('3')?.(page([jurySubmission(21, 'Street')]));
+  expect(await screen.findByRole('img', { name: 'Street' })).toBeVisible();
+  answers.get('2')?.(page([jurySubmission(11, 'First')]));
+  await settle();
+  expect(screen.getByRole('img', { name: 'Street' })).toBeVisible();
+  expect(screen.queryByRole('img', { name: 'First' })).not.toBeInTheDocument();
+});
+
+it('shows no error from a theme load the judge has left', async () => {
+  let failFirstTheme: (() => void) | undefined;
+  serveApi({
+    'GET /contest/1': () => twoThemes,
+    'GET /judge/submission': (config) =>
+      config.params.theme === 2
+        ? new Promise((_resolve, reject) => {
+            failFirstTheme = () => reject(httpError(config, 503));
+          })
+        : page([jurySubmission(21, 'Street')]),
+    'GET /rating': () => page([]),
+  });
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/judge/contest/:contestId/theme/:themeId/rate',
+        element: <RateSubmission />,
+      },
+    ],
+    { initialEntries: ['/judge/contest/1/theme/2/rate'] },
+  );
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  );
+  await waitFor(() => expect(failFirstTheme).toBeDefined());
+
+  // The same rater stays mounted, as after a jump in the browser history.
+  await act(() => router.navigate('/judge/contest/1/theme/3/rate'));
+  expect(await screen.findByRole('img', { name: 'Street' })).toBeVisible();
+  failFirstTheme?.();
+  await settle();
+  expect(screen.getByRole('img', { name: 'Street' })).toBeVisible();
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+});
+
+it('leaves the error of a failed theme behind when another theme opens', async () => {
+  serveApi({
+    'GET /contest/1': () => twoThemes,
+    'GET /judge/submission': (config) => {
+      if (config.params.theme === 2) throw httpError(config, 503);
+      return page([jurySubmission(21, 'Street'), jurySubmission(22, 'Bridge')]);
+    },
+    'GET /rating': () => page([]),
+  });
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/judge/contest/:contestId/theme/:themeId/rate',
+        element: <RateSubmission />,
+      },
+    ],
+    { initialEntries: ['/judge/contest/1/theme/2/rate'] },
+  );
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  );
+  expect(
+    await screen.findByText('Request failed. Please try again.'),
+  ).toBeInTheDocument();
+
+  await act(() =>
+    router.navigate('/judge/contest/1/theme/3/rate?submission=22'),
+  );
+  expect(await screen.findByRole('img', { name: 'Bridge' })).toBeVisible();
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+  expect(router.state.location.search).toBe('?submission=22');
 });

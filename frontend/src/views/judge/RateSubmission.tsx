@@ -27,11 +27,10 @@ interface RouteMatchParams {
 }
 
 const RateSubmission: React.FC<PropsFromRedux> = ({
-  submission,
+  submission: storedSubmission,
   theme,
-  isLoading,
-  isPrevious,
-  isNext,
+  isPrevious: storedIsPrevious,
+  isNext: storedIsNext,
   initialize,
   nextSubmission,
   previousSubmission,
@@ -54,6 +53,10 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     message: string;
   } | null>(null);
   const [close, setClose] = useState(false);
+  // Until this view's own initialization has stored its theme, the store
+  // holds the theme opened before, or this one as it was; none of it may be
+  // shown, rated or put in the address.
+  const [loaded, setLoaded] = useState(false);
 
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
@@ -62,6 +65,9 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   if (!themeId) {
     throw new Error('Missing themeId route parameter');
   }
+  const submission = loaded ? storedSubmission : null;
+  const isPrevious = loaded && storedIsPrevious;
+  const isNext = loaded && storedIsNext;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,9 +100,9 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
 
   // Initialize the store.
   useEffect(() => {
-    initialize(contestId, themeId, submissionId.current).catch(
-      (error: unknown) => setError(requestError(error)),
-    );
+    initialize(contestId, themeId, submissionId.current)
+      .then(setLoaded)
+      .catch((error: unknown) => setError(requestError(error)));
   }, [contestId, themeId, initialize]);
 
   // Store submission id in url.
@@ -155,7 +161,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
 
   if (error) return <Alert severity="error">{error}</Alert>;
 
-  if (isLoading || !submission) return <LoadingProgress />;
+  if (!submission) return <LoadingProgress />;
 
   return (
     <div style={{ position: 'absolute', width: '100%', left: 0, right: 0 }}>
@@ -194,7 +200,7 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
     contestId: string,
     themeId: string,
     submissionId: number | undefined,
-  ): Promise<void> =>
+  ): Promise<boolean> =>
     dispatch(initializeStore(contestId, themeId, submissionId)),
   previousSubmission: () => dispatch(setPreviousSubmission()),
   nextSubmission: () => dispatch(setNextSubmission()),
@@ -204,4 +210,12 @@ const connector = connect(mapStateToProps, mapDispatchToProps);
 
 type PropsFromRedux = ConnectedProps<typeof connector>;
 
-export default connector(RateSubmission);
+const ConnectedRateSubmission = connector(RateSubmission);
+
+// Another theme gets a new view, so no state of the previous one stays.
+const RateSubmissionRoute: React.FC = () => {
+  const { contestId, themeId } = useParams<keyof RouteMatchParams>();
+  return <ConnectedRateSubmission key={`${contestId}/${themeId}`} />;
+};
+
+export default RateSubmissionRoute;

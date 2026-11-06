@@ -20,21 +20,26 @@ export type AppThunk<R = void> = ThunkAction<
   UnknownAction
 >;
 
-const store = configureStore({
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      immutableCheck: {
-        // Browser File metadata getters can return new objects on every access.
-        isImmutable: (value: unknown) =>
-          value instanceof File || isImmutableDefault(value),
-      },
-      serializableCheck: {
-        ignoredActions: [AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST],
-        ignoredPaths: ['upload.contest'],
-      },
-    }),
-});
+// Tests create their own store, so that no state carries over between them.
+export const createAppStore = () =>
+  configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: {
+          // Browser File metadata getters can return new objects on every access.
+          isImmutable: (value: unknown) =>
+            value instanceof File || isImmutableDefault(value),
+        },
+        serializableCheck: {
+          ignoredActions: [AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST],
+          ignoredPaths: ['upload.contest'],
+        },
+      }),
+  });
+export type AppStore = ReturnType<typeof createAppStore>;
+
+const store = createAppStore();
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 export const useAppSelector = useSelector.withTypes<AppState>();

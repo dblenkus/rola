@@ -1,7 +1,6 @@
 import { Contest, JurySubmission, Theme } from '../../types/api';
 
 export interface JuryState {
-  isLoading: boolean;
   contest: Contest | null;
   theme: Theme | null;
   submissions: JurySubmission[] | null;

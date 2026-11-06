@@ -186,6 +186,9 @@ Fixes
   the Django admin.
 * The jury view ignores late rating responses for a photograph it has already
   left.
+* The jury gallery and rater show a theme only once they have loaded it:
+  nothing from the theme opened before, no rating during the load, and
+  neither the result nor the error of a load the judge has left.
 * Contest notices are sanitized: scripts, iframes, embedded objects,
   event-handler attributes and ``javascript:`` links are removed. Links that
   open in another window keep their ``target`` and get

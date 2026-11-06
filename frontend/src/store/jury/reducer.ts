@@ -8,7 +8,6 @@ import {
 } from './types';
 
 const initialState: JuryState = {
-  isLoading: true,
   contest: null,
   theme: null,
   submissions: null,
@@ -18,7 +17,7 @@ const initialState: JuryState = {
 const reducer = (state = initialState, action: JuryActionTypes): JuryState => {
   switch (action.type) {
     case PERFORM_INITIALIZE:
-      return { ...state, ...action.payload, isLoading: false };
+      return { ...state, ...action.payload };
     case SET_SUBMISSION: {
       const { submissions } = state;
       const { submissionId } = action.payload;
