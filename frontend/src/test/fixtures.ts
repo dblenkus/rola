@@ -1,4 +1,11 @@
-import type { Author, Contest, Submission, SubmissionSet } from '../types/api';
+import type {
+  Author,
+  Contest,
+  Image,
+  JurySubmission,
+  Submission,
+  SubmissionSet,
+} from '../types/api';
 
 export const contest: Contest = {
   id: 1,
@@ -38,6 +45,15 @@ export const author: Author = {
   email: null,
 };
 
+function photograph(id: number): Image {
+  return {
+    id,
+    created: '2026-01-01T00:00:00Z',
+    modified: '2026-01-01T00:00:00Z',
+    file: `https://media.example/${id}.jpg`,
+  };
+}
+
 export function submission(id: number, title: string): Submission {
   return {
     id,
@@ -46,14 +62,19 @@ export function submission(id: number, title: string): Submission {
     author,
     theme: 2,
     title,
-    files: [
-      {
-        id,
-        created: '2026-01-01T00:00:00Z',
-        modified: '2026-01-01T00:00:00Z',
-        file: `https://media.example/${id}.jpg`,
-      },
-    ],
+    files: [photograph(id)],
+  };
+}
+
+export function jurySubmission(id: number, title: string): JurySubmission {
+  return {
+    id,
+    created: '2026-01-01T00:00:00Z',
+    modified: '2026-01-01T00:00:00Z',
+    theme: 2,
+    title,
+    description: null,
+    files: [photograph(id)],
   };
 }
 

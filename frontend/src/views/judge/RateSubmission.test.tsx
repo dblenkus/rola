@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 import '../../i18n/config';
 import store from '../../store';
 import { httpError, page, serveApi } from '../../test/api';
-import { contest, submission } from '../../test/fixtures';
+import { contest, jurySubmission } from '../../test/fixtures';
 import type { PaginatedResponse, Rating } from '../../types/api';
 import RateSubmission from './RateSubmission';
 
@@ -79,7 +79,7 @@ it('keeps the rater after a failed rating load', async () => {
   serveApi({
     'GET /contest/1': () => contest,
     'GET /judge/submission': () =>
-      page([submission(11, 'First'), submission(12, 'Second')]),
+      page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': (config) => {
       if (config.params.submission !== 12) return page([]);
       if (unavailable) {
@@ -125,7 +125,7 @@ it('keeps the rater after a failed rating load', async () => {
 it('ignores rating keys when the theme does not load', async () => {
   serveApi({
     'GET /contest/1': () => contest,
-    'GET /judge/submission': () => page([submission(11, 'First')]),
+    'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
     'GET /rating': () => page([]),
   });
   renderRater();
@@ -159,7 +159,7 @@ it('shows each submission its own rating while the judge moves on', async () => 
   serveApi({
     'GET /contest/1': () => contest,
     'GET /judge/submission': () =>
-      page([submission(11, 'First'), submission(12, 'Second')]),
+      page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': ({ params }) =>
       new Promise((resolve) =>
         pending.push({ submission: params.submission, resolve }),
@@ -188,7 +188,7 @@ it('stays on the shown submission when an earlier save finishes', async () => {
   serveApi({
     'GET /contest/1': () => contest,
     'GET /judge/submission': () =>
-      page([submission(11, 'First'), submission(12, 'Second')]),
+      page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': ({ params }) =>
       params.submission === 12 ? ratings(12, 3) : page([]),
     'POST /rating': () =>
@@ -215,7 +215,7 @@ it('keeps the rater after a failed save', async () => {
   serveApi({
     'GET /contest/1': () => contest,
     'GET /judge/submission': () =>
-      page([submission(11, 'First'), submission(12, 'Second')]),
+      page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': () => page([]),
     'POST /rating': (config) => {
       attempts += 1;

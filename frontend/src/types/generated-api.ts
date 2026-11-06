@@ -624,6 +624,18 @@ export interface components {
             school_show?: boolean;
             school_required?: boolean;
         };
+        /** @description Serialize a submission for judging, without its author. */
+        JudgeSubmission: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly created: string;
+            /** Format: date-time */
+            readonly modified: string;
+            readonly theme: number;
+            readonly title: string | null;
+            readonly description: string | null;
+            readonly files: components["schemas"]["File"][];
+        };
         /** @description Serializer for Theme objects. */
         JudgeTheme: {
             readonly id: number;
@@ -710,6 +722,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["JudgeContest"][];
+        };
+        PaginatedJudgeSubmissionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["JudgeSubmission"][];
         };
         PaginatedPaymentList: {
             /** @example 123 */
@@ -1457,7 +1484,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedSubmissionList"];
+                    "application/json": components["schemas"]["PaginatedJudgeSubmissionList"];
                 };
             };
         };

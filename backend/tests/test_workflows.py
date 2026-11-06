@@ -359,6 +359,30 @@ def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
     assert response.data["results"] == []
 
 
+def test_judges_see_submissions_without_their_authors(world):
+    Judge.objects.create(judge=world.owner, contest=world.contest)
+    item = submitted(world, user=world.other, author=world.other_author)
+    item.files.add(photo(world.other))
+    group = SubmissionSet.objects.create(
+        user=world.other, author=world.other_author, contest=world.contest
+    )
+    group.submissions.add(item)
+    Payment.objects.create(submissionset=group, paid=True)
+    response = world.client.get("/api/v1/judge/submission")
+    assert response.status_code == 200, response.data
+    [row] = response.json()["results"]
+    assert set(row) == {
+        "id",
+        "created",
+        "modified",
+        "theme",
+        "title",
+        "description",
+        "files",
+    }
+    assert [file["id"] for file in row["files"]] == [item.files.get().pk]
+
+
 def test_anonymous_judge_endpoint_denies_without_server_error(world):
     response = APIClient().get("/api/v1/judge/submission")
     assert response.status_code == 401

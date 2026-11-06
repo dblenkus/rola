@@ -16,13 +16,12 @@ from django.utils import timezone
 from rest_framework import mixins, permissions, viewsets
 
 from rolca.core.api.filters import ContestFilter, SubmissionFilter
-from rolca.core.api.querysets import with_submission_details
-from rolca.core.api.serializers import SubmissionSerializer
 from rolca.core.models import Contest, Submission, Theme
 from rolca.rating.api.filters import RatingFilter
 from rolca.rating.api.permissions import CanModifyRating, IsActiveJudge
 from rolca.rating.api.serializers import (
     JudgeContestSerializer,
+    JudgeSubmissionSerializer,
     RatingSerializer,
     SubmissionResultsSerializer,
     ThemeResultsSerializer,
@@ -47,7 +46,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List paid submissions assigned to an active judge."""
 
     queryset = Submission.objects.all()
-    serializer_class = SubmissionSerializer
+    serializer_class = JudgeSubmissionSerializer
     filterset_class = SubmissionFilter
     permission_classes = (IsActiveJudge,)
 
@@ -58,7 +57,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             contest__in=judge_qs.values("contest"),
             contest__publish_date__gte=timezone.now(),
         )
-        return with_submission_details(
+        return (
             Submission.objects.filter(
                 theme__in=theme_qs,
                 submissionset__payment__paid=True,
@@ -69,6 +68,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 )
             )
             .order_by("random")
+            .prefetch_related("files")
         )
 
 

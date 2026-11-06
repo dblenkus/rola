@@ -17,6 +17,9 @@ API changes
   timestamps are no longer public. ``/api/v1/submission`` lists only the
   requester's own submissions, also after publication and for
   administrators, and another account's submission answers 404.
+* ``/api/v1/judge/submission`` leaves out each submission's author. Judges
+  used to get the author's name, date of birth, school, mentor, club and
+  distinction, which the jury view does not show.
 * Profile ``PUT`` works without a password. ``PUT`` and ``PATCH`` on
   ``/api/v1/user/{id}`` answer 400 when the request contains a password (use
   the change-password endpoint) or a different email address. A profile

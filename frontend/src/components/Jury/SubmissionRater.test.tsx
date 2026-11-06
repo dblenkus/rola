@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import '../../i18n/config';
-import { submission } from '../../test/fixtures';
+import { jurySubmission } from '../../test/fixtures';
 import SubmissionRater from './SubmissionRater';
 
 afterEach(() => {
@@ -10,11 +10,11 @@ afterEach(() => {
 
 it('shows every photograph of a series without React key warnings', () => {
   const consoleError = vi.spyOn(console, 'error');
-  const files = [21, 22, 23, 24].flatMap((id) => submission(id, '').files);
+  const files = [21, 22, 23, 24].flatMap((id) => jurySubmission(id, '').files);
 
   render(
     <SubmissionRater
-      submission={{ ...submission(11, 'Bridges'), files }}
+      submission={{ ...jurySubmission(11, 'Bridges'), files }}
       rating={0}
       isSeries
       isPrevious={false}

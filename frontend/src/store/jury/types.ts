@@ -1,10 +1,10 @@
-import { Contest, Submission, Theme } from '../../types/api';
+import { Contest, JurySubmission, Theme } from '../../types/api';
 
 export interface JuryState {
   isLoading: boolean;
   contest: Contest | null;
   theme: Theme | null;
-  submissions: Submission[] | null;
+  submissions: JurySubmission[] | null;
   currentIndex: number;
 }
 
@@ -18,7 +18,7 @@ type PerformInitializeAction = {
   payload: {
     contest: Contest;
     theme: Theme;
-    submissions: Submission[];
+    submissions: JurySubmission[];
     currentIndex: number;
   };
 };

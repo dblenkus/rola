@@ -509,7 +509,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedSubmissionList'
+                $ref: '#/components/schemas/PaginatedJudgeSubmissionList'
           description: ''
   /api/v1/payment:
     get:
@@ -1887,6 +1887,45 @@ components:
       - start_date
       - themes
       - title
+    JudgeSubmission:
+      type: object
+      description: Serialize a submission for judging, without its author.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+        theme:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+          nullable: true
+        description:
+          type: string
+          readOnly: true
+          nullable: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
+          readOnly: true
+      required:
+      - created
+      - description
+      - files
+      - id
+      - modified
+      - theme
+      - title
     JudgeTheme:
       type: object
       description: Serializer for Theme objects.
@@ -2040,6 +2079,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/JudgeContest'
+    PaginatedJudgeSubmissionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JudgeSubmission'
     PaginatedPaymentList:
       type: object
       required:

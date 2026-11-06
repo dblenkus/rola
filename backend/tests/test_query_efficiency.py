@@ -48,13 +48,16 @@ def _entry(world, judge, index):
     )
 
 
-def _assert_submission(data, entry, email):
+def _assert_submission(data, entry, email, *, with_author=True):
     assert data["id"] == entry.submission.pk
     assert data["title"] == entry.submission.title
     assert data["theme"] == entry.theme.pk
-    assert data["author"]["id"] == entry.author.pk
-    assert data["author"]["first_name"] == entry.author.first_name
-    assert data["author"]["email"] == email
+    if with_author:
+        assert data["author"]["id"] == entry.author.pk
+        assert data["author"]["first_name"] == entry.author.first_name
+        assert data["author"]["email"] == email
+    else:
+        assert "author" not in data
     assert [item["id"] for item in data["files"]] == [file.pk for file in entry.files]
     assert all(item["file"] and item["thumbnail"] for item in data["files"])
 
@@ -135,7 +138,9 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 entry.submission.pk for entry in expected
             ]
             for item, entry in zip(data, expected, strict=True):
-                _assert_submission(item, entry, None)
+                _assert_submission(
+                    item, entry, None, with_author=endpoint != "judge/submission"
+                )
 
     assert query_counts[1] == query_counts[0]
 

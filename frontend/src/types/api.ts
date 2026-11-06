@@ -23,5 +23,6 @@ export type JuryTheme = Schemas['JudgeTheme'];
 export type ResultsTheme = Schemas['ThemeResults'];
 export type Contest = Schemas['Contest'];
 export type JuryContest = Schemas['JudgeContest'];
+export type JurySubmission = Schemas['JudgeSubmission'];
 export type Payment = Schemas['Payment'];
 export type Rating = Schemas['Rating'];

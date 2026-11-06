@@ -17,7 +17,7 @@ from rolca.core.api.serializers import BaseSerializer, FileSerializer
 from rolca.core.api.serializers import ContestSerializer as CoreContestSerializer
 from rolca.core.api.serializers import SubmissionSerializer as CoreSubmissionSerializer
 from rolca.core.api.serializers import ThemeSerializer as CoreThemeSerializer
-from rolca.core.models import Author
+from rolca.core.models import Author, Submission
 from rolca.rating.models import Judge, Rating, SubmissionReward
 
 
@@ -99,6 +99,19 @@ class JudgeContestSerializer(CoreContestSerializer):
     """Serializer for Contest objects."""
 
     themes = JudgeThemeSerializer(many=True, read_only=True)
+
+
+class JudgeSubmissionSerializer(serializers.ModelSerializer):
+    """Serialize a submission for judging, without its author."""
+
+    files = FileSerializer(many=True, read_only=True)
+
+    class Meta:
+        """Serializer configuration."""
+
+        model = Submission
+        fields = ["id", "created", "modified", "theme", "title", "description", "files"]
+        read_only_fields = fields
 
 
 class AuthorResultsSerializer(serializers.ModelSerializer):

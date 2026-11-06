@@ -1,7 +1,7 @@
 import { AppState, AppThunk } from '..';
 import ContestService from '../../services/ContestService';
 import JudgeSubmissionService from '../../services/JudgeSubmissionService';
-import { Contest, Submission, Theme } from '../../types/api';
+import { Contest, JurySubmission, Theme } from '../../types/api';
 import fetchAll from '../../utils/fetchAll';
 
 import {
@@ -15,7 +15,7 @@ import {
 export const performInitialize = (
   contest: Contest,
   theme: Theme,
-  submissions: Submission[],
+  submissions: JurySubmission[],
   currentIndex: number,
 ): JuryActionTypes => ({
   type: PERFORM_INITIALIZE,
@@ -57,7 +57,9 @@ export const initializeStore =
       dispatch(performInitialize(contest, theme, submissions, currentIndex));
   };
 
-export const getCurrentSubmission = (state: AppState): Submission | null => {
+export const getCurrentSubmission = (
+  state: AppState,
+): JurySubmission | null => {
   const {
     jury: { submissions, currentIndex },
   } = state;

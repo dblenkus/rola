@@ -7,7 +7,13 @@ import { apiClient } from './services/Base';
 import store from './store';
 import { deleteMessage } from './store/notifications/actions';
 import { httpError, page, serveApi, signIn } from './test/api';
-import { author, contest, submission, submissionSet } from './test/fixtures';
+import {
+  author,
+  contest,
+  jurySubmission,
+  submission,
+  submissionSet,
+} from './test/fixtures';
 import type {
   PaginatedResponse,
   Payment,
@@ -228,7 +234,10 @@ describe('sessions', () => {
       }),
       'GET /contest/1': () => contest,
       'GET /judge/submission': () =>
-        page([submission(11, 'First photograph'), submission(12, 'Second')]),
+        page([
+          jurySubmission(11, 'First photograph'),
+          jurySubmission(12, 'Second'),
+        ]),
       'GET /rating': () => page([]),
     });
     const user = userEvent.setup();

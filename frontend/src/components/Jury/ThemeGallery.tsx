@@ -2,11 +2,11 @@ import React from 'react';
 import { Box, Card, Grid } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-import { Rating as RatingModel, Submission } from '../../types/api';
+import { JurySubmission, Rating as RatingModel } from '../../types/api';
 import Rating from './Rating';
 
 interface ThemeGalleryProps {
-  submissions: Submission[];
+  submissions: JurySubmission[];
   isSeries: boolean;
   ratings: RatingModel[];
   handleClick: (submissionId: number) => void;
