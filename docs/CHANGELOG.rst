@@ -270,6 +270,9 @@ Fixes
 * A page that needs a login reloads when another account signs in, in any
   tab, instead of keeping the previous account's submissions, photographs
   and author details on screen.
+* Public pages such as the contest list load without a login when the server
+  has revoked the stored session, for example after a password change on
+  another device, instead of failing once until the page is reloaded.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

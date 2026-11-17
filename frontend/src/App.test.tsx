@@ -226,6 +226,27 @@ describe('sessions', () => {
     expect(window.location.pathname).toBe('/login');
   });
 
+  it('loads public contests after the server rejects the stored token', async () => {
+    signIn('revoked');
+    const sent: unknown[] = [];
+    serveApi({
+      'GET /contest': (config) => {
+        sent.push(config.headers.get('Authorization'));
+        if (config.headers.has('Authorization')) {
+          throw httpError(config, 401, { detail: 'Token has expired.' });
+        }
+        return page([contest]);
+      },
+    });
+    open('/contests');
+    expect(
+      await screen.findByRole('heading', { name: contest.title }),
+    ).toBeInTheDocument();
+    expect(sent).toEqual(['Token revoked', undefined]);
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(window.location.pathname).toBe('/contests');
+  });
+
   it('returns to the full requested location after login', async () => {
     serveApi({
       'POST /user/login': () => ({

@@ -4,6 +4,12 @@ import store from '../store/index';
 import { addNotificationError } from '../store/notifications/actions';
 import { loadToken, rejectToken } from './token';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    retriedWithoutToken?: boolean;
+  }
+}
+
 export const apiBaseURL = '/api/v1';
 
 const config: AxiosRequestConfig = {
@@ -34,7 +40,17 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      rejectToken(error.config?.headers.get('Authorization'));
+      const request = error.config;
+      const sent = request?.headers.get('Authorization');
+      rejectToken(sent);
+      // The server rejects a revoked token even where no login is needed, so
+      // a read is sent once more without it; views that need a login follow
+      // the cleared session to the login page. Writes are never sent twice.
+      if (sent && request?.method === 'get' && !request.retriedWithoutToken) {
+        request.headers.delete('Authorization');
+        request.retriedWithoutToken = true;
+        return apiClient.request(request);
+      }
     }
     if (
       !axios.isAxiosError(error) ||
