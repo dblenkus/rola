@@ -6,11 +6,15 @@ import { Alert, Typography } from '@mui/material';
 
 import { AppState, AppDispatch } from '../../store';
 
-import { initializeStore, setSubmission } from '../../store/jury/actions';
+import {
+  initializeStore,
+  setSubmission,
+  type InitializeResult,
+} from '../../store/jury/actions';
 import LoadingProgress from '../../components/LoadingProgress';
 import ThemeGallery from '../../components/Jury/ThemeGallery';
 import RatingService from '../../services/RatingService';
-import { requestError } from '../../services/errors';
+import { contentUnavailable, requestError } from '../../services/errors';
 import { Rating } from '../../types/api';
 import fetchAll from '../../utils/fetchAll';
 
@@ -42,7 +46,10 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   // Initialize the store.
   useEffect(() => {
     initialize(contestId, themeId)
-      .then(setLoaded)
+      .then((result) => {
+        if (result === 'missing') setError(contentUnavailable);
+        else setLoaded(result === 'stored');
+      })
       .catch((error: unknown) => setError(requestError(error)));
   }, [contestId, themeId, initialize]);
 
@@ -87,7 +94,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
 const mapStateToProps = (state: AppState) => ({ ...state.jury });
 
 const mapDispatchToProps = (dispatch: AppDispatch) => ({
-  initialize: (contestId: string, themeId: string): Promise<boolean> =>
+  initialize: (contestId: string, themeId: string): Promise<InitializeResult> =>
     dispatch(initializeStore(contestId, themeId, undefined)),
   setSubmission: (submissionId: number): void => {
     dispatch(setSubmission(submissionId));

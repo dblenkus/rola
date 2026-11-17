@@ -15,9 +15,10 @@ import {
   initializeStore,
   setNextSubmission,
   setPreviousSubmission,
+  type InitializeResult,
 } from '../../store/jury/actions';
 import RatingService from '../../services/RatingService';
-import { requestError } from '../../services/errors';
+import { contentUnavailable, requestError } from '../../services/errors';
 import useKeyPress from '../../hooks/useKeyPress';
 import LoadingProgress from '../../components/LoadingProgress';
 
@@ -101,7 +102,10 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   // Initialize the store.
   useEffect(() => {
     initialize(contestId, themeId, submissionId.current)
-      .then(setLoaded)
+      .then((result) => {
+        if (result === 'missing') setError(contentUnavailable);
+        else setLoaded(result === 'stored');
+      })
       .catch((error: unknown) => setError(requestError(error)));
   }, [contestId, themeId, initialize]);
 
@@ -200,7 +204,7 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
     contestId: string,
     themeId: string,
     submissionId: number | undefined,
-  ): Promise<boolean> =>
+  ): Promise<InitializeResult> =>
     dispatch(initializeStore(contestId, themeId, submissionId)),
   previousSubmission: () => dispatch(setPreviousSubmission()),
   nextSubmission: () => dispatch(setNextSubmission()),

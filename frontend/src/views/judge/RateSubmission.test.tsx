@@ -412,3 +412,21 @@ it('leaves the error of a failed theme behind when another theme opens', async (
   ).not.toBeInTheDocument();
   expect(router.state.location.search).toBe('?submission=22');
 });
+
+it('reports a theme that is not in the contest', async () => {
+  const submissionLoads: unknown[] = [];
+  // Theme 99 belongs to another contest, so the judge's list for it is empty.
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': ({ params }) => {
+      submissionLoads.push(params.theme);
+      return page([]);
+    },
+  });
+  renderRater('/judge/contest/1/theme/99/rate');
+  expect(
+    await screen.findByText('The requested content is no longer available.'),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(submissionLoads).toEqual([]);
+});

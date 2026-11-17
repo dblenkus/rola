@@ -37,19 +37,24 @@ export const setNextSubmission = (): JuryActionTypes => ({
 // started neither replaces the newer theme nor reports its failure.
 let initialization = 0;
 
-// Resolves to whether this initialization stored its theme.
+// Whether this initialization stored its theme, was replaced by a newer one,
+// or found the theme missing from the contest, as for a link whose contest id
+// does not match its theme.
+export type InitializeResult = 'stored' | 'superseded' | 'missing';
+
 export const initializeStore =
   (
     contestId: string,
     themeId: string,
     submissionId: number | undefined,
-  ): AppThunk<Promise<boolean>> =>
-  async (dispatch): Promise<boolean> => {
+  ): AppThunk<Promise<InitializeResult>> =>
+  async (dispatch): Promise<InitializeResult> => {
     initialization += 1;
     const current = initialization;
     try {
       const { data: contest } = await ContestService.getContest(contestId);
       const theme = contest.themes.find((t) => t.id.toString() === themeId);
+      if (!theme) return current === initialization ? 'missing' : 'superseded';
 
       const submissionResource = () =>
         JudgeSubmissionService.getSubmissionsByTheme(parseInt(themeId, 10));
@@ -61,12 +66,12 @@ export const initializeStore =
         if (currentIndex === -1) currentIndex = 0;
       }
 
-      if (!theme || current !== initialization) return false;
+      if (current !== initialization) return 'superseded';
       dispatch(performInitialize(contest, theme, submissions, currentIndex));
-      return true;
+      return 'stored';
     } catch (error) {
       if (current === initialization) throw error;
-      return false;
+      return 'superseded';
     }
   };
 

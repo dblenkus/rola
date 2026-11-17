@@ -162,3 +162,23 @@ it('shows no ratings error from a theme the gallery has left', async () => {
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
 });
+
+it('reports a theme that is not in the contest', async () => {
+  const store = createAppStore();
+  const submissionLoads: unknown[] = [];
+  // Theme 99 belongs to another contest, so the judge's list for it is empty.
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': ({ params }) => {
+      submissionLoads.push(params.theme);
+      return page([]);
+    },
+    'GET /rating': () => page([]),
+  });
+  renderGallery(store, '/judge/contest/1/theme/99');
+  expect(
+    await screen.findByText('The requested content is no longer available.'),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(submissionLoads).toEqual([]);
+});

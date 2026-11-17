@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 const requestFailed = 'Request failed. Please try again.';
+export const contentUnavailable =
+  'The requested content is no longer available.';
 
 export function formErrors(error: unknown): Record<string, string[]> {
   if (!axios.isAxiosError<unknown>(error)) {
@@ -62,8 +64,7 @@ export function requestError(error: unknown): string {
       return 'Your session has expired. Please log in again.';
     if (error.response?.status === 403)
       return 'You do not have permission to perform this action.';
-    if (error.response?.status === 404)
-      return 'The requested content is no longer available.';
+    if (error.response?.status === 404) return contentUnavailable;
     if (error.response?.status === 429)
       return throttledError(error.response.headers['retry-after']);
   }

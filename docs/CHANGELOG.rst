@@ -279,6 +279,8 @@ Fixes
 * A payment change in the admin submission list that finishes after the
   admin has moved to another page no longer shows every submission set on
   that page as unpaid.
+* A jury gallery or rater link whose theme is not in the linked contest says
+  that the content is no longer available instead of loading forever.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.
