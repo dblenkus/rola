@@ -48,7 +48,7 @@ def download_contest(request, contest_id):
     # The response closes the file, which deletes it.
     archive = tempfile.TemporaryFile()  # noqa: SIM115
     try:
-        _write_contest_archive(contest, archive)
+        write_contest_archive(contest, archive)
     except BaseException:
         archive.close()
         raise
@@ -61,8 +61,15 @@ def download_contest(request, contest_id):
     )
 
 
-def _write_contest_archive(contest, archive):
-    """Write every photograph of the contest's submissions into a zip archive."""
+def write_contest_archive(contest, archive):
+    """Write every photograph of the contest's submissions into a zip archive.
+
+    The ``exportcontest`` command writes the same archive to a file on the
+    server, for a contest whose download takes too long.
+
+    :param contest: The contest to archive.
+    :param archive: A binary file open for writing.
+    """
     with zipfile.ZipFile(archive, mode="w") as zip_archive:
         for theme in Theme.objects.filter(contest=contest):
             theme_path = "/".join(

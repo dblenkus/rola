@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import CommandError, call_command
 from django.db import connection, transaction
 from django.test import Client
 from django.urls import reverse
@@ -660,6 +661,48 @@ def test_export_builds_the_archive_without_holding_it_in_memory(world):
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         assert archive.testzip() is None
         assert len([name for name in archive.namelist() if name.endswith(".jpg")]) == 12
+
+
+def test_export_command_writes_the_contest_archive(world, tmp_path):
+    item = submitted(world)
+    item.files.add(photo(world.owner, "first.jpg"), photo(world.owner, "second.jpg"))
+    world.client.force_login(world.admin)
+    response = world.client.get(f"/core/contest/{world.contest.pk}/download")
+    assert response.status_code == 200
+    exports = tmp_path / "exports"
+    exports.mkdir()
+    path = exports / "salon.zip"
+
+    call_command("exportcontest", world.contest.pk, str(path))
+
+    with (
+        zipfile.ZipFile(io.BytesIO(response.getvalue())) as downloaded,
+        zipfile.ZipFile(path) as exported,
+    ):
+        assert exported.testzip() is None
+        assert exported.namelist() == downloaded.namelist()
+        assert len([name for name in exported.namelist() if name.endswith(".jpg")]) == 2
+        for name in downloaded.namelist():
+            assert exported.read(name) == downloaded.read(name)
+
+    # An existing file is neither overwritten nor removed.
+    content = path.read_bytes()
+    with pytest.raises(CommandError, match="already exists"):
+        call_command("exportcontest", world.contest.pk, str(path))
+    assert path.read_bytes() == content
+
+    unknown = exports / "unknown.zip"
+    with pytest.raises(CommandError, match="does not exist"):
+        call_command("exportcontest", world.contest.pk + 1, str(unknown))
+    assert not unknown.exists()
+
+    # A photograph missing from storage fails the export without leaving part
+    # of the archive behind.
+    os.remove(item.files.first().file.path)
+    failed = exports / "failed.zip"
+    with pytest.raises(FileNotFoundError):
+        call_command("exportcontest", world.contest.pk, str(failed))
+    assert not failed.exists()
 
 
 def test_payment_permissions_upsert_and_filter(world):

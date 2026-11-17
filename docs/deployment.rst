@@ -279,6 +279,24 @@ download is almost complete, and Gunicorn cuts it off if that takes longer
 than 120 seconds. Each download that runs at the same time needs as much
 disk again.
 
+If a download does not complete, write the contest's archive on the server
+instead. ``manage.py exportcontest`` writes the same archive as the download
+to a new file in the backend container, with no time limit. It refuses a
+path that exists already, and removes the file again if writing it fails.
+The contest's id is the number in the address of its page in the Django
+admin. The archive holds the entrants' photographs, so copy it into a
+directory that no other account on the server can read, then remove it from
+the container:
+
+.. code-block:: shell
+
+   docker compose exec backend python manage.py exportcontest <id> /tmp/<name>.zip
+   install -d -m 700 ~/rola-export
+   docker compose cp backend:/tmp/<name>.zip ~/rola-export/
+   docker compose exec backend rm /tmp/<name>.zip
+
+Until the ``rm``, the server needs as much free disk as the archive twice.
+
 Workers
 =======
 

@@ -229,6 +229,9 @@ Deployment changes
   disk as the archive instead of as much memory. nginx waits 120 seconds for
   it, the TLS terminator must wait as long, and nginx keeps up to 4 GiB of it
   on disk, so a slow browser does not hold a Gunicorn worker.
+* ``manage.py exportcontest`` writes a contest's archive to a file on the
+  server, with no time limit, for a contest whose download does not
+  complete, as "Contest downloads" in ``docs/deployment.rst`` describes.
 * ``manage.py deleteorphanphotos`` deletes uploads that no submission holds
   and stored photographs and thumbnails that no upload references, once they
   are a day old. Run it weekly, as "Maintenance" in ``docs/deployment.rst``

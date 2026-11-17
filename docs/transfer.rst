@@ -520,8 +520,9 @@ Verify and switch
    account, register a new one (this fails if a sequence was not reset), open
    a contest with photographs, and open the Django admin with a staff account.
    With a superuser account, open the contest with the most photographs there
-   and download it with its Download button; the download must complete (see
-   "Contest downloads" in :doc:`deployment`).
+   and download it with its Download button. If the download does not
+   complete, contests of that size need ``manage.py exportcontest`` instead
+   (see "Contest downloads" in :doc:`deployment`).
 #. Remove the scratch database and the copies of the old data. Run
    ``rm -rf "$TRANSFER"`` on every other machine that has a transfer
    directory, too. ``-f`` removes an archive that the Docker variant made,
