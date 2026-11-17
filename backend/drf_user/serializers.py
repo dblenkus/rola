@@ -18,6 +18,8 @@ from .utils.signing import (
     validate_reset_token,
 )
 
+LOGIN_FAILED_MESSAGE = "Unable to log in with provided credentials."
+
 
 class LocationSerializer(serializers.ModelSerializer):
     """Validate postal address fields against the location model."""
@@ -213,7 +215,7 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(request=self.context.get("request"), **attrs)
         if not user:
             raise serializers.ValidationError(
-                "Unable to log in with provided credentials.", code="authorization"
+                LOGIN_FAILED_MESSAGE, code="authorization"
             )
         attrs["user"] = user
         return attrs

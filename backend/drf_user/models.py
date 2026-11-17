@@ -5,6 +5,7 @@ import secrets
 import uuid
 
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -151,6 +152,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Clean the model."""
         super().clean()
         self.email = type(self).objects.normalize_email(self.email)
+
+    def check_password(self, raw_password):
+        """Check the password and upgrade an outdated hash that is still stored.
+
+        Django saves the upgraded hash over the row, which would restore the
+        old password over a reset or change that committed after this
+        instance was loaded.
+        """
+        checked_hash = self.password
+
+        def setter(raw_password):
+            self.set_password(raw_password)
+            # Password hash upgrades shouldn't be considered password changes.
+            self._password = None
+            User.objects.filter(pk=self.pk, password=checked_hash).update(
+                password=self.password
+            )
+
+        return check_password(raw_password, checked_hash, setter)
 
     def get_full_name(self):
         """Return the first_name plus the last_name, with a space in between."""

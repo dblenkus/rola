@@ -217,6 +217,9 @@ Fixes
 * A profile update that overlaps a password change or reset keeps the new
   password. It used to restore the old password and revive the reset links
   that the change had invalidated.
+* A login with the old password that overlaps a password change or reset is
+  refused. It used to receive a token that outlived the change, and an
+  account whose stored hash the login upgraded got its old password back.
 
 Development changes
 -------------------

@@ -1,13 +1,18 @@
 """Account management endpoints."""
 
+from django.contrib.auth.hashers import check_password
+from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, views, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from .models import Token, User
 from .permissions import IsSuperUser, IsTargetUser
 from .serializers import (
+    LOGIN_FAILED_MESSAGE,
     ActivationSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
@@ -38,7 +43,24 @@ class LoginView(views.APIView):
         """Validate credentials and return a token with its expiration."""
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        token = Token.objects.create_token(user=serializer.validated_data["user"])
+        user = serializer.validated_data["user"]
+        with transaction.atomic():
+            # A password change or reset expires only the tokens that already
+            # exist, so issue one only while the row holds the checked
+            # password. Its hash also changes when another login upgrades it,
+            # so check the password again against the hash the row holds.
+            locked = User.objects.select_for_update().get(pk=user.pk)
+            if not locked.is_active or (
+                locked.password != user.password
+                and not check_password(
+                    serializer.validated_data["password"], locked.password
+                )
+            ):
+                raise ValidationError(
+                    {api_settings.NON_FIELD_ERRORS_KEY: [LOGIN_FAILED_MESSAGE]},
+                    code="authorization",
+                )
+            token = Token.objects.create_token(user=locked)
         return Response(TokenSerializer(token).data)
 
 
