@@ -347,6 +347,9 @@ Fixes
 * The jury theme overview says "No published results." for a theme without
   published results. It lists only published results, and used to show an
   empty page before the contest's results were published.
+* The page footer stays below the rater. The rater was laid over the page,
+  so the footer was drawn behind the photographs, the description and the
+  rating stars whenever they reached below the first screen.
 
 Development changes
 -------------------

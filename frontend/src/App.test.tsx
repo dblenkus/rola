@@ -1009,3 +1009,44 @@ describe('theme results', () => {
     ]);
   });
 });
+
+// jsdom lays nothing out, so these pin the structure the layout relies on.
+// That the footer stays clear of the rater's photographs, at 1280x800 for
+// example, is checked in a browser.
+describe('page layout', () => {
+  it('keeps the rater in the page flow at full width', async () => {
+    serveApi({
+      'GET /contest/1': () => contest,
+      'GET /judge/submission': () =>
+        page([jurySubmission(11, 'First photograph')]),
+      'GET /rating': () => page([]),
+    });
+    signIn();
+    open('/judge/contest/1/theme/2/rate?submission=11');
+    const image = await screen.findByRole('img', { name: 'First photograph' });
+    const main = image.closest('.MuiContainer-root');
+    expect(main).not.toBeNull();
+    expect(main).not.toHaveClass('MuiContainer-maxWidthLg');
+    // An absolutely positioned rater takes no space, so the footer that
+    // follows the container is drawn over it.
+    const positions: string[] = [];
+    for (
+      let element = image.parentElement;
+      element && element !== main;
+      element = element.parentElement
+    ) {
+      positions.push(getComputedStyle(element).position);
+    }
+    expect(positions).not.toContain('absolute');
+    expect(positions).not.toContain('fixed');
+  });
+
+  it('keeps other pages in the lg container', async () => {
+    serveApi({ 'GET /contest': () => page([contest]) });
+    open('/contests');
+    const heading = await screen.findByRole('heading', { name: contest.title });
+    expect(heading.closest('.MuiContainer-root')).toHaveClass(
+      'MuiContainer-maxWidthLg',
+    );
+  });
+});

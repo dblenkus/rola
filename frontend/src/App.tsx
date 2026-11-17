@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import React from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useMatch } from 'react-router';
 import { Provider } from 'react-redux';
 
 import { Box, CssBaseline, Container } from '@mui/material';
@@ -33,6 +34,19 @@ import ThemeResultsView from './views/results/ThemeResults';
 import SelectResultsThemeView from './views/results/SelectTheme';
 import SubmissionResultsView from './views/results/SubmissionResults';
 
+const raterPath = '/judge/contest/:contestId/theme/:themeId/rate';
+
+// The rater gives a series of photographs the window's full width. It stays
+// in the page's flow, so the footer follows it.
+const Main: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const rater = useMatch(raterPath);
+  return (
+    <Container maxWidth={rater ? false : 'lg'} sx={{ mt: 2, mb: 4 }}>
+      {children}
+    </Container>
+  );
+};
+
 const App = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -42,7 +56,7 @@ const App = () => {
             <CssBaseline />
             <Notifications />
             <Header />
-            <Container sx={{ mt: 2, mb: 4 }}>
+            <Main>
               <Routes>
                 <Route path="/" element={<Navigate to="/contests" replace />} />
                 <Route path="/contests" element={<ContestsListView />} />
@@ -117,7 +131,7 @@ const App = () => {
                   }
                 />
                 <Route
-                  path="/judge/contest/:contestId/theme/:themeId/rate"
+                  path={raterPath}
                   element={
                     <PrivateRoute>
                       <RateSubmissionView />
@@ -150,7 +164,7 @@ const App = () => {
                   }
                 />
               </Routes>
-            </Container>
+            </Main>
             <Footer />
           </BrowserRouter>
         </AuthProvider>

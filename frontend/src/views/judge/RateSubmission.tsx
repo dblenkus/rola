@@ -242,7 +242,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   if (!submission) return <LoadingProgress />;
 
   return (
-    <div style={{ position: 'absolute', width: '100%', left: 0, right: 0 }}>
+    <>
       {saveError?.submissionId === submission.id && (
         <Alert severity="error">{saveError.message}</Alert>
       )}
@@ -268,7 +268,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         rating?.submissionId !== submission.id && (
           <Alert severity="error">{loadError.message}</Alert>
         )}
-    </div>
+    </>
   );
 };
 
