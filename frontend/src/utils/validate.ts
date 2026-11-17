@@ -103,7 +103,7 @@ const validateAuthor = (
   initial: boolean,
   contest: ContestModel,
 ): AuthorModel => {
-  const { first_name, last_name, dob, school } = author;
+  const { first_name, last_name, dob, school, club } = author;
   const errors = {
     first_name: !first_name && !initial ? 'Please enter the first name.' : null,
     last_name: !last_name && !initial ? 'Please enter the last name.' : null,
@@ -116,14 +116,18 @@ const validateAuthor = (
         ? 'Please enter the school.'
         : null,
     mentor: null,
-    club: null,
+    club:
+      contest.meta.clubRequired && !club && !initial
+        ? 'Please enter the photo club.'
+        : null,
     distinction: null,
     hasError:
       !initial &&
       (!first_name ||
         !last_name ||
         (contest.meta.dobRequired && !dob) ||
-        (contest.meta.schoolRequired && !school)),
+        (contest.meta.schoolRequired && !school) ||
+        (contest.meta.clubRequired && !club)),
   };
 
   return { ...author, errors };

@@ -265,6 +265,8 @@ Fixes
   used to ignore it silently and keep the photograph chosen before.
 * Clearing a title, or a series description, in the upload form no longer
   lets the upload through without it while photographs are selected.
+* The upload form asks for the photo club when the contest requires it,
+  instead of marking the field as required and uploading without it.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.
