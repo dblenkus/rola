@@ -157,6 +157,10 @@ Deployment changes
   needs a new activation link; the transfer procedure shows how to send one
   on request.
 * S3 media URLs are signed with SigV4 for ``ROLA_AWS_REGION_NAME``.
+* S3 static file URLs are no longer signed, so the Django admin's stylesheets
+  can load their icons. The static bucket needs a bucket policy that allows
+  public reads, as "Maintenance" in ``docs/deployment.rst`` describes; the
+  media bucket stays private.
 * nginx sends ``X-Frame-Options``, ``X-Content-Type-Options`` and
   ``Referrer-Policy``, hides its version, caches hashed assets for a year,
   and answers 404 for a missing asset instead of serving the application.

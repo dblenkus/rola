@@ -5,6 +5,7 @@ import logging
 import os
 import runpy
 from unittest.mock import patch
+from urllib.parse import urljoin, urlsplit
 
 import pytest
 from django.test import Client, override_settings
@@ -108,15 +109,28 @@ def test_s3_requires_a_signing_region(load_settings):
         load_settings(environment)
 
 
-@pytest.mark.parametrize("alias", ["default", "staticfiles"])
-def test_s3_urls_are_signed_with_sigv4(load_settings, monkeypatch, tmp_path, alias):
+def test_s3_media_urls_are_signed_with_sigv4(load_settings, monkeypatch, tmp_path):
     # Keep local AWS configuration files from changing the signer.
     monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "config"))
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "credentials"))
-    storage = load_settings(S3_ENVIRONMENT)["STORAGES"][alias]
+    storage = load_settings(S3_ENVIRONMENT)["STORAGES"]["default"]
     url = import_string(storage["BACKEND"])(**storage["OPTIONS"]).url("photo.jpg")
     assert "X-Amz-Algorithm=AWS4-HMAC-SHA256" in url
     assert "%2Feu-west-1%2Fs3%2Faws4_request" in url
+    assert "X-Amz-Expires=3600" in url
+
+
+def test_s3_static_urls_are_unsigned(load_settings, monkeypatch, tmp_path):
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "config"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "credentials"))
+    options = load_settings(S3_ENVIRONMENT)["STORAGES"]["staticfiles"]
+    storage = import_string(options["BACKEND"])(**options["OPTIONS"])
+    stylesheet = storage.url("admin/css/widgets.css")
+    assert urlsplit(stylesheet).netloc.startswith("rola-static.")
+    # The admin's stylesheets load their icons by relative URLs, which carry
+    # no query string, so a signed stylesheet URL leaves the icons unsigned.
+    icon = urljoin(stylesheet, "../img/calendar-icons.svg")
+    assert icon == storage.url("admin/img/calendar-icons.svg")
 
 
 def test_production_requires_https_and_distrusts_proxy_headers(load_settings):

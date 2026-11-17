@@ -110,7 +110,9 @@ as a secret key or a password, in single quotes.
    * - ``ROLA_AWS_MEDIA_STORAGE_BUCKET_NAME``,
        ``ROLA_AWS_STATIC_STORAGE_BUCKET_NAME``
      - when ``ROLA_USE_S3`` is on
-     - The buckets for uploaded photographs and collected static files.
+     - The buckets for uploaded photographs and collected static files. The
+       media bucket stays private, and the static bucket must be publicly
+       readable. See `Maintenance`_.
 
 ``.env.example`` describes the optional variables: ``WEB_CONCURRENCY``,
 ``ROLA_APP_NAME``, ``ROLA_CSRF_TRUSTED_ORIGINS``,
@@ -394,6 +396,31 @@ Maintenance
   the ``static`` volume on every start. The application has no backup
   feature of its own.
 * With ``ROLA_USE_S3`` on, photographs and static files are stored in the S3
-  buckets instead of the volumes.
+  buckets instead of the volumes. Keep the media bucket private: the backend
+  signs every photograph URL, and a signed URL is valid for one hour. Static
+  file URLs are not signed, because the Django admin's stylesheets load their
+  images by relative URLs, which cannot carry a signature. Give the static
+  bucket a bucket policy that lets anyone read its objects:
+
+  .. code-block:: json
+
+     {
+       "Version": "2012-10-17",
+       "Statement": [
+         {
+           "Effect": "Allow",
+           "Principal": "*",
+           "Action": "s3:GetObject",
+           "Resource": "arn:aws:s3:::<static bucket>/*"
+         }
+       ]
+     }
+
+  S3 Block Public Access refuses such a policy. On the static bucket only,
+  turn off its two settings for bucket policies, ``BlockPublicPolicy`` and
+  ``RestrictPublicBuckets``, and keep the two for ACLs on. S3 applies the
+  stricter of the account's and the bucket's settings, so the account must
+  have those two off as well. Leave Block Public Access fully on for the
+  media bucket.
 * A PostgreSQL major upgrade needs a dump and a restore into a new ``db``
   volume; pointing a newer image at the old volume does not work.

@@ -200,6 +200,9 @@ if boolean("ROLA_USE_S3"):
             "OPTIONS": {
                 **s3_options,
                 "bucket_name": os.environ["ROLA_AWS_STATIC_STORAGE_BUCKET_NAME"],
+                # Stylesheets load images by relative URLs, which cannot carry
+                # a signature, so static files come from a public bucket.
+                "querystring_auth": False,
             },
         },
     }
