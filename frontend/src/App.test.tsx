@@ -1049,4 +1049,21 @@ describe('page layout', () => {
       'MuiContainer-maxWidthLg',
     );
   });
+
+  // That no page scrolls sideways on a 360 or 390 pixel wide phone is
+  // checked in a browser.
+  it('wraps the header and keeps its button labels on one line', async () => {
+    serveApi({ 'GET /contest': () => page([contest]) });
+    open('/contests');
+    await screen.findByRole('heading', { name: contest.title });
+    const header = screen.getByRole('banner');
+    expect(header.querySelector('.MuiToolbar-root')).toHaveStyle({
+      flexWrap: 'wrap',
+    });
+    for (const name of ['Active contests', 'Edit submissions', 'Results']) {
+      expect(within(header).getByRole('link', { name })).toHaveStyle({
+        whiteSpace: 'nowrap',
+      });
+    }
+  });
 });

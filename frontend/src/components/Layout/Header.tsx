@@ -18,22 +18,34 @@ const Header: React.FC = () => {
 
   return (
     <AppBar position="sticky">
-      <Toolbar>
+      {/* On a narrow screen the buttons continue on further rows instead of
+          widening the page past the screen. */}
+      <Toolbar sx={{ flexWrap: 'wrap' }}>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Rolca
         </Typography>
-        <Button to="/contests" component={Link} sx={{ mr: 2 }} color="inherit">
+        <Button
+          to="/contests"
+          component={Link}
+          sx={{ mr: 2, whiteSpace: 'nowrap' }}
+          color="inherit"
+        >
           {t('active_contests')}
         </Button>
         <Button
           to="/user/submissions"
           component={Link}
-          sx={{ mr: 2 }}
+          sx={{ mr: 2, whiteSpace: 'nowrap' }}
           color="inherit"
         >
           {t('edit_submissions')}
         </Button>
-        <Button to="/results" component={Link} sx={{ mr: 2 }} color="inherit">
+        <Button
+          to="/results"
+          component={Link}
+          sx={{ mr: 2, whiteSpace: 'nowrap' }}
+          color="inherit"
+        >
           {t('results')}
         </Button>
 

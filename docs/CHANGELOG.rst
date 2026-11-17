@@ -350,6 +350,9 @@ Fixes
 * The page footer stays below the rater. The rater was laid over the page,
   so the footer was drawn behind the photographs, the description and the
   rating stars whenever they reached below the first screen.
+* On a narrow screen, such as a 360 or 390 pixel wide phone, the header's
+  buttons continue on further rows. They used to widen every page past the
+  screen, so the account menu was cut off and the page scrolled sideways.
 
 Development changes
 -------------------
