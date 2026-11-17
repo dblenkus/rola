@@ -249,6 +249,12 @@ Fixes
 * An upload stops when another account signs in, in any tab, before it
   finishes, instead of sending the rest of the photographs and the author's
   details as that account.
+* When a retried upload finds that the server had stored the earlier
+  attempt after all, it says so and points to Edit submissions: changes
+  made to the form since the lost response were not applied.
+* Retrying an upload whose response was lost no longer enters its
+  submissions a second time: every attempt from one upload form sends the
+  same ``Idempotency-Key``.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

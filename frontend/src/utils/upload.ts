@@ -17,11 +17,15 @@ export class SessionChanged extends Error {
 }
 
 // Photographs go up one at a time, so a failure stops the upload before
-// any later file, the author or the submissions are created.
+// any later file, the author or the submissions are created. A retry sends
+// the photographs and the author again, but the form's upload key keeps the
+// submissions from being stored twice. Resolves to whether the server had
+// already stored them, in which case this request changed nothing.
 export default async function upload(
   contest: ContestModel,
   session: Session,
-): Promise<void> {
+  uploadKey: string,
+): Promise<boolean> {
   // Every request carries the token of the session that started the upload,
   // so none acts for an account that signs in meanwhile, in this tab or
   // another. The upload also stops once its account is no longer the one
@@ -77,8 +81,10 @@ export default async function upload(
     authorization,
   );
   checkSession();
-  await SubmissionService.createSubmissions(
+  const { status } = await SubmissionService.createSubmissions(
     submissions.map((submission) => ({ ...submission, author })),
+    uploadKey,
     authorization,
   );
+  return status === 200;
 }

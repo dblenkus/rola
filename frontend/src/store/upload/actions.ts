@@ -3,10 +3,12 @@ import axios from 'axios';
 import { AppThunk } from '..';
 import {
   addNotificationError,
+  addNotificationInfo,
   addNotificationSuccess,
   addNotificationWarning,
 } from '../notifications/actions';
 
+import i18n from '../../i18n/config';
 import { loadToken, rejectToken } from '../../services/token';
 import { Contest, Theme } from '../../types/api';
 import {
@@ -89,16 +91,22 @@ export const uploadSubmit =
         }
         return false;
       }
-      await upload(contest, session);
+      const alreadyStored = await upload(contest, session, uploadKey);
       if (current()) {
         dispatch(uploadComplete(uploadKey));
       }
-      // The form's view may have been left or replaced during the upload.
-      dispatch(
-        addNotificationSuccess(
-          `Your photographs for ${contest.meta.title} were uploaded.`,
-        ),
-      );
+      if (alreadyStored) {
+        // An earlier attempt was stored although its response was lost;
+        // changes made to the form since then were not applied.
+        dispatch(addNotificationInfo(i18n.t('upload_already_received')));
+      } else {
+        // The form's view may have been left or replaced during the upload.
+        dispatch(
+          addNotificationSuccess(
+            `Your photographs for ${contest.meta.title} were uploaded.`,
+          ),
+        );
+      }
       return true;
     } catch (error) {
       // The view follows the changed session; there is nothing to report.

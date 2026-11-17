@@ -61,6 +61,7 @@
   "theme": "Theme",
   "title": "Title",
   "upload": "Upload",
+  "upload_already_received": "Your earlier upload had already been received. Check your entry under $t(edit_submissions).",
   "view": "View",
   "yes": "Yes"
 }

@@ -9,17 +9,21 @@ export type SubmissionCreatePayload =
   components['schemas']['SubmissionRequest'];
 
 export default {
+  // The server answers a repeated idempotency key with the submissions it
+  // stored for it, so a retry after a lost response submits nothing twice.
   createSubmissions(
     submissions: SubmissionCreatePayload[],
+    idempotencyKey: string,
     authorization?: string,
   ): AxiosPromise<SubmissionWrite[]> {
-    return apiClient.post(
-      '/submission',
-      submissions,
-      authorization === undefined
-        ? {}
-        : { headers: { Authorization: authorization } },
-    );
+    return apiClient.post('/submission', submissions, {
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+        ...(authorization === undefined
+          ? {}
+          : { Authorization: authorization }),
+      },
+    });
   },
   deleteSubmission(submissionsId: number): AxiosPromise<Submission[]> {
     return apiClient.delete(`/submission/${submissionsId}`);

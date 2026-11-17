@@ -61,6 +61,7 @@
   "theme": "Tema",
   "title": "Naslov",
   "upload": "Naloži",
+  "upload_already_received": "Fotografije so bile prejete že ob prejšnjem poskusu. Prijavo preverite pod »$t(edit_submissions)«.",
   "view": "Ogled",
   "yes": "Da"
 }

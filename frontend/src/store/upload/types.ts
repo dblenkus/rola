@@ -13,7 +13,8 @@ export interface UploadState {
   // The account that entered it; null until it is opened.
   owner: string | null;
   // Tells this form from a later one, which an upload that finishes after
-  // the form was replaced must leave alone; null until it is opened.
+  // the form was replaced must leave alone, and is the idempotency key, a
+  // UUID, of its submissions; null until it is opened.
   uploadKey: string | null;
   // The form whose upload completed, for the view that showed it.
   uploadedKey: string | null;

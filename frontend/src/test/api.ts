@@ -9,6 +9,18 @@ import type { PaginatedResponse } from '../types/api';
 
 type Handler = (config: InternalAxiosRequestConfig, url: URL) => unknown;
 
+class StatusResponse {
+  constructor(
+    readonly status: number,
+    readonly data: unknown,
+  ) {}
+}
+
+// A handler result answered with the given status instead of 200.
+export function withStatus(status: number, data: unknown): StatusResponse {
+  return new StatusResponse(status, data);
+}
+
 // Answers API requests by "METHOD /path", where the path is relative to the
 // API base and excludes the query, which handlers read from `url`. Any other
 // request fails.
@@ -23,8 +35,12 @@ export function serveApi(handlers: Record<string, Handler>) {
     if (!handler) {
       throw new Error(`Unexpected request: ${request}`);
     }
-    const data = await handler(config, url);
-    return { config, data, status: 200, statusText: 'OK', headers: {} };
+    const result = await handler(config, url);
+    if (result instanceof StatusResponse) {
+      const { status, data } = result;
+      return { config, data, status, statusText: '', headers: {} };
+    }
+    return { config, data: result, status: 200, statusText: 'OK', headers: {} };
   });
   apiClient.defaults.adapter = adapter;
   return adapter;
@@ -43,6 +59,12 @@ export function httpError(
     undefined,
     { config, data, status, statusText: '', headers },
   );
+}
+
+// A request that got no response, as when the connection drops after the
+// server received it.
+export function networkError(config: InternalAxiosRequestConfig): AxiosError {
+  return new AxiosError('Network Error', AxiosError.ERR_NETWORK, config);
 }
 
 export function page<T>(results: T[]): PaginatedResponse<T> {

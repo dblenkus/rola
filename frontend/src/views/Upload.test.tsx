@@ -6,11 +6,24 @@ import App from '../App';
 import store from '../store';
 import { deleteMessage } from '../store/notifications/actions';
 import { uploadReset } from '../store/upload/actions';
-import { httpError, page, serveApi, signIn } from '../test/api';
+import {
+  httpError,
+  networkError,
+  page,
+  serveApi,
+  signIn,
+  withStatus,
+} from '../test/api';
 import { author, contest } from '../test/fixtures';
 import type { Contest, Theme } from '../types/api';
 
 const winter: Contest = { ...contest, id: 3, title: 'Winter photographs' };
+
+const alreadyReceived =
+  'Your earlier upload had already been received. Check your entry under Edit submissions.';
+
+// The server accepts only a UUID as an idempotency key.
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const storedPhotograph = {
   id: 21,
@@ -48,7 +61,7 @@ function uploadApi(overrides: Parameters<typeof serveApi>[0] = {}) {
     'GET /contest/3': () => winter,
     'POST /file': () => storedPhotograph,
     'POST /author': () => author,
-    'POST /submission': () => [],
+    'POST /submission': () => withStatus(201, []),
     ...overrides,
   });
 }
@@ -130,6 +143,10 @@ describe('photograph upload', () => {
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/contest/1/confirm');
     expect(
+      screen.getByText(`Your photographs for ${contest.title} were uploaded.`),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(alreadyReceived)).not.toBeInTheDocument();
+    expect(
       adapter.mock.calls.map(([config]) => `${config.method} ${config.url}`),
     ).toEqual([
       'get /contest/1',
@@ -145,6 +162,38 @@ describe('photograph upload', () => {
       await screen.findByRole('heading', { name: winter.title }),
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/contest/3/upload');
+  });
+
+  it('says so when a retry finds the earlier upload already received', async () => {
+    let attempts = 0;
+    uploadApi({
+      'POST /submission': (config) => {
+        attempts += 1;
+        // The server stored the first request, but its response was lost.
+        if (attempts === 1) {
+          throw networkError(config);
+        }
+        return withStatus(200, []);
+      },
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Upload failed. Please try again.'),
+    ).toBeInTheDocument();
+    const [title] = screen.getAllByRole('textbox', { name: /title/i });
+    if (!title) {
+      throw new Error('The form has no title field');
+    }
+    await user.type(title, ' corrected');
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(alreadyReceived)).toBeInTheDocument();
   });
 
   it('stops at the first failed photograph and allows another try', async () => {
@@ -166,6 +215,46 @@ describe('photograph upload', () => {
     expect(
       adapter.mock.calls.filter(([config]) => config.method === 'post'),
     ).toHaveLength(1);
+  });
+
+  it('sends the same key when retrying after a lost response', async () => {
+    const submissionKeys: unknown[] = [];
+    uploadApi({
+      'POST /submission': (config) => {
+        submissionKeys.push(config.headers.get('Idempotency-Key'));
+        if (submissionKeys.length === 1) {
+          throw networkError(config);
+        }
+        return [];
+      },
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Upload failed. Please try again.'),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/contest/1/confirm');
+    const [lost, retried] = submissionKeys;
+    expect(lost).toMatch(uuid);
+    expect(retried).toBe(lost);
+
+    await openFromContestList(user, 1);
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(submissionKeys).toHaveLength(3);
+    expect(submissionKeys[2]).toMatch(uuid);
+    expect(submissionKeys[2]).not.toBe(lost);
   });
 
   it('asks for a photograph before sending anything', async () => {
@@ -522,7 +611,9 @@ describe('photograph upload', () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
       'POST /submission': () =>
-        new Promise((resolve) => submissionResponses.push(() => resolve([]))),
+        new Promise((resolve) =>
+          submissionResponses.push(() => resolve(withStatus(201, []))),
+        ),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -547,7 +638,9 @@ describe('photograph upload', () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
       'POST /submission': () =>
-        new Promise((resolve) => submissionResponses.push(() => resolve([]))),
+        new Promise((resolve) =>
+          submissionResponses.push(() => resolve(withStatus(201, []))),
+        ),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -578,7 +671,9 @@ describe('photograph upload', () => {
     const winterResponses: (() => void)[] = [];
     uploadApi({
       'POST /submission': () =>
-        new Promise((resolve) => submissionResponses.push(() => resolve([]))),
+        new Promise((resolve) =>
+          submissionResponses.push(() => resolve(withStatus(201, []))),
+        ),
       'GET /contest/3': () =>
         new Promise((resolve) => winterResponses.push(() => resolve(winter))),
     });
@@ -611,7 +706,9 @@ describe('photograph upload', () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
       'POST /submission': () =>
-        new Promise((resolve) => submissionResponses.push(() => resolve([]))),
+        new Promise((resolve) =>
+          submissionResponses.push(() => resolve(withStatus(201, []))),
+        ),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
