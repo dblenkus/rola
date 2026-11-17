@@ -2,10 +2,11 @@
 
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
+from django.db.models import ProtectedError
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
@@ -29,6 +30,14 @@ from .throttling import (
     RecoveryThrottle,
     RegistrationThrottle,
 )
+
+
+class Conflict(APIException):
+    """Refuse a request that the current state of the data does not allow."""
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "The request conflicts with the current state of the data."
+    default_code = "conflict"
 
 
 class LoginView(views.APIView):
@@ -126,6 +135,15 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(status=status.HTTP_201_CREATED)
+
+    def perform_destroy(self, instance):
+        """Delete the account, or answer 409 while protected records refer to it."""
+        try:
+            super().perform_destroy(instance)
+        except ProtectedError as error:
+            raise Conflict(
+                "This account cannot be deleted while other records depend on it."
+            ) from error
 
     @extend_schema(request=ActivationSerializer, responses={200: None})
     @action(

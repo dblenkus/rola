@@ -428,6 +428,20 @@ Verify and switch
    permissions and models that no longer exist, and the two permission
    tables by the rows that the remapping listed.
 
+#. Delete the postal addresses that no account uses. The previous deployment
+   kept an account's address when the account was deleted, and nothing in the
+   application can show or delete such an address any more; the new stack
+   deletes it with the account:
+
+   .. code-block:: shell
+
+      docker compose exec -T db psql -U rola -d rola -c \
+          "DELETE FROM drf_user_location l WHERE NOT EXISTS (SELECT 1 FROM drf_user_user u WHERE u.location_id = l.id)"
+
+   psql prints the number of deleted addresses as ``DELETE <n>``. From here
+   on, ``drf_user_location`` holds that many rows fewer than in the old
+   database, so a repeated count comparison prints that table.
+
 #. If the old deployment runs on the same server and still publishes port
    8080, stop it completely. Then start the new stack:
 

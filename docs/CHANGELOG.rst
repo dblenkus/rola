@@ -70,6 +70,10 @@ API changes
   These requests used to succeed at any time, so an entrant could delete
   entries that the jury was rating or the results showed, with their
   ratings and rewards, or change the name shown in the results.
+* Deleting an account also deletes its postal address, which used to stay
+  in the database after the account was gone. ``DELETE`` on
+  ``/api/v1/user/{id}`` answers 409 for an account that a contest has as a
+  judge, instead of failing with 500.
 * A submission's author and photographs must belong to the requester, a
   photograph can belong to only one submission, and an update cannot change
   the author or the contest. Such requests answer 400.

@@ -18,7 +18,7 @@ from django.utils.text import slugify
 from PIL import Image
 from rest_framework.test import APIClient
 
-from drf_user.models import Email
+from drf_user.models import Email, User
 from rolca.core.models import (
     Author,
     Contest,
@@ -434,6 +434,21 @@ def test_judges_see_submissions_without_their_authors(world):
 def test_anonymous_judge_endpoint_denies_without_server_error(world):
     response = APIClient().get("/api/v1/judge/submission")
     assert response.status_code == 401
+
+
+def test_deleting_a_judge_answers_409(world):
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    client = APIClient()
+    client.force_authenticate(world.admin)
+
+    response = client.delete(f"/api/v1/user/{world.other.id}")
+
+    assert response.status_code == 409
+    assert response.data["detail"] == (
+        "This account cannot be deleted while other records depend on it."
+    )
+    assert User.objects.filter(pk=world.other.pk).exists()
+    assert Judge.objects.filter(pk=judge.pk).exists()
 
 
 def test_rating_updates_cannot_move_rating_to_another_contest(world):

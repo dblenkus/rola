@@ -15,6 +15,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from django.db import models
 from django.db.models.functions import Lower
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils.timezone import now
 
 from .settings import drf_user_settings
@@ -183,6 +185,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+
+@receiver(post_delete, sender=User)
+def delete_unused_location(sender, instance, **kwargs):
+    """Delete a removed account's address unless another account still uses it.
+
+    The foreign key points from the account to its address, so deleting the
+    account never cascades to the address, and no other record refers to it.
+    Deleting an address that is still in use would cascade to its accounts.
+    """
+    if instance.location_id is not None:
+        Location.objects.filter(pk=instance.location_id, user__isnull=True).delete()
 
 
 class TokenManager(models.Manager):

@@ -161,6 +161,35 @@ def test_invalid_address_field_does_not_update_profile(
     assert Location.objects.count() == 1
 
 
+def test_deleting_an_account_deletes_its_address(client, account, address):
+    account.location = Location.objects.create(**address)
+    account.save(update_fields=["location"])
+    other = User.objects.create_user(
+        email="other@example.com", location=Location.objects.create(**address)
+    )
+
+    response = client.delete(reverse("user-detail", kwargs={"id": account.id}))
+
+    assert response.status_code == 204
+    assert not User.objects.filter(pk=account.pk).exists()
+    assert list(Location.objects.values_list("pk", flat=True)) == [other.location_id]
+
+
+def test_deleting_an_account_keeps_an_address_another_account_uses(
+    client, account, address
+):
+    shared = Location.objects.create(**address)
+    account.location = shared
+    account.save(update_fields=["location"])
+    other = User.objects.create_user(email="other@example.com", location=shared)
+
+    response = client.delete(reverse("user-detail", kwargs={"id": account.id}))
+
+    assert response.status_code == 204
+    other.refresh_from_db()
+    assert other.location == shared
+
+
 @pytest.mark.parametrize(("length", "status"), [(100, 201), (101, 400)])
 def test_registration_validates_address_lengths(db, address, length, status):
     address = dict.fromkeys(address, "x" * length)
