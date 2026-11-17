@@ -13,8 +13,10 @@ Core API views
 """
 
 import logging
+from collections import Counter
 from functools import partial
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
@@ -35,7 +37,11 @@ from rolca.core.api.filters import (
     SubmissionSetFilter,
 )
 from rolca.core.api.parsers import ImageUploadParser
-from rolca.core.api.permissions import AdminOrReadOnly, IsSubmissionOwnerOrReadOnly
+from rolca.core.api.permissions import (
+    AdminOrReadOnly,
+    IsSubmissionOwnerOrReadOnly,
+    require_open_contest,
+)
 from rolca.core.api.querysets import with_submission_details
 from rolca.core.api.serializers import (
     AuthorSerializer,
@@ -189,6 +195,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Create one coherent submission set, atomically, for either payload shape."""
+        self._lock_account()
         serializer_kwargs = {}
         if isinstance(request.data, list):
             serializer_kwargs.update(many=True, allow_empty=False)
@@ -205,6 +212,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             raise exceptions.ValidationError(
                 "All submissions must belong to the same contest."
             )
+        require_open_contest(contest)
         if any(item["author"] != items[0]["author"] for item in items):
             raise exceptions.ValidationError(
                 "All submissions must have the same author."
@@ -214,6 +222,11 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             raise exceptions.ValidationError(
                 "Each file may only be used once in a submission set."
             )
+        new_photos = Counter()
+        for item in items:
+            new_photos[item["theme"]] += len(item["files"])
+        for theme, count in new_photos.items():
+            self._limit_photos(items[0]["author"], theme, count)
         self._lock_files(files)
         self.perform_create(serializer)
 
@@ -236,6 +249,35 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
+    def _lock_account(self):
+        """Serialize the requester's submission writes.
+
+        Concurrent writes would otherwise each count the photographs in a
+        theme without the ones that the other is adding.
+        """
+        get_user_model().objects.select_for_update().get(pk=self.request.user.pk)
+
+    def _limit_photos(self, author, theme, count, submission=None):
+        """Refuse more than the theme's number of photographs per author.
+
+        The limit counts photographs, not submissions: a series is one
+        submission with up to that many photographs.
+        """
+        entered = File.objects.filter(
+            submission__author=author, submission__theme=theme
+        )
+        if submission is not None:
+            entered = entered.exclude(submission=submission)
+        if entered.count() + count > theme.n_photos:
+            raise exceptions.ValidationError(
+                {
+                    "files": [
+                        f'Too many photographs for the theme "{theme.title}", '
+                        f"which accepts {theme.n_photos} per author."
+                    ]
+                }
+            )
+
     def _lock_files(self, files, submission=None):
         """Recheck attachment state under a lock to prevent concurrent file reuse."""
         locked = list(
@@ -255,26 +297,30 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         """Serialize file reassignment with other submission writes."""
+        self._lock_account()
         return super().update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        """Lock uploads before changing their submission relation."""
-        if "files" in serializer.validated_data:
-            self._lock_files(serializer.validated_data["files"], serializer.instance.pk)
+        """Limit the theme's photographs and lock uploads before saving."""
+        instance = serializer.instance
+        data = serializer.validated_data
+        if "files" in data or "theme" in data:
+            count = len(data["files"]) if "files" in data else instance.files.count()
+            theme = data.get("theme", instance.theme)
+            self._limit_photos(instance.author, theme, count, instance)
+        if "files" in data:
+            self._lock_files(data["files"], instance.pk)
         serializer.save()
 
     def destroy(self, request, *args, **kwargs):
-        """Delete an unpublished submission owned by the requester."""
+        """Delete the requester's submission while its contest accepts entries."""
         instance = self.get_object()
 
         if request.user != instance.user:
             raise exceptions.PermissionDenied(
                 "You can only delete your own submissions."
             )
-        if instance.theme.contest.publish_date < timezone.now():
-            raise exceptions.PermissionDenied(
-                "You cannot delete already published submissions."
-            )
+        require_open_contest(instance.theme.contest)
 
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -308,13 +354,18 @@ class SubmissionSetViewSet(
         return queryset
 
     def destroy(self, request, *args, **kwargs):
-        """Destroy the instance and all related submissions."""
+        """Delete a set and its submissions while its contest accepts entries.
+
+        Superusers may delete any set until the results are published.
+        """
         instance = self.get_object()
 
-        if instance.contest.publish_date < timezone.now():
-            raise exceptions.PermissionDenied(
-                "You cannot delete already published submission sets."
-            )
+        # Organizers remove duplicate and mistaken sets here, as the Django
+        # admin does not list submission sets.
+        if not (
+            request.user.is_superuser and timezone.now() < instance.contest.publish_date
+        ):
+            require_open_contest(instance.contest)
 
         instance.submissions.all().delete()
         self.perform_destroy(instance)

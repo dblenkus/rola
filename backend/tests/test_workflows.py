@@ -237,6 +237,144 @@ def test_owner_cannot_change_published_submission(world):
     )
 
 
+# Start, end and publication of a contest that accepts no entries, from now.
+CLOSED_SCHEDULES = {
+    "before_start": (timedelta(hours=1), timedelta(days=1), timedelta(days=2)),
+    "after_end": (-timedelta(days=2), -timedelta(hours=1), timedelta(days=1)),
+    "after_publication": (
+        -timedelta(days=3),
+        -timedelta(days=2),
+        -timedelta(hours=1),
+    ),
+    "published_before_end": (
+        -timedelta(days=1),
+        timedelta(days=1),
+        -timedelta(hours=1),
+    ),
+}
+ENTRIES_CLOSED = {"detail": "This contest is not accepting entries."}
+
+
+def reschedule(contest, start, end, publish):
+    """Move the contest's start, end and publication relative to now."""
+    now = timezone.now()
+    contest.start_date = now + start
+    contest.end_date = now + end
+    contest.publish_date = now + publish
+    contest.save()
+
+
+def entered(world):
+    """Enter a submission with one photograph as a submission set."""
+    item = submitted(world)
+    item.files.add(photo(world.owner))
+    group = SubmissionSet.objects.create(
+        user=world.owner, author=world.author, contest=world.contest
+    )
+    group.submissions.add(item)
+    return item, group
+
+
+@pytest.mark.parametrize("schedule", list(CLOSED_SCHEDULES))
+@pytest.mark.parametrize("batch", [False, True])
+def test_entries_are_accepted_only_while_the_contest_is_open(world, schedule, batch):
+    reschedule(world.contest, *CLOSED_SCHEDULES[schedule])
+    data = [payload(world), payload(world)] if batch else payload(world)
+    response = world.client.post("/api/v1/submission", data, format="json")
+    assert response.status_code == 403
+    assert response.json() == ENTRIES_CLOSED
+    assert not Submission.objects.exists()
+    assert not SubmissionSet.objects.exists()
+    assert not File.objects.filter(submission__isnull=False).exists()
+
+
+@pytest.mark.parametrize(
+    ("method", "endpoint"),
+    [
+        ("put", "submission"),
+        ("patch", "submission"),
+        ("delete", "submission"),
+        ("delete", "submissionset"),
+    ],
+)
+def test_entries_cannot_change_after_the_contest_closes(world, method, endpoint):
+    item, group = entered(world)
+    image = item.files.get()
+    reschedule(world.contest, *CLOSED_SCHEDULES["after_end"])
+    target = item if endpoint == "submission" else group
+    data = payload(world, title="Late") if method != "delete" else None
+    response = getattr(world.client, method)(
+        f"/api/v1/{endpoint}/{target.pk}", data, format="json"
+    )
+    assert response.status_code == 403
+    assert response.json() == ENTRIES_CLOSED
+    item.refresh_from_db()
+    assert item.title == "Original"
+    assert list(item.files.all()) == [image]
+    assert list(group.submissions.all()) == [item]
+
+
+def test_superusers_delete_submission_sets_until_publication(world):
+    (judged, judged_set), (published, published_set) = entered(world), entered(world)
+    reschedule(world.contest, *CLOSED_SCHEDULES["after_end"])
+    world.client.force_authenticate(world.admin)
+    response = world.client.delete(f"/api/v1/submissionset/{judged_set.pk}")
+    assert response.status_code == 204
+    assert not Submission.objects.filter(pk=judged.pk).exists()
+
+    reschedule(world.contest, *CLOSED_SCHEDULES["after_publication"])
+    response = world.client.delete(f"/api/v1/submissionset/{published_set.pk}")
+    assert response.status_code == 403
+    assert response.json() == ENTRIES_CLOSED
+    assert list(published_set.submissions.all()) == [published]
+
+
+def test_a_theme_accepts_at_most_n_photos_per_author(world):
+    world.theme.n_photos = 2
+    world.theme.save()
+    city = Theme.objects.create(contest=world.contest, title="City", n_photos=1)
+    series = Theme.objects.create(
+        contest=world.contest, title="Series", is_series=True, n_photos=3
+    )
+
+    def post(data):
+        return world.client.post("/api/v1/submission", data, format="json")
+
+    def photos(count):
+        return [{"id": photo(world.owner).pk} for _ in range(count)]
+
+    response = post([payload(world) for _ in range(3)])
+    assert response.status_code == 400
+    assert response.json() == {
+        "files": [
+            'Too many photographs for the theme "Nature", which accepts 2 per author.'
+        ]
+    }
+    assert not Submission.objects.exists()
+
+    first, _ = post([payload(world), payload(world)]).data
+    assert post(payload(world)).status_code == 400
+    another = Author.objects.create(user=world.owner, first_name="Another")
+    assert post(payload(world, author={"id": another.pk})).status_code == 201
+    assert post(payload(world, theme=city.pk)).status_code == 201
+    assert Submission.objects.filter(author=world.author).count() == 3
+
+    url = f"/api/v1/submission/{first['id']}"
+    replaced = world.client.patch(url, {"files": photos(1)}, format="json")
+    assert replaced.status_code == 200, replaced.data
+    added = world.client.patch(url, {"files": photos(2)}, format="json")
+    assert added.status_code == 400
+    moved = world.client.patch(url, {"theme": city.pk}, format="json")
+    assert moved.status_code == 400
+    assert Submission.objects.get(pk=first["id"]).theme == world.theme
+    assert File.objects.filter(submission=first["id"]).count() == 1
+
+    assert post(payload(world, theme=series.pk, files=photos(4))).status_code == 400
+    assert post(payload(world, theme=series.pk, files=photos(3))).status_code == 201
+    assert post(payload(world, theme=series.pk, files=photos(1))).status_code == 400
+    assert File.objects.filter(submission__theme=series).count() == 3
+
+
 def test_contest_and_institution_filters_are_applied(world):
     Contest.objects.create(
         title="Past",

@@ -137,6 +137,18 @@ class Contest(BaseModel):
     is_active.boolean = True
     is_active.short_description = _("active")
 
+    def accepts_entries(self, now=None):
+        """Check whether entries may be created, changed or deleted.
+
+        Entries close at the end date, or earlier if the results are
+        published first.
+
+        :param now: The moment to check, the current time by default.
+        """
+        if now is None:
+            now = timezone.now()
+        return self.start_date <= now <= self.end_date and now < self.publish_date
+
     def number_of_photos(self):
         """Return number of photos submitted to the current contest."""
         return Submission.objects.filter(theme__contest=self).count()

@@ -69,9 +69,15 @@ API changes
 * Validation errors for a batch submission, a list in the request body, are
   an object keyed by the index of each failing item instead of a list with an
   entry per item, as Django REST framework 3.18 reports them.
-* Only the owner can change a submission, and only until its contest's
-  results are published; after that, ``PUT`` and ``PATCH`` answer 403, as
-  ``DELETE`` already did.
+* Submissions can be created, changed and deleted only while their contest
+  accepts entries: from its start date to its end date, and before its
+  results are published. Outside that window these requests answer 403 with
+  the detail "This contest is not accepting entries."; superusers can still
+  delete a submission set until publication. Only the owner can change or
+  delete a submission. An author can enter at most a theme's ``n_photos``
+  photographs in it, and more answer 400. Submissions used to be accepted at
+  any time and in any number, and could be changed or deleted until
+  publication, also while the jury rated them.
 * ``PUT``, ``PATCH`` and ``DELETE`` on ``/api/v1/author/{id}`` answer 403
   once the author has submissions in a contest that no longer accepts
   entries because it has ended or its results are published, and so does

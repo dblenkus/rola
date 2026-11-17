@@ -305,7 +305,7 @@ export interface paths {
         /** @description Serialize file reassignment with other submission writes. */
         put: operations["submission_update"];
         post?: never;
-        /** @description Delete an unpublished submission owned by the requester. */
+        /** @description Delete the requester's submission while its contest accepts entries. */
         delete: operations["submission_destroy"];
         options?: never;
         head?: never;
@@ -341,7 +341,11 @@ export interface paths {
         get: operations["submissionset_retrieve"];
         put?: never;
         post?: never;
-        /** @description Destroy the instance and all related submissions. */
+        /**
+         * @description Delete a set and its submissions while its contest accepts entries.
+         *
+         *     Superusers may delete any set until the results are published.
+         */
         delete: operations["submissionset_destroy"];
         options?: never;
         head?: never;

@@ -1125,7 +1125,7 @@ paths:
           description: ''
     delete:
       operationId: submission_destroy
-      description: Delete an unpublished submission owned by the requester.
+      description: Delete the requester's submission while its contest accepts entries.
       parameters:
       - in: path
         name: id
@@ -1202,7 +1202,10 @@ paths:
           description: ''
     delete:
       operationId: submissionset_destroy
-      description: Destroy the instance and all related submissions.
+      description: |-
+        Delete a set and its submissions while its contest accepts entries.
+
+        Superusers may delete any set until the results are published.
       parameters:
       - in: path
         name: id
