@@ -263,6 +263,8 @@ Fixes
 * A photograph the browser cannot read, such as HEIC data saved as ``.jpg``,
   shows "Invalid file." in the upload form as soon as it is chosen. The form
   used to ignore it silently and keep the photograph chosen before.
+* Clearing a title, or a series description, in the upload form no longer
+  lets the upload through without it while photographs are selected.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

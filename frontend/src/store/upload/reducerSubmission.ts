@@ -6,9 +6,25 @@ import imageReducer from './reducerImage';
 import { getEmptySubmission } from './utils';
 
 interface RequiredFields {
-  titleRequired?: boolean;
-  descriptionRequired?: boolean;
+  titleRequired: boolean;
+  descriptionRequired: boolean;
 }
+
+// A selected photograph needs a title, and a series needs both texts once it
+// has a photograph or either text. Derived from the whole submission so that
+// clearing one field cannot lift a requirement the rest of it sets.
+const requiredFields = ({
+  meta,
+  title,
+  description,
+  images,
+}: SubmissionModel): RequiredFields => {
+  const anyImage = images.some((image) => !!image.file);
+  return {
+    titleRequired: anyImage || (meta.isSeries && !!description),
+    descriptionRequired: meta.isSeries && (anyImage || !!title),
+  };
+};
 
 const initialSate = getEmptySubmission();
 
@@ -33,37 +49,23 @@ const reducer = (
     }
     case SUBMISSION_UPDATE: {
       const { name, value } = action.payload;
-      const { isSeries } = state.meta;
-
-      const requiredFields: RequiredFields = {};
-      if (name === 'title' || name === 'description') {
-        requiredFields.titleRequired = !!value;
-        requiredFields.descriptionRequired = isSeries && !!value;
-      }
-
+      const submission = { ...state, [name]: value };
       return {
-        ...state,
-        meta: { ...state.meta, ...requiredFields, isChanged: true },
-        [name]: value,
+        ...submission,
+        meta: { ...state.meta, ...requiredFields(submission), isChanged: true },
       };
     }
     default: {
       if ('image_id' in action) {
-        const { description, meta, title } = state;
         const images = state.images.map((image) => {
           return image.meta.id === action.image_id
             ? imageReducer(image, action)
             : image;
         });
-
-        const anyImage = images.some((image) => !!image.file);
-        const titleRequired = anyImage || (meta.isSeries && !!description);
-        const descriptionRequired = meta.isSeries && (anyImage || !!title);
-
+        const submission = { ...state, images };
         return {
-          ...state,
-          meta: { ...state.meta, titleRequired, descriptionRequired },
-          images,
+          ...submission,
+          meta: { ...state.meta, ...requiredFields(submission) },
         };
       }
       return state;
