@@ -309,6 +309,10 @@ Fixes
   thumbnail, so judges could read the author's name and, after publication,
   anyone where a photograph was taken. ``manage.py stripphotometadata``
   strips photographs and thumbnails stored before; the transfer runs it.
+* Thumbnails show photographs upright. A photograph whose EXIF orientation
+  turns it for display, as phones store portrait photographs, used to get a
+  thumbnail on its side, so the jury's theme gallery showed it sideways.
+  Thumbnails made before are not turned upright.
 * The jury view ignores late rating responses for a photograph it has already
   left.
 * The jury gallery and rater show a theme only once they have loaded it:

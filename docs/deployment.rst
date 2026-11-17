@@ -246,9 +246,11 @@ displaying it needs: the JFIF header, the ICC colour profile, the Adobe
 colour transform and the EXIF orientation. It drops every other EXIF tag,
 such as the camera owner, the copyright holder and the GPS position, XMP and
 IPTC data, comments, embedded thumbnails and further pictures in the file.
-The thumbnail is made from the stripped photograph. ``manage.py
-stripphotometadata`` strips the photographs and thumbnails stored before,
-under the same names; the data transfer runs it (see :doc:`transfer`).
+The thumbnail is made from the stripped photograph and turned upright by its
+EXIF orientation, because the thumbnail itself carries no EXIF data.
+``manage.py stripphotometadata`` strips the photographs and thumbnails stored
+before, under the same names; the data transfer runs it (see
+:doc:`transfer`). It does not turn the thumbnails made before upright.
 
 Contest downloads
 =================

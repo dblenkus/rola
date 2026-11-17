@@ -38,7 +38,7 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from PIL import Image
+from PIL import Image, ImageOps
 
 from rolca.core.images import strip_metadata
 
@@ -352,6 +352,9 @@ class File(BaseModel):
 
             thumb = io.BytesIO()
             with Image.open(self.file) as image:
+                # The thumbnail carries no EXIF data, so its pixels take the
+                # orientation that viewers apply to the stored photograph.
+                ImageOps.exif_transpose(image, in_place=True)
                 image.thumbnail((400, 400), Image.Resampling.LANCZOS)
                 image.save(
                     thumb, format="jpeg", quality=80, optimize=True, progressive=True

@@ -489,6 +489,47 @@ def test_uploads_keep_only_orientation_and_colour_profile(world):
         assert not thumbnail.getexif()
 
 
+def red_quarters(image):
+    """Name the quarters of a red and white image whose centre is red."""
+    width, height = image.size
+    centres = {
+        "top left": (width // 4, height // 4),
+        "top right": (3 * width // 4, height // 4),
+        "bottom left": (width // 4, 3 * height // 4),
+        "bottom right": (3 * width // 4, 3 * height // 4),
+    }
+    # Red has no green, white has all of it.
+    return {name for name, centre in centres.items() if image.getpixel(centre)[1] < 128}
+
+
+@pytest.mark.parametrize(
+    ("orientation", "size", "red"),
+    [
+        (3, (400, 300), "bottom right"),
+        (6, (300, 400), "top right"),
+        (8, (300, 400), "bottom left"),
+    ],
+)
+def test_thumbnails_show_the_photograph_upright(world, orientation, size, red):
+    # A camera stores its sensor's pixels with an EXIF orientation that turns
+    # them upright for display, as viewers do with the stored photograph.
+    sensor = Image.new("RGB", (1600, 1200), "white")
+    sensor.paste("red", (0, 0, 800, 600))
+    exif = Image.Exif()
+    exif[ExifTags.Base.Orientation] = orientation
+    data = io.BytesIO()
+    sensor.save(data, "JPEG", exif=exif)
+
+    response = upload(world, data.getvalue())
+
+    assert response.status_code == 201, response.data
+    stored = File.objects.get(pk=response.data["id"])
+    with stored.thumbnail.open("rb") as source, Image.open(source) as thumbnail:
+        assert not thumbnail.getexif()
+        assert thumbnail.size == size
+        assert red_quarters(thumbnail) == {red}
+
+
 def test_multi_picture_uploads_keep_only_the_first_picture(world):
     first, second = patterned_image(), Image.new("RGB", (32, 24), "blue")
     data = io.BytesIO()
