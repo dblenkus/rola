@@ -17,7 +17,7 @@ import {
   SubmissionMeta,
 } from '../../types/models';
 import imageReader from '../../utils/imageReader';
-import upload from '../../utils/upload';
+import upload, { SessionChanged } from '../../utils/upload';
 import validate from '../../utils/validate';
 
 import {
@@ -62,6 +62,11 @@ export const uploadSubmit =
     if (!session) {
       return false;
     }
+    // Another account signed in before the view followed it; its form
+    // opens next.
+    if (session.email !== getState().upload.owner) {
+      return false;
+    }
     if (Date.parse(session.expires) - Date.now() < uploadSessionMargin) {
       rejectToken(`Token ${session.token}`);
       dispatch(
@@ -84,7 +89,7 @@ export const uploadSubmit =
         }
         return false;
       }
-      await upload(contest);
+      await upload(contest, session);
       if (current()) {
         dispatch(uploadComplete(uploadKey));
       }
@@ -96,6 +101,10 @@ export const uploadSubmit =
       );
       return true;
     } catch (error) {
+      // The view follows the changed session; there is nothing to report.
+      if (error instanceof SessionChanged) {
+        return false;
+      }
       if (!axios.isAxiosError(error)) {
         throw error;
       }

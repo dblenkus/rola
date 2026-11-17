@@ -11,8 +11,15 @@ export type SubmissionCreatePayload =
 export default {
   createSubmissions(
     submissions: SubmissionCreatePayload[],
+    authorization?: string,
   ): AxiosPromise<SubmissionWrite[]> {
-    return apiClient.post('/submission', submissions);
+    return apiClient.post(
+      '/submission',
+      submissions,
+      authorization === undefined
+        ? {}
+        : { headers: { Authorization: authorization } },
+    );
   },
   deleteSubmission(submissionsId: number): AxiosPromise<Submission[]> {
     return apiClient.delete(`/submission/${submissionsId}`);

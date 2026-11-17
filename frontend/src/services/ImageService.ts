@@ -19,11 +19,14 @@ function contentDisposition(name: string): string {
 }
 
 export default {
-  uploadImage(image: File): AxiosPromise<Image> {
+  uploadImage(image: File, authorization?: string): AxiosPromise<Image> {
     return apiClient.post('/file', image, {
       headers: {
         'Content-Type': image.type,
         'Content-Disposition': contentDisposition(image.name),
+        ...(authorization === undefined
+          ? {}
+          : { Authorization: authorization }),
       },
     });
   },

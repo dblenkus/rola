@@ -12,6 +12,13 @@ import type { Contest, Theme } from '../types/api';
 
 const winter: Contest = { ...contest, id: 3, title: 'Winter photographs' };
 
+const storedPhotograph = {
+  id: 21,
+  created: '2026-01-01T00:00:00Z',
+  modified: '2026-01-01T00:00:00Z',
+  file: 'https://media.example/21.jpg',
+};
+
 // jsdom does not decode images; validation only needs their dimensions.
 class DecodedImage {
   width = 3000;
@@ -39,12 +46,7 @@ function uploadApi(overrides: Parameters<typeof serveApi>[0] = {}) {
     'GET /contest': () => page([contest, winter]),
     'GET /contest/1': () => contest,
     'GET /contest/3': () => winter,
-    'POST /file': () => ({
-      id: 21,
-      created: '2026-01-01T00:00:00Z',
-      modified: '2026-01-01T00:00:00Z',
-      file: 'https://media.example/21.jpg',
-    }),
+    'POST /file': () => storedPhotograph,
     'POST /author': () => author,
     'POST /submission': () => [],
     ...overrides,
@@ -374,6 +376,47 @@ describe('photograph upload', () => {
     expect(
       adapter.mock.calls.filter(([config]) => config.method === 'post'),
     ).toHaveLength(0);
+  });
+
+  it('sends no request as an account that signed in during an upload', async () => {
+    const photographResponses: (() => void)[] = [];
+    const adapter = uploadApi({
+      'POST /file': () =>
+        photographResponses.length
+          ? storedPhotograph
+          : new Promise((resolve) =>
+              photographResponses.push(() => resolve(storedPhotograph)),
+            ),
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    await waitFor(() => expect(photographResponses).toHaveLength(1));
+    act(() => {
+      signIn('next-account', 'next@example.com');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+    });
+    expect(
+      await screen.findByRole('textbox', { name: /first name/i }),
+    ).toHaveValue('');
+
+    photographResponses[0]?.();
+    await settle();
+    expect(
+      adapter.mock.calls
+        .map(([config]) => config)
+        .filter((config) => config.method === 'post')
+        .map((config) => [config.url, config.headers.get('Authorization')]),
+    ).toEqual([['/file', 'Token signed-in']]);
+    expect(window.location.pathname).toBe('/contest/1/upload');
+    expect(screen.getByRole('textbox', { name: /first name/i })).toHaveValue(
+      '',
+    );
+    expect(
+      screen.queryByText('Upload failed. Please try again.'),
+    ).not.toBeInTheDocument();
   });
 
   it('starts an empty form after a completed upload', async () => {

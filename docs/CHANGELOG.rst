@@ -246,6 +246,9 @@ Fixes
 * A failed upload releases the upload button and says that it failed, and an
   upload without photographs asks for one.
 * An upload form in progress, with its photographs, survives a new login.
+* An upload stops when another account signs in, in any tab, before it
+  finishes, instead of sending the rest of the photographs and the author's
+  details as that account.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

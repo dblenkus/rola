@@ -16,10 +16,14 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config);
 
+// A request that names its session keeps it, so that an upload acts for the
+// account that started it after another account signs in.
 apiClient.interceptors.request.use((config) => {
-  const token = loadToken();
-  if (token) {
-    config.headers.set('Authorization', `Token ${token.token}`);
+  if (!config.headers.has('Authorization')) {
+    const token = loadToken();
+    if (token) {
+      config.headers.set('Authorization', `Token ${token.token}`);
+    }
   }
   return config;
 });
