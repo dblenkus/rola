@@ -92,6 +92,9 @@ if boolean("ROLA_DISABLE_PASSWORD_VALIDATORS"):
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["drf_user.authentication.TokenAuthentication"],
+    # The browsable API's forms list related objects from unfiltered querysets,
+    # which would show any account the titles of every submission.
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),

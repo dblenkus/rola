@@ -568,3 +568,21 @@ def test_published_scores_are_immutable(world, method):
     assert response.status_code == 403
     rating.refresh_from_db()
     assert rating.rating == 4
+
+
+def test_the_api_answers_only_json(world):
+    submitted(world, title="Unpublished entry")
+    world.client.force_authenticate(world.other)
+    browsable = world.client.get("/api/v1/rating?format=api")
+    assert browsable.status_code == 404
+    html = world.client.get("/api/v1/rating", HTTP_ACCEPT="text/html")
+    assert html.status_code == 406
+    for response in [browsable, html]:
+        assert response["Content-Type"] == "application/json"
+        assert b"Unpublished entry" not in response.content
+
+
+@pytest.mark.parametrize("title", [None, ""])
+def test_untitled_submission_has_a_name(world, title):
+    item = submitted(world, title=title)
+    assert str(item) == f"Submission {item.pk}"

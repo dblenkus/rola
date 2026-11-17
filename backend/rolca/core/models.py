@@ -253,7 +253,7 @@ class Submission(BaseModel):
 
     def __str__(self):
         """Return string representation of Submission object."""
-        return self.title
+        return self.title or f"Submission {self.pk}"
 
 
 def validate_image(file):

@@ -81,6 +81,10 @@ API changes
 * The API sends no CORS headers; the frontend calls it from the same origin.
 * ``/api-auth/``, Django REST framework's session login, is removed. The API
   accepts only token authentication.
+* The API answers JSON only. Django REST framework's browsable HTML pages,
+  whose forms showed any account the titles of every submission, are gone:
+  ``?format=api`` answers 404 and a request that accepts only ``text/html``
+  answers 406.
 * ``?current=`` on the account list is described as a presence flag: any
   non-empty value limits the list to the caller's own account.
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
@@ -202,6 +206,8 @@ Fixes
 * Theme results sort names in Slovenian alphabetical order and highlight an
   author's row only in the theme of the author's reward.
 * The Django admin index no longer fails for an account without a first name.
+* The Django admin's submission list and pages no longer fail when a
+  submission has no title.
 * The contest download sends a logged-out organizer to the Django admin
   login and back, instead of to a page that does not exist.
 
