@@ -42,13 +42,15 @@ let initialization = 0;
 // does not match its theme.
 export type InitializeResult = 'stored' | 'superseded' | 'missing';
 
-export const initializeStore =
+// Loads the theme and its submissions, and stores them with the position that
+// `position` picks once they have arrived.
+const loadTheme =
   (
     contestId: string,
     themeId: string,
-    submissionId: number | undefined,
+    position: (submissions: JurySubmission[], state: AppState) => number,
   ): AppThunk<Promise<InitializeResult>> =>
-  async (dispatch): Promise<InitializeResult> => {
+  async (dispatch, getState): Promise<InitializeResult> => {
     initialization += 1;
     const current = initialization;
     try {
@@ -60,13 +62,8 @@ export const initializeStore =
         JudgeSubmissionService.getSubmissionsByTheme(parseInt(themeId, 10));
       const submissions = await fetchAll(submissionResource);
 
-      let currentIndex = 0;
-      if (submissionId) {
-        currentIndex = submissions.findIndex((s) => s.id === submissionId);
-        if (currentIndex === -1) currentIndex = 0;
-      }
-
       if (current !== initialization) return 'superseded';
+      const currentIndex = position(submissions, getState());
       dispatch(performInitialize(contest, theme, submissions, currentIndex));
       return 'stored';
     } catch (error) {
@@ -74,6 +71,34 @@ export const initializeStore =
       return 'superseded';
     }
   };
+
+const indexOf = (
+  submissions: JurySubmission[],
+  submissionId: number | undefined,
+): number =>
+  Math.max(
+    submissions.findIndex((s) => s.id === submissionId),
+    0,
+  );
+
+export const initializeStore = (
+  contestId: string,
+  themeId: string,
+  submissionId: number | undefined,
+): AppThunk<Promise<InitializeResult>> =>
+  loadTheme(contestId, themeId, (submissions) =>
+    indexOf(submissions, submissionId),
+  );
+
+// Loads the shown theme again and keeps the submission shown when the load
+// finishes, which may not be the one shown when it started.
+export const reloadStore = (
+  contestId: string,
+  themeId: string,
+): AppThunk<Promise<InitializeResult>> =>
+  loadTheme(contestId, themeId, (submissions, state) =>
+    indexOf(submissions, getCurrentSubmission(state)?.id),
+  );
 
 export const getCurrentSubmission = (
   state: AppState,

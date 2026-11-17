@@ -13,6 +13,7 @@ import {
   getIsNext,
   getIsPrevious,
   initializeStore,
+  reloadStore,
   setNextSubmission,
   setPreviousSubmission,
   type InitializeResult,
@@ -33,6 +34,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   isPrevious: storedIsPrevious,
   isNext: storedIsNext,
   initialize,
+  reload,
   nextSubmission,
   previousSubmission,
 }: PropsFromRedux) => {
@@ -51,6 +53,13 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   // A failed save keeps the rater on screen so the judge can try again.
   const [saveError, setSaveError] = useState<{
     submissionId: number;
+    message: string;
+  } | null>(null);
+  // A failed reload of the photograph links keeps the rater as it was. It is
+  // kept with the submissions whose photographs failed, each until one of its
+  // photographs loads or a later reload succeeds.
+  const [reloadError, setReloadError] = useState<{
+    submissionIds: ReadonlySet<number>;
     message: string;
   } | null>(null);
   const [close, setClose] = useState(false);
@@ -125,6 +134,52 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       .catch((error: unknown) => setError(requestError(error)));
   }, [contestId, themeId, initialize]);
 
+  // Photograph links are signed for an hour, and a judge can spend longer on
+  // a theme. A photograph that fails to load reloads the theme for new links
+  // at most once a minute, so that one missing for another reason does not
+  // reload it over and over.
+  const lastReload = useRef<number | undefined>(undefined);
+  // Submissions whose photographs failed since the last stored reload,
+  // including those the throttle or a pending reload kept from reloading, so
+  // that a failed reload is shown on all of them.
+  const failedIds = useRef(new Set<number>());
+  const reloadSubmissions = () => {
+    if (!submission) return;
+    failedIds.current.add(submission.id);
+    const now = Date.now();
+    if (lastReload.current !== undefined && now - lastReload.current <= 60_000)
+      return;
+    lastReload.current = now;
+    // A stored reload keeps the submission on screen and gives it new links;
+    // one that a newer initialization replaced changes nothing.
+    reload(contestId, themeId)
+      .then((result) => {
+        if (result === 'missing') setError(contentUnavailable);
+        else {
+          failedIds.current.clear();
+          setReloadError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        // Nothing was reloaded, so the next failing photograph tries again.
+        lastReload.current = undefined;
+        setReloadError({
+          submissionIds: new Set(failedIds.current),
+          message: requestError(error),
+        });
+      });
+  };
+
+  const photographLoaded = (loadedId: number) => {
+    failedIds.current.delete(loadedId);
+    setReloadError((current) => {
+      if (!current?.submissionIds.has(loadedId)) return current;
+      const submissionIds = new Set(current.submissionIds);
+      submissionIds.delete(loadedId);
+      return submissionIds.size > 0 ? { ...current, submissionIds } : null;
+    });
+  };
+
   // Store submission id in url.
   useEffect(() => {
     if (submission && submissionId.current !== submission.id) {
@@ -191,6 +246,9 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       {saveError?.submissionId === submission.id && (
         <Alert severity="error">{saveError.message}</Alert>
       )}
+      {reloadError?.submissionIds.has(submission.id) && (
+        <Alert severity="error">{reloadError.message}</Alert>
+      )}
       <SubmissionRater
         submission={submission}
         rating={rating?.submissionId === submission.id ? rating.value : 0}
@@ -202,6 +260,8 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         previousSubmission={previousSubmission}
         nextSubmission={nextSubmission}
         updateRating={updateRating}
+        onImageError={reloadSubmissions}
+        onImageLoad={() => photographLoaded(submission.id)}
       />
       {/* A rating saved since the failed load replaces the missing one. */}
       {loadError?.submissionId === submission.id &&
@@ -226,6 +286,8 @@ const mapDispatchToProps = (dispatch: AppDispatch) => ({
     submissionId: number | undefined,
   ): Promise<InitializeResult> =>
     dispatch(initializeStore(contestId, themeId, submissionId)),
+  reload: (contestId: string, themeId: string): Promise<InitializeResult> =>
+    dispatch(reloadStore(contestId, themeId)),
   previousSubmission: () => dispatch(setPreviousSubmission()),
   nextSubmission: () => dispatch(setNextSubmission()),
 });

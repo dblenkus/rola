@@ -24,6 +24,8 @@ it('shows every photograph of a series without React key warnings', () => {
       previousSubmission={vi.fn()}
       nextSubmission={vi.fn()}
       updateRating={vi.fn()}
+      onImageError={vi.fn()}
+      onImageLoad={vi.fn()}
     />,
   );
 
@@ -60,6 +62,8 @@ it('shows a series of more than six photographs in full', () => {
       previousSubmission={vi.fn()}
       nextSubmission={vi.fn()}
       updateRating={vi.fn()}
+      onImageError={vi.fn()}
+      onImageLoad={vi.fn()}
     />,
   );
 

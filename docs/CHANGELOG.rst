@@ -293,6 +293,11 @@ Fixes
 * The rater and the jury theme overview show every photograph of a series.
   They used to show only the first six, so a judge rated a longer series
   without seeing the rest.
+* The rater reloads a theme's photograph links when a photograph fails to
+  load, at most once a minute, and stays on the shown submission. Links to
+  photographs in S3 expire an hour after the rater loads them, so a longer
+  judging session used to show broken photographs until the page was
+  reloaded.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

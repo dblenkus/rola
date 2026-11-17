@@ -15,7 +15,7 @@ import {
   RouterProvider,
   Routes,
 } from 'react-router';
-import { beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import '../../i18n/config';
 import { createAppStore, type AppStore } from '../../store';
 import { httpError, page, serveApi } from '../../test/api';
@@ -38,6 +38,10 @@ let store: AppStore;
 beforeEach(() => {
   pending.length = 0;
   store = createAppStore();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function ratings(submissionId: number, value: number) {
@@ -540,4 +544,266 @@ it('reports a theme that is not in the contest', async () => {
   ).toBeInTheDocument();
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   expect(submissionLoads).toEqual([]);
+});
+
+it('reloads expired photograph links at most once a minute', async () => {
+  let loads = 0;
+  serveApi({
+    'GET /contest/1': () => contest,
+    // Every load signs the links anew, as the server does.
+    'GET /judge/submission': () => {
+      loads += 1;
+      return page(
+        [jurySubmission(11, 'First'), jurySubmission(12, 'Second')].map(
+          (submission) => ({
+            ...submission,
+            files: submission.files.map((file) => ({
+              ...file,
+              file: `${file.file}?v=${loads}`,
+            })),
+          }),
+        ),
+      );
+    },
+    'GET /rating': () => page([]),
+  });
+  const user = userEvent.setup();
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  await user.keyboard('{ArrowRight}');
+  const expired = await screen.findByRole('img', { name: 'Second' });
+  expect(expired).toHaveAttribute('src', 'https://media.example/12.jpg?v=1');
+
+  fireEvent.error(expired);
+  await waitFor(() =>
+    expect(screen.getByRole('img', { name: 'Second' })).toHaveAttribute(
+      'src',
+      'https://media.example/12.jpg?v=2',
+    ),
+  );
+  expect(loads).toBe(2);
+
+  fireEvent.error(screen.getByRole('img', { name: 'Second' }));
+  await settle();
+  expect(loads).toBe(2);
+  expect(screen.getByRole('img', { name: 'Second' })).toHaveAttribute(
+    'src',
+    'https://media.example/12.jpg?v=2',
+  );
+
+  vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_001);
+  fireEvent.error(screen.getByRole('img', { name: 'Second' }));
+  await waitFor(() =>
+    expect(screen.getByRole('img', { name: 'Second' })).toHaveAttribute(
+      'src',
+      'https://media.example/12.jpg?v=3',
+    ),
+  );
+  expect(loads).toBe(3);
+});
+
+it('keeps the rater when reloading photograph links fails', async () => {
+  let failing = false;
+  let loads = 0;
+  const saves: unknown[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': (config) => {
+      loads += 1;
+      if (failing) throw httpError(config, 503);
+      return page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]);
+    },
+    'GET /rating': () => page([]),
+    'POST /rating': (config) => {
+      saves.push(JSON.parse(String(config.data)));
+      return {};
+    },
+  });
+  const user = userEvent.setup();
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  await user.keyboard('{ArrowRight}');
+  const shown = await screen.findByRole('img', { name: 'Second' });
+
+  failing = true;
+  fireEvent.error(shown);
+  expect(
+    await screen.findByText('Request failed. Please try again.'),
+  ).toBeInTheDocument();
+  expect(loads).toBe(2);
+  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+
+  // The failure belongs to the submission whose photograph failed.
+  failing = false;
+  await user.keyboard('{ArrowLeft}');
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+  await user.keyboard('7');
+  await waitFor(() => expect(saves).toEqual([{ submission: 11, rating: 7 }]));
+
+  // Once its photograph loads, nothing is left to retry.
+  fireEvent.load(await screen.findByRole('img', { name: 'Second' }));
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+
+  // The failed reload does not hold back the next one.
+  fireEvent.error(screen.getByRole('img', { name: 'Second' }));
+  await waitFor(() => expect(loads).toBe(3));
+  await settle();
+  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+});
+
+it('shows a failed reload on every submission whose photograph failed during it', async () => {
+  let loads = 0;
+  const failures: (() => void)[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': (config) => {
+      loads += 1;
+      if (loads === 1)
+        return page([
+          jurySubmission(11, 'First'),
+          jurySubmission(12, 'Second'),
+          jurySubmission(13, 'Third'),
+        ]);
+      return new Promise((_resolve, reject) =>
+        failures.push(() => reject(httpError(config, 503))),
+      );
+    },
+    'GET /rating': () => page([]),
+  });
+  const user = userEvent.setup();
+  renderRater('/judge/contest/1/theme/2/rate?submission=12');
+  fireEvent.error(await screen.findByRole('img', { name: 'Second' }));
+  await waitFor(() => expect(failures).toHaveLength(1));
+  await user.keyboard('{ArrowRight}');
+  fireEvent.error(await screen.findByRole('img', { name: 'Third' }));
+
+  failures[0]?.();
+  expect(
+    await screen.findByText('Request failed. Please try again.'),
+  ).toBeInTheDocument();
+  expect(loads).toBe(2);
+
+  await user.keyboard('{ArrowLeft}');
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  expect(
+    screen.getByText('Request failed. Please try again.'),
+  ).toBeInTheDocument();
+
+  // A submission whose photographs never failed has nothing to retry.
+  await user.keyboard('{ArrowLeft}');
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  expect(
+    screen.queryByText('Request failed. Please try again.'),
+  ).not.toBeInTheDocument();
+});
+
+const signedSubmissions = (list: JurySubmission[], load: number) =>
+  page(
+    list.map((submission) => ({
+      ...submission,
+      files: submission.files.map((file) => ({
+        ...file,
+        file: `${file.file}?v=${load}`,
+      })),
+    })),
+  );
+
+// Answers the first load of the theme's submissions at once and holds the
+// later ones until the test releases them.
+function heldReloads(lists: JurySubmission[][]) {
+  let loads = 0;
+  const release: (() => void)[] = [];
+  const handler = () => {
+    loads += 1;
+    const load = loads;
+    const list = lists[Math.min(load, lists.length) - 1] ?? [];
+    if (load === 1) return signedSubmissions(list, load);
+    return new Promise<PaginatedResponse<JurySubmission>>((resolve) =>
+      release.push(() => resolve(signedSubmissions(list, load))),
+    );
+  };
+  return { handler, release };
+}
+
+const threeSubmissions = [
+  jurySubmission(11, 'First'),
+  jurySubmission(12, 'Second'),
+  jurySubmission(13, 'Third'),
+];
+
+it('stays on the submission the judge moved to while photograph links reload', async () => {
+  const held = heldReloads([threeSubmissions]);
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': held.handler,
+    'GET /rating': () => page([]),
+  });
+  const user = userEvent.setup();
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/judge/contest/:contestId/theme/:themeId/rate',
+        element: <RateSubmission />,
+      },
+    ],
+    { initialEntries: ['/judge/contest/1/theme/2/rate?submission=12'] },
+  );
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  );
+  fireEvent.error(await screen.findByRole('img', { name: 'Second' }));
+  await waitFor(() => expect(held.release).toHaveLength(1));
+  await user.keyboard('{ArrowRight}');
+  expect(await screen.findByRole('img', { name: 'Third' })).toBeVisible();
+
+  held.release[0]?.();
+  await waitFor(() =>
+    expect(screen.getByRole('img', { name: 'Third' })).toHaveAttribute(
+      'src',
+      'https://media.example/13.jpg?v=2',
+    ),
+  );
+  expect(screen.queryByRole('img', { name: 'Second' })).not.toBeInTheDocument();
+  expect(router.state.location.search).toBe('?submission=13');
+});
+
+it('stays on the last submission when a save finishes after a reload shortened the list', async () => {
+  const held = heldReloads([threeSubmissions, threeSubmissions.slice(0, 2)]);
+  const answers: (() => void)[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': held.handler,
+    'GET /rating': () => page([]),
+    'POST /rating': () =>
+      new Promise((resolve) => answers.push(() => resolve({}))),
+  });
+  const user = userEvent.setup();
+  renderRater('/judge/contest/1/theme/2/rate?submission=12');
+  const second = await screen.findByRole('img', { name: 'Second' });
+  await user.keyboard('5');
+  await waitFor(() => expect(answers).toHaveLength(1));
+  fireEvent.error(second);
+  await waitFor(() => expect(held.release).toHaveLength(1));
+  held.release[0]?.();
+  await waitFor(() =>
+    expect(screen.getByRole('img', { name: 'Second' })).toHaveAttribute(
+      'src',
+      'https://media.example/12.jpg?v=2',
+    ),
+  );
+
+  answers[0]?.();
+  await settle();
+  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
 });

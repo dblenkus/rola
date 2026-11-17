@@ -20,6 +20,8 @@ interface SubmissionRaterProps {
   previousSubmission: () => void;
   nextSubmission: () => void;
   updateRating: (value: number) => void;
+  onImageError: () => void;
+  onImageLoad: () => void;
 }
 
 const SubmissionRater: React.FC<SubmissionRaterProps> = ({
@@ -33,6 +35,8 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
   previousSubmission,
   nextSubmission,
   updateRating,
+  onImageError,
+  onImageLoad,
 }: SubmissionRaterProps) => {
   const sx = {
     mainFlex: {
@@ -89,6 +93,8 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
               sx={sx.image}
               src={file.file}
               alt={title ?? ''}
+              onError={() => onImageError()}
+              onLoad={() => onImageLoad()}
             />
           ))}
         </div>
