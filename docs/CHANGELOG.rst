@@ -87,6 +87,10 @@ API changes
   at once used to store two ratings, which the results added up and which
   made every later change of that rating fail with 500; now the later save
   updates the rating.
+* A rating's score is an integer from 1 to 10, as the jury view offers, and
+  other values answer 400. Any integer used to be stored, so a single score
+  outside that range could outweigh all other judges in the totals that
+  decide acceptance and ranking.
 * ``/core/contest/{id}/download`` answers 403 to anyone but the contest's
   organizer and superusers. Its archive holds every photograph of each
   submission, read through the configured storage.

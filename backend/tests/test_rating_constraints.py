@@ -1,4 +1,4 @@
-"""Keep one rating per judge and submission in the database."""
+"""Keep ratings unique per judge and submission and in range in the database."""
 
 import queue
 import time
@@ -38,6 +38,16 @@ def test_a_judge_rates_a_submission_once():
     with pytest.raises(IntegrityError), transaction.atomic():
         Rating.objects.create(judge=judge, submission=submission, rating=7)
     assert list(Rating.objects.values_list("rating", flat=True)) == [5]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("score", [0, 11])
+def test_a_rating_score_is_between_1_and_10(score):
+    judge, submission = create_judge_and_submission()
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        Rating.objects.create(judge=judge, submission=submission, rating=score)
+    assert not Rating.objects.exists()
 
 
 def wait_until_blocked_by_this_connection(pid):

@@ -471,6 +471,29 @@ def test_rating_updates_cannot_move_rating_to_another_contest(world):
     assert response.status_code == 400
 
 
+@pytest.mark.parametrize("score", [0, 11, -1000])
+def test_rating_scores_outside_1_to_10_are_refused(world, score):
+    judge = Judge.objects.create(judge=world.owner, contest=world.contest)
+    item = submitted(world)
+    response = world.client.post(
+        "/api/v1/rating", {"submission": item.pk, "rating": score}, format="json"
+    )
+    assert response.status_code == 400
+    assert set(response.data) == {"rating"}
+    assert not Rating.objects.exists()
+
+    rating = Rating.objects.create(
+        judge=judge, user=world.owner, submission=item, rating=4
+    )
+    response = world.client.patch(
+        f"/api/v1/rating/{rating.pk}", {"rating": score}, format="json"
+    )
+    assert response.status_code == 400
+    assert set(response.data) == {"rating"}
+    rating.refresh_from_db()
+    assert rating.rating == 4
+
+
 def test_results_hide_before_publication_and_handle_optional_relations(world):
     item = submitted(world)
     judge = Judge.objects.create(judge=world.other, contest=world.contest)

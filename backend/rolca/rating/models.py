@@ -13,6 +13,7 @@ Rating models
 """
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from rolca.core.models import Author, BaseModel, Contest, Submission, Theme
@@ -39,14 +40,20 @@ class Rating(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["judge", "submission"], name="rating_unique_judge_submission"
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1, rating__lte=10),
+                name="rating_rating_between_1_and_10",
+            ),
         ]
 
     judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name="ratings")
 
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
 
-    rating = models.IntegerField()
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
 
 
 class ThemeResults(BaseModel):

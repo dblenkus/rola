@@ -2346,8 +2346,8 @@ components:
           type: integer
         rating:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 10
+          minimum: 1
     PatchedSubmissionRequest:
       type: object
       description: Serializer for Submission objects.
@@ -2460,8 +2460,8 @@ components:
           type: integer
         rating:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 10
+          minimum: 1
       required:
       - created
       - id
@@ -2476,8 +2476,8 @@ components:
           type: integer
         rating:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 10
+          minimum: 1
       required:
       - rating
       - submission

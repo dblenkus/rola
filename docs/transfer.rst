@@ -38,9 +38,11 @@ decide how the data is copied:
   ``auth_group``, ``auth_permission``, ``django_content_type`` and
   ``django_admin_log`` keep 32-bit keys. The old values copy unchanged.
 * ``rating_rating`` holds at most one rating per judge and submission, through
-  the unique constraint ``rating_unique_judge_submission``. The old schema
-  had no such constraint, and a single duplicate makes the copy fail, so the
-  old data is checked for duplicates first.
+  the unique constraint ``rating_unique_judge_submission``, and its ``rating``
+  column is a ``smallint`` from 1 to 10, through the check constraint
+  ``rating_rating_between_1_and_10``. The old schema had an ``integer``
+  column and neither constraint, and a single duplicate or out-of-range score
+  makes the copy fail, so the old data is checked for both first.
 
 Content types and permissions are created by ``migrate`` and get new ids, so
 their tables are not copied. The group and user permissions are remapped
@@ -262,6 +264,19 @@ them. Then start again from the dump:
        AND (newer.modified, newer.id) > (r.modified, r.id);
    SQL
    unset PGPASSWORD
+
+Look for scores outside 1 to 10, which the new schema refuses. This must
+print no rows:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -U rola -d rola_old -c \
+       "SELECT id, rating FROM rating_rating WHERE rating NOT BETWEEN 1 AND 10"
+
+If it prints any, stop. The jury view has only ever sent scores from 1 to
+10, so such a score came from a direct API request. Ask the organizer of its
+contest for the correct score, set it or delete the rating in the old
+database as for the duplicates, and start again from the dump.
 
 List the contests whose notice holds content that the frontend now removes
 before it shows a notice: scripts, iframes, embedded objects, ``link``,
@@ -501,7 +516,7 @@ Rolling back means stopping the new stack, pointing the TLS terminator back
 at the old deployment and restarting its web server from the old deployment's
 directory. The old buckets or media directory have not changed since the
 freeze, and the old database only by the fixes that the checks called for: a
-changed email address, removed duplicate ratings. The old
+changed email address, removed duplicate ratings, corrected scores. The old
 deployment therefore finds every photograph it had, and its results show the
 corrected totals. Everything written to the new stack in the meantime is
 lost.
