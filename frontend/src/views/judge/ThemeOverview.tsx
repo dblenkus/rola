@@ -41,28 +41,12 @@ const ThemeOverview: React.FC = () => {
             <div
               style={{
                 display: 'flex',
+                flexWrap: 'wrap',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {(submission.files ?? []).slice(0, 3).map((file) => (
-                <img
-                  key={file.id}
-                  style={{ maxWidth: '30%', margin: '5px' }}
-                  src={file.file}
-                  alt={submission.title ?? ''}
-                  onClick={() => window.open(file.file)}
-                />
-              ))}
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {(submission.files ?? []).slice(3, 6).map((file) => (
+              {(submission.files ?? []).map((file) => (
                 <img
                   key={file.id}
                   style={{ maxWidth: '30%', margin: '5px' }}

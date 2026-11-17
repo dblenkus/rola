@@ -290,6 +290,9 @@ Fixes
 * Holding a digit key in the rater rates only the photograph on screen. The
   key's repeats used to rate each following photograph the same, before the
   judge had seen it.
+* The rater and the jury theme overview show every photograph of a series.
+  They used to show only the first six, so a judge rated a longer series
+  without seeing the rest.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

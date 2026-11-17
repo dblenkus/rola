@@ -74,41 +74,23 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
         <IconButton disabled={!isPrevious} onClick={() => previousSubmission()}>
           <NavigateBefore />
         </IconButton>
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {files.slice(0, 3).map((file) => (
-              <Box
-                key={file.id}
-                component="img"
-                sx={sx.image}
-                src={file.file}
-                alt={title ?? ''}
-              />
-            ))}
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {files.slice(3, 6).map((file) => (
-              <Box
-                key={file.id}
-                component="img"
-                sx={sx.image}
-                src={file.file}
-                alt={title ?? ''}
-              />
-            ))}
-          </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {files.map((file) => (
+            <Box
+              key={file.id}
+              component="img"
+              sx={sx.image}
+              src={file.file}
+              alt={title ?? ''}
+            />
+          ))}
         </div>
         <Box sx={sx.iconsFlex}>
           <IconButton onClick={() => close()}>

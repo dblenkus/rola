@@ -43,3 +43,29 @@ it('shows every photograph of a series without React key warnings', () => {
     ),
   ).toEqual([]);
 });
+
+it('shows a series of more than six photographs in full', () => {
+  const ids = [21, 22, 23, 24, 25, 26, 27, 28];
+  const files = ids.flatMap((id) => jurySubmission(id, '').files);
+
+  render(
+    <SubmissionRater
+      submission={{ ...jurySubmission(11, 'Bridges'), files }}
+      rating={0}
+      ratingDisabled={false}
+      isSeries
+      isPrevious={false}
+      isNext={false}
+      close={vi.fn()}
+      previousSubmission={vi.fn()}
+      nextSubmission={vi.fn()}
+      updateRating={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen
+      .getAllByRole('img', { name: 'Bridges' })
+      .map((image) => image.getAttribute('src')),
+  ).toEqual(ids.map((id) => `https://media.example/${id}.jpg`));
+});
