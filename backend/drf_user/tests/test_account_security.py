@@ -19,7 +19,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 from drf_user.models import Location, Token, User
-from drf_user.serializers import ActivationSerializer, PasswordResetSerializer
+from drf_user.serializers import (
+    ActivationSerializer,
+    ChangePasswordSerializer,
+    PasswordResetSerializer,
+)
 from drf_user.throttling import (
     ActivationThrottle,
     LoginThrottle,
@@ -32,6 +36,7 @@ from drf_user.utils.signing import (
     generate_activation_token,
     generate_reset_token,
 )
+from drf_user.views import UserViewSet
 
 
 @pytest.fixture
@@ -548,6 +553,84 @@ def test_concurrent_token_redemptions_succeed_once(flow):
     user.refresh_from_db()
     assert user.is_active
     assert user.password_reset_counter == (0 if flow == "activation" else 1)
+
+
+def replace_password(user, flow):
+    """Replace ``Original!73`` with ``Replacement!73`` through ``flow``'s serializer."""
+    if flow == "password-change":
+        serializer = ChangePasswordSerializer(
+            data={"current_password": "Original!73", "new_password": "Replacement!73"},
+            context={"user": user},
+        )
+    else:
+        serializer = PasswordResetSerializer(
+            data={"token": generate_reset_token(user), "new_password": "Replacement!73"}
+        )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+
+@pytest.mark.parametrize("flow", ["password-change", "password-reset"])
+def test_profile_update_keeps_a_concurrent_password_change(client, account, flow):
+    load_profile = UserViewSet.get_object
+
+    def load_profile_then_replace_password(view):
+        profile = load_profile(view)
+        replace_password(User.objects.get(pk=profile.pk), flow)
+        return profile
+
+    with patch.object(UserViewSet, "get_object", load_profile_then_replace_password):
+        response = client.patch(
+            reverse("user-detail", kwargs={"id": account.id}), {"first_name": "Changed"}
+        )
+
+    assert response.status_code == 200
+    account.refresh_from_db()
+    assert account.first_name == "Changed"
+    assert account.check_password("Replacement!73")
+    assert account.password_reset_counter == 1
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("flow", ["password-change", "password-reset"])
+def test_profile_update_waiting_on_a_password_change_keeps_it(flow):
+    user = User.objects.create_user(
+        email="person@example.com", password="Original!73", is_active=True
+    )
+    client = APIClient()
+    client.credentials(
+        HTTP_AUTHORIZATION=f"Token {Token.objects.create_token(user=user).key}"
+    )
+    backend_pids = queue.SimpleQueue()
+
+    def update_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return client.patch(
+                reverse("user-detail", kwargs={"id": user.id}),
+                {"first_name": "Changed"},
+            )
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with transaction.atomic():
+            replace_password(user, flow)
+            update = executor.submit(update_on_another_connection)
+            # The update has read the old row and now waits to write it.
+            wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+        response = update.result(timeout=10)
+
+    assert response.status_code == 200
+    user.refresh_from_db()
+    assert user.first_name == "Changed"
+    assert user.check_password("Replacement!73")
+    assert user.password_reset_counter == 1
 
 
 def test_recovery_does_not_reveal_unknown_or_inactive_accounts(

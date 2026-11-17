@@ -111,14 +111,21 @@ class UserWriteSerializer(UserSerializer):
     def update(self, instance, validated_data):
         """Update profile and location together without changing credentials."""
         location_data = validated_data.pop("location", None)
+        # The instance was loaded without a lock, so saving the whole row
+        # would revert a password change that committed in the meantime.
+        update_fields = list(validated_data)
         if location_data:
             if instance.location_id is None:
                 instance.location = Location.objects.create(**location_data)
+                update_fields.append("location")
             else:
                 for field, value in location_data.items():
                     setattr(instance.location, field, value)
                 instance.location.save(update_fields=list(location_data))
-        return super().update(instance, validated_data)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save(update_fields=update_fields)
+        return instance
 
 
 @extend_schema_serializer(component_name="User")

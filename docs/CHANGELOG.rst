@@ -214,6 +214,9 @@ Fixes
   submission has no title.
 * The contest download sends a logged-out organizer to the Django admin
   login and back, instead of to a page that does not exist.
+* A profile update that overlaps a password change or reset keeps the new
+  password. It used to restore the old password and revive the reset links
+  that the change had invalidated.
 
 Development changes
 -------------------
