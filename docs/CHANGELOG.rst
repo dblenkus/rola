@@ -43,6 +43,9 @@ API changes
 * Activation and reset emails link to the frontend under
   ``ROLA_FRONTEND_URL``; the backend placeholder pages that answered 501 are
   gone.
+* An activation link answers 200 each time it is used until it expires. Once
+  the account was active it used to answer 400 "Bad token.", so opening the
+  link again, or retrying after a lost response, reported it as invalid.
 * The results of a published theme that has no results yet answer 404
   instead of 500.
 * ``?submitted=`` on the contest list returns each contest once instead of

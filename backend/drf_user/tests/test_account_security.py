@@ -483,6 +483,19 @@ def test_password_reset_revokes_login_tokens(client, account):
     assert client.get(reverse("user-list")).status_code == 401
 
 
+def test_activation_link_can_be_opened_again(db):
+    user = User.objects.create_user(email="person@example.com", password="Original!73")
+    payload = {"token": generate_activation_token(user)}
+    client = APIClient()
+
+    first = client.post(reverse("user-activate-account"), payload)
+    second = client.post(reverse("user-activate-account"), payload)
+
+    assert first.status_code == second.status_code == 200
+    user.refresh_from_db()
+    assert user.is_active
+
+
 def test_validated_recovery_token_cannot_be_replayed(account):
     data = {"token": generate_reset_token(account), "new_password": "Replacement!73"}
     first = PasswordResetSerializer(data=data)
@@ -516,21 +529,13 @@ def wait_until_blocked_by_this_connection(pid):
     connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
 )
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("flow", ["activation", "password-reset"])
-def test_concurrent_token_redemptions_succeed_once(flow):
+def test_concurrent_token_redemptions_succeed_once():
     user = User.objects.create_user(
-        email="person@example.com",
-        password="Original!73",
-        is_active=flow == "password-reset",
+        email="person@example.com", password="Original!73", is_active=True
     )
-    if flow == "activation":
-        serializer_class = ActivationSerializer
-        data = {"token": generate_activation_token(user)}
-    else:
-        serializer_class = PasswordResetSerializer
-        data = {"token": generate_reset_token(user), "new_password": "Replacement!73"}
-    first = serializer_class(data=data)
-    second = serializer_class(data=data)
+    data = {"token": generate_reset_token(user), "new_password": "Replacement!73"}
+    first = PasswordResetSerializer(data=data)
+    second = PasswordResetSerializer(data=data)
     first.is_valid(raise_exception=True)
     second.is_valid(raise_exception=True)
     backend_pids = queue.SimpleQueue()
@@ -554,7 +559,42 @@ def test_concurrent_token_redemptions_succeed_once(flow):
 
     user.refresh_from_db()
     assert user.is_active
-    assert user.password_reset_counter == (0 if flow == "activation" else 1)
+    assert user.password_reset_counter == 1
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+def test_concurrent_activations_both_succeed():
+    user = User.objects.create_user(email="person@example.com", password="Original!73")
+    data = {"token": generate_activation_token(user)}
+    first = ActivationSerializer(data=data)
+    second = ActivationSerializer(data=data)
+    first.is_valid(raise_exception=True)
+    second.is_valid(raise_exception=True)
+    backend_pids = queue.SimpleQueue()
+
+    def activate_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return second.save()
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with transaction.atomic():
+            first.save()
+            activation = executor.submit(activate_on_another_connection)
+            # The second activation waits for the first one's row lock and then
+            # finds the account already active.
+            wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+        assert activation.result(timeout=10) == user
+
+    user.refresh_from_db()
+    assert user.is_active
 
 
 def replace_password(user, flow):

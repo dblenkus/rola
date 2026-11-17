@@ -227,16 +227,17 @@ class ActivationSerializer(serializers.Serializer):
     token = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        """Require an unexpired token for an inactive account."""
+        """Require an unexpired token for an existing account."""
         validate_activation_token(attrs["token"])
         return attrs
 
     @transaction.atomic
     def save(self, **kwargs):
-        """Consume an activation token exactly once."""
+        """Activate the account unless an earlier use of the token already did."""
         user = validate_activation_token(self.validated_data["token"], lock=True)
-        user.is_active = True
-        user.save(update_fields=["is_active"])
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=["is_active"])
         return user
 
 

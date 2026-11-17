@@ -74,7 +74,11 @@ def send_reset_email(user):
 
 
 def validate_activation_token(token: str, *, lock: bool = False) -> User:
-    """Return the inactive account referenced by a valid activation token."""
+    """Return the account referenced by a valid activation token.
+
+    The account may already be active: a link opened again, or retried after
+    a lost response, still refers to it.
+    """
     try:
         email = signing.loads(
             token,
@@ -84,9 +88,7 @@ def validate_activation_token(token: str, *, lock: bool = False) -> User:
         if not isinstance(email, str):
             raise ValueError("Invalid token payload.")
         users = User.objects.select_for_update() if lock else User.objects
-        return users.get(
-            email__iexact=User.objects.normalize_email(email), is_active=False
-        )
+        return users.get(email__iexact=User.objects.normalize_email(email))
     except (signing.BadSignature, User.DoesNotExist, ValueError) as error:
         raise exceptions.ValidationError("Bad token.") from error
 
