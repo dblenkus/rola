@@ -41,3 +41,21 @@ it('shows a series of more than six photographs in full', async () => {
     ),
   ).toEqual(ids.map((id) => `https://media.example/${id}.jpg`));
 });
+
+it('says so while the theme has no published results', async () => {
+  serveApi({ 'GET /results/submission': () => page([]) });
+
+  render(
+    <MemoryRouter initialEntries={['/judge/contest/1/theme/2/overview']}>
+      <Routes>
+        <Route
+          path="/judge/contest/:contestId/theme/:themeId/overview"
+          element={<ThemeOverview />}
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText('No published results.')).toBeVisible();
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+});

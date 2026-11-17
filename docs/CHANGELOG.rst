@@ -344,6 +344,9 @@ Fixes
 * The activation email greets with "Hello!" instead of the first name given
   at registration. Anyone can register any address, so that name could put a
   stranger's text and links into a genuine mail from the platform.
+* The jury theme overview says "No published results." for a theme without
+  published results. It lists only published results, and used to show an
+  empty page before the contest's results were published.
 
 Development changes
 -------------------

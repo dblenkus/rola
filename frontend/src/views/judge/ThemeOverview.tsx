@@ -32,6 +32,10 @@ const ThemeOverview: React.FC = () => {
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!submissions) return <LoadingProgress />;
+  // The overview uses the public results, which list nothing until the
+  // contest's results are published.
+  if (!submissions.length)
+    return <Typography>No published results.</Typography>;
 
   return (
     <Grid container>
