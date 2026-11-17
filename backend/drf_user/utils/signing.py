@@ -30,11 +30,15 @@ def generate_reset_token(user: User) -> str:
     )
 
 
-def _send_user_email(user, template, path, token):
-    """Email the user a frontend link that carries a signed token."""
+def _send_user_email(
+    user: User, template: str, path: str, token: str, **context: str
+) -> None:
+    """Email the user a frontend link that carries a signed token.
+
+    :param context: Template variables besides ``app_name`` and ``url``.
+    """
     base_url = settings.ROLA_FRONTEND_URL.rstrip("/")
-    context = {
-        "first_name": user.first_name or "",
+    context |= {
         "app_name": drf_user_settings.APP_NAME,
         "url": f"{base_url}{path}?{urlencode({'token': token})}",
     }
@@ -51,6 +55,8 @@ def _send_user_email(user, template, path, token):
 
 def send_activation_email(user):
     """Send an activation link pointing to the configured frontend."""
+    # Anyone can register any address, so the name is the registrant's text,
+    # not the recipient's, and stays out of the mail.
     _send_user_email(
         user, "registration", "/register/activate", generate_activation_token(user)
     )
@@ -59,7 +65,11 @@ def send_activation_email(user):
 def send_reset_email(user):
     """Send a recovery link pointing to the configured frontend."""
     _send_user_email(
-        user, "password_reset", "/password-reset", generate_reset_token(user)
+        user,
+        "password_reset",
+        "/password-reset",
+        generate_reset_token(user),
+        first_name=user.first_name or "",
     )
 
 

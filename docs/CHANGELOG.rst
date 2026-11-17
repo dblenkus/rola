@@ -205,8 +205,8 @@ Fixes
 * Screen readers hear the upload form's photograph preview as "Selected
   photograph" or "No photograph selected" instead of "Missing", and the
   preview and the file input are named in the interface language.
-* Activation and reset emails show names and the application name as
-  written instead of with HTML escapes such as ``&amp;``.
+* Reset emails show names and the application name as written instead of
+  with HTML escapes such as ``&amp;``.
 * Theme results sort names in Slovenian alphabetical order and highlight an
   author's row only in the theme of the author's reward.
 * The Django admin index no longer fails for an account without a first name.
@@ -220,6 +220,9 @@ Fixes
 * A login with the old password that overlaps a password change or reset is
   refused. It used to receive a token that outlived the change, and an
   account whose stored hash the login upgraded got its old password back.
+* The activation email greets with "Hello!" instead of the first name given
+  at registration. Anyone can register any address, so that name could put a
+  stranger's text and links into a genuine mail from the platform.
 
 Development changes
 -------------------

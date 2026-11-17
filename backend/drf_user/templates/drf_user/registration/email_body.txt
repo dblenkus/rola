@@ -1,4 +1,4 @@
-{% autoescape off %}Hello {{ first_name }}!
+{% autoescape off %}Hello!
 
 Welcome to {{ app_name }}.
 
