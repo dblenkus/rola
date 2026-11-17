@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { blockStorage } from '../test/api';
 import { loadToken, rejectToken, sessionChanged } from './token';
 
 beforeEach(() => localStorage.clear());
@@ -35,6 +36,15 @@ describe('persisted authentication', () => {
   it('announces nothing when no session is stored', () => {
     const announced = vi.fn();
     window.addEventListener(sessionChanged, announced);
+    expect(loadToken()).toBeNull();
+    window.removeEventListener(sessionChanged, announced);
+    expect(announced).not.toHaveBeenCalled();
+  });
+
+  it('finds no session when site storage is blocked', () => {
+    const announced = vi.fn();
+    window.addEventListener(sessionChanged, announced);
+    blockStorage();
     expect(loadToken()).toBeNull();
     window.removeEventListener(sessionChanged, announced);
     expect(announced).not.toHaveBeenCalled();

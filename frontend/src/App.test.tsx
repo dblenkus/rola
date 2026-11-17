@@ -6,7 +6,7 @@ import App from './App';
 import { apiClient } from './services/Base';
 import store from './store';
 import { deleteMessage } from './store/notifications/actions';
-import { httpError, page, serveApi, signIn } from './test/api';
+import { blockStorage, httpError, page, serveApi, signIn } from './test/api';
 import {
   author,
   contest,
@@ -245,6 +245,45 @@ describe('sessions', () => {
     expect(sent).toEqual(['Token revoked', undefined]);
     expect(localStorage.getItem('token')).toBeNull();
     expect(window.location.pathname).toBe('/contests');
+  });
+
+  it('lists public contests when site storage is blocked', async () => {
+    blockStorage();
+    serveApi({ 'GET /contest': () => page([contest]) });
+    open('/contests');
+    expect(
+      await screen.findByRole('heading', { name: contest.title }),
+    ).toBeInTheDocument();
+  });
+
+  it('refuses a login that site storage cannot keep', async () => {
+    blockStorage();
+    const adapter = serveApi({
+      'POST /user/login': () => ({
+        token: 'signed-in',
+        expires: '2999-01-01T00:00:00Z',
+      }),
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await user.type(
+      await screen.findByRole('textbox', { name: /email/i }),
+      'ana@example.com',
+    );
+    await user.type(screen.getByLabelText(/password/i), 'example-password');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    expect(
+      await screen.findByText(
+        'Signing in needs site storage. Allow this site to store data, then try again.',
+      ),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/login');
+    expect(
+      adapter.mock.calls.map(([config]) => [
+        `${config.method} ${config.url}`,
+        config.headers.get('Authorization'),
+      ]),
+    ).toEqual([['post /user/login', undefined]]);
   });
 
   it('returns to the full requested location after login', async () => {

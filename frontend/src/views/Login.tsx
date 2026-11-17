@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 import { userContext } from '../components/Auth/AuthProvider';
 import LoginForm, { Errors, Fields } from '../components/Auth/LoginForm';
 import { formErrors } from '../services/errors';
+import { StorageBlocked } from '../services/token';
 
 interface LoginViewProps extends WithTranslation {
   location: Location;
@@ -63,7 +64,15 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
       await this.context.login(this.state.fields);
       this.setState({ redirect: true });
     } catch (error) {
-      this.setState({ errors: { ...this.state.errors, ...formErrors(error) } });
+      const errors =
+        error instanceof StorageBlocked
+          ? {
+              non_field_errors: [
+                'Signing in needs site storage. Allow this site to store data, then try again.',
+              ],
+            }
+          : formErrors(error);
+      this.setState({ errors: { ...this.state.errors, ...errors } });
     }
   };
 

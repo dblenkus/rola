@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadToken } from '../../services/token';
-import { serveApi } from '../../test/api';
+import { blockStorage, serveApi } from '../../test/api';
 import AuthProvider, { userContext } from './AuthProvider';
 import PrivateRoute from './PrivateRoute';
 
@@ -81,6 +81,20 @@ describe('authentication flows', () => {
     act(() => {
       loadToken();
     });
+    expect(screen.getByText('Signed out')).toBeInTheDocument();
+  });
+
+  it('logs out after site storage is blocked during a session', async () => {
+    localStorage.setItem('token', JSON.stringify(session));
+    const user = userEvent.setup();
+    render(
+      <AuthProvider>
+        <Session />
+      </AuthProvider>,
+    );
+    expect(screen.getByText('Signed in')).toBeInTheDocument();
+    blockStorage();
+    await user.click(screen.getByRole('button', { name: 'Log out' }));
     expect(screen.getByText('Signed out')).toBeInTheDocument();
   });
 

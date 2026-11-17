@@ -3,7 +3,7 @@ import {
   type AxiosAdapter,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import { vi } from 'vitest';
+import { onTestFinished, vi } from 'vitest';
 import { apiBaseURL, apiClient } from '../services/Base';
 import type { PaginatedResponse } from '../types/api';
 
@@ -76,4 +76,15 @@ export function signIn(token = 'signed-in', email = 'ana@example.com'): void {
     'token',
     JSON.stringify({ token, expires: '2999-01-01T00:00:00Z', email }),
   );
+}
+
+// Makes every access to site storage throw until the test ends, as browsers
+// do when they block site data for the site.
+export function blockStorage(): void {
+  const storage = vi
+    .spyOn(window, 'localStorage', 'get')
+    .mockImplementation(() => {
+      throw new DOMException('Access is denied', 'SecurityError');
+    });
+  onTestFinished(() => storage.mockRestore());
 }

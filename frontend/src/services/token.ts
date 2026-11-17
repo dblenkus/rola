@@ -7,8 +7,36 @@ export type Session = AuthToken & { email: string };
 
 export const sessionChanged = 'rola:session-changed';
 
+// Thrown when the browser refuses to store a new login. The API client reads
+// the session from site storage, so a session kept only in memory would send
+// requests without its token.
+export class StorageBlocked extends Error {
+  constructor(options?: ErrorOptions) {
+    super('Site storage is blocked', options);
+    this.name = 'StorageBlocked';
+  }
+}
+
+// A browser that blocks site data for the site throws on every access to its
+// storage, which then holds no session: public pages work without one.
+function readStored(): string | null {
+  try {
+    return localStorage.getItem('token');
+  } catch {
+    return null;
+  }
+}
+
+export function removeStored(): void {
+  try {
+    localStorage.removeItem('token');
+  } catch {
+    // Blocked storage keeps no session to remove.
+  }
+}
+
 export function loadToken(): Session | null {
-  const stored = localStorage.getItem('token');
+  const stored = readStored();
   if (!stored) {
     return null;
   }
@@ -34,7 +62,7 @@ export function loadToken(): Session | null {
   }
   // A removal in this tab fires no storage event, so announce it; the views
   // that need a session then send the user to the login page.
-  localStorage.removeItem('token');
+  removeStored();
   window.dispatchEvent(new Event(sessionChanged));
   return null;
 }
@@ -44,7 +72,7 @@ export function loadToken(): Session | null {
 export function rejectToken(authorization: unknown): void {
   const current = loadToken();
   if (current && authorization === `Token ${current.token}`) {
-    localStorage.removeItem('token');
+    removeStored();
     window.dispatchEvent(new Event(sessionChanged));
   }
 }

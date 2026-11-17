@@ -8,7 +8,13 @@ import {
 } from 'react';
 
 import UserService, { type LoginPayload } from '../../services/UserService';
-import { loadToken, sessionChanged, type Session } from '../../services/token';
+import {
+  loadToken,
+  removeStored,
+  sessionChanged,
+  StorageBlocked,
+  type Session,
+} from '../../services/token';
 
 interface AuthContext {
   user: Session | null;
@@ -47,12 +53,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     // Normalized as the backend matches accounts, so that logging in again
     // with other capitalization keeps the upload form of the same account.
     const session = { ...data, email: payload.email.trim().toLowerCase() };
-    localStorage.setItem('token', JSON.stringify(session));
+    try {
+      localStorage.setItem('token', JSON.stringify(session));
+    } catch (error) {
+      throw new StorageBlocked({ cause: error });
+    }
     setUser(session);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
+    removeStored();
     setUser(null);
   }, []);
 

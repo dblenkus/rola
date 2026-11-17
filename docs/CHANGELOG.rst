@@ -273,6 +273,9 @@ Fixes
 * Public pages such as the contest list load without a login when the server
   has revoked the stored session, for example after a password change on
   another device, instead of failing once until the page is reloaded.
+* A browser that blocks site data for the site shows the public pages, such
+  as the contest list and results, instead of a blank page. Logging in there
+  says that signing in needs site storage.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.
