@@ -358,7 +358,7 @@ export interface paths {
         /** @description List accounts visible to the caller. */
         get: operations["user_list"];
         put?: never;
-        /** @description Manage the current account, with administrative access for superusers. */
+        /** @description Register an account, answering alike whether the address had one. */
         post: operations["user_create"];
         delete?: never;
         options?: never;
@@ -2146,13 +2146,12 @@ export interface operations {
             };
         };
         responses: {
+            /** @description No response body */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
+                content?: never;
             };
         };
     };

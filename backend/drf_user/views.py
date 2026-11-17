@@ -3,7 +3,7 @@
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import permissions, views, viewsets
+from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -76,7 +76,7 @@ class LoginView(views.APIView):
             )
         ],
     ),
-    create=extend_schema(responses={201: UserSerializer}, auth=[{}]),
+    create=extend_schema(responses={201: None}, auth=[{}]),
     update=extend_schema(responses=UserSerializer),
     partial_update=extend_schema(responses=UserSerializer),
 )
@@ -119,6 +119,13 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in {"request_password_reset", "password_reset"}:
             return [RecoveryThrottle()]
         return super().get_throttles()
+
+    def create(self, request, *args, **kwargs):
+        """Register an account, answering alike whether the address had one."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(status=status.HTTP_201_CREATED)
 
     @extend_schema(request=ActivationSerializer, responses={200: None})
     @action(

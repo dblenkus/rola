@@ -3,16 +3,17 @@
 from functools import partial
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from .models import Location, Token, User
 from .utils.signing import (
     send_activation_email,
+    send_existing_account_email,
     send_reset_email,
     validate_activation_token,
     validate_reset_token,
@@ -103,11 +104,35 @@ class UserWriteSerializer(UserSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        """Create an inactive account and email it after the transaction commits."""
-        location = Location.objects.create(**validated_data.pop("location"))
-        user = User.objects.create_user(location=location, **validated_data)
-        transaction.on_commit(partial(send_activation_email, user))
-        return user
+        """Create an inactive account, or email the account the address already has.
+
+        Both paths hash the password and send one email after the transaction
+        commits, so the response does not tell whether the address had an
+        account. An existing address is looked up before any insert, because
+        PostgreSQL logs a failed insert with the registrant's details. A
+        registration racing another one for the same address meets the
+        database's unique index instead and takes the existing-account path.
+        """
+        location_data = validated_data.pop("location")
+        email = validated_data["email"]
+        existing = User.objects.filter(email__iexact=email).first()
+        if existing is not None:
+            # The hash is discarded; computing it keeps the response time alike.
+            make_password(validated_data["password"])
+        else:
+            try:
+                with transaction.atomic():
+                    location = Location.objects.create(**location_data)
+                    user = User.objects.create_user(location=location, **validated_data)
+            except IntegrityError:
+                existing = User.objects.filter(email__iexact=email).first()
+                if existing is None:
+                    raise
+            else:
+                transaction.on_commit(partial(send_activation_email, user))
+                return user
+        transaction.on_commit(partial(send_existing_account_email, existing))
+        return existing
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -135,19 +160,13 @@ class UserRegistrationSerializer(UserWriteSerializer):
     """Validate a new account, including its required password."""
 
     class Meta(UserWriteSerializer.Meta):
-        """Reject existing addresses regardless of their stored capitalization."""
+        """Accept existing addresses, which creation answers like new ones."""
 
         extra_kwargs = {
             **UserWriteSerializer.Meta.extra_kwargs,
-            "email": {
-                "validators": [
-                    UniqueValidator(
-                        queryset=User.objects.all(),
-                        message="user with this email already exists.",
-                        lookup="iexact",
-                    )
-                ]
-            },
+            # Without this, ModelSerializer adds a validator for the unique
+            # email, whose error would tell which addresses have an account.
+            "email": {"validators": []},
         }
 
     def validate(self, attrs):
@@ -303,10 +322,15 @@ class PasswordResetSerializer(serializers.Serializer):
 
     @transaction.atomic
     def save(self, **kwargs):
-        """Consume the recovery token and revoke all login tokens atomically."""
+        """Consume the recovery token, activate the account and revoke its logins.
+
+        The link reached the account's mailbox, which proves the address as
+        well as an activation link does.
+        """
         user = validate_reset_token(self.validated_data["token"], lock=True)
         user.set_password(self.validated_data["new_password"])
         user.password_reset_counter += 1
-        user.save(update_fields=["password", "password_reset_counter"])
+        user.is_active = True
+        user.save(update_fields=["password", "password_reset_counter", "is_active"])
         Token.objects.expire_for_user(user)
         return user

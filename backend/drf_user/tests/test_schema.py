@@ -48,10 +48,12 @@ def test_profile_endpoints_require_a_token(paths):
     assert change_password["security"] == [{"tokenAuth": []}]
 
 
+def test_registration_responds_without_a_body(paths):
+    assert "content" not in paths["/api/v1/user"]["post"]["responses"]["201"]
+
+
 def test_account_writes_respond_with_the_profile(paths):
     profile = {"$ref": "#/components/schemas/User"}
-    response = paths["/api/v1/user"]["post"]["responses"]["201"]
-    assert response["content"]["application/json"]["schema"] == profile
     for method in ("put", "patch"):
         response = paths["/api/v1/user/{id}"][method]["responses"]["200"]
         assert response["content"]["application/json"]["schema"] == profile

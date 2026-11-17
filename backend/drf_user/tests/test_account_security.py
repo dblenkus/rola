@@ -15,6 +15,7 @@ from django.core import mail, signing
 from django.core.cache import cache
 from django.db import IntegrityError, connection, transaction
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
@@ -177,7 +178,6 @@ def test_registration_validates_address_lengths(db, address, length, status):
 
     assert response.status_code == status
     if status == 201:
-        assert {field: response.data[field] for field in address} == address
         location = User.objects.get().location
         assert {field: getattr(location, field) for field in address} == address
     else:
@@ -290,27 +290,6 @@ def test_malformed_account_id_does_not_reach_uuid_lookup(client):
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize(
-    "email", ["person@example.com", "person@Example.com", "PERSON@example.com"]
-)
-def test_registration_rejects_normalized_duplicate_email(account, address, email):
-    response = APIClient().post(
-        reverse("user-list"),
-        {
-            "email": email,
-            "password": "Original!73",
-            "first_name": "New",
-            "last_name": "Account",
-            **address,
-        },
-        format="json",
-    )
-    assert response.status_code == 400
-    assert response.data == {"email": ["user with this email already exists."]}
-    assert User.objects.count() == 1
-    assert not Location.objects.exists()
-
-
 def test_profile_put_does_not_require_credentials(client, account, address):
     response = client.put(
         reverse("user-detail", kwargs={"id": account.id}),
@@ -356,26 +335,31 @@ def test_profile_accepts_unchanged_normalized_email(client, account):
     assert account.first_name == "Updated"
 
 
+@override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
 @pytest.mark.parametrize("stored_email", ["person@example.com", "Person@Example.com"])
 def test_registration_checks_uniqueness_against_stored_case(
-    account, address, stored_email
+    account, address, stored_email, django_capture_on_commit_callbacks
 ):
     User.objects.filter(pk=account.pk).update(email=stored_email)
-    response = APIClient().post(
-        reverse("user-list"),
-        {
-            "email": "PERSON@EXAMPLE.COM",
-            "password": "Original!73",
-            "first_name": "New",
-            "last_name": "Account",
-            **address,
-        },
-        format="json",
-    )
-    assert response.status_code == 400
-    assert response.data == {"email": ["user with this email already exists."]}
+    with django_capture_on_commit_callbacks(execute=True):
+        response = APIClient().post(
+            reverse("user-list"),
+            {
+                "email": "PERSON@EXAMPLE.COM",
+                "password": "Original!73",
+                "first_name": "New",
+                "last_name": "Account",
+                **address,
+            },
+            format="json",
+        )
+    assert response.status_code == 201
+    assert response.content == b""
     assert User.objects.count() == 1
     assert not Location.objects.exists()
+    (message,) = mail.outbox
+    assert message.to == [stored_email]
+    assert first_link(message).startswith("https://photos.example.com/password-reset?")
 
 
 def test_database_rejects_addresses_that_differ_only_in_case(account):
@@ -400,7 +384,6 @@ def test_registration_lowercases_email_without_removing_dots_or_tags(db, address
         format="json",
     )
     assert response.status_code == 201
-    assert response.data["email"] == "person.name+contest@example.com"
     assert User.objects.get().email == "person.name+contest@example.com"
 
 
@@ -937,6 +920,149 @@ def registration(email, address):
         "last_name": "Account",
         **address,
     }
+
+
+def link_token(message):
+    """Return the token of the first link in a plain-text email body."""
+    return parse_qs(urlsplit(first_link(message)).query)["token"][0]
+
+
+@override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
+@pytest.mark.parametrize(
+    "email", ["person@example.com", "person@Example.com", "PERSON@example.com"]
+)
+def test_registration_of_an_existing_address_answers_like_a_new_one(
+    account, address, email, django_capture_on_commit_callbacks
+):
+    client = APIClient()
+    with django_capture_on_commit_callbacks(execute=True):
+        existing = client.post(
+            reverse("user-list"), registration(email, address), format="json"
+        )
+
+    assert existing.status_code == 201
+    assert existing.content == b""
+    assert User.objects.get() == account
+    assert not Location.objects.exists()
+    (message,) = mail.outbox
+    assert message.to == [account.email]
+    assert first_link(message).startswith("https://photos.example.com/password-reset?")
+    response = client.post(
+        reverse("user-password-reset"),
+        {"token": link_token(message), "new_password": "Replacement!73"},
+    )
+    assert response.status_code == 200
+    account.refresh_from_db()
+    assert account.check_password("Replacement!73")
+
+    new = client.post(
+        reverse("user-list"), registration("new@example.com", address), format="json"
+    )
+    assert (new.status_code, new.content) == (existing.status_code, existing.content)
+
+
+def test_registration_of_an_existing_address_attempts_no_insert(account, address):
+    encode = MD5PasswordHasher.encode
+    hashed = []
+
+    def record(hasher, password, salt):
+        hashed.append(password)
+        return encode(hasher, password, salt)
+
+    with (
+        patch.object(MD5PasswordHasher, "encode", record),
+        CaptureQueriesContext(connection) as queries,
+    ):
+        response = APIClient().post(
+            reverse("user-list"),
+            registration("PERSON@example.com", address),
+            format="json",
+        )
+
+    assert response.status_code == 201
+    # PostgreSQL logs a failed account insert with its values: the
+    # registrant's email, names and password hash.
+    tables = ('INSERT INTO "drf_user_user"', 'INSERT INTO "drf_user_location"')
+    assert not [query for query in queries if query["sql"].startswith(tables)]
+    # As for a new address, so that the response time is alike.
+    assert hashed == ["Original!73"]
+
+
+@override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
+def test_registration_of_an_inactive_address_sends_a_reset_link_that_activates(
+    db, address, django_capture_on_commit_callbacks
+):
+    # Whoever registered the address first chose this password.
+    pending = User.objects.create_user(email="person@example.com", password="Preset!73")
+    client = APIClient()
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client.post(
+            reverse("user-list"), registration(pending.email, address), format="json"
+        )
+    assert response.status_code == 201
+    (message,) = mail.outbox
+    assert message.to == [pending.email]
+
+    response = client.post(
+        reverse("user-password-reset"),
+        {"token": link_token(message), "new_password": "Replacement!73"},
+    )
+
+    assert response.status_code == 200
+    pending.refresh_from_db()
+    assert pending.is_active
+    assert pending.check_password("Replacement!73")
+    login = client.post(
+        reverse("login"), {"email": pending.email, "password": "Replacement!73"}
+    )
+    assert login.status_code == 200
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+@override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
+def test_concurrent_registrations_of_one_address_answer_201(address):
+    payload = registration("person@example.com", address)
+    backend_pids = queue.SimpleQueue()
+
+    def register(remote_addr):
+        # Separate client addresses keep the registration throttle's advisory
+        # lock out of the way, so the second request meets the account row.
+        return APIClient(REMOTE_ADDR=remote_addr).post(
+            reverse("user-list"), payload, format="json"
+        )
+
+    def register_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return register("198.51.100.2")
+        finally:
+            connection.close()
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            with transaction.atomic():
+                first = register("198.51.100.1")
+                concurrent = executor.submit(register_on_another_connection)
+                # The second account insert waits for this uncommitted one.
+                wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+            second = concurrent.result(timeout=10)
+    finally:
+        # Transactional tests flush model tables only, not the registration
+        # throttle's history in the cache table.
+        cache.clear()
+
+    assert first.status_code == second.status_code == 201
+    assert first.content == second.content == b""
+    assert User.objects.count() == Location.objects.count() == 1
+    assert sorted(urlsplit(first_link(message)).path for message in mail.outbox) == [
+        "/password-reset",
+        "/register/activate",
+    ]
 
 
 def test_registration_and_recovery_have_separate_limits(account, address):

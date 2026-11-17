@@ -36,10 +36,15 @@ API changes
 * Changing the password also invalidates the account's outstanding reset
   links, as resetting it already did. Both still expire its login tokens.
 * Email addresses are stored in lowercase and matched without regard to case.
-  Registering a case variant of an existing address answers 400 with "user
-  with this email already exists.", the same message as for an exact
-  duplicate; a domain-case variant used to fail with 500, and a local-part
-  variant created a second account.
+  Registering a domain-case variant of an existing address used to fail with
+  500, and a local-part variant created a second account.
+* Registration (``POST /api/v1/user``) answers 201 with an empty body for
+  every address, instead of the new profile, or 400 "user with this email
+  already exists." for an address that has an account. Such an address gets
+  an email with a password-reset link instead of an activation link, and a
+  password reset now also activates an inactive account, which used to get
+  400 "Account is not activated, contact support.". Two registrations of one
+  address at once no longer fail with 500.
 * Activation and reset emails link to the frontend under
   ``ROLA_FRONTEND_URL``; the backend placeholder pages that answered 501 are
   gone.
@@ -156,9 +161,10 @@ Deployment changes
 * Sessions are stored in the database instead of Redis.
 * Activation and password-reset links that the previous deployment sent no
   longer work, because Django now signs them with SHA-256 instead of SHA-1.
-  An account that registered before the transfer and was not activated
-  needs a new activation link; the transfer procedure shows how to send one
-  on request.
+  An account that registered before the transfer and was not activated can
+  register again, which sends it a password-reset link that also activates
+  it; the transfer procedure shows how to send a new activation link on
+  request.
 * S3 media URLs are signed with SigV4 for ``ROLA_AWS_REGION_NAME``.
 * S3 static file URLs are no longer signed, so the Django admin's stylesheets
   can load their icons. The static bucket needs a bucket policy that allows

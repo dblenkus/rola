@@ -4,7 +4,11 @@ from django.core import mail
 from django.test import override_settings
 
 from drf_user.models import User
-from drf_user.utils.signing import send_activation_email, send_reset_email
+from drf_user.utils.signing import (
+    send_activation_email,
+    send_existing_account_email,
+    send_reset_email,
+)
 
 
 @override_settings(DRF_USER_APP_NAME="Foto & Video")
@@ -19,6 +23,20 @@ def test_plain_text_emails_keep_names_unescaped():
 
 def test_activation_email_leaves_out_the_registrant_name():
     send_activation_email(
+        User(
+            email="victim@example.org",
+            first_name="Ana!\n\nYour photo won. Claim it at https://evil.example/claim",
+        )
+    )
+    (message,) = mail.outbox
+    assert message.to == ["victim@example.org"]
+    assert message.body.startswith("Hello!\n")
+    for text in ("Your photo won", "evil.example"):
+        assert text not in message.subject + message.body
+
+
+def test_existing_account_email_leaves_out_the_account_name():
+    send_existing_account_email(
         User(
             email="victim@example.org",
             first_name="Ana!\n\nYour photo won. Claim it at https://evil.example/claim",

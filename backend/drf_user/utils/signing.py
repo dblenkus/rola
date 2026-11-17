@@ -73,6 +73,15 @@ def send_reset_email(user):
     )
 
 
+def send_existing_account_email(user):
+    """Send a recovery link to an account whose address registered again."""
+    # An inactive account's name is the text of whoever registered the
+    # address first, so it stays out of the mail.
+    _send_user_email(
+        user, "existing_account", "/password-reset", generate_reset_token(user)
+    )
+
+
 def validate_activation_token(token: str, *, lock: bool = False) -> User:
     """Return the account referenced by a valid activation token.
 
@@ -94,7 +103,11 @@ def validate_activation_token(token: str, *, lock: bool = False) -> User:
 
 
 def validate_reset_token(token: str, *, lock: bool = False) -> User:
-    """Return an active account if the recovery generation still matches."""
+    """Return the account if the recovery generation still matches.
+
+    The account may be inactive: registering its address again sends it a
+    recovery link, and the reset activates it.
+    """
     try:
         data = signing.loads(
             token,
@@ -108,12 +121,9 @@ def validate_reset_token(token: str, *, lock: bool = False) -> User:
         ):
             raise ValueError("Invalid token payload.")
         users = User.objects.select_for_update() if lock else User.objects
-        user = users.get(
+        return users.get(
             email__iexact=User.objects.normalize_email(data["email"]),
             password_reset_counter=data["counter"],
         )
     except (signing.BadSignature, User.DoesNotExist, ValueError) as error:
         raise exceptions.ValidationError("Bad token.") from error
-    if not user.is_active:
-        raise exceptions.ValidationError("Account is not activated, contact support.")
-    return user

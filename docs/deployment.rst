@@ -287,6 +287,15 @@ sends it before answering. The response time can therefore still reveal
 whether an address has an active account. The recovery limit slows such
 probing; removing the difference would need asynchronous mail delivery.
 
+Registration answers 201 with an empty body for every address. A new address
+gets an activation link. An address that already has an account, active or
+not, gets a password-reset link instead, and completing the reset activates
+the account. Both paths hash the submitted password and send one email before
+answering, so their response times are alike. Each registration of an
+existing address therefore emails that account, limited like any
+registration to 60 requests an hour per client address (`Request limits`_),
+with no separate limit per recipient address.
+
 Logs
 ====
 

@@ -104,7 +104,7 @@ jobs:
           Contest.objects.exists()
           with translation.override("sl"):
               assert str(Contest._meta.verbose_name) == "natečaj"
-          for purpose in ("registration", "password_reset"):
+          for purpose in ("registration", "password_reset", "existing_account"):
               for name in ("email_subject.txt", "email_body.txt", "email_body.html"):
                   get_template(f"drf_user/{purpose}/{name}")
           PY

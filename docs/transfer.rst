@@ -465,12 +465,12 @@ SHA-256 signatures. An active account with an old reset link gets "Bad token."
 and has to request a new link.
 
 No new activation links are sent. Someone who registered before the freeze
-and has not activated the account cannot activate it, register again or reset
-its password, and the Django admin does not list accounts. If such a person
-asks, send their account a new activation link, filling in the address. The
-command fails with ``DoesNotExist`` if no inactive account has that address,
-and reports a message that the mail server refused as ``Unable to send account
-email``:
+and has not activated the account can register again with the same address:
+the email they get links to a password reset, and setting a new password
+activates the account. If such a person asks for a new activation link
+instead, send one, filling in the address. The command fails with
+``DoesNotExist`` if no inactive account has that address, and reports a
+message that the mail server refused as ``Unable to send account email``:
 
 .. code-block:: shell
 

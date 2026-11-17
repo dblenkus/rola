@@ -1,0 +1,9 @@
+{% autoescape off %}Hello!
+
+Someone (probably you) has tried to register at {{ app_name }} with this address, which already has an account.
+
+To set a new password, please follow the link below. This also activates the account if it has not been activated yet.
+
+{{ url }}
+
+If you did not try to register, you can ignore this email.{% endautoescape %}

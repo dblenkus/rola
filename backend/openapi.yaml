@@ -1258,7 +1258,7 @@ paths:
           description: ''
     post:
       operationId: user_create
-      description: Manage the current account, with administrative access for superusers.
+      description: Register an account, answering alike whether the address had one.
       tags:
       - user
       requestBody:
@@ -1277,11 +1277,7 @@ paths:
       - {}
       responses:
         '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: ''
+          description: No response body
   /api/v1/user/{id}:
     get:
       operationId: user_retrieve

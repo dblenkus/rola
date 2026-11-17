@@ -135,7 +135,7 @@ class UserManagementTest(APITestCase):
             response = self.client.post(self.list_url, self.post_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        user = User.objects.get(id=response.data["id"])
+        user = User.objects.get(email=self.post_data["email"])
         self.assertTrue(user.check_password(self.post_data["password"]))
         self.assertFalse(user.is_active)
 
@@ -384,5 +384,7 @@ class ResetPasswordTest(APITestCase):
             {"token": token, "new_password": "n3wp4ss!"},
             format="json",
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Account is not activated", response.data["non_field_errors"][0])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_active)
+        self.assertTrue(self.user.check_password("n3wp4ss!"))
