@@ -281,6 +281,9 @@ Fixes
   that page as unpaid.
 * A jury gallery or rater link whose theme is not in the linked contest says
   that the content is no longer available instead of loading forever.
+* A rating that finishes saving after the judge has left the rater no longer
+  moves the next rater on, past a photograph or onto a spinner that never
+  ends.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

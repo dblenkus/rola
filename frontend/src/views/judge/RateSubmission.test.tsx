@@ -224,6 +224,35 @@ it('stays on the shown submission when an earlier save finishes', async () => {
   expect(filledStars()).toBe(3);
 });
 
+it('keeps the next rater on its submission when a closed rater saves late', async () => {
+  const saves: (() => void)[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': () =>
+      page([
+        jurySubmission(11, 'First'),
+        jurySubmission(12, 'Second'),
+        jurySubmission(13, 'Third'),
+      ]),
+    'GET /rating': () => page([]),
+    'POST /rating': () =>
+      new Promise((resolve) => saves.push(() => resolve({}))),
+  });
+  const user = userEvent.setup();
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+  await user.keyboard('5');
+  await waitFor(() => expect(saves).toHaveLength(1));
+  cleanup();
+
+  renderRater('/judge/contest/1/theme/2/rate?submission=12');
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  saves[0]?.();
+  await settle();
+  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+  expect(screen.queryByRole('img', { name: 'Third' })).not.toBeInTheDocument();
+});
+
 it('keeps the rater after a failed save', async () => {
   let attempts = 0;
   serveApi({

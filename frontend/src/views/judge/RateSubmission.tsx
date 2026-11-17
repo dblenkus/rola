@@ -77,9 +77,14 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   );
 
   // The submission on screen, for saves that finish after the judge moved on.
+  // Cleared when the rater closes: the jury store outlives it, and a save that
+  // finishes later must not move the next rater on.
   const shownId = useRef<number | undefined>(undefined);
   useEffect(() => {
     shownId.current = submission?.id;
+    return () => {
+      shownId.current = undefined;
+    };
   }, [submission]);
 
   const updateRating = async (newRating: number): Promise<void> => {
