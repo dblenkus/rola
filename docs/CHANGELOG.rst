@@ -96,6 +96,12 @@ API changes
   submission set in one transaction. An empty batch, a batch that mixes
   contests or authors, and a photograph used twice answer 400 and create
   nothing.
+* ``POST /api/v1/submission`` accepts an optional ``Idempotency-Key`` header
+  with a UUID. A request that repeats the key of an earlier upload by the
+  same account creates nothing and sends no email: it answers 200 with that
+  upload's submissions, also after the contest has closed. A key that is not
+  a UUID answers 400. A retry after a lost response used to enter the
+  submissions again and send a second confirmation email.
 * Only a judge of the contest can create or change a rating, only for a paid
   submission, as the judging list shows, and only until the results are
   published, and a rating cannot move to another submission. Rating an

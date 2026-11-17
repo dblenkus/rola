@@ -18,7 +18,7 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The new schema has the same tables and columns, with four differences that
+The new schema has the same tables and columns, with five differences that
 decide how the data is copied:
 
 * Seven tables (``core_author``, ``core_contest``, ``core_submission``,
@@ -27,6 +27,11 @@ decide how the data is copied:
   must match columns by name. ``pg_restore`` does, because ``pg_dump`` writes
   every ``COPY`` with its column list; a data-only plain dump with
   ``--inserts`` would not.
+* ``core_submissionset`` has a new column, ``upload_key``, which recognizes
+  a repeated upload request. The dump has no such column, so the copied sets
+  get ``NULL``, which the unique constraint
+  ``core_submissionset_unique_upload_key`` on the account and the key allows
+  in any number of rows.
 * The submission table started as ``core_photo``, and the old database
   still names its sequence, keys and indexes ``core_photo_*``. The dump's
   ``SEQUENCE SET`` entry for ``core_photo_id_seq`` has no target in the new

@@ -3,14 +3,18 @@
 import io
 import logging
 import os
+import queue
 import tracemalloc
+import uuid
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from smtplib import SMTPException
 from unittest.mock import patch
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection, transaction
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -19,6 +23,7 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 from drf_user.models import Email, User
+from drf_user.tests.test_account_security import wait_until_blocked_by_this_connection
 from rolca.core.models import (
     Author,
     Contest,
@@ -373,6 +378,159 @@ def test_a_theme_accepts_at_most_n_photos_per_author(world):
     assert post(payload(world, theme=series.pk, files=photos(3))).status_code == 201
     assert post(payload(world, theme=series.pk, files=photos(1))).status_code == 400
     assert File.objects.filter(submission__theme=series).count() == 3
+
+
+def test_a_repeated_upload_returns_the_existing_set(
+    world, mailoutbox, django_capture_on_commit_callbacks
+):
+    world.contest.confirmation_email = Email.objects.create(
+        subject="Thank you", body="Submitted"
+    )
+    world.contest.save()
+    key = str(uuid.uuid4())
+    other_client = APIClient()
+    other_client.force_authenticate(world.other)
+
+    def upload(data, key, client=world.client):
+        with django_capture_on_commit_callbacks(execute=True):
+            return client.post(
+                "/api/v1/submission", data, format="json", HTTP_IDEMPOTENCY_KEY=key
+            )
+
+    batch = [payload(world), payload(world)]
+    first = upload(batch, key)
+    assert first.status_code == 201, first.data
+    # A retry after a lost response uploads its photographs again.
+    retry = upload([payload(world), payload(world)], key)
+    assert retry.status_code == 200, retry.data
+    assert retry.json() == first.json()
+
+    assert upload([payload(world)], str(uuid.uuid4())).status_code == 201
+    foreign = payload(
+        world,
+        author={"id": world.other_author.pk},
+        files=[{"id": photo(world.other).pk}],
+    )
+    assert upload([foreign], key, other_client).status_code == 201
+    refused = upload([payload(world)], "not-a-uuid")
+    assert refused.status_code == 400
+    assert refused.json() == {"detail": "The Idempotency-Key header must be a UUID."}
+
+    # The repeated request would now be refused: its photographs are
+    # attached and the contest has closed.
+    reschedule(world.contest, *CLOSED_SCHEDULES["after_end"])
+    late = upload(batch, key)
+    assert late.status_code == 200, late.data
+    assert late.json() == first.json()
+    single = upload(batch[0], key)
+    assert single.status_code == 200, single.data
+    assert single.json() == first.json()[0]
+
+    assert SubmissionSet.objects.filter(user=world.owner).count() == 2
+    assert SubmissionSet.objects.filter(user=world.other).count() == 1
+    assert Submission.objects.count() == 4
+    assert [message.to for message in mailoutbox] == [
+        [world.owner.email],
+        [world.owner.email],
+        [world.other.email],
+    ]
+
+
+@pytest.mark.parametrize("batch", [False, True])
+def test_a_repeated_upload_is_entered_again_after_its_submissions_are_deleted(
+    world, batch, mailoutbox, django_capture_on_commit_callbacks
+):
+    world.contest.confirmation_email = Email.objects.create(
+        subject="Thank you", body="Submitted"
+    )
+    world.contest.save()
+    key = str(uuid.uuid4())
+
+    def upload():
+        data = payload(world)
+        with django_capture_on_commit_callbacks(execute=True):
+            response = world.client.post(
+                "/api/v1/submission",
+                [data] if batch else data,
+                format="json",
+                HTTP_IDEMPOTENCY_KEY=key,
+            )
+        assert isinstance(response.json(), list) == batch
+        return response
+
+    def entered(response):
+        items = response.json() if batch else [response.json()]
+        return [item["id"] for item in items]
+
+    first = upload()
+    assert first.status_code == 201, first.data
+    (deleted,) = entered(first)
+    response = world.client.delete(f"/api/v1/submission/{deleted}")
+    assert response.status_code == 204
+    # The upload form keeps its key until it is completed, so a retry after
+    # a lost response can follow the deletion of the entry.
+    retry = upload()
+    assert retry.status_code == 201, retry.data
+    assert list(
+        SubmissionSet.objects.get(upload_key=key).submissions.values_list(
+            "pk", flat=True
+        )
+    ) == entered(retry)
+    replay = upload()
+    assert replay.status_code == 200, replay.data
+    assert replay.json() == retry.json()
+
+    assert SubmissionSet.objects.filter(user=world.owner).count() == 2
+    assert Submission.objects.count() == 1
+    assert [message.to for message in mailoutbox] == [
+        [world.owner.email],
+        [world.owner.email],
+    ]
+
+
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+def test_concurrent_uploads_with_one_key_create_one_set(world, mailoutbox):
+    world.contest.confirmation_email = Email.objects.create(
+        subject="Thank you", body="Submitted"
+    )
+    world.contest.save()
+    key = str(uuid.uuid4())
+    first_data, retry_data = [payload(world)], [payload(world)]
+    retry_client = APIClient()
+    retry_client.force_authenticate(world.owner)
+    backend_pids = queue.SimpleQueue()
+
+    def upload(client, data):
+        return client.post(
+            "/api/v1/submission", data, format="json", HTTP_IDEMPOTENCY_KEY=key
+        )
+
+    def retry_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return upload(retry_client, retry_data)
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with transaction.atomic():
+            first = upload(world.client, first_data)
+            retry = executor.submit(retry_on_another_connection)
+            # The retry waits for the first upload's lock on the account row
+            # and then finds the committed set.
+            wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+        second = retry.result(timeout=10)
+
+    assert first.status_code == 201, first.data
+    assert second.status_code == 200, second.data
+    assert second.json() == first.json()
+    assert SubmissionSet.objects.count() == 1
+    assert len(mailoutbox) == 1
 
 
 def test_contest_and_institution_filters_are_applied(world):

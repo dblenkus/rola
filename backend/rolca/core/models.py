@@ -228,6 +228,12 @@ class SubmissionSet(BaseModel):
         ordering = ["id"]
         verbose_name = _("submission set")
         verbose_name_plural = _("submission sets")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "upload_key"],
+                name="core_submissionset_unique_upload_key",
+            ),
+        ]
 
     submissions = models.ManyToManyField("Submission")
 
@@ -236,6 +242,10 @@ class SubmissionSet(BaseModel):
     )
 
     author = models.ForeignKey("Author", on_delete=models.CASCADE)
+
+    #: client's key for the upload request that created the set, so that a
+    #: repeated request returns this set instead of creating another one
+    upload_key = models.UUIDField(null=True, blank=True, editable=False)
 
     def __str__(self):
         """Return string representation of SubmissionSet object."""

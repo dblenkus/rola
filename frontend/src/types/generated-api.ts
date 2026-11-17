@@ -285,7 +285,13 @@ export interface paths {
         /** @description API view Submission objects. */
         get: operations["submission_list"];
         put?: never;
-        /** @description Create one coherent submission set, atomically, for either payload shape. */
+        /**
+         * @description Create one coherent submission set, atomically, for either payload shape.
+         *
+         *     A request that repeats the Idempotency-Key of the requester's earlier
+         *     upload creates nothing and returns that upload's submissions. Once all
+         *     of them are deleted, the request is entered as a new upload.
+         */
         post: operations["submission_create"];
         delete?: never;
         options?: never;
@@ -1933,7 +1939,10 @@ export interface operations {
     submission_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Identifies the upload, so that a retry after a lost response returns the submissions instead of entering them again. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1945,6 +1954,15 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The submissions of the requester's earlier upload with this Idempotency-Key; a list when the request body is a list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionWrite"] | components["schemas"]["SubmissionWrite"][];
+                };
+            };
             /** @description A list when the request body is a list. */
             201: {
                 headers: {

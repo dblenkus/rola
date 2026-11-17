@@ -1004,8 +1004,20 @@ paths:
           description: ''
     post:
       operationId: submission_create
-      description: Create one coherent submission set, atomically, for either payload
-        shape.
+      description: |-
+        Create one coherent submission set, atomically, for either payload shape.
+
+        A request that repeats the Idempotency-Key of the requester's earlier
+        upload creates nothing and returns that upload's submissions. Once all
+        of them are deleted, the request is entered as a new upload.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          format: uuid
+        description: Identifies the upload, so that a retry after a lost response
+          returns the submissions instead of entering them again.
       tags:
       - submission
       requestBody:
@@ -1026,6 +1038,17 @@ paths:
       security:
       - tokenAuth: []
       responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/SubmissionWrite'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/SubmissionWrite'
+          description: The submissions of the requester's earlier upload with this
+            Idempotency-Key; a list when the request body is a list.
         '201':
           content:
             application/json:
