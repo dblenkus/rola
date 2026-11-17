@@ -287,6 +287,9 @@ Fixes
 * The rater ignores a rating entered while the previous one is still being
   saved. Both used to be sent, and the server could store the earlier one
   last, after the rater had moved on as if the later one were stored.
+* Holding a digit key in the rater rates only the photograph on screen. The
+  key's repeats used to rate each following photograph the same, before the
+  judge had seen it.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

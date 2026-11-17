@@ -1,9 +1,11 @@
 import { useCallback, useEffect } from 'react';
 
-const useKeyPress = (handler: (pressedKey: string) => void): void => {
+const useKeyPress = (
+  handler: (pressedKey: string, repeat: boolean) => void,
+): void => {
   const downHandler = useCallback(
-    ({ key }: KeyboardEvent): void => {
-      handler(key);
+    ({ key, repeat }: KeyboardEvent): void => {
+      handler(key, repeat);
     },
     [handler],
   );

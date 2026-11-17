@@ -161,12 +161,15 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     };
   }, [currentId]);
 
-  useKeyPress((value: string) => {
+  useKeyPress((value: string, repeat: boolean) => {
     // Without a loaded theme the rater is hidden; keys must not rate it.
     if (error) return;
     const parsedNumber = parseInt(value, 10);
     if (!Number.isNaN(parsedNumber)) {
-      updateRating(parsedNumber || 10);
+      // A held digit repeats, and each repeat would rate the photograph the
+      // last save moved on to before the judge has seen it. Held arrow keys
+      // only step through the photographs, so they keep repeating.
+      if (!repeat) updateRating(parsedNumber || 10);
     } else if (value === 'ArrowRight' && isNext) {
       nextSubmission();
     } else if (value === 'ArrowLeft' && isPrevious) {

@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import {
@@ -292,6 +299,40 @@ it('ignores new ratings while a rating save is pending', async () => {
     { submission: 11, rating: 5 },
     { submission: 12, rating: 7 },
   ]);
+});
+
+it('ignores auto-repeated digit keys but not arrow keys', async () => {
+  const saves: unknown[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': () =>
+      page([
+        jurySubmission(11, 'First'),
+        jurySubmission(12, 'Second'),
+        jurySubmission(13, 'Third'),
+      ]),
+    'GET /rating': () => page([]),
+    'POST /rating': (config) => {
+      saves.push(JSON.parse(String(config.data)));
+      return {};
+    },
+  });
+  const user = userEvent.setup();
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+
+  await user.keyboard('7');
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  // fireEvent dispatches at once; the rater listens for keys on the shown
+  // submission only after its effects have run.
+  await settle();
+  fireEvent.keyDown(window, { key: '7', repeat: true });
+  await settle();
+  expect(saves).toEqual([{ submission: 11, rating: 7 }]);
+  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+
+  fireEvent.keyDown(window, { key: 'ArrowRight', repeat: true });
+  expect(await screen.findByRole('img', { name: 'Third' })).toBeVisible();
 });
 
 it('keeps the rater after a failed save', async () => {
