@@ -580,11 +580,8 @@ export interface components {
             thumbnail?: string | null;
         };
         /** @description Serializer for File objects. */
-        FileRequest: {
-            /** Format: binary */
-            file: string;
-            /** Format: binary */
-            thumbnail?: string;
+        IdRelated: {
+            id: number;
         };
         /** @description Serializer for File objects. */
         IdRelatedRequest: {
@@ -981,6 +978,19 @@ export interface components {
             submissions: components["schemas"]["Submission"][];
             author: components["schemas"]["Author"];
             contest: number;
+        };
+        /** @description Submission as writes return it, with the author and the files as ids. */
+        SubmissionWrite: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly created: string;
+            /** Format: date-time */
+            readonly modified: string;
+            author: components["schemas"]["IdRelated"];
+            theme: number;
+            title?: string | null;
+            description?: string | null;
+            files: components["schemas"]["IdRelated"][];
         };
         /** @description Serializer for Theme objects. */
         Theme: {
@@ -1379,13 +1389,16 @@ export interface operations {
     file_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Names the photograph, for example attachment; filename="photo.jpg". */
+                "Content-Disposition": string;
+            };
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "image/jpeg": components["schemas"]["FileRequest"];
+                "image/jpeg": string;
             };
         };
         responses: {
@@ -1902,20 +1915,21 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["SubmissionRequest"];
+                "application/json": components["schemas"]["SubmissionRequest"] | components["schemas"]["SubmissionRequest"][];
                 "application/x-www-form-urlencoded": components["schemas"]["SubmissionRequest"];
                 "multipart/form-data": components["schemas"]["SubmissionRequest"];
             };
         };
         responses: {
+            /** @description A list when the request body is a list. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Submission"];
+                    "application/json": components["schemas"]["SubmissionWrite"] | components["schemas"]["SubmissionWrite"][];
                 };
             };
         };
@@ -1965,7 +1979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Submission"];
+                    "application/json": components["schemas"]["SubmissionWrite"];
                 };
             };
         };
@@ -2014,7 +2028,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Submission"];
+                    "application/json": components["schemas"]["SubmissionWrite"];
                 };
             };
         };

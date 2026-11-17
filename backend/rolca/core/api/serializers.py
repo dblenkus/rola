@@ -190,6 +190,21 @@ class SubmissionSerializer(BaseSerializer):
         return instance
 
 
+# Used only in the API schema: writes respond with SubmissionSerializer, whose
+# fields depend on the request method, which the schema generator cannot see.
+class SubmissionWriteSerializer(BaseSerializer):
+    """Submission as writes return it, with the author and the files as ids."""
+
+    author = IdRelatedSerializer()
+    files = IdRelatedSerializer(many=True)
+
+    class Meta(BaseSerializer.Meta):
+        """Serializer configuration."""
+
+        model = Submission
+        fields = SubmissionSerializer.Meta.fields
+
+
 class SubmissionSetSerializer(BaseSerializer):
     """Serializer for SubmissionSet objects."""
 

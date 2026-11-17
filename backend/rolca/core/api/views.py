@@ -18,6 +18,13 @@ from functools import partial
 from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import exceptions, mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
@@ -37,6 +44,7 @@ from rolca.core.api.serializers import (
     InstitutionSerializer,
     SubmissionSerializer,
     SubmissionSetSerializer,
+    SubmissionWriteSerializer,
 )
 from rolca.core.models import (
     Author,
@@ -51,6 +59,31 @@ from rolca.core.models import (
 logger = logging.getLogger(__name__)
 
 
+def _component(name):
+    """Return a reference to a component of the generated API schema."""
+    return {"$ref": f"#/components/schemas/{name}"}
+
+
+def _one_or_many(name):
+    """Describe a body that holds one component object or a list of them."""
+    return {"oneOf": [_component(name), {"type": "array", "items": _component(name)}]}
+
+
+@extend_schema_view(
+    create=extend_schema(
+        request={"image/jpeg": OpenApiTypes.BINARY},
+        parameters=[
+            OpenApiParameter(
+                "Content-Disposition",
+                str,
+                OpenApiParameter.HEADER,
+                required=True,
+                description="Names the photograph, for example "
+                'attachment; filename="photo.jpg".',
+            )
+        ],
+    )
+)
 class FileViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """API viewset for File objects."""
 
@@ -113,6 +146,26 @@ class AuthorViewSet(viewsets.ModelViewSet):
             )
 
 
+@extend_schema_view(
+    # SubmissionSerializer reads the request method, so the schema generator
+    # cannot instantiate it here; SubmissionRequest is its request component,
+    # which update registers. A form body cannot hold a list.
+    create=extend_schema(
+        request={
+            "application/json": _one_or_many("SubmissionRequest"),
+            "application/x-www-form-urlencoded": _component("SubmissionRequest"),
+            "multipart/form-data": _component("SubmissionRequest"),
+        },
+        responses={
+            201: OpenApiResponse(
+                _one_or_many("SubmissionWrite"),
+                description="A list when the request body is a list.",
+            )
+        },
+    ),
+    update=extend_schema(responses=SubmissionWriteSerializer),
+    partial_update=extend_schema(responses=SubmissionWriteSerializer),
+)
 class SubmissionViewSet(viewsets.ModelViewSet):
     """API view Submission objects."""
 

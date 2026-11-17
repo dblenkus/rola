@@ -16,6 +16,7 @@ export type Institution = Schemas['Institution'];
 export type Author = Schemas['Author'];
 export type ResultsAuthor = Schemas['AuthorResults'];
 export type Submission = Schemas['Submission'];
+export type SubmissionWrite = Schemas['SubmissionWrite'];
 export type ResultsSubmission = Schemas['SubmissionResults'];
 export type SubmissionSet = Schemas['SubmissionSet'];
 export type Theme = Schemas['Theme'];

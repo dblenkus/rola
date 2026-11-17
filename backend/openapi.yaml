@@ -344,14 +344,21 @@ paths:
     post:
       operationId: file_create
       description: API viewset for File objects.
+      parameters:
+      - in: header
+        name: Content-Disposition
+        schema:
+          type: string
+        description: Names the photograph, for example attachment; filename="photo.jpg".
+        required: true
       tags:
       - file
       requestBody:
         content:
           image/jpeg:
             schema:
-              $ref: '#/components/schemas/FileRequest'
-        required: true
+              type: string
+              format: binary
       security:
       - tokenAuth: []
       responses:
@@ -1005,14 +1012,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubmissionRequest'
+              oneOf:
+              - $ref: '#/components/schemas/SubmissionRequest'
+              - type: array
+                items:
+                  $ref: '#/components/schemas/SubmissionRequest'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/SubmissionRequest'
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/SubmissionRequest'
-        required: true
       security:
       - tokenAuth: []
       responses:
@@ -1020,8 +1030,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
-          description: ''
+                oneOf:
+                - $ref: '#/components/schemas/SubmissionWrite'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/SubmissionWrite'
+          description: A list when the request body is a list.
   /api/v1/submission/{id}:
     get:
       operationId: submission_retrieve
@@ -1075,7 +1089,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: '#/components/schemas/SubmissionWrite'
           description: ''
     patch:
       operationId: submission_partial_update
@@ -1107,7 +1121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: '#/components/schemas/SubmissionWrite'
           description: ''
     delete:
       operationId: submission_destroy
@@ -1780,18 +1794,14 @@ components:
       - file
       - id
       - modified
-    FileRequest:
+    IdRelated:
       type: object
       description: Serializer for File objects.
       properties:
-        file:
-          type: string
-          format: binary
-        thumbnail:
-          type: string
-          format: binary
+        id:
+          type: integer
       required:
-      - file
+      - id
     IdRelatedRequest:
       type: object
       description: Serializer for File objects.
@@ -2635,6 +2645,44 @@ components:
       - id
       - modified
       - submissions
+    SubmissionWrite:
+      type: object
+      description: Submission as writes return it, with the author and the files as
+        ids.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          $ref: '#/components/schemas/IdRelated'
+        theme:
+          type: integer
+        title:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/IdRelated'
+      required:
+      - author
+      - created
+      - files
+      - id
+      - modified
+      - theme
     Theme:
       type: object
       description: Serializer for Theme objects.
