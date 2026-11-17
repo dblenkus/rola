@@ -211,11 +211,10 @@ def test_owner_can_patch_submission_and_replace_own_files(world):
     )
     assert response.status_code == 200, response.data
     item.refresh_from_db()
-    old.refresh_from_db()
     assert item.title == "Edited"
     assert item.user == world.owner
     assert list(item.files.values_list("pk", flat=True)) == [new.pk]
-    assert old.submission_id is None
+    assert not File.objects.filter(pk=old.pk).exists()
 
 
 def test_submission_cannot_change_contest_or_author_after_grouping(world):

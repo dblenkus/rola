@@ -92,6 +92,10 @@ API changes
 * A submission's author and photographs must belong to the requester, a
   photograph can belong to only one submission, and an update cannot change
   the author or the contest. Such requests answer 400.
+* ``PUT`` and ``PATCH`` on ``/api/v1/submission/{id}`` delete the uploads
+  that the new ``files`` list leaves out, with their stored photographs and
+  thumbnails. They used to stay stored without a submission until the
+  account was deleted.
 * A submission request, single or batch, creates its submissions and their
   submission set in one transaction. An empty batch, a batch that mixes
   contests or authors, and a photograph used twice answer 400 and create
@@ -221,6 +225,10 @@ Deployment changes
   disk as the archive instead of as much memory. nginx waits 120 seconds for
   it, the TLS terminator must wait as long, and nginx keeps up to 4 GiB of it
   on disk, so a slow browser does not hold a Gunicorn worker.
+* ``manage.py deleteorphanphotos`` deletes uploads that no submission holds
+  and stored photographs and thumbnails that no upload references, once they
+  are a day old. Run it weekly, as "Maintenance" in ``docs/deployment.rst``
+  describes; abandoned uploads used to stay stored indefinitely.
 * CI no longer publishes images; they are built on the server.
 
 Fixes

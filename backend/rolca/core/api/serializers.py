@@ -182,11 +182,15 @@ class SubmissionSerializer(BaseSerializer):
         return submission
 
     def update(self, instance, validated_data):
-        """Replace uploaded-file relations only when supplied by the client."""
+        """Replace uploaded-file relations only when supplied by the client.
+
+        Uploads left out of the new list are deleted with their stored images.
+        """
         files = validated_data.pop("files", None)
         instance = super().update(instance, validated_data)
         if files is not None:
-            instance.files.set(files)
+            instance.files.exclude(pk__in=[file.pk for file in files]).delete()
+            instance.files.add(*files)
         return instance
 
 

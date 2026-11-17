@@ -401,6 +401,20 @@ Maintenance
 
      0 4 * * 1 cd /srv/rola && docker compose exec -T backend python manage.py clearsessions
 
+* Photographs uploaded by a form that failed or was abandoned stay stored
+  without a submission, and so does an image whose delete failed; the
+  backend logs ``Unable to delete stored image <name>.`` for it. Delete them
+  weekly as well:
+
+  .. code-block:: text
+
+     0 4 * * 1 cd /srv/rola && docker compose exec -T backend python manage.py deleteorphanphotos
+
+  The command deletes uploads that no submission holds, and the stored files
+  in ``photos/`` and ``thumbs/`` that no upload references, once they are a
+  day old, so uploads in progress and contest header images stay. It prints
+  how many of each it deleted; ``--dry-run`` prints the counts and deletes
+  nothing.
 * The ``db`` and ``media`` volumes hold all state; ``collectstatic`` refills
   the ``static`` volume on every start. The application has no backup
   feature of its own.

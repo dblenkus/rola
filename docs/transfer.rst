@@ -542,6 +542,15 @@ message that the mail server refused as ``Unable to send account email``:
    send_activation_email(User.objects.get(email__iexact='<address>', is_active=False))
    "
 
+The previous deployment kept the stored photographs of deleted submissions,
+and the uploads that a submission replaced or never received, with their
+photographs. ``deleteorphanphotos`` (see "Maintenance" in :doc:`deployment`)
+deletes them from the new stack. Copying the photographs gave every stored
+file a new modification time, so only a run at least a day after the copy
+deletes the photographs of deleted submissions; an earlier run deletes only
+the uploads and their photographs. The old database and the old buckets or
+media directory keep them, so a rollback still finds them.
+
 Rollback
 ========
 
