@@ -29,6 +29,11 @@ interface SubmissionSetTableProps {
   onDelete: (submissionSet: SubmissionSet) => void;
 }
 
+interface LoadedPayments {
+  sets: SubmissionSet[];
+  results: Payment[];
+}
+
 const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   contestId,
   reloadKey,
@@ -37,7 +42,10 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   const [error, setError] = useState<string | null>(null);
   // A failed payment update keeps the table so the admin can try again.
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<LoadedPayments>({
+    sets: [],
+    results: [],
+  });
   const source = useCallback(
     (page: number, pageSize: number) =>
       SubmissionSetService.getByContest(contestId.toString(), page, pageSize),
@@ -55,12 +63,13 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   } = usePagination<SubmissionSet>({ source, reloadKey });
   const { t } = useTranslation();
 
-  const fetchPayments = useCallback(async (): Promise<Payment[]> => {
-    if (submissionSets.length === 0) return [];
+  const fetchPayments = useCallback(async (): Promise<LoadedPayments> => {
+    if (submissionSets.length === 0)
+      return { sets: submissionSets, results: [] };
 
     const submissionSetIds = submissionSets.map(({ id }) => id);
     const { data } = await PaymentService.getBySubmissionSets(submissionSetIds);
-    return data.results;
+    return { sets: submissionSets, results: data.results };
   }, [submissionSets]);
 
   useEffect(() => {
@@ -100,7 +109,11 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     setPaymentError(null);
     try {
       await PaymentService.updatePayment(submissionSetId, paid);
-      setPayments(await fetchPayments());
+      const loaded = await fetchPayments();
+      // The admin may have moved to another page while this was saved.
+      setPayments((current) =>
+        current.sets === loaded.sets ? loaded : current,
+      );
     } catch (error) {
       setPaymentError(requestError(error));
     }
@@ -113,6 +126,9 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   }: LabelDisplayedRowsArgs): React.ReactNode => {
     return t('displayed_rows', { from, to, total });
   };
+
+  const shownPayments =
+    payments.sets === submissionSets ? payments.results : [];
 
   if (error || paginationError)
     return <Alert severity="error">{error || paginationError}</Alert>;
@@ -135,7 +151,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
           </TableHead>
           <TableBody>
             {submissionSets.map((submissionSet) => {
-              const payment = payments.find(
+              const payment = shownPayments.find(
                 (p) => p.submissionset === submissionSet.id,
               );
               return (

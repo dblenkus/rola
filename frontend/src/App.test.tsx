@@ -647,6 +647,67 @@ describe('admin submission list', () => {
     expect(screen.getByRole('checkbox')).toBeChecked();
     expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(1);
   });
+
+  it('keeps the payments of the shown page when a change on a left page finishes', async () => {
+    signIn();
+    const sets = Array.from({ length: 21 }, (_, index) => ({
+      ...submissionSet,
+      id: index + 1,
+    }));
+    let finishUpdate: (() => void) | undefined;
+    const adapter = serveApi({
+      'GET /contest/1': () => contest,
+      'GET /submissionset': (config) => {
+        const pageNumber: number = config.params.page;
+        const pageSize: number = config.params.page_size;
+        return {
+          ...page(
+            sets.slice((pageNumber - 1) * pageSize, pageNumber * pageSize),
+          ),
+          count: sets.length,
+        };
+      },
+      'GET /payment': (config) =>
+        page<Payment>(
+          config.params.submissionset__in === '21'
+            ? [
+                {
+                  id: 8,
+                  created: '2026-01-01T00:00:00Z',
+                  modified: '2026-01-01T00:00:00Z',
+                  submissionset: 21,
+                  paid: true,
+                },
+              ]
+            : [],
+        ),
+      'POST /payment': () =>
+        new Promise((resolve) => {
+          finishUpdate = () => resolve({});
+        }),
+    });
+    const paymentLoads = () =>
+      adapter.mock.calls.filter(
+        ([config]) => config.method === 'get' && config.url === '/payment',
+      ).length;
+    const user = userEvent.setup();
+    open('/admin/contest/1/submissions');
+    await waitFor(() => expect(paymentLoads()).toBe(1));
+    const [firstPaid] = screen.getAllByRole('checkbox');
+    if (!firstPaid) {
+      throw new Error('The first page has no payment checkbox');
+    }
+    await user.click(firstPaid);
+    await waitFor(() => expect(finishUpdate).toBeDefined());
+
+    await user.click(screen.getByRole('button', { name: 'Go to next page' }));
+    expect(await screen.findByText('21-21 of 21')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked());
+    await act(async () => finishUpdate?.());
+    await waitFor(() => expect(paymentLoads()).toBe(3));
+    expect(screen.getByText('21-21 of 21')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeChecked();
+  });
 });
 
 describe('submissions edit list', () => {

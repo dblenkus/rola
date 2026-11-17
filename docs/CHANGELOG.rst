@@ -276,6 +276,9 @@ Fixes
 * A browser that blocks site data for the site shows the public pages, such
   as the contest list and results, instead of a blank page. Logging in there
   says that signing in needs site storage.
+* A payment change in the admin submission list that finishes after the
+  admin has moved to another page no longer shows every submission set on
+  that page as unpaid.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.
