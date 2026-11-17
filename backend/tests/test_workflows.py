@@ -532,6 +532,7 @@ def test_rating_scores_outside_1_to_10_are_refused(world, score):
 
 def test_results_hide_before_publication_and_handle_optional_relations(world):
     item = submitted(world)
+    pay(item)
     judge = Judge.objects.create(judge=world.other, contest=world.contest)
     Rating.objects.create(user=world.other, judge=judge, submission=item, rating=5)
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
@@ -563,6 +564,7 @@ def test_published_theme_without_results_returns_not_found(world):
 
 def test_results_identify_the_rewarded_theme_by_id(world):
     item = submitted(world)
+    pay(item)
     judge = Judge.objects.create(judge=world.other, contest=world.contest)
     Rating.objects.create(user=world.other, judge=judge, submission=item, rating=5)
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
@@ -578,7 +580,9 @@ def test_results_identify_the_rewarded_theme_by_id(world):
     assert author["reward_theme"] == world.theme.pk
 
 
-def test_results_show_only_the_public_author_details(world):
+@pytest.mark.parametrize("school_show", [False, True])
+@pytest.mark.parametrize("club_show", [False, True])
+def test_results_show_only_the_public_author_details(world, school_show, club_show):
     Author.objects.filter(pk=world.author.pk).update(
         email="alice@example.org",
         dob="2012-03-04",
@@ -588,28 +592,89 @@ def test_results_show_only_the_public_author_details(world):
         distinction="Distinction",
     )
     accepted = submitted(world)
-    submitted(world, title="Not accepted")
+    pay(accepted)
+    pay(submitted(world, title="Not accepted"))
     judge = Judge.objects.create(judge=world.other, contest=world.contest)
     Rating.objects.create(user=world.other, judge=judge, submission=accepted, rating=5)
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.school_show = school_show
+    world.contest.club_show = club_show
     world.contest.save()
     public = APIClient()
     theme = public.get(f"/api/v1/results/theme/{world.theme.pk}").json()
     listing = public.get("/api/v1/results/submission").json()["results"]
-    authors = [row["author"] for row in theme["submissions"] + listing]
-    assert len(authors) == 3
+    detail = public.get(f"/api/v1/results/submission/{accepted.pk}").json()
+    authors = [row["author"] for row in theme["submissions"] + listing + [detail]]
+    assert len(authors) == 4
     for author in authors:
         assert author == {
             "id": world.author.pk,
             "first_name": "Alice",
             "last_name": "Photographer",
-            "school": "Primary school",
-            "club": "Photo club",
+            "school": "Primary school" if school_show else None,
+            "club": "Photo club" if club_show else None,
             "country": None,
             "reward": None,
             "reward_theme": None,
         }
+
+
+def test_theme_results_list_only_paid_entries_without_scores(world):
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    accepted = submitted(world, title="Accepted")
+    declined = submitted(world, title="Declined")
+    unpaid = submitted(world, title="Unpaid")
+    submitted(world, user=world.other, author=world.other_author, title="Unjudged")
+    pay(accepted)
+    # A second paid set must neither repeat the entry nor add its score twice,
+    # which would lift 2 over the threshold of 3.
+    pay(declined)
+    pay(declined)
+    payment = pay(unpaid)
+    payment.paid = False
+    payment.save()
+    for item, score in [(accepted, 5), (declined, 2), (unpaid, 5)]:
+        Rating.objects.create(
+            user=world.other, judge=judge, submission=item, rating=score
+        )
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+
+    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    assert response.status_code == 200, response.data
+    theme = response.json()
+    assert [(row["id"], row["accepted"]) for row in theme["submissions"]] == [
+        (accepted.pk, True),
+        (declined.pk, False),
+    ]
+    assert theme["submissions_number"] == 2
+    for row in theme["submissions"]:
+        assert "rating" not in row
+
+
+def test_submission_results_list_only_paid_entries(world):
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    paid = submitted(world, title="Paid")
+    unpaid = submitted(world, title="Unpaid")
+    # A second paid set must neither repeat the entry nor add its score twice.
+    pay(paid)
+    pay(paid)
+    for item in [paid, unpaid]:
+        Rating.objects.create(user=world.other, judge=judge, submission=item, rating=5)
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
+    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
+    world.contest.save()
+    public = APIClient()
+
+    response = public.get("/api/v1/results/submission")
+    assert response.status_code == 200, response.data
+    assert [(row["id"], row["rating"]) for row in response.data["results"]] == [
+        (paid.pk, 5)
+    ]
+    assert public.get(f"/api/v1/results/submission/{paid.pk}").status_code == 200
+    assert public.get(f"/api/v1/results/submission/{unpaid.pk}").status_code == 404
 
 
 def test_published_submissions_stay_private_to_their_owner(world):

@@ -290,6 +290,34 @@ that matters, rewrite the notice in the Django admin:
    docker compose exec -T db psql -U rola -d rola_old -c \
        "SELECT id, title FROM core_contest WHERE notice_html ~* '<(iframe|object|embed|script|style|link|meta|base|frame)|<[^>]*\son[a-z]+\s*=|javascript:' ORDER BY id"
 
+List the published contests with entries that are in no paid submission
+set, with how many such entries each has and how many of them were rated or
+rewarded. The results now publish only paid entries, as judging lists only
+those, so these entries disappear from the results of the listed contests.
+Tell their organizers before the switch:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -U rola -d rola_old <<'SQL'
+   SELECT c.id, c.title, count(*) AS unpaid_entries,
+       count(*) FILTER (
+           WHERE EXISTS (SELECT 1 FROM rating_rating r WHERE r.submission_id = s.id)
+               OR EXISTS (SELECT 1 FROM rating_submissionreward w WHERE w.submission_id = s.id)
+       ) AS rated_or_rewarded
+   FROM core_submission s
+   JOIN core_theme t ON t.id = s.theme_id
+   JOIN core_contest c ON c.id = t.contest_id
+   WHERE c.publish_date <= now()
+       AND EXISTS (SELECT 1 FROM rating_themeresults tr WHERE tr.theme_id = t.id)
+       AND NOT EXISTS (
+           SELECT 1 FROM core_submissionset_submissions m
+           JOIN payment_payment p ON p.submissionset_id = m.submissionset_id
+           WHERE m.submission_id = s.id AND p.paid
+       )
+   GROUP BY c.id, c.title
+   ORDER BY c.id;
+   SQL
+
 Name the tables to copy, in a variable that the later steps use too, and
 check that the dump holds no table that this procedure does not know. The
 second command must print nothing and exit with status 0. It skips

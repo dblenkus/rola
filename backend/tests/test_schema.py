@@ -129,9 +129,13 @@ def test_result_authors_have_only_public_fields(components):
 def test_theme_results_list_submission_results(components):
     assert components["ThemeResults"]["properties"]["submissions"] == {
         "type": "array",
-        "items": {"$ref": "#/components/schemas/SubmissionResults"},
+        "items": {"$ref": "#/components/schemas/ThemeSubmissionResults"},
         "readOnly": True,
     }
+    theme_rows = components["ThemeSubmissionResults"]["properties"]
+    rows = components["SubmissionResults"]["properties"]
+    assert "rating" in rows
+    assert theme_rows == {name: rows[name] for name in rows if name != "rating"}
 
 
 @pytest.mark.django_db

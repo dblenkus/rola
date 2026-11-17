@@ -3,6 +3,7 @@
 from django.db.models import (
     CharField,
     Count,
+    Exists,
     F,
     OuterRef,
     Prefetch,
@@ -27,6 +28,13 @@ from rolca.rating.api.serializers import (
     ThemeResultsSerializer,
 )
 from rolca.rating.models import Judge, Rating
+
+# Results publish only entries in a paid submission set, as judging lists
+# only those. Exists instead of a join, so an entry in several paid sets is
+# listed once and its ratings are summed once.
+IS_PAID = Exists(
+    Submission.objects.filter(pk=OuterRef("pk"), submissionset__payment__paid=True)
+)
 
 
 class RatingViewSet(viewsets.ModelViewSet):
@@ -110,7 +118,8 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Retrieve published results for a theme."""
 
     submission_qs = (
-        Submission.objects.annotate(rating_sum=Sum("rating__rating"))
+        Submission.objects.filter(IS_PAID)
+        .annotate(rating_sum=Sum("rating__rating"))
         .select_related(
             "author",
             "author__user",
@@ -121,7 +130,7 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         .order_by("pk")
     )
 
-    queryset = Theme.objects.prefetch_related(
+    queryset = Theme.objects.select_related("contest").prefetch_related(
         Prefetch("submission_set", queryset=submission_qs)
     )
     serializer_class = ThemeResultsSerializer
@@ -136,12 +145,14 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 class SubmissionResultsViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
-    """List and retrieve accepted submissions after publication."""
+    """List and retrieve accepted, paid submissions after publication."""
 
     queryset = (
-        Submission.objects.annotate(rating_sum=Sum("rating__rating"))
+        Submission.objects.filter(IS_PAID)
+        .annotate(rating_sum=Sum("rating__rating"))
         .filter(rating_sum__gte=F("theme__results__accepted_threshold"))
         .select_related(
+            "theme__contest",
             "theme__results",
             "author",
             "author__user",
@@ -156,5 +167,5 @@ class SubmissionResultsViewSet(
     ordering_fields = ["rating_sum"]
 
     def get_queryset(self):
-        """Return accepted submissions of published contests."""
+        """Return accepted, paid submissions of published contests."""
         return self.queryset.filter(theme__contest__publish_date__lte=timezone.now())

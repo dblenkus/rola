@@ -18,6 +18,7 @@ export type ResultsAuthor = Schemas['AuthorResults'];
 export type Submission = Schemas['Submission'];
 export type SubmissionWrite = Schemas['SubmissionWrite'];
 export type ResultsSubmission = Schemas['SubmissionResults'];
+export type ResultsThemeSubmission = Schemas['ThemeSubmissionResults'];
 export type SubmissionSet = Schemas['SubmissionSet'];
 export type Theme = Schemas['Theme'];
 export type JuryTheme = Schemas['JudgeTheme'];

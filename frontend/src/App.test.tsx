@@ -17,7 +17,7 @@ import {
 import type {
   PaginatedResponse,
   Payment,
-  ResultsSubmission,
+  ResultsThemeSubmission,
 } from './types/api';
 
 beforeEach(() => {
@@ -671,7 +671,7 @@ describe('theme results', () => {
     title: string,
     authorId: number,
     [first_name, last_name]: [string, string],
-  ): ResultsSubmission {
+  ): ResultsThemeSubmission {
     return {
       id,
       created: '2026-01-01T00:00:00Z',
@@ -689,7 +689,6 @@ describe('theme results', () => {
       title,
       files: null,
       accepted: false,
-      rating: null,
       reward_kind: null,
       reward_label: null,
     };

@@ -223,6 +223,33 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
         if hasattr(submission, "reward"):
             return mapping[submission.reward.kind]
 
+    def to_representation(self, submission):
+        """Publish the author's school and club only if the contest shows them."""
+        data = super().to_representation(submission)
+        if "contest" in self.context:
+            contest = self.context["contest"]
+        else:
+            contest = submission.theme.contest
+        if not contest.school_show:
+            data["author"]["school"] = None
+        if not contest.club_show:
+            data["author"]["club"] = None
+
+        return data
+
+
+class ThemeSubmissionResultsSerializer(SubmissionResultsSerializer):
+    """Serialize a submission in published theme results, without its score."""
+
+    class Meta(SubmissionResultsSerializer.Meta):
+        """Serializer configuration."""
+
+        fields = [
+            field
+            for field in SubmissionResultsSerializer.Meta.fields
+            if field != "rating"
+        ]
+
 
 class ThemeResultsSerializer(CoreThemeSerializer):
     """Serializer for Theme results."""
@@ -236,14 +263,15 @@ class ThemeResultsSerializer(CoreThemeSerializer):
             "submissions",
         ]
 
-    @extend_schema_field(SubmissionResultsSerializer(many=True))
+    @extend_schema_field(ThemeSubmissionResultsSerializer(many=True))
     def get_submissions(self, theme):
         """Serialize each submission against the theme acceptance threshold."""
-        return SubmissionResultsSerializer(
+        return ThemeSubmissionResultsSerializer(
             theme.submission_set.all(),
             many=True,
             context={
                 "request": self.context["request"],
                 "accept_threshold": theme.results.accepted_threshold,
+                "contest": theme.contest,
             },
         ).data

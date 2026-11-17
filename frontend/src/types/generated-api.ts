@@ -231,7 +231,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List and retrieve accepted submissions after publication. */
+        /** @description List and retrieve accepted, paid submissions after publication. */
         get: operations["results_submission_list"];
         put?: never;
         post?: never;
@@ -248,7 +248,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List and retrieve accepted submissions after publication. */
+        /** @description List and retrieve accepted, paid submissions after publication. */
         get: operations["results_submission_retrieve"];
         put?: never;
         post?: never;
@@ -1026,7 +1026,25 @@ export interface components {
             n_photos: number;
             /** @description Count submissions in this theme. */
             readonly submissions_number: number;
-            readonly submissions: components["schemas"]["SubmissionResults"][];
+            readonly submissions: components["schemas"]["ThemeSubmissionResults"][];
+        };
+        /** @description Serialize a submission in published theme results, without its score. */
+        ThemeSubmissionResults: {
+            readonly id: number;
+            /** Format: date-time */
+            readonly created: string;
+            /** Format: date-time */
+            readonly modified: string;
+            author: components["schemas"]["AuthorResults"];
+            theme: number;
+            title?: string | null;
+            description?: string | null;
+            readonly files: components["schemas"]["File"][] | null;
+            /** @description Report whether the submission reached the acceptance threshold. */
+            readonly accepted: boolean;
+            /** @description Return the human-readable award kind when present. */
+            readonly reward_kind: string | null;
+            readonly reward_label: string | null;
         };
         /** @description Represent a newly issued token and its expiration. */
         Token: {

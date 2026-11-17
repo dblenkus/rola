@@ -6,7 +6,8 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from rolca.core.models import Submission
+from rolca.core.models import Submission, SubmissionSet
+from rolca.payment.models import Payment
 from rolca.rating.models import Judge, Rating, ThemeResults
 
 pytestmark = pytest.mark.django_db
@@ -25,6 +26,11 @@ def scores(world):
         )
         for index in range(60)
     )
+    group = SubmissionSet.objects.create(
+        user=world.owner, author=world.author, contest=world.contest
+    )
+    group.submissions.add(*submissions)
+    Payment.objects.create(submissionset=group, paid=True)
     result = {
         submission.pk: 3 + index % 3 for index, submission in enumerate(submissions)
     }

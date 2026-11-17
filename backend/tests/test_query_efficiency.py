@@ -20,7 +20,7 @@ from rolca.rating.models import (
     SubmissionReward,
     ThemeResults,
 )
-from tests.factories import photo, submitted
+from tests.factories import pay, photo, submitted
 
 pytestmark = pytest.mark.django_db
 
@@ -184,6 +184,7 @@ def _rewarded_result(world, judge, index):
     AuthorReward.objects.create(author=author, theme=world.theme, label="Best author")
     submission = submitted(world, author=author)
     submission.files.add(photo(world.owner))
+    pay(submission)
     Rating.objects.create(judge=judge, submission=submission, rating=5)
     SubmissionReward.objects.create(submission=submission, kind=1, label="Gold")
 

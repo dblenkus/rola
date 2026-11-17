@@ -17,6 +17,15 @@ API changes
   timestamps are no longer public. ``/api/v1/submission`` lists only the
   requester's own submissions, also after publication and for
   administrators, and another account's submission answers 404.
+* Theme and submission results publish only entries in a paid submission
+  set, as judging lists only those, and ``submissions_number`` in theme
+  results counts only those. Theme results list their entries as
+  ``ThemeSubmissionResults``, without ``rating``, the total score;
+  ``/api/v1/results/submission`` keeps it. A result author's ``school`` is
+  ``null`` unless the contest sets ``school_show``, and ``club`` unless it
+  sets ``club_show``. The results used to include unpaid entries, theme
+  results the score of every entry, accepted or not, and every author's
+  school and club.
 * ``/api/v1/judge/submission`` leaves out each submission's author. Judges
   used to get the author's name, date of birth, school, mentor, club and
   distinction, which the jury view does not show.

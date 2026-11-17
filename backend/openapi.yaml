@@ -874,7 +874,7 @@ paths:
   /api/v1/results/submission:
     get:
       operationId: results_submission_list
-      description: List and retrieve accepted submissions after publication.
+      description: List and retrieve accepted, paid submissions after publication.
       parameters:
       - in: query
         name: contest
@@ -917,7 +917,7 @@ paths:
   /api/v1/results/submission/{id}:
     get:
       operationId: results_submission_retrieve
-      description: List and retrieve accepted submissions after publication.
+      description: List and retrieve accepted, paid submissions after publication.
       parameters:
       - in: path
         name: id
@@ -2765,7 +2765,7 @@ components:
         submissions:
           type: array
           items:
-            $ref: '#/components/schemas/SubmissionResults'
+            $ref: '#/components/schemas/ThemeSubmissionResults'
           readOnly: true
       required:
       - created
@@ -2775,6 +2775,62 @@ components:
       - submissions
       - submissions_number
       - title
+    ThemeSubmissionResults:
+      type: object
+      description: Serialize a submission in published theme results, without its
+        score.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          $ref: '#/components/schemas/AuthorResults'
+        theme:
+          type: integer
+        title:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
+          nullable: true
+          readOnly: true
+        accepted:
+          type: boolean
+          description: Report whether the submission reached the acceptance threshold.
+          readOnly: true
+        reward_kind:
+          type: string
+          nullable: true
+          description: Return the human-readable award kind when present.
+          readOnly: true
+        reward_label:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+      - accepted
+      - author
+      - created
+      - files
+      - id
+      - modified
+      - reward_kind
+      - reward_label
+      - theme
     Token:
       type: object
       description: Represent a newly issued token and its expiration.

@@ -16,7 +16,11 @@ import ContestService from '../../services/ContestService';
 import LoadingProgress from '../../components/LoadingProgress';
 import ResultsThemeService from '../../services/ResultsThemeService';
 import { requestError } from '../../services/errors';
-import { Contest, ResultsAuthor, ResultsSubmission } from '../../types/api';
+import {
+  Contest,
+  ResultsAuthor,
+  ResultsThemeSubmission,
+} from '../../types/api';
 import groupBy from '../../utils/groupBy';
 
 interface RouteMatchParams {
@@ -30,7 +34,7 @@ const nameCollator = new Intl.Collator('sl');
 const ThemeResults: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [submissionsByAuthor, setSubmissionsByAuthor] = useState<
-    ResultsSubmission[][] | null
+    ResultsThemeSubmission[][] | null
   >(null);
   const [contest, setContest] = useState<Contest | null>(null);
   const [redirect, setRedirect] = useState<null | number>(null);
@@ -64,7 +68,7 @@ const ThemeResults: React.FC = () => {
     fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
-  const getAuthor = (submissions: ResultsSubmission[]): ResultsAuthor => {
+  const getAuthor = (submissions: ResultsThemeSubmission[]): ResultsAuthor => {
     const author = submissions[0]?.author;
     if (!author) {
       throw new Error('Submission group is empty');
@@ -87,13 +91,15 @@ const ThemeResults: React.FC = () => {
     return style;
   };
 
-  const getReward = (submission: ResultsSubmission): string => {
+  const getReward = (submission: ResultsThemeSubmission): string => {
     if (submission.reward_label) return submission.reward_label;
     if (submission.accepted) return 'Accepted';
     return '';
   };
 
-  const getRewardStyle = (submission: ResultsSubmission): CSSProperties => {
+  const getRewardStyle = (
+    submission: ResultsThemeSubmission,
+  ): CSSProperties => {
     const style: CSSProperties = {};
 
     if (submission.reward_kind === 'Gold') {
@@ -109,7 +115,9 @@ const ThemeResults: React.FC = () => {
     return style;
   };
 
-  const getRewardTextStyle = (submission: ResultsSubmission): CSSProperties => {
+  const getRewardTextStyle = (
+    submission: ResultsThemeSubmission,
+  ): CSSProperties => {
     const style: CSSProperties = {};
 
     if (submission.reward_kind === 'Honorable Mention') {
@@ -119,7 +127,7 @@ const ThemeResults: React.FC = () => {
     return style;
   };
 
-  const isAccepted = (submission: ResultsSubmission): boolean =>
+  const isAccepted = (submission: ResultsThemeSubmission): boolean =>
     submission.accepted;
 
   if (redirect)
@@ -139,7 +147,7 @@ const ThemeResults: React.FC = () => {
       <TableContainer component={Paper}>
         <Table>
           <TableBody>
-            {submissionsByAuthor.map((submissions: ResultsSubmission[]) => {
+            {submissionsByAuthor.map((submissions) => {
               const author = getAuthor(submissions);
               let authorDetails = `${author.country}`;
               if (contest.school_show)
