@@ -284,6 +284,9 @@ Fixes
 * A rating that finishes saving after the judge has left the rater no longer
   moves the next rater on, past a photograph or onto a spinner that never
   ends.
+* The rater ignores a rating entered while the previous one is still being
+  saved. Both used to be sent, and the server could store the earlier one
+  last, after the rater had moved on as if the later one were stored.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

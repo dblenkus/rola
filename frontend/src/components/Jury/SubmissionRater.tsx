@@ -12,6 +12,7 @@ import Rating from './Rating';
 interface SubmissionRaterProps {
   submission: JurySubmission;
   rating: number;
+  ratingDisabled: boolean;
   isSeries: boolean;
   isPrevious: boolean;
   isNext: boolean;
@@ -24,6 +25,7 @@ interface SubmissionRaterProps {
 const SubmissionRater: React.FC<SubmissionRaterProps> = ({
   submission,
   rating,
+  ratingDisabled,
   isSeries,
   isPrevious,
   isNext,
@@ -133,6 +135,7 @@ const SubmissionRater: React.FC<SubmissionRaterProps> = ({
         <Rating
           max={10}
           value={rating}
+          disabled={ratingDisabled}
           onChange={(value) => updateRating(value)}
         />
       </div>

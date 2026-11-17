@@ -87,15 +87,26 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     };
   }, [submission]);
 
+  // One save at a time: the server keeps whichever save it handles last, so a
+  // rating sent while another is pending could be overwritten by it. The ref
+  // guards the keys and any input before the disabled stars render.
+  const saveInProgress = useRef(false);
+  const [saving, setSaving] = useState(false);
+
   const updateRating = async (newRating: number): Promise<void> => {
-    if (!submission) return;
+    if (!submission || saveInProgress.current) return;
     const ratedId = submission.id;
+    saveInProgress.current = true;
+    setSaving(true);
     setSaveError(null);
     try {
       await RatingService.updateForSubmission(ratedId, newRating);
     } catch (error) {
       setSaveError({ submissionId: ratedId, message: requestError(error) });
       return;
+    } finally {
+      saveInProgress.current = false;
+      setSaving(false);
     }
     // A judge who moved on stays where they are; the rating is fetched again
     // when they return.
@@ -180,6 +191,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       <SubmissionRater
         submission={submission}
         rating={rating?.submissionId === submission.id ? rating.value : 0}
+        ratingDisabled={saving}
         isSeries={theme?.is_series || false}
         close={handleClose}
         isPrevious={isPrevious}

@@ -16,6 +16,7 @@ it('shows every photograph of a series without React key warnings', () => {
     <SubmissionRater
       submission={{ ...jurySubmission(11, 'Bridges'), files }}
       rating={0}
+      ratingDisabled={false}
       isSeries
       isPrevious={false}
       isNext={false}

@@ -87,6 +87,12 @@ function filledStars(): number {
     .length;
 }
 
+function star(value: number): HTMLElement {
+  const icon = screen.getAllByTestId('StarIcon')[value - 1];
+  if (!icon) throw new Error(`No star for rating ${value}`);
+  return icon;
+}
+
 it('keeps the rater after a failed rating load', async () => {
   let unavailable = true;
   const saves: unknown[] = [];
@@ -251,6 +257,41 @@ it('keeps the next rater on its submission when a closed rater saves late', asyn
   await settle();
   expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
   expect(screen.queryByRole('img', { name: 'Third' })).not.toBeInTheDocument();
+});
+
+it('ignores new ratings while a rating save is pending', async () => {
+  const saves: unknown[] = [];
+  const answers: (() => void)[] = [];
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /judge/submission': () =>
+      page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
+    'GET /rating': () => page([]),
+    'POST /rating': (config) => {
+      saves.push(JSON.parse(String(config.data)));
+      return new Promise((resolve) => answers.push(() => resolve({})));
+    },
+  });
+  const user = userEvent.setup();
+  renderRater();
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+
+  await user.keyboard('5');
+  await waitFor(() => expect(saves).toHaveLength(1));
+  await user.keyboard('7');
+  await user.click(star(7));
+  await settle();
+  expect(saves).toEqual([{ submission: 11, rating: 5 }]);
+  expect(filledStars()).toBe(0);
+
+  answers[0]?.();
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await user.keyboard('7');
+  await waitFor(() => expect(saves).toHaveLength(2));
+  expect(saves).toEqual([
+    { submission: 11, rating: 5 },
+    { submission: 12, rating: 7 },
+  ]);
 });
 
 it('keeps the rater after a failed save', async () => {
