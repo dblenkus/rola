@@ -258,6 +258,8 @@ Fixes
 * An upload or a submission delete that the server refuses because the
   contest has closed says so. A refused delete used to show a permission
   error, or nothing once the reload no longer listed the contest.
+* A photograph removed or replaced in the upload form while it was still
+  being read no longer comes back into the form when the read finishes.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

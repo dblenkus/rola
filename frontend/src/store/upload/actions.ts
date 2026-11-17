@@ -205,6 +205,11 @@ export const imageStore = (
   payload,
 });
 
+// Counts the choices made for each photograph slot of each form. Reading a
+// large photograph takes long enough for the user to remove it or choose
+// another, and only the latest choice may fill the slot.
+const imageChoices = new Map<string, number>();
+
 export const imageUpdate =
   (
     theme_id: number,
@@ -212,8 +217,19 @@ export const imageUpdate =
     image_id: number,
     payload: { file: File | undefined },
   ): AppThunk<Promise<void>> =>
-  async (dispatch) => {
+  async (dispatch, getState) => {
     const { file } = payload;
+    const { uploadKey } = getState().upload;
+    const slot = `${uploadKey}:${theme_id}:${submission_id}:${image_id}`;
+    const choice = (imageChoices.get(slot) ?? 0) + 1;
+    imageChoices.set(slot, choice);
     const url = !file ? '' : (await imageReader(file)).src;
+    // A later choice, or another form, replaced this one during the read.
+    if (
+      imageChoices.get(slot) !== choice ||
+      getState().upload.uploadKey !== uploadKey
+    ) {
+      return;
+    }
     dispatch(imageStore(theme_id, submission_id, image_id, { file, url }));
   };
