@@ -230,12 +230,25 @@ permission. Give that permission only to fully trusted staff. Contest notices
 Uploads
 =======
 
-The frontend uploads each photograph in its own request. The backend rejects
-a photograph larger than 5 MiB, or with a longer edge above 3500 pixels, with
-a validation message. nginx accepts request bodies of up to 10 MiB, so a
-photograph slightly over the limit gets that message instead of a bare 413;
-the TLS terminator must accept the same size. nginx buffers request bodies,
-so a slow upload does not hold a Gunicorn worker.
+The frontend uploads each photograph in its own request. The backend accepts
+JPEG files only, and rejects a photograph larger than 5 MiB, or with a longer
+edge above 3500 pixels, with a validation message. nginx accepts request
+bodies of up to 10 MiB, so a photograph slightly over the limit gets that
+message instead of a bare 413; the TLS terminator must accept the same size.
+nginx buffers request bodies, so a slow upload does not hold a Gunicorn
+worker.
+
+Judges and, once the results are published, anyone can download the stored
+photographs, so the backend stores each without the metadata that could
+identify its author or the place where it was taken. It keeps the compressed
+image unchanged, so the photograph loses no quality, and the metadata that
+displaying it needs: the JFIF header, the ICC colour profile, the Adobe
+colour transform and the EXIF orientation. It drops every other EXIF tag,
+such as the camera owner, the copyright holder and the GPS position, XMP and
+IPTC data, comments, embedded thumbnails and further pictures in the file.
+The thumbnail is made from the stripped photograph. ``manage.py
+stripphotometadata`` strips the photographs and thumbnails stored before,
+under the same names; the data transfer runs it (see :doc:`transfer`).
 
 Contest downloads
 =================

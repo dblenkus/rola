@@ -451,6 +451,25 @@ Copy the data
       print('stored', stored, 'skipped', skipped)
       "
 
+#. Strip the identifying metadata from the copied photographs and their
+   thumbnails, as the new stack does for every upload (see "Uploads" in
+   :doc:`deployment`); the old thumbnails carry the comment of their
+   photograph. The command rewrites each photograph and thumbnail in the new
+   stack's media storage under its name. Only the copies change: the old
+   buckets or media directory keep the originals, so a rollback finds them
+   unchanged. It skips images that have no such metadata, so it can run
+   again after a failure. It names each file that is not a valid JPEG
+   photograph and leaves it, with its metadata, as it is, and names each
+   image that an upload row references but the media storage does not hold.
+   Then it prints how many images it rewrote and skipped, how many files are
+   not valid JPEG photographs and how many are not in storage. Copy an image
+   that is not in storage from the old storage, if it is there, and run the
+   command again:
+
+   .. code-block:: shell
+
+      docker compose run --rm --no-deps -T migrate python manage.py stripphotometadata
+
 Verify and switch
 =================
 

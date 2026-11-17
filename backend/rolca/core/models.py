@@ -31,6 +31,7 @@ from functools import partial
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models.signals import post_delete
@@ -38,6 +39,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
+
+from rolca.core.images import strip_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -279,14 +282,30 @@ class Submission(BaseModel):
 
 
 def validate_image(file):
-    """Validate the upload size and longest image edge."""
+    """Validate the upload size, format and longest image edge.
+
+    The photograph must be a JPEG file whose metadata can be stripped.
+    """
     max_size = settings.ROLCA_MAX_UPLOAD_SIZE
     if file.size > max_size:
         raise ValidationError(f"Max size of file is {max_size}B.")
 
+    # Pillow reports a JPEG file that holds further pictures, as many
+    # cameras write it, as MPO; stripping keeps only its first picture.
+    if file.image.format not in ("JPEG", "MPO"):
+        raise ValidationError("Photographs must be JPEG files.")
+
     max_res = settings.ROLCA_MAX_UPLOAD_RESOLUTION
     if max(file.image.size) > max_res:
         raise ValidationError(f"Max photo resolution is {max_res}px.")
+
+    file.seek(0)
+    try:
+        strip_metadata(file.read())
+    except ValueError as error:
+        raise ValidationError("The photograph is not a valid JPEG file.") from error
+    finally:
+        file.seek(0)
 
 
 class File(BaseModel):
@@ -319,8 +338,18 @@ class File(BaseModel):
     thumbnail = models.ImageField(upload_to=generate_thumb_filename)
 
     def save(self, *args, **kwargs):
-        """Add photo thumbnail and save object."""
+        """Strip the photograph's metadata, add its thumbnail and save object.
+
+        :raises ValueError: On create, if the photograph is not a well-formed
+            JPEG file, which ``validate_image`` refuses.
+        """
         if not self.pk:  # on create
+            # Before the thumbnail and the generated name, which both derive
+            # from the stored photograph.
+            with self.file.open("rb") as upload:
+                photograph = strip_metadata(upload.read())
+            self.file = ContentFile(photograph, name=self.file.name)
+
             thumb = io.BytesIO()
             with Image.open(self.file) as image:
                 image.thumbnail((400, 400), Image.Resampling.LANCZOS)

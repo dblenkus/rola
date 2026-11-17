@@ -96,6 +96,10 @@ API changes
   that the new ``files`` list leaves out, with their stored photographs and
   thumbnails. They used to stay stored without a submission until the
   account was deleted.
+* ``POST /api/v1/file`` accepts JPEG files only and answers 400 for another
+  image format or a damaged JPEG file. Other formats used to be stored or to
+  fail with 500, as a truncated JPEG file did. The stored photograph that
+  ``file`` links to no longer carries the upload's identifying metadata.
 * A submission request, single or batch, creates its submissions and their
   submission set in one transaction. An empty batch, a batch that mixes
   contests or authors, and a photograph used twice answer 400 and create
@@ -242,6 +246,14 @@ Fixes
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.
+* Stored photographs keep only the metadata that displaying them needs: the
+  JFIF header, the colour profile, the Adobe colour transform and the EXIF
+  orientation. The camera owner, copyright holder, GPS position and other
+  EXIF tags, XMP and IPTC data, comments, embedded thumbnails and further
+  pictures used to be stored as uploaded, and a comment was copied into the
+  thumbnail, so judges could read the author's name and, after publication,
+  anyone where a photograph was taken. ``manage.py stripphotometadata``
+  strips photographs and thumbnails stored before; the transfer runs it.
 * The jury view ignores late rating responses for a photograph it has already
   left.
 * The jury gallery and rater show a theme only once they have loaded it:
