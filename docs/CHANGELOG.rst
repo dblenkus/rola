@@ -267,6 +267,9 @@ Fixes
   lets the upload through without it while photographs are selected.
 * The upload form asks for the photo club when the contest requires it,
   instead of marking the field as required and uploading without it.
+* A page that needs a login reloads when another account signs in, in any
+  tab, instead of keeping the previous account's submissions, photographs
+  and author details on screen.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

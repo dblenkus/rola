@@ -694,6 +694,36 @@ describe('submissions edit list', () => {
       [contest.title, 'Mia Zupan', '2', '3', 'EditDelete'],
     ]);
   });
+
+  it('reloads the list for another account that signs in from another tab', async () => {
+    signIn();
+    const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
+    const adapter = serveApi({
+      'GET /contest': () => page([contest]),
+      'GET /submission': (config) =>
+        config.headers.get('Authorization') === 'Token next-account'
+          ? page([{ ...submission(12, 'River'), author: mia }])
+          : page([submission(11, 'Forest')]),
+    });
+    open('/user/submissions');
+    await screen.findByRole('row', { name: /Ana Novak/ });
+    act(() => {
+      signIn('next-account', 'next@example.com');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+    });
+    expect(
+      screen.queryByRole('row', { name: /Ana Novak/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('row', { name: /Mia Zupan/ }),
+    ).toBeInTheDocument();
+    expect(
+      adapter.mock.calls
+        .map(([config]) => config)
+        .filter((config) => config.url === '/submission')
+        .map((config) => config.headers.get('Authorization')),
+    ).toEqual(['Token signed-in', 'Token next-account']);
+  });
 });
 
 describe('theme results', () => {
