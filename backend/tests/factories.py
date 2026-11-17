@@ -6,7 +6,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from drf_user.models import User
-from rolca.core.models import File, Submission
+from rolca.core.models import File, Submission, SubmissionSet
+from rolca.payment.models import Payment
 
 PASSWORD = "test-only-passphrase-A9!"
 
@@ -46,3 +47,14 @@ def submitted(world, **changes):
     )
     data.update(changes)
     return Submission.objects.create(**data)
+
+
+def pay(submission):
+    """Put the submission in a paid submission set and return its payment."""
+    group = SubmissionSet.objects.create(
+        user=submission.user,
+        author=submission.author,
+        contest=submission.theme.contest,
+    )
+    group.submissions.add(submission)
+    return Payment.objects.create(submissionset=group, paid=True)

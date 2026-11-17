@@ -36,7 +36,7 @@ from rolca.rating.models import (
     SubmissionReward,
     ThemeResults,
 )
-from tests.factories import PASSWORD, payload, photo, submitted
+from tests.factories import PASSWORD, pay, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
 
@@ -454,6 +454,7 @@ def test_deleting_a_judge_answers_409(world):
 def test_rating_updates_cannot_move_rating_to_another_contest(world):
     Judge.objects.create(judge=world.owner, contest=world.contest)
     item = submitted(world)
+    pay(item)
     response = world.client.post(
         "/api/v1/rating", {"submission": item.pk, "rating": 3}, format="json"
     )
@@ -465,16 +466,51 @@ def test_rating_updates_cannot_move_rating_to_another_contest(world):
     )
     theme = Theme.objects.create(contest=contest, title="Other", n_photos=4)
     other = submitted(world, theme=theme)
+    pay(other)
     response = world.client.patch(
         f"/api/v1/rating/{response.data['id']}", {"submission": other.pk}, format="json"
     )
     assert response.status_code == 400
 
 
+def test_ratings_of_unpaid_submissions_are_refused(world):
+    Judge.objects.create(judge=world.owner, contest=world.contest)
+    refused = {"submission": ["Only paid submissions can be rated."]}
+    unpaid = submitted(world, user=world.other, author=world.other_author)
+    response = world.client.post(
+        "/api/v1/rating", {"submission": unpaid.pk, "rating": 5}, format="json"
+    )
+    assert response.status_code == 400
+    assert response.data == refused
+    assert not Rating.objects.exists()
+
+    item = submitted(world, user=world.other, author=world.other_author)
+    payment = pay(item)
+    response = world.client.post(
+        "/api/v1/rating", {"submission": item.pk, "rating": 5}, format="json"
+    )
+    assert response.status_code == 201, response.data
+    rating = Rating.objects.get()
+    payment.paid = False
+    payment.save()
+    revoked = [
+        world.client.post(
+            "/api/v1/rating", {"submission": item.pk, "rating": 9}, format="json"
+        ),
+        world.client.patch(f"/api/v1/rating/{rating.pk}", {"rating": 9}, format="json"),
+    ]
+    for response in revoked:
+        assert response.status_code == 400
+        assert response.data == refused
+    rating.refresh_from_db()
+    assert rating.rating == 5
+
+
 @pytest.mark.parametrize("score", [0, 11, -1000])
 def test_rating_scores_outside_1_to_10_are_refused(world, score):
     judge = Judge.objects.create(judge=world.owner, contest=world.contest)
     item = submitted(world)
+    pay(item)
     response = world.client.post(
         "/api/v1/rating", {"submission": item.pk, "rating": score}, format="json"
     )
@@ -595,6 +631,7 @@ def test_published_submissions_stay_private_to_their_owner(world):
 def test_published_scores_are_immutable(world, method):
     judge = Judge.objects.create(judge=world.owner, contest=world.contest)
     item = submitted(world)
+    pay(item)
     rating = Rating.objects.create(
         judge=judge, user=world.owner, submission=item, rating=4
     )

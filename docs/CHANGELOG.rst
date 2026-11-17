@@ -81,8 +81,12 @@ API changes
   submission set in one transaction. An empty batch, a batch that mixes
   contests or authors, and a photograph used twice answer 400 and create
   nothing.
-* Only a judge of the contest can create or change a rating, only until the
-  results are published, and a rating cannot move to another submission.
+* Only a judge of the contest can create or change a rating, only for a paid
+  submission, as the judging list shows, and only until the results are
+  published, and a rating cannot move to another submission. Rating an
+  unpaid submission used to succeed through the API, so its score counted
+  towards acceptance in the results; now it answers 400, as does changing a
+  rating after the submission's payment was revoked.
 * A judge has one rating per submission. Two saves of a judge's first rating
   at once used to store two ratings, which the results added up and which
   made every later change of that rating fail with 500; now the later save

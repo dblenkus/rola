@@ -48,7 +48,7 @@ class RatingSerializer(BaseSerializer):
         return rating
 
     def validate(self, attrs):
-        """Keep a rating tied to its original submission and active judge."""
+        """Keep a rating tied to its original, paid submission and active judge."""
         submission = attrs.get(
             "submission", self.instance.submission if self.instance else None
         )
@@ -66,6 +66,17 @@ class RatingSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError(
                 "Only active judges can rate this contest."
+            )
+        # The judging list shows paid submissions only. Checked after the judge,
+        # so other accounts cannot probe whether a submission is paid.
+        if (
+            submission
+            and not Submission.objects.filter(
+                pk=submission.pk, submissionset__payment__paid=True
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                {"submission": "Only paid submissions can be rated."}
             )
         return attrs
 
