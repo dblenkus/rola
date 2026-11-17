@@ -255,6 +255,9 @@ Fixes
 * Retrying an upload whose response was lost no longer enters its
   submissions a second time: every attempt from one upload form sends the
   same ``Idempotency-Key``.
+* An upload or a submission delete that the server refuses because the
+  contest has closed says so. A refused delete used to show a permission
+  error, or nothing once the reload no longer listed the contest.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

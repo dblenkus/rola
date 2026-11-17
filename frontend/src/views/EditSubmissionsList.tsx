@@ -1,5 +1,7 @@
 import React from 'react';
 
+import axios from 'axios';
+
 import { WithTranslation, withTranslation } from 'react-i18next';
 
 import {
@@ -108,7 +110,15 @@ class EditSubmissionsList extends React.Component<
         await SubmissionService.deleteSubmission(submission.id);
       }
     } catch (error) {
-      this.setState({ deleteError: requestError(error) });
+      // Only the owner's submissions are listed, so a refusal means the
+      // contest has closed.
+      const closed =
+        axios.isAxiosError(error) && error.response?.status === 403;
+      this.setState({
+        deleteError: closed
+          ? 'This contest has closed, so its submissions can no longer be deleted.'
+          : requestError(error),
+      });
     }
     await this.fetchSubmissions();
   };
@@ -118,12 +128,20 @@ class EditSubmissionsList extends React.Component<
     if (error) return <Alert severity="error">{error}</Alert>;
     if (!allSubmissions) return <LoadingProgress />;
     const { t } = this.props;
+    const deleteAlert = this.state.deleteError && (
+      <Alert severity="error">{this.state.deleteError}</Alert>
+    );
 
+    // A closed contest drops out of the reload after a refused delete, and
+    // with it possibly every submission listed.
     if (!allSubmissions.length)
       return (
-        <Typography align="center" variant="h3">
-          You don't have any active submission to edit.
-        </Typography>
+        <>
+          {deleteAlert}
+          <Typography align="center" variant="h3">
+            You don't have any active submission to edit.
+          </Typography>
+        </>
       );
 
     const groupedSubmissions: GroupedSubmissions[] = [];
@@ -156,9 +174,7 @@ class EditSubmissionsList extends React.Component<
 
     return (
       <>
-        {this.state.deleteError && (
-          <Alert severity="error">{this.state.deleteError}</Alert>
-        )}
+        {deleteAlert}
         <TableContainer component={Paper}>
           <Table>
             <TableHead>

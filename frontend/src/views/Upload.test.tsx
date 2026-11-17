@@ -257,6 +257,30 @@ describe('photograph upload', () => {
     expect(submissionKeys[2]).not.toBe(lost);
   });
 
+  it('explains an upload refused because the contest closed', async () => {
+    uploadApi({
+      'POST /submission': (config) => {
+        throw httpError(config, 403, {
+          detail: 'This contest is not accepting entries.',
+        });
+      },
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText(
+        'The contest is closed. Your photographs were not submitted.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Upload failed. Please try again.'),
+    ).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe('/contest/1/upload');
+  });
+
   it('asks for a photograph before sending anything', async () => {
     const adapter = uploadApi();
     const user = userEvent.setup();

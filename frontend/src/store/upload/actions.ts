@@ -116,8 +116,18 @@ export const uploadSubmit =
       if (!axios.isAxiosError(error)) {
         throw error;
       }
+      // The server checks the contest's entry window when the submissions
+      // are created, and the contest may have closed since the form opened.
+      const closed =
+        error.config?.url === '/submission' && error.response?.status === 403;
       if (current()) {
-        dispatch(addNotificationError('Upload failed. Please try again.'));
+        dispatch(
+          addNotificationError(
+            closed
+              ? 'The contest is closed. Your photographs were not submitted.'
+              : 'Upload failed. Please try again.',
+          ),
+        );
       }
       return false;
     } finally {

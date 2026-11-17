@@ -601,7 +601,7 @@ describe('submissions edit list', () => {
         return null;
       },
       'DELETE /submission/12': (config) => {
-        throw httpError(config, 403, { detail: 'Forbidden' });
+        throw httpError(config, 503);
       },
     });
     const user = userEvent.setup();
@@ -613,9 +613,7 @@ describe('submissions edit list', () => {
       }),
     );
     expect(
-      await screen.findByText(
-        'You do not have permission to perform this action.',
-      ),
+      await screen.findByText('Request failed. Please try again.'),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(
@@ -624,6 +622,39 @@ describe('submissions edit list', () => {
           .map((cell) => cell.textContent),
       ).toEqual([contest.title, 'Ana Novak', '1', '1', 'EditDelete']),
     );
+  });
+
+  it('explains a delete refused because the contest closed', async () => {
+    signIn();
+    let activeContests = [contest];
+    serveApi({
+      'GET /contest': () => page(activeContests),
+      'GET /submission': () => page([submission(11, 'First')]),
+      'DELETE /submission/11': (config) => {
+        // The contest closed after the list loaded, so the reload no longer
+        // lists it.
+        activeContests = [];
+        throw httpError(config, 403, {
+          detail: 'This contest is not accepting entries.',
+        });
+      },
+    });
+    const user = userEvent.setup();
+    open('/user/submissions');
+    await user.click(await screen.findByRole('button', { name: 'Delete' }));
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Yes',
+      }),
+    );
+    expect(
+      await screen.findByText("You don't have any active submission to edit."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'This contest has closed, so its submissions can no longer be deleted.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('lists one row per author in the order the authors were created', async () => {
