@@ -260,6 +260,9 @@ Fixes
   error, or nothing once the reload no longer listed the contest.
 * A photograph removed or replaced in the upload form while it was still
   being read no longer comes back into the form when the read finishes.
+* A photograph the browser cannot read, such as HEIC data saved as ``.jpg``,
+  shows "Invalid file." in the upload form as soon as it is chosen. The form
+  used to ignore it silently and keep the photograph chosen before.
 * Deleting a submission or a submission set also deletes its photographs
   and thumbnails from storage, and so does deleting a contest or a theme in
   the Django admin.

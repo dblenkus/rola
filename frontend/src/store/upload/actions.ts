@@ -14,6 +14,7 @@ import { Contest, Theme } from '../../types/api';
 import {
   ContestModel,
   DateChange,
+  ImageError,
   ImageMeta,
   InputChange,
   SubmissionMeta,
@@ -37,6 +38,7 @@ import {
   UploadActionTypes,
   IMAGE_STORE,
 } from './types';
+import { getEmptyImageError } from './utils';
 
 export const uploadInit = (
   contest: Contest,
@@ -196,7 +198,7 @@ export const imageStore = (
   theme_id: number,
   submission_id: number,
   image_id: number,
-  payload: { file: File | undefined; url: string },
+  payload: { file: File | undefined; url: string; errors: ImageError },
 ): UploadActionTypes => ({
   type: IMAGE_STORE,
   theme_id,
@@ -223,7 +225,18 @@ export const imageUpdate =
     const slot = `${uploadKey}:${theme_id}:${submission_id}:${image_id}`;
     const choice = (imageChoices.get(slot) ?? 0) + 1;
     imageChoices.set(slot, choice);
-    const url = !file ? '' : (await imageReader(file)).src;
+    let url = '';
+    let errors = getEmptyImageError();
+    if (file) {
+      try {
+        url = (await imageReader(file)).src;
+      } catch {
+        // The browser cannot decode it, for example HEIC data saved as .jpg.
+        // The slot takes the file with the error rather than keeping an
+        // earlier choice the entrant meant to replace.
+        errors = { file: 'Invalid file.', hasError: true };
+      }
+    }
     // A later choice, or another form, replaced this one during the read.
     if (
       imageChoices.get(slot) !== choice ||
@@ -231,5 +244,7 @@ export const imageUpdate =
     ) {
       return;
     }
-    dispatch(imageStore(theme_id, submission_id, image_id, { file, url }));
+    dispatch(
+      imageStore(theme_id, submission_id, image_id, { file, url, errors }),
+    );
   };

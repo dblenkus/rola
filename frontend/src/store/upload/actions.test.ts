@@ -53,8 +53,59 @@ const chosen = (store: Store) => {
   return { name: file?.name, url };
 };
 
+// The error the field shows under that photograph.
+const imageErrors = (store: Store) =>
+  store.getState().upload.contest.themes[0]!.submissions[0]!.images[0]!.errors;
+
 const photograph = (name: string) =>
   new File(['jpeg'], name, { type: 'image/jpeg' });
+
+// The browser fails to decode the next photograph read, as it does for
+// HEIC data saved as .jpg.
+const failNextRead = () =>
+  vi
+    .mocked(imageReader)
+    .mockRejectedValueOnce(new DOMException('Problem reading input file.'));
+
+it('reports a photograph the browser cannot read', async () => {
+  const store = openForm();
+  const readable = photograph('readable.jpg');
+  const reading = select(store, readable);
+  finishRead(readable);
+  await reading;
+
+  failNextRead();
+  await expect(
+    select(store, photograph('broken.jpg')),
+  ).resolves.toBeUndefined();
+
+  expect(chosen(store)).toEqual({ name: 'broken.jpg', url: '' });
+  expect(imageErrors(store)).toEqual({
+    file: 'Invalid file.',
+    hasError: true,
+  });
+});
+
+it('drops the read error when the photograph is replaced or removed', async () => {
+  const store = openForm();
+  failNextRead();
+  await select(store, photograph('broken.jpg'));
+  const readable = photograph('readable.jpg');
+  const reading = select(store, readable);
+  finishRead(readable);
+  await reading;
+  expect(chosen(store)).toEqual({
+    name: 'readable.jpg',
+    url: 'blob:readable.jpg',
+  });
+  expect(imageErrors(store)).toEqual({ file: null, hasError: false });
+
+  failNextRead();
+  await select(store, photograph('broken.jpg'));
+  await select(store, undefined);
+  expect(chosen(store)).toEqual({ name: undefined, url: '' });
+  expect(imageErrors(store)).toEqual({ file: null, hasError: false });
+});
 
 it('leaves a photograph removed during its read out of the form', async () => {
   const store = openForm();

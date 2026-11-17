@@ -2,6 +2,7 @@ import { Contest, Theme } from '../../types/api';
 import {
   ContestModel,
   DateChange,
+  ImageError,
   ImageMeta,
   InputChange,
   SubmissionMeta,
@@ -94,7 +95,7 @@ type ImageStoreAction = {
   theme_id: number;
   submission_id: number;
   image_id: number;
-  payload: { file: File | undefined; url: string };
+  payload: { file: File | undefined; url: string; errors: ImageError };
 };
 
 export type UploadActionTypes =
