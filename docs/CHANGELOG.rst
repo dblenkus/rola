@@ -69,6 +69,10 @@ API changes
 * Validation errors for a batch submission, a list in the request body, are
   an object keyed by the index of each failing item instead of a list with an
   entry per item, as Django REST framework 3.18 reports them.
+* Every error on a submission's ``files`` is a list of messages, as on the
+  other fields. An upload deleted while a submission request attached it
+  used to answer ``{"files": "An upload is no longer available."}``, with a
+  string.
 * Submissions can be created, changed and deleted only while their contest
   accepts entries: from its start date to its end date, and before its
   results are published. Outside that window these requests answer 403 with

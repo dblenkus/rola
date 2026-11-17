@@ -352,7 +352,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             for file in locked
         ):
             raise exceptions.ValidationError(
-                {"files": "An upload is no longer available."}
+                {"files": ["An upload is no longer available."]}
             )
 
     @transaction.atomic

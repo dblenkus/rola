@@ -533,6 +533,41 @@ def test_concurrent_uploads_with_one_key_create_one_set(world, mailoutbox):
     assert len(mailoutbox) == 1
 
 
+@pytest.mark.skipif(
+    connection.vendor != "postgresql", reason="Row locks need PostgreSQL."
+)
+@pytest.mark.django_db(transaction=True)
+def test_an_upload_deleted_during_a_submission_answers_a_files_error(world):
+    image = photo(world.owner)
+    data = payload(world, files=[{"id": image.pk}])
+    client = APIClient()
+    client.force_authenticate(world.owner)
+    backend_pids = queue.SimpleQueue()
+
+    def submit_on_another_connection():
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_backend_pid()")
+                backend_pids.put(cursor.fetchone()[0])
+            return client.post("/api/v1/submission", data, format="json")
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with transaction.atomic():
+            File.objects.select_for_update().get(pk=image.pk)
+            submission = executor.submit(submit_on_another_connection)
+            # The submission has validated the upload, waits for its row lock
+            # and then finds it deleted.
+            wait_until_blocked_by_this_connection(backend_pids.get(timeout=10))
+            File.objects.filter(pk=image.pk).delete()
+        response = submission.result(timeout=10)
+
+    assert response.status_code == 400
+    assert response.json() == {"files": ["An upload is no longer available."]}
+    assert not Submission.objects.exists()
+
+
 def test_contest_and_institution_filters_are_applied(world):
     Contest.objects.create(
         title="Past",
