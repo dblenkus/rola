@@ -1,7 +1,1 @@
-""".. Ignore pydocstyle D400.
-
-========
-Payments
-========
-
-"""
+"""Record whether a submission set is paid."""

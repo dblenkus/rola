@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==================
-Contests API views
-==================
-
-.. autoclass:: rola.contests.api.views.ContestViewSet
-    :members:
-
-"""
+"""Serve the contest and institution endpoints."""
 
 from django.db.models import Count, Prefetch
 from rest_framework import mixins, viewsets

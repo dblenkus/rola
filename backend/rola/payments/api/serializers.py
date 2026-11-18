@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-=======================
-Payment API serializers
-=======================
-
-.. autoclass:: rola.payments.api.serializers.PaymentSerializer
-    :members:
-
-"""
+"""Serialize payments for the API."""
 
 from rola.common.serializers import BaseSerializer
 from rola.payments.models import Payment

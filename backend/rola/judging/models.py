@@ -1,16 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-=============
-Rating models
-=============
-
-.. autoclass:: rola.judging.models.Judge
-    :members:
-
-.. autoclass:: rola.judging.models.Rating
-    :members:
-
-"""
+"""Store judges, ratings, results and rewards."""
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator

@@ -1,38 +1,17 @@
-""".. Ignore pydocstyle D400.
+"""Download a contest's photographs."""
 
-=============
-Entries views
-=============
-
-.. autofunction:: rola.entries.views.upload
-
-"""
-
-import json
-import logging
-import os
 import shutil
 import tempfile
 import time
 import zipfile
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import (
-    FileResponse,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseForbidden,
-    HttpResponseNotAllowed,
-)
+from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
-from django.views.decorators.csrf import csrf_exempt
 
 from rola.contests.models import Contest, Theme
-from rola.entries.models import File, Submission
-
-logger = logging.getLogger(__name__)
+from rola.entries.models import Submission
 
 
 @login_required
@@ -100,53 +79,3 @@ def write_contest_archive(contest, archive):
                         zip_archive.open(entry, "w") as target,
                     ):
                         shutil.copyfileobj(source, target)
-
-
-@csrf_exempt
-def upload(request):
-    """Handle uploaded photo and create new File object."""
-    if request.method != "POST":
-        logger.warning("Upload request other than POST.")
-        return HttpResponseNotAllowed(["POST"], "Only POST accepted")
-
-    if not request.user.is_authenticated:
-        logger.warning("Anonymous user tried to upload file.")
-        return HttpResponseForbidden("Please login!")
-
-    if request.FILES is None:
-        logger.warning("Upload request without attached image.")
-        return HttpResponseBadRequest("Must have files attached!")
-
-    fn = request.FILES["files[]"]
-    logger.info("Image received.")
-
-    file_ = File(file=fn, user=request.user)
-
-    if file_.file.size > settings.MAX_UPLOAD_SIZE:
-        logger.warning("Too big file.")
-        return HttpResponseBadRequest(
-            f"File can't excede size of {settings.MAX_UPLOAD_SIZE / 1024}KB"
-        )
-
-    max_image_resolution = settings.MAX_IMAGE_RESOLUTION
-    if max(file_.file.width, file_.file.height) > max_image_resolution:
-        logger.warning("Too big file.")
-        return HttpResponseBadRequest(
-            f"File can't excede size of {settings.MAX_IMAGE_RESOLUTION}px"
-        )
-
-    file_.save()
-
-    result = []
-    result.append(
-        {
-            "name": os.path.basename(file_.file.name),
-            "size": file_.file.size,
-            "url": file_.file.url,
-            "thumbnail": file_.thumbnail.url,
-            "delete_url": "",
-            "delete_type": "POST",
-        }
-    )
-    response_data = json.dumps(result)
-    return HttpResponse(response_data, content_type="application/json")

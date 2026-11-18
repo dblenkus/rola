@@ -1,16 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-=======================
-Entries API serializers
-=======================
-
-.. autoclass:: rola.entries.api.serializers.FileSerializer
-    :members:
-
-.. autoclass:: rola.entries.api.serializers.SubmissionSerializer
-    :members:
-
-"""
+"""Serialize authors, photographs, submissions and submission sets."""
 
 from rest_framework import serializers
 

@@ -1,4 +1,4 @@
-""".. Ignore pydocstyle D400."""
+"""List the payment API routes."""
 
 from rola.payments.api.views import (
     PaymentViewSet,

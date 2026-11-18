@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-======================
-Rating API permissions
-======================
-
-.. autoclass:: rola.judging.api.permissions.IsActiveJudge
-    :members:
-
-"""
+"""Check who may judge a contest and change a rating."""
 
 from django.utils import timezone
 from rest_framework import permissions

@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-=======================
-Entries API permissions
-=======================
-
-.. autoclass:: rola.entries.api.permissions.IsSubmissionOwnerOrReadOnly
-    :members:
-
-"""
+"""Check who may change entries and when."""
 
 from rest_framework import exceptions, permissions
 

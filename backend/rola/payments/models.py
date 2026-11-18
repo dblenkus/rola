@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==============
-Payment models
-==============
-
-.. autoclass:: rola.payments.models.Payment
-    :members:
-
-"""
+"""Store the payment state of submission sets."""
 
 from django.db import models
 

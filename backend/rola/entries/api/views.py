@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-=================
-Entries API views
-=================
-
-.. autoclass:: rola.entries.api.views.FileViewSet
-    :members:
-
-"""
+"""Serve the author, photograph, submission and submission set endpoints."""
 
 import logging
 import uuid

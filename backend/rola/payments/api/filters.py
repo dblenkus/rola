@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-===================
-Payment API filters
-===================
-
-"""
+"""Filter the payment API endpoint."""
 
 from django_filters import rest_framework as filters
 

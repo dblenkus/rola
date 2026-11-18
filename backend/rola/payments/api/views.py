@@ -1,4 +1,4 @@
-""".. Ignore pydocstyle D400."""
+"""Serve the payment API endpoint."""
 
 from rest_framework import viewsets
 

@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-====================
-Contests API filters
-====================
-
-"""
+"""Filter the contest and institution endpoints."""
 
 from django.utils import timezone
 from django_filters import rest_framework as filters
