@@ -12,16 +12,16 @@ import {
   Typography,
 } from '@mui/material';
 
-import ContestService from '../../features/contests/api/ContestService';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
-import ResultsThemeService from '../../services/ResultsThemeService';
-import { requestError } from '../../shared/api/errors';
+import ContestService from '../../contests/api/ContestService';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import ResultsThemeService from '../api/ResultsThemeService';
+import { requestError } from '../../../shared/api/errors';
 import {
   Contest,
   ResultsAuthor,
   ResultsThemeSubmission,
-} from '../../shared/api/types';
-import groupBy from '../../shared/utils/groupBy';
+} from '../../../shared/api/types';
+import groupBy from '../../../shared/utils/groupBy';
 
 interface RouteMatchParams {
   contestId: string;

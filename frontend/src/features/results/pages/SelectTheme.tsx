@@ -13,10 +13,10 @@ import {
   TableRow,
 } from '@mui/material';
 
-import ContestService from '../../features/contests/api/ContestService';
-import { requestError } from '../../shared/api/errors';
-import { Contest } from '../../shared/api/types';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
+import ContestService from '../../contests/api/ContestService';
+import { requestError } from '../../../shared/api/errors';
+import { Contest } from '../../../shared/api/types';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
 
 interface RouteMatchParams {
   contestId: string;
