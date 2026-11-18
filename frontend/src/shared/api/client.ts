@@ -1,7 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-import store from '../../app/store';
-import { addNotificationError } from '../../features/notifications/state/actions';
 import { loadToken, rejectToken } from './token';
 
 declare module 'axios' {
@@ -22,6 +20,14 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config);
 
+let unexpectedFailureHandler: (() => void) | null = null;
+
+// Registers what a failure no view can explain (no response, server errors)
+// raises; the app registers it at start-up.
+export function onUnexpectedFailure(handler: () => void): void {
+  unexpectedFailureHandler = handler;
+}
+
 // A request that names its session keeps it, so that an upload acts for the
 // account that started it after another account signs in.
 apiClient.interceptors.request.use((config) => {
@@ -35,7 +41,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // Views show client errors in place; only failures they cannot explain
-// (no response, server errors) also raise a global notification.
+// (no response, server errors) also go to the registered handler.
 apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
@@ -57,7 +63,10 @@ apiClient.interceptors.response.use(
       !error.response ||
       error.response.status >= 500
     ) {
-      store.dispatch(addNotificationError('Network error occurred.'));
+      if (!unexpectedFailureHandler) {
+        throw new Error('No handler for unexpected API failures is registered');
+      }
+      unexpectedFailureHandler();
     }
     return Promise.reject(error);
   },
