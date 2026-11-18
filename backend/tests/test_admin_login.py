@@ -8,7 +8,7 @@ from django.test import Client, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from drf_user.throttling import LoginThrottle
+from rola.accounts.throttling import LoginThrottle
 from tests.factories import PASSWORD, create_user
 
 pytestmark = pytest.mark.django_db

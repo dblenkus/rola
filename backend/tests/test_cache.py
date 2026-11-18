@@ -6,7 +6,7 @@ from django.db import connection
 from django.test import Client
 from django.urls import reverse
 
-from drf_user.models import User
+from rola.accounts.models import User
 
 pytestmark = pytest.mark.django_db
 

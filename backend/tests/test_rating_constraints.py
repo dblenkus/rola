@@ -10,8 +10,8 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
-from rolca.core.models import Author, Contest, Submission, Theme
-from rolca.rating.models import Judge, Rating
+from rola.contests.models import Author, Contest, Submission, Theme
+from rola.judging.models import Judge, Rating
 
 
 def create_judge_and_submission():

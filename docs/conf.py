@@ -8,7 +8,7 @@ from pathlib import Path
 import django
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-os.environ["DJANGO_SETTINGS_MODULE"] = "rola.test_settings"
+os.environ["DJANGO_SETTINGS_MODULE"] = "rola.config.test_settings"
 django.setup()
 
 project = "Rola"

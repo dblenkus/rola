@@ -89,7 +89,7 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/venv" -r "$RUNNER_TEMP/requirements.txt"
           uv pip install --python "$RUNNER_TEMP/venv" --no-deps "$RUNNER_TEMP"/dist/*.whl
           cd "$RUNNER_TEMP"
-          DJANGO_SETTINGS_MODULE=rola.test_settings venv/bin/python -I - <<'PY'
+          DJANGO_SETTINGS_MODULE=rola.config.test_settings venv/bin/python -I - <<'PY'
           import django
           from django.core.management import call_command
           from django.template.loader import get_template
@@ -97,7 +97,7 @@ jobs:
 
           django.setup()
 
-          from rolca.core.models import Contest
+          from rola.contests.models import Contest
 
           call_command("check")
           call_command("migrate", verbosity=0)
@@ -106,7 +106,7 @@ jobs:
               assert str(Contest._meta.verbose_name) == "natečaj"
           for purpose in ("registration", "password_reset", "existing_account"):
               for name in ("email_subject.txt", "email_body.txt", "email_body.html"):
-                  get_template(f"drf_user/{purpose}/{name}")
+                  get_template(f"accounts/{purpose}/{name}")
           PY
       - name: Audit the locked runtime dependencies
         run: |

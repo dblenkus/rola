@@ -1,6 +1,6 @@
 """Apply contest rules to the account endpoints.
 
-``drf_user`` knows nothing about contests, so the rules that tie an account
+``rola.accounts`` knows nothing about contests, so the rules that tie an account
 to its entries live in the host project.
 """
 
@@ -8,8 +8,8 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import exceptions
 
-from drf_user import views as user_views
-from rolca.core.models import Submission
+from rola.accounts import views as user_views
+from rola.contests.models import Submission
 
 
 class UserViewSet(user_views.UserViewSet):

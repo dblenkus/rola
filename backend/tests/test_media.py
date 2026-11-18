@@ -17,9 +17,11 @@ from django.db import connection, transaction
 from django.utils import timezone
 from PIL import ExifTags, Image, ImageCms
 
-from drf_user.models import User
-from drf_user.tests.test_account_security import wait_until_blocked_by_this_connection
-from rolca.core.models import Author, Contest, File, SubmissionSet
+from rola.accounts.models import User
+from rola.accounts.tests.test_account_security import (
+    wait_until_blocked_by_this_connection,
+)
+from rola.contests.models import Author, Contest, File, SubmissionSet
 from tests.factories import create_user, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db

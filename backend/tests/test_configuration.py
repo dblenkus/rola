@@ -11,8 +11,8 @@ import pytest
 from django.test import Client, override_settings
 from django.utils.module_loading import import_string
 
-import rola.settings
-from rola.environment import boolean
+import rola.config.settings
+from rola.config.environment import boolean
 
 REQUIRED_ENVIRONMENT = {
     "ROLA_SECRET_KEY": "test-only-secret-key",
@@ -43,7 +43,7 @@ def load_settings(monkeypatch):
     def load(variables):
         for name, value in variables.items():
             monkeypatch.setenv(name, value)
-        return runpy.run_path(rola.settings.__file__)
+        return runpy.run_path(rola.config.settings.__file__)
 
     return load
 
@@ -232,7 +232,7 @@ def test_server_errors_are_logged_to_the_console():
     previous_stream = handler.setStream(console)
     try:
         with patch(
-            "rolca.core.api.views.ContestViewSet.list",
+            "rola.contests.api.views.ContestViewSet.list",
             side_effect=RuntimeError("database unavailable"),
         ):
             response = Client(raise_request_exception=False).get("/api/v1/contest")
