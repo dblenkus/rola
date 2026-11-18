@@ -16,7 +16,8 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from rola.contests.models import Author, BaseModel, Contest, Submission, Theme
+from rola.contests.models import BaseModel, Contest, Theme
+from rola.entries.models import Author, Submission
 
 
 class Judge(BaseModel):

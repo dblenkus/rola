@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from rola.contests.models import File
+from rola.entries.models import File
 
 #: Younger uploads and stored images may belong to an upload in progress,
 #: whose submission does not exist yet.

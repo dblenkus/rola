@@ -1,8 +1,8 @@
 """.. Ignore pydocstyle D400.
 
-==========
-Core Admin
-==========
+==============
+Contests admin
+==============
 
 .. autoclass:: rola.contests.admin.ThemeInline
     :members:
@@ -16,7 +16,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from rola.contests.models import Contest, File, Submission, Theme
+from rola.contests.models import Contest, Theme
 
 
 class ThemeInline(admin.TabularInline):
@@ -87,7 +87,7 @@ class ContestAdmin(admin.ModelAdmin):
         """Generate 'Download' button."""
         return format_html(
             '<a class="button" href="{}">Download</a>',
-            reverse("contests:download-contest", args=[obj.pk]),
+            reverse("entries:download-contest", args=[obj.pk]),
         )
 
     download_action.short_description = "Download"
@@ -95,5 +95,3 @@ class ContestAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Contest, ContestAdmin)
-admin.site.register(Submission)
-admin.site.register(File)

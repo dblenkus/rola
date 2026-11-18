@@ -1,10 +1,10 @@
 """.. Ignore pydocstyle D400.
 
-==========
-Core views
-==========
+=============
+Entries views
+=============
 
-.. autofunction:: rola.contests.views.upload
+.. autofunction:: rola.entries.views.upload
 
 """
 
@@ -29,7 +29,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
 
-from rola.contests.models import Contest, File, Submission, Theme
+from rola.contests.models import Contest, Theme
+from rola.entries.models import File, Submission
 
 logger = logging.getLogger(__name__)
 

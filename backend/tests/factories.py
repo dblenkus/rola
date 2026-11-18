@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from rola.accounts.models import User
-from rola.contests.models import File, Submission, SubmissionSet
+from rola.entries.models import File, Submission, SubmissionSet
 from rola.payments.models import Payment
 
 PASSWORD = "test-only-passphrase-A9!"

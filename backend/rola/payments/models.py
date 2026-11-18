@@ -11,7 +11,8 @@ Payment models
 
 from django.db import models
 
-from rola.contests.models import BaseModel, SubmissionSet
+from rola.contests.models import BaseModel
+from rola.entries.models import SubmissionSet
 
 
 class Payment(BaseModel):

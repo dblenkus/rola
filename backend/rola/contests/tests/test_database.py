@@ -3,7 +3,8 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from rola.contests.models import Author, Contest, Submission, Theme
+from rola.contests.models import Contest, Theme
+from rola.entries.models import Author, Submission
 
 
 class DatabaseTestCase(unittest.TestCase):

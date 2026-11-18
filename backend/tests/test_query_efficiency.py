@@ -11,7 +11,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from rola.accounts.models import Location
-from rola.contests.models import Author, SubmissionSet, Theme
+from rola.contests.models import Theme
+from rola.entries.models import Author, SubmissionSet
 from rola.judging.models import (
     AuthorReward,
     Judge,

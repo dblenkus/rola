@@ -11,8 +11,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory, APITestCase, force_authenticate
 
-from rola.contests.api.views import ContestViewSet, FileViewSet, SubmissionViewSet
-from rola.contests.models import Author, Contest, File, Submission, Theme
+from rola.contests.api.views import ContestViewSet
+from rola.contests.models import Contest, Theme
+from rola.entries.api.views import FileViewSet, SubmissionViewSet
+from rola.entries.models import Author, File, Submission
 from tests.factories import create_user
 
 
@@ -253,7 +255,7 @@ class FileViewSetTest(APITestCase):
         headers = {"HTTP_CONTENT_DISPOSITION": "attachment; filename=test.jpg;"}
         return self.factory.post("", photo, content_type="image/jpeg", **headers)
 
-    @patch("rola.contests.api.views.FileViewSet.create")
+    @patch("rola.entries.api.views.FileViewSet.create")
     def test_create_permissions(self, file_create_mock):
         file_create_mock.return_value = Response()
         request = self.factory.post("", format="json")

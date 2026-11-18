@@ -27,15 +27,8 @@ from rola.accounts.models import Email, User
 from rola.accounts.tests.test_account_security import (
     wait_until_blocked_by_this_connection,
 )
-from rola.contests.models import (
-    Author,
-    Contest,
-    File,
-    Institution,
-    Submission,
-    SubmissionSet,
-    Theme,
-)
+from rola.contests.models import Contest, Institution, Theme
+from rola.entries.models import Author, File, Submission, SubmissionSet
 from rola.judging.models import (
     AuthorReward,
     Judge,
@@ -178,7 +171,7 @@ def test_submission_database_failure_rolls_back_files_and_records(
     with (
         django_capture_on_commit_callbacks(execute=True) as callbacks,
         patch(
-            "rola.contests.api.views.SubmissionSet.objects.create",
+            "rola.entries.api.views.SubmissionSet.objects.create",
             side_effect=RuntimeError("database failure"),
         ),
         pytest.raises(RuntimeError, match="database failure"),

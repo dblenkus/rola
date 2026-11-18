@@ -1,8 +1,8 @@
 """.. Ignore pydocstyle D400.
 
-========
-Core API
-========
+============
+Contests API
+============
 
 .. automodule:: rola.contests.api.views
 .. automodule:: rola.contests.api.serializers

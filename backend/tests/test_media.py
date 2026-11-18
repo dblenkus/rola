@@ -21,7 +21,8 @@ from rola.accounts.models import User
 from rola.accounts.tests.test_account_security import (
     wait_until_blocked_by_this_connection,
 )
-from rola.contests.models import Author, Contest, File, SubmissionSet
+from rola.contests.models import Contest
+from rola.entries.models import Author, File, SubmissionSet
 from tests.factories import create_user, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db

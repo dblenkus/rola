@@ -6,7 +6,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from rola.contests.models import Submission, SubmissionSet
+from rola.entries.models import Submission, SubmissionSet
 from rola.judging.models import Judge, Rating, ThemeResults
 from rola.payments.models import Payment
 

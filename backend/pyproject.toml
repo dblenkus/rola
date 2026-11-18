@@ -44,7 +44,7 @@ include = ["rola*", "utils*"]
 exclude = ["*.tests", "*.tests.*"]
 
 [tool.setuptools.package-data]
-"rola.contests" = ["locale/sl/LC_MESSAGES/django.*"]
+"rola" = ["locale/sl/LC_MESSAGES/django.*"]
 "rola.accounts" = ["templates/**/*.txt", "templates/**/*.html"]
 
 [tool.pytest]
@@ -71,7 +71,7 @@ ignore = ["E501", "D202"]
 convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
-"!rola/{contests,payments,judging}/**" = ["D"]
+"!rola/{contests,entries,payments,judging}/**" = ["D"]
 "**/tests/**" = ["D"]
 
 [tool.mypy]

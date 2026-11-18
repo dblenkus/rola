@@ -2,7 +2,7 @@
 
 from django.db.models import QuerySet
 
-from rola.contests.models import Submission
+from rola.entries.models import Submission
 
 
 def with_submission_details(queryset: QuerySet[Submission]) -> QuerySet[Submission]:
