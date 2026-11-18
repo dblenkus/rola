@@ -1,8 +1,10 @@
 """Enter and change submissions under the contest's rules.
 
-Every function here expects to run inside the caller's transaction, after
-:func:`lock_account` has locked the requester's account. The rules raise
-the REST framework's exceptions, so the API answers with their payloads.
+:func:`require_open_contest` and :func:`refuse_closed_entries` check a
+contest's dates and may run anywhere. Every other function here expects to
+run inside the caller's transaction, after :func:`lock_account` has locked
+the requester's account. The rules raise the REST framework's exceptions, so
+the API answers with their payloads.
 """
 
 import uuid
@@ -13,12 +15,36 @@ from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import QuerySet
 from rest_framework import exceptions
 
 from rola.accounts.models import User
-from rola.contests.models import Theme
-from rola.entries.api.permissions import require_open_contest
+from rola.contests.models import Contest, Theme
 from rola.entries.models import Author, File, Submission, SubmissionSet
+
+
+def require_open_contest(contest: Contest) -> None:
+    """Answer 403 unless the contest accepts entries.
+
+    :raises PermissionDenied: If the contest does not accept entries now.
+    """
+    if not contest.accepts_entries():
+        raise exceptions.PermissionDenied("This contest is not accepting entries.")
+
+
+def refuse_closed_entries(submissions: QuerySet[Submission]) -> None:
+    """Answer 403 if any of the submissions is in a closed contest.
+
+    Judging and results show the entries of a closed contest, so they stay
+    as they are.
+
+    :param submissions: The submissions that the request would change or delete.
+    :raises PermissionDenied: If a submission's contest is closed.
+    """
+    if submissions.filter(theme__contest__in=Contest.objects.closed()).exists():
+        raise exceptions.PermissionDenied(
+            "Entries in a closed contest can no longer be changed."
+        )
 
 
 def lock_account(user: User) -> None:

@@ -1,5 +1,7 @@
 """Store contests, their themes and participating institutions."""
 
+from datetime import datetime
+
 from django.contrib import admin
 from django.db import models
 from django.db.models import Count, Q
@@ -26,7 +28,7 @@ class ContestQuerySet(models.QuerySet):
         now = timezone.now()
         return self.exclude(start_date__lte=now, end_date__gte=now)
 
-    def closed(self):
+    def closed(self) -> ContestQuerySet:
         """Return contests whose entries are final.
 
         A contest closes after its end date, or when its results are
@@ -127,7 +129,7 @@ class Contest(BaseModel):
         """Check if contest is active."""
         return self.start_date <= timezone.now() <= self.end_date
 
-    def accepts_entries(self, now=None):
+    def accepts_entries(self, now: datetime | None = None) -> bool:
         """Check whether entries may be created, changed or deleted.
 
         Entries close at the end date, or earlier if the results are
