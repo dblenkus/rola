@@ -10,8 +10,10 @@ from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
+from rola.common.permissions import IsSuperUser
+
 from .models import Token, User
-from .permissions import IsSuperUser, IsTargetUser
+from .permissions import IsTargetUser
 from .serializers import (
     LOGIN_FAILED_MESSAGE,
     ActivationSerializer,

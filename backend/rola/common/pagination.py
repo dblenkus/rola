@@ -1,3 +1,5 @@
+"""Pagination for the API."""
+
 from rest_framework import pagination
 
 

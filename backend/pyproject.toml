@@ -40,7 +40,7 @@ exclude-newer = "7 days"
 exclude-newer-package = { django = false }
 
 [tool.setuptools.packages.find]
-include = ["rola*", "utils*"]
+include = ["rola*"]
 exclude = ["*.tests", "*.tests.*"]
 
 [tool.setuptools.package-data]
@@ -71,7 +71,7 @@ ignore = ["E501", "D202"]
 convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
-"!rola/{contests,entries,payments,judging}/**" = ["D"]
+"!rola/{common,contests,entries,payments,judging}/**" = ["D"]
 "**/tests/**" = ["D"]
 
 [tool.mypy]

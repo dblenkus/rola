@@ -33,7 +33,8 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 from PIL import Image, ImageOps
 
-from rola.contests.models import BaseModel, Contest, Theme
+from rola.common.models import BaseModel
+from rola.contests.models import Contest, Theme
 from rola.entries.images import strip_metadata
 
 logger = logging.getLogger(__name__)

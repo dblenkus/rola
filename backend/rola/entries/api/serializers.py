@@ -14,7 +14,7 @@ Entries API serializers
 
 from rest_framework import serializers
 
-from rola.contests.api.serializers import BaseSerializer
+from rola.common.serializers import BaseSerializer
 from rola.contests.models import Theme
 from rola.entries.models import Author, File, Submission, SubmissionSet
 

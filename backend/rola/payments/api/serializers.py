@@ -9,7 +9,7 @@ Payment API serializers
 
 """
 
-from rola.contests.api.serializers import BaseSerializer
+from rola.common.serializers import BaseSerializer
 from rola.payments.models import Payment
 
 

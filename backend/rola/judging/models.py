@@ -16,7 +16,8 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from rola.contests.models import BaseModel, Contest, Theme
+from rola.common.models import BaseModel
+from rola.contests.models import Contest, Theme
 from rola.entries.models import Author, Submission
 
 

@@ -2,7 +2,7 @@
 
 from rest_framework import viewsets
 
-from rola.contests.api.permissions import IsSuperUser
+from rola.common.permissions import IsSuperUser
 from rola.payments.api.filters import PaymentFilter
 from rola.payments.api.serializers import PaymentSerializer
 from rola.payments.models import Payment
