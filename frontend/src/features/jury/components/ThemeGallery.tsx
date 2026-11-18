@@ -2,7 +2,10 @@ import React from 'react';
 import { Box, Card, Grid } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-import { JurySubmission, Rating as RatingModel } from '../../shared/api/types';
+import {
+  JurySubmission,
+  Rating as RatingModel,
+} from '../../../shared/api/types';
 import Rating from './Rating';
 
 interface ThemeGalleryProps {

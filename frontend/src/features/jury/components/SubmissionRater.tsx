@@ -6,7 +6,7 @@ import { Box, IconButton } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { Close, NavigateBefore, NavigateNext } from '@mui/icons-material';
 
-import { JurySubmission } from '../../shared/api/types';
+import { JurySubmission } from '../../../shared/api/types';
 import Rating from './Rating';
 
 interface SubmissionRaterProps {

@@ -16,15 +16,15 @@ import {
   Routes,
 } from 'react-router';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import '../../app/i18n/config';
-import { createAppStore, type AppStore } from '../../app/store';
-import { httpError, page, serveApi } from '../../test/api';
-import { contest, jurySubmission } from '../../test/fixtures';
+import '../../../app/i18n/config';
+import { createAppStore, type AppStore } from '../../../app/store';
+import { httpError, page, serveApi } from '../../../test/api';
+import { contest, jurySubmission } from '../../../test/fixtures';
 import type {
   JurySubmission,
   PaginatedResponse,
   Rating,
-} from '../../shared/api/types';
+} from '../../../shared/api/types';
 import RateSubmission from './RateSubmission';
 
 interface PendingRating {

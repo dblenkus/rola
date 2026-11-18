@@ -1,8 +1,8 @@
-import { AppState, AppThunk } from '../../app/store';
-import ContestService from '../../features/contests/api/ContestService';
-import JudgeSubmissionService from '../../services/JudgeSubmissionService';
-import { Contest, JurySubmission, Theme } from '../../shared/api/types';
-import fetchAll from '../../shared/api/fetchAll';
+import { AppState, AppThunk } from '../../../app/store';
+import ContestService from '../../contests/api/ContestService';
+import JudgeSubmissionService from '../api/JudgeSubmissionService';
+import { Contest, JurySubmission, Theme } from '../../../shared/api/types';
+import fetchAll from '../../../shared/api/fetchAll';
 
 import {
   JuryActionTypes,

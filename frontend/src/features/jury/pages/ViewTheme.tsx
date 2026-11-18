@@ -4,19 +4,19 @@ import { connect, ConnectedProps } from 'react-redux';
 
 import { Alert, Typography } from '@mui/material';
 
-import { AppState, AppDispatch } from '../../app/store';
+import { AppState, AppDispatch } from '../../../app/store';
 
 import {
   initializeStore,
   setSubmission,
   type InitializeResult,
-} from '../../store/jury/actions';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
-import ThemeGallery from '../../components/Jury/ThemeGallery';
-import RatingService from '../../services/RatingService';
-import { contentUnavailable, requestError } from '../../shared/api/errors';
-import { Rating } from '../../shared/api/types';
-import fetchAll from '../../shared/api/fetchAll';
+} from '../state/actions';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import ThemeGallery from '../components/ThemeGallery';
+import RatingService from '../api/RatingService';
+import { contentUnavailable, requestError } from '../../../shared/api/errors';
+import { Rating } from '../../../shared/api/types';
+import fetchAll from '../../../shared/api/fetchAll';
 
 interface RouteMatchParams {
   contestId: string;
