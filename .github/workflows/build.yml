@@ -25,9 +25,6 @@ jobs:
       fail-fast: false
       matrix:
         python: ["3.14", "3.15"]
-    defaults:
-      run:
-        working-directory: backend
     env:
       ROLA_SECRET_KEY: ci-only-fake-secret-key
       ROLA_FRONTEND_URL: http://localhost:8080
@@ -42,27 +39,19 @@ jobs:
           python-version: ${{ matrix.python }}
           working-directory: backend
       - name: Start PostgreSQL
-        run: docker compose -f ../compose.yaml up -d --wait db
-      - run: uv sync --locked --all-groups
+        run: make db
+      - run: make backend-sync
       - name: Test on SQLite
-        run: uv run pytest
+        run: make backend-test
       - name: Test on PostgreSQL
-        run: uv run pytest
-        env:
-          ROLA_TEST_POSTGRESQL: "true"
-      - run: uv run python manage.py check
-      - run: uv run python manage.py makemigrations --check --dry-run
+        run: make backend-test-postgresql
+      - run: make backend-system-check
+      - run: make backend-migrations-check
       - name: Migrate an empty PostgreSQL database
-        run: |
-          uv run python manage.py migrate --noinput
-          uv run python manage.py createcachetable
-          uv run python manage.py readinesscheck
+        run: make backend-migrate
 
   quality:
     runs-on: ubuntu-26.04
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: astral-sh/setup-uv@v10.3.3
@@ -70,18 +59,17 @@ jobs:
           version: "0.13.6"
           python-version: "3.14"
           working-directory: backend
-      - run: uv lock --check
-      - run: uv sync --locked --all-groups
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - name: Lint docs/conf.py with the backend configuration
-        run: |
-          uv run ruff check --config pyproject.toml ../docs/conf.py
-          uv run ruff format --check --config pyproject.toml ../docs/conf.py
-      - run: uv run mypy
+      - run: make backend-lock-check
+      - run: make backend-sync
+      - name: Lint the backend and docs/conf.py
+        run: make backend-lint
+      - name: Check the formatting of the backend and docs/conf.py
+        run: make backend-format
+      - run: make backend-types
       - name: Build the documentation
-        run: uv run sphinx-build -W --keep-going -b html ../docs "$RUNNER_TEMP/docs"
+        run: make docs DOCS_BUILD="$RUNNER_TEMP/docs"
       - name: Check the wheel in a clean environment
+        working-directory: backend
         run: |
           uv build --wheel --out-dir "$RUNNER_TEMP/dist"
           uv export --frozen --no-dev --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
@@ -109,15 +97,10 @@ jobs:
                   get_template(f"accounts/{purpose}/{name}")
           PY
       - name: Audit the locked runtime dependencies
-        run: |
-          uv export --frozen --no-dev --no-hashes --no-emit-project -o "$RUNNER_TEMP/audit.txt"
-          uvx --exclude-newer "7 days" --from pip-audit==2.10.1 pip-audit -r "$RUNNER_TEMP/audit.txt" --no-deps --disable-pip
+        run: make backend-audit AUDIT_REQUIREMENTS="$RUNNER_TEMP/audit.txt"
 
   frontend:
     runs-on: ubuntu-26.04
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -125,14 +108,14 @@ jobs:
           node-version-file: frontend/.node-version
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      - run: npm ls --all
-      - run: npm audit --omit=dev
+      - run: make frontend-install
+      - run: make frontend-lint
+      - run: make frontend-format
+      - run: make frontend-typecheck
+      - run: make frontend-test
+      - run: make frontend-build
+      - run: make frontend-deps
+      - run: make frontend-audit
 
   api-contract:
     runs-on: ubuntu-26.04
@@ -154,13 +137,10 @@ jobs:
       - run: uv sync --locked
         working-directory: backend
       - name: Generate the OpenAPI schema with the PostgreSQL backend
-        run: uv run python manage.py spectacular --file openapi.yaml --validate --fail-on-warn
-        working-directory: backend
+        run: make api-schema
       - run: git diff --exit-code -- backend/openapi.yaml
-      - run: npm ci
-        working-directory: frontend
-      - run: npm run api:generate
-        working-directory: frontend
+      - run: make frontend-install
+      - run: make api-types
       - run: git diff --exit-code -- frontend/src/shared/api/generated-api.ts
 
   images:
@@ -211,11 +191,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Lint the workflows
-        run: docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:1.7.12
+        run: make actionlint
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: "0.13.6"
       - name: Validate the Dependabot configuration
-        run: >-
-          uvx --exclude-newer "7 days" --from check-jsonschema==0.39.0
-          check-jsonschema --builtin-schema vendor.dependabot .github/dependabot.yml
+        run: make dependabot-config
