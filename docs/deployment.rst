@@ -41,10 +41,9 @@ Services
 ``frontend``
    nginx as uid 101, published on ``127.0.0.1:8080``. It serves the
    built frontend, ``/media/`` from the ``media`` volume and ``/static2/``
-   from the ``static`` volume, and passes ``/api``, ``/core`` and
-   ``/django-admin`` to the backend. It looks up the backend's address again
-   every 10 seconds, so it keeps working when the backend container is
-   recreated. It waits up to 120 seconds for the backend's response and
+   from the ``static`` volume, and passes ``/api`` and ``/django-admin`` to
+   the backend. It looks up the backend's address again every 10 seconds, so
+   it keeps working when the backend container is recreated. It waits up to 120 seconds for the backend's response and
    keeps up to 4 GiB of a response in a temporary file in its container;
    see `Contest downloads`_.
 
@@ -255,10 +254,12 @@ before, under the same names; the data transfer runs it (see
 Contest downloads
 =================
 
-The contest download in the Django admin is the longest request: the
-120-second limits of Gunicorn, nginx and the TLS terminator are set for it.
-The zip archive is not compressed, so it is as large as the contest's
-photographs together. A backend worker reads every photograph from storage
+The contest download is the Download button of a contest in the Django
+admin, at ``/django-admin/contests/contest/<id>/download/``. It needs a staff
+account that organizes the contest, or a superuser. It is the longest
+request: the 120-second limits of Gunicorn, nginx and the TLS terminator are
+set for it. The zip archive is not compressed, so it is as large as the
+contest's photographs together. A backend worker reads every photograph from storage
 and writes the archive to a temporary file in the backend container, so its
 memory does not grow with the contest, but the server needs as much free
 disk as the archive while the download runs. For 300 photographs of 3 MB,
@@ -387,8 +388,8 @@ changed. Without them, Docker keeps using the copies it pulled first.
 ``run`` runs the release command from the new image while the previous
 backend still serves requests. If ``pull db`` fetched a new image, or the
 new revision changes the ``db`` service in ``compose.production.yaml``,
-``run`` first recreates the ``db`` container, and ``/api``, ``/core`` and the
-Django admin answer with a server error until PostgreSQL accepts connections
+``run`` first recreates the ``db`` container, and ``/api`` and the Django
+admin answer with a server error until PostgreSQL accepts connections
 again, usually after a few seconds.
 
 If ``run`` fails, ``&&`` stops the commands before ``up``: the backend has
@@ -397,7 +398,7 @@ until ``run`` succeeds, because ``up`` would replace the backend and run the
 same failing ``migrate`` again, which leaves no backend serving.
 
 ``up`` replaces the backend and runs ``migrate`` again, which finds nothing
-to apply. ``/api``, ``/core`` and the Django admin are unavailable from when
+to apply. ``/api`` and the Django admin are unavailable from when
 it stops the old backend until the new one starts serving, once ``migrate``
 has finished and Gunicorn has started. ``--wait`` returns when the new
 backend passes a health check, the first of which runs about 15 seconds

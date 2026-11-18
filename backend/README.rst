@@ -3,9 +3,10 @@ Rola
 ====
 
 The backend of Rola, a platform for photography contests. The ``rola``
-distribution holds the Django project ``rola``, the account app
-``drf_user``, the contest, judging and payment apps under ``rolca``, and
-``utils`` with the ``readinesscheck`` command.
+distribution holds one Django project: its configuration in
+``rola.config``, shared code in ``rola.common``, and the apps
+``rola.accounts``, ``rola.contests``, ``rola.entries``, ``rola.payments`` and
+``rola.judging``.
 
 Development
 ===========
@@ -30,6 +31,9 @@ updates; ``docs/deployment.rst`` describes the production stack.
 Licences
 ========
 
-The apps under ``rolca`` are licensed under Apache-2.0 (``LICENSE``),
-``drf_user`` under BSD-3-Clause (``drf_user/LICENSE``), and the rest under
-AGPL-3.0-only (``LICENSE-AGPL``).
+The code that came with the Rolca contest, payment and rating apps is
+licensed under Apache-2.0 (``licenses/Apache-2.0.txt``), the code that came
+with the drf_user account app under BSD-3-Clause
+(``licenses/BSD-3-Clause.txt``), and the rest under AGPL-3.0-only
+(``LICENSE-AGPL``). ``licenses/README.rst`` names the modules that the
+inherited code is in.

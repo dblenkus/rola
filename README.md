@@ -18,9 +18,11 @@ http://localhost:8080/django-admin/. Create an admin account with:
 docker compose exec backend python manage.py createsuperuser
 ```
 
-[docs/contributing.rst](docs/contributing.rst) covers native development,
-the checks CI runs, and how to regenerate migrations, the API contract and
-the lockfiles.
+`make check` runs the checks that CI runs; the `Makefile` lists them one by
+one. [docs/contributing.rst](docs/contributing.rst) covers native
+development, the checks, and how to regenerate migrations, the API contract
+and the lockfiles. [AGENTS.md](AGENTS.md) describes the code layout and where
+new code goes.
 
 ## Layout
 
@@ -35,12 +37,13 @@ the lockfiles.
 
 ## Licences
 
-| Path | Licence | Text |
+| Code | Licence | Text |
 | --- | --- | --- |
-| `backend/rolca/` | Apache-2.0 | [backend/LICENSE](backend/LICENSE) |
-| `backend/drf_user/` | BSD-3-Clause | [backend/drf_user/LICENSE](backend/drf_user/LICENSE) |
+| Code from the Rolca contest, payment and rating apps | Apache-2.0 | [backend/licenses/Apache-2.0.txt](backend/licenses/Apache-2.0.txt) |
+| Code from the drf_user account app | BSD-3-Clause | [backend/licenses/BSD-3-Clause.txt](backend/licenses/BSD-3-Clause.txt) |
 | everything else | AGPL-3.0-only | [LICENSE](LICENSE) |
 
-`backend/LICENSE-AGPL` is a copy of `LICENSE`, so that the backend wheel
-ships all three texts. The wheel declares
+[backend/licenses/README.rst](backend/licenses/README.rst) names the modules
+that the inherited code is in. `backend/LICENSE-AGPL` is a copy of `LICENSE`,
+so that the backend wheel ships all three texts. The wheel declares
 `AGPL-3.0-only AND Apache-2.0 AND BSD-3-Clause`.
