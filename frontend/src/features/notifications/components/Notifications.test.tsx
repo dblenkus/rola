@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import store from '../../app/store';
-import { addNotificationError } from '../../store/notifications/actions';
+import store from '../../../app/store';
+import { addNotificationError } from '../state/actions';
 import Notifications from './Notifications';
 
 beforeEach(() => {

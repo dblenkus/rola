@@ -6,7 +6,7 @@ import {
   addNotificationInfo,
   addNotificationSuccess,
   addNotificationWarning,
-} from '../notifications/actions';
+} from '../../features/notifications/state/actions';
 
 import i18n from '../../app/i18n/config';
 import { loadToken, rejectToken } from '../../shared/api/token';
