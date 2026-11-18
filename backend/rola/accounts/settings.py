@@ -1,4 +1,4 @@
-"""Settings for DRF User application."""
+"""Settings for the accounts app."""
 
 from datetime import timedelta
 
@@ -34,7 +34,7 @@ class AccountsSettings:
     @property
     def APP_NAME(self) -> str:
         """Return name of the app."""
-        return str(getattr(settings, "ACCOUNTS_APP_NAME", "DRF User"))
+        return str(getattr(settings, "ACCOUNTS_APP_NAME", "Rola"))
 
 
 accounts_settings = AccountsSettings()

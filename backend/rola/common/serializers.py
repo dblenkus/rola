@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 
 class BaseSerializer(serializers.ModelSerializer[Any]):
-    """Base serializer for Rolca models."""
+    """Base serializer for Rola models."""
 
     user = serializers.HiddenField(
         default=serializers.CreateOnlyDefault(serializers.CurrentUserDefault())

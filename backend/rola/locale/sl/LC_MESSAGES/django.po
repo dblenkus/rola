@@ -1,6 +1,6 @@
-# Slovenian translations for ``rolca.core`` package.
+# Slovenian translations for the ``rola`` package.
 # Copyright (C) 2017 Domen Blenkuš
-# This file is distributed under the same license as the ``rolca.core`` package.
+# This file is distributed under the same license as the ``rola`` package.
 # Domen Blenkuš <domen@blenkus.com>, 2017.
 #
 #, fuzzy
