@@ -7,8 +7,8 @@ import { Box, CssBaseline, Container } from '@mui/material';
 import Header from '../shared/ui/Layout/Header';
 import Footer from '../shared/ui/Layout/Footer';
 
-import ContestsListView from '../views/ContestsList';
-import ContestDetailsView from '../views/ContestDetails';
+import ContestsListView from '../features/contests/pages/ContestsList';
+import ContestDetailsView from '../features/contests/pages/ContestDetails';
 import LoginView from '../features/auth/pages/Login';
 import RegisterView from '../features/auth/pages/Register';
 import RegisterActivateView from '../features/auth/pages/RegisterActivate';

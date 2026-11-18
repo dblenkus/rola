@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import ContestService from '../../services/ContestService';
+import ContestService from '../../features/contests/api/ContestService';
 import LoadingProgress from '../../shared/ui/LoadingProgress';
 import ResultsThemeService from '../../services/ResultsThemeService';
 import { requestError } from '../../shared/api/errors';

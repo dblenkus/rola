@@ -2,7 +2,7 @@ import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import LoadingProgress from '../shared/ui/LoadingProgress';
-import ContestService from '../services/ContestService';
+import ContestService from '../features/contests/api/ContestService';
 import { requestError } from '../shared/api/errors';
 import { Contest } from '../shared/api/types';
 

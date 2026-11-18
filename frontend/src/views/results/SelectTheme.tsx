@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@mui/material';
 
-import ContestService from '../../services/ContestService';
+import ContestService from '../../features/contests/api/ContestService';
 import { requestError } from '../../shared/api/errors';
 import { Contest } from '../../shared/api/types';
 import LoadingProgress from '../../shared/ui/LoadingProgress';
