@@ -1,4 +1,4 @@
-import type { InputChange } from '../../../types/models';
+import type { InputChange } from '../../upload/models';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';

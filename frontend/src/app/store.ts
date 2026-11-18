@@ -7,12 +7,12 @@ import {
 } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import notifications from '../features/notifications/state/reducer';
-import upload from '../store/upload/reducer';
+import upload from '../features/upload/state/reducer';
 import {
   AUTHOR_UPDATE,
   IMAGE_STORE,
   UPLOAD_SET_CONTEST,
-} from '../store/upload/types';
+} from '../features/upload/state/types';
 import jury from '../store/jury/reducer';
 
 const rootReducer = combineReducers({ notifications, upload, jury });
