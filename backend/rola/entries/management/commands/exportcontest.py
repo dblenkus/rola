@@ -5,7 +5,7 @@ import os
 from django.core.management.base import BaseCommand, CommandError
 
 from rola.contests.models import Contest
-from rola.entries.views import write_contest_archive
+from rola.entries.archive import write_contest_archive
 
 
 class Command(BaseCommand):
