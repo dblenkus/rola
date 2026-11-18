@@ -16,7 +16,7 @@ Docker with Compose runs the whole application. From the repository root:
    docker compose up --build --wait
 
 The stack needs no ``.env``. It serves the site on http://localhost:8080
-through the Vite development server, which forwards ``/api``, ``/core``,
+through the Vite development server, which forwards ``/api``,
 ``/django-admin``, ``/media`` and ``/static2`` to Django's development
 server. ``backend/`` and ``frontend/`` are mounted into the containers, so
 both servers reload on changes. PostgreSQL 18 listens on
@@ -87,86 +87,102 @@ Checks
 
 CI runs the jobs in ``.github/workflows/build.yml`` on every pull request,
 on every push to ``main`` and once a week, so that new advisories against
-the locked dependencies show up without a push. Run the same commands
-locally before opening a pull request.
-
-Backend tests, on Python 3.14 and 3.15, from ``backend/``. Deprecation
-warnings fail the tests (``filterwarnings`` in ``pyproject.toml``):
-
-.. code-block:: shell
-
-   uv sync --locked --all-groups --python 3.14
-   uv run pytest
-   docker compose -f ../compose.yaml up -d --wait db
-   ROLA_TEST_POSTGRESQL=true ROLA_POSTGRESQL_HOST=127.0.0.1 \
-       ROLA_POSTGRESQL_PORT=55432 ROLA_POSTGRESQL_PASSWORD=rola uv run pytest
-
-pytest uses ``rola.test_settings``, which runs on an in-memory SQLite
-database unless ``ROLA_TEST_POSTGRESQL`` is set. The tests of concurrent
-token redemption need PostgreSQL's row locks and are skipped on SQLite. The
-database user must be allowed to create the test database.
-
-System checks and migrations, with the variables from `Native development`_
-set; CI runs the last three commands on an empty database:
+the locked dependencies show up without a push. The ``Makefile`` in the
+repository root holds the commands, and each check step of the workflow runs
+one of its targets; only the wheel check, the image builds and the Compose
+checks are written in the workflow itself. Run the same targets locally,
+from the repository root, before opening a pull request. With another uv
+than 0.13.6, pass ``UV="uvx --from uv==0.13.6 uv"`` to every ``make``
+command. The targets set ``ROLA_SECRET_KEY``,
+``ROLA_FRONTEND_URL`` and the database variables of the development stack
+unless the environment already does.
 
 .. code-block:: shell
 
-   uv run python manage.py check
-   uv run python manage.py makemigrations --check --dry-run
-   uv run python manage.py migrate --noinput
-   uv run python manage.py createcachetable
-   uv run python manage.py readinesscheck
+   make backend-sync frontend-install
+   make check
 
-Quality checks, from ``backend/``:
+``make check`` runs the tests on SQLite and PostgreSQL, the system and
+migration checks, lint, formatting, types and the documentation build of the
+backend, the frontend's lint, formatting, type checks, tests and build, and
+the API contract regeneration. It starts the ``db`` service of the
+development stack for the tests on PostgreSQL. The lockfile check, the
+migration of a database, the dependency checks and the audits run only as
+their own targets.
+
+Backend tests, which CI runs on Python 3.14 and 3.15; ``uv sync --locked
+--all-groups --python 3.15`` from ``backend/`` switches the environment.
+Deprecation warnings fail the tests (``filterwarnings`` in
+``pyproject.toml``):
 
 .. code-block:: shell
 
-   uv lock --check
-   uv run ruff check .
-   uv run ruff format --check .
-   uv run ruff check --config pyproject.toml ../docs/conf.py
-   uv run ruff format --check --config pyproject.toml ../docs/conf.py
-   uv run mypy
-   uv run sphinx-build -W --keep-going -b html ../docs ../docs/_build/html
-   uv export --frozen --no-dev --no-hashes --no-emit-project -o /tmp/audit.txt
-   uvx --exclude-newer "7 days" --from pip-audit==2.10.1 \
-       pip-audit -r /tmp/audit.txt --no-deps --disable-pip
+   make backend-test
+   make backend-test-postgresql
+
+pytest uses ``rola.config.test_settings``, which runs on an in-memory SQLite
+database unless ``ROLA_TEST_POSTGRESQL`` is set, as
+``backend-test-postgresql`` does. The tests of concurrent token redemption
+need PostgreSQL's row locks and are skipped on SQLite. The database user must
+be allowed to create the test database.
+
+System checks and migrations. ``backend-migrate`` migrates the database that
+``ROLA_POSTGRESQL_NAME`` names, ``rola`` by default, creates the cache table
+and runs ``readinesscheck``; CI runs it on an empty database:
+
+.. code-block:: shell
+
+   make backend-system-check
+   make backend-migrations-check
+   make backend-migrate
+
+Quality checks: the lockfile, Ruff's lint rules and formatting on the backend
+and ``docs/conf.py``, mypy, the documentation (see `Documentation`_) and the
+audit of the locked runtime dependencies:
+
+.. code-block:: shell
+
+   make backend-lock-check
+   make backend-lint
+   make backend-format
+   make backend-types
+   make docs
+   make backend-audit
 
 The quality job also builds the wheel, installs it with the locked runtime
 dependencies into a clean environment, and checks there that Django starts,
 migrates, queries a model, finds the email templates and loads the Slovenian
 translations.
 
-Frontend checks, from ``frontend/``:
+Frontend checks:
 
 .. code-block:: shell
 
-   npm ci
-   npm run lint
-   npm run format:check
-   npm run typecheck
-   npm test
-   npm run build
-   npm ls --all
-   npm audit --omit=dev
+   make frontend-lint
+   make frontend-format
+   make frontend-typecheck
+   make frontend-test
+   make frontend-build
+   make frontend-deps
+   make frontend-audit
 
-``npm audit`` without ``--omit=dev`` also reports a moderate minimatch
-advisory in the development tooling, which has no fix yet.
+``frontend-audit`` runs ``npm audit --omit=dev``. Without ``--omit=dev``,
+``npm audit`` also reports a moderate minimatch advisory in the development
+tooling, which has no fix yet.
 
 The API contract job regenerates both generated files (see `API contract`_)
-and fails if either differs from the committed one. The image job builds the
-development and production targets of both Dockerfiles, with fake values for
-the frontend's build arguments, and pushes nothing. The Compose job runs
-``docker compose config`` on both Compose files. The GitHub configuration job
-lints the workflows with actionlint and validates ``.github/dependabot.yml``
-against Dependabot's schema. To run the same checks before pushing, run from
-the repository root:
+and fails if either differs from the committed one; ``make api-contract``
+does the same. The image job builds the development and production targets
+of both Dockerfiles, with fake values for the frontend's build arguments,
+and pushes nothing. The Compose job runs ``docker compose config`` on both
+Compose files. The GitHub configuration job lints the workflows with
+actionlint, in Docker, and validates ``.github/dependabot.yml`` against
+Dependabot's schema:
 
 .. code-block:: shell
 
-   docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:1.7.12
-   uvx --exclude-newer "7 days" --from check-jsonschema==0.39.0 check-jsonschema \
-       --builtin-schema vendor.dependabot .github/dependabot.yml
+   make actionlint
+   make dependabot-config
 
 actionlint 1.7.12 does not know the ``ubuntu-26.04`` runner label, so
 ``.github/actionlint.yaml`` declares it.
@@ -175,19 +191,16 @@ API contract
 ============
 
 After changing a serializer, a view or a schema annotation, regenerate
-``backend/openapi.yaml`` and the frontend types from it:
+``backend/openapi.yaml`` and ``frontend/src/shared/api/generated-api.ts``
+from it, and commit both with the change:
 
 .. code-block:: shell
 
-   cd backend
-   ROLA_SECRET_KEY=schema-only ROLA_FRONTEND_URL=http://localhost:8080 \
-       uv run python manage.py spectacular --file openapi.yaml --validate --fail-on-warn
-   cd ../frontend
-   npm run api:generate
+   make api-schema api-types
 
-The command uses the production settings, which select the PostgreSQL
+The schema is generated with the production settings, which select the PostgreSQL
 backend; no database server needs to run. drf-spectacular takes integer
-bounds from the database backend, so generating with ``rola.test_settings``
+bounds from the database backend, so generating with ``rola.config.test_settings``
 (SQLite) would publish 64-bit bounds for 32-bit and 16-bit columns. Review
 both diffs with the change, update the frontend code and tests that use the
 changed responses, and list the contract change in ``docs/CHANGELOG.rst``.
@@ -208,37 +221,47 @@ rename a column only in a release after the one that stopped using it, and
 give a new ``NOT NULL`` column a database default (``db_default``).
 
 Regenerate one app at a time, so that each app keeps a single migration file.
-From ``backend/``:
+The apps' migrations depend on each other in the order of the apps:
+``contests`` on ``accounts``, ``entries`` on ``contests``, ``payments`` on
+``entries``, and ``judging`` on ``contests`` and ``entries``. From
+``backend/``:
 
 #. Delete the app's ``migrations/0001_schema.py``.
-#. Other apps' migrations depend on ``drf_user`` and ``core``, and the
-   migration loader fails while their dependency is missing. For those two
-   apps, write a scratch settings module that marks the dependent apps as
-   unmigrated, and do not commit it. For ``drf_user``, create
+#. The migration loader fails while a migration that another app's migration
+   depends on is missing. For ``accounts``, ``contests`` and ``entries``,
+   write a scratch settings module that marks the apps after it as
+   unmigrated, and do not commit it. For ``accounts``, create
    ``backend/regen_settings.py``:
 
    .. code-block:: python
 
-      from rola.test_settings import *  # noqa: F403
+      from rola.config.test_settings import *  # noqa: F403
 
-      MIGRATION_MODULES = {"core": None, "payment": None, "rating": None}
+      MIGRATION_MODULES = {
+          "contests": None,
+          "entries": None,
+          "payments": None,
+          "judging": None,
+      }
 
-   For ``core``, leave ``core`` out of ``MIGRATION_MODULES``. ``payment``
-   and ``rating`` need no scratch module; use ``rola.test_settings``.
+   For ``contests``, leave ``contests`` out of ``MIGRATION_MODULES``, and for
+   ``entries`` leave out ``contests`` and ``entries``. ``payments`` and
+   ``judging`` need no scratch module; use ``rola.config.test_settings``.
 #. Generate the migration under the same name, so the dependencies of the
    other apps stay valid:
 
    .. code-block:: shell
 
-      uv run python manage.py makemigrations drf_user --name schema --settings=regen_settings
+      uv run python manage.py makemigrations accounts --name schema --settings=regen_settings
 
-#. After regenerating ``rating``, add back the ``CryptoExtension()``
+#. After regenerating ``judging``, add back the ``CryptoExtension()``
    operation as the first operation, with its import from
    ``django.contrib.postgres.operations``. makemigrations does not generate
    it, and judging orders submissions by ``SHA1()``, which the pgcrypto
-   extension provides. ``tests/test_migrations.py`` fails without it.
-#. Delete the scratch module, then run ``makemigrations --check --dry-run``
-   and the tests on PostgreSQL.
+   extension provides. ``tests/project/test_migrations.py`` fails without
+   it.
+#. Delete the scratch module, then run ``make backend-migrations-check`` and
+   ``make backend-test-postgresql``.
 
 Dependencies
 ============
@@ -257,8 +280,8 @@ The resolvers refuse releases younger than 7 days: ``exclude-newer = "7
 days"`` in ``[tool.uv]`` and ``min-release-age=7`` in ``frontend/.npmrc``.
 This applies to manual and Dependabot version updates, whose cooldown is
 7 days too. Compromised releases are usually found and withdrawn within days.
-``uvx`` does not read ``[tool.uv]``, so the tool runs on this page and in CI
-pass ``--exclude-newer "7 days"`` themselves; the pinned tool version alone
+``uv tool run`` (``uvx``) does not read ``[tool.uv]``, so the tool runs in
+the ``Makefile`` pass ``--exclude-newer "7 days"`` themselves; the pinned tool version alone
 leaves its dependencies unrestricted.
 
 The policy also holds back security fixes younger than 7 days. When such a fix
@@ -295,12 +318,6 @@ which overrides ``frontend/.npmrc``, so the fix and any new package it pulls in
 can be hours old. Check their release dates, for example with ``npm view
 <package> time``, before merging.
 
-``exclude-newer-package = { django = false }`` in ``backend/pyproject.toml``
-is such an exemption, for the Django 6.1.3 security release, uploaded on
-2026-11-03 at 15:21 UTC. After 2026-11-10 15:22 UTC, delete the line and run
-``uv lock``; before then the lock fails, because no Django release inside the
-window satisfies the ``>=6.1.3`` floor.
-
 Pinned tools
 ------------
 
@@ -327,7 +344,8 @@ images and the actions. These pins move by hand:
   database from ``compose.yaml``. Dependabot ignores PostgreSQL majors, which
   need a dump and restore.
 * pip-audit 2.10.1, actionlint 1.7.12 and check-jsonschema 0.39.0 in the
-  workflow and on this page, and the ``ubuntu-26.04`` runner label.
+  ``Makefile``, the ``ubuntu-26.04`` runner label in the workflow and
+  ``.github/actionlint.yaml``.
 * The base OS release in the image tags: ``-alpine3.24`` for Node.js,
   nginx-unprivileged and PostgreSQL, and ``-slim-trixie`` for Python.
   Dependabot compares a tag only with tags of the same suffix, so it proposes
@@ -338,11 +356,13 @@ images and the actions. These pins move by hand:
 Documentation
 =============
 
-Build the documentation from ``backend/`` with warnings as errors:
+Build the documentation into ``docs/_build/html`` with warnings as errors;
+``DOCS_BUILD`` selects another directory:
 
 .. code-block:: shell
 
-   uv run sphinx-build -W --keep-going -b html ../docs ../docs/_build/html
+   make docs
 
-``docs/conf.py`` sets up Django with ``rola.test_settings`` for autodoc. User
+``docs/conf.py`` sets up Django with ``rola.config.test_settings`` for
+autodoc. User
 or operator visible changes go into ``docs/CHANGELOG.rst``.

@@ -12,7 +12,7 @@ npm run dev
 ```
 
 The development server listens on http://localhost:5173 and forwards `/api`,
-`/core`, `/django-admin`, `/media` and `/static2` to the backend on
+`/django-admin`, `/media` and `/static2` to the backend on
 http://localhost:8000; set `API_PROXY_TARGET` for another address. The
 repository's Compose development stack runs it together with the backend on
 http://localhost:8080.
