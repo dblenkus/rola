@@ -128,7 +128,9 @@ API changes
   other values answer 400. Any integer used to be stored, so a single score
   outside that range could outweigh all other judges in the totals that
   decide acceptance and ranking.
-* ``/core/contest/{id}/download`` answers 403 to anyone but the contest's
+* The contest download moves from ``/core/contest/{id}/download`` into the
+  Django admin, at ``/django-admin/contests/contest/{id}/download/``, so it
+  needs a staff login, and it answers 403 to anyone but the contest's
   organizer and superusers. Its archive holds every photograph of each
   submission, read through the configured storage.
 * The API sends no CORS headers; the frontend calls it from the same origin.
@@ -161,16 +163,24 @@ Deployment changes
   non-root users.
 * nginx listens on port 8080, published on ``127.0.0.1`` only, and serves the
   frontend, media and static files itself; the separate proxy image is gone.
-  It passes ``/api``, ``/core`` and ``/django-admin`` to Django, so the Django
-  admin and the contest download are reachable from the internet; the proxy
-  in ``deploy/nginx`` passed neither. The Django admin login shares the API
-  login's rate limit.
+  It passes ``/api`` and ``/django-admin`` to Django, so the Django admin,
+  with the contest download, is reachable from the internet; the proxy in
+  ``deploy/nginx`` passed neither the admin nor the download. The Django
+  admin login shares the API login's rate limit.
 * The database is no longer published on port 5432 of every interface, where
   the old stack accepted connections without a password. The production stack
   publishes no database port; reach the database with ``docker compose exec
   db psql``.
 * The database starts from new migrations. A database with the old migration
   history is refused, and the data moves with the transfer procedure.
+* The apps have new labels, and their tables new names: ``drf_user_*``
+  becomes ``accounts_*``, ``core_*`` becomes ``contests_*`` (contests,
+  themes, institutions) or ``entries_*`` (authors, submission sets,
+  submissions, files), ``payment_payment`` becomes ``payments_payment`` and
+  ``rating_*`` becomes ``judging_*``. Constraint, index and sequence names
+  follow the new labels, and the Django admin groups its models under
+  Accounts, Contests, Entries, Payments and Judging. The transfer procedure
+  maps the old names to the new ones.
 * A ``migrate`` service runs ``migrate``, ``createcachetable`` and
   ``collectstatic`` on every start, before the backend. The ``rola_cache``
   table is required, and the backend health check fails without it.
@@ -362,10 +372,22 @@ Development changes
 -------------------
 
 * The backend is one ``rola`` distribution declared in
-  ``backend/pyproject.toml`` and locked in ``backend/uv.lock``. Ruff replaces
+  ``backend/pyproject.toml`` and locked in ``backend/uv.lock``. Its packages
+  ``rolca``, ``drf_user`` and ``utils`` become the apps ``rola.accounts``,
+  ``rola.contests``, ``rola.entries``, ``rola.payments`` and
+  ``rola.judging``, with ``rola.common`` for shared code and ``rola.config``
+  for the settings, so ``DJANGO_SETTINGS_MODULE`` is
+  ``rola.config.settings``. The tests are in ``backend/tests``. Ruff replaces
   black, flake8, isort and pydocstyle, and tox is gone.
 * The frontend builds with Vite instead of Create React App, and npm with a
-  lockfile replaces yarn.
+  lockfile replaces yarn. Its package is ``rola-frontend`` instead of
+  ``rolca-ui``, and ``frontend/src`` is organized into ``app``, ``shared``
+  and one directory per feature.
+* The Django settings ``DRF_USER_*`` are named ``ACCOUNTS_*``, and
+  ``ROLCA_MAX_UPLOAD_SIZE`` and ``ROLCA_MAX_UPLOAD_RESOLUTION`` are
+  ``ENTRIES_MAX_UPLOAD_SIZE`` and ``ENTRIES_MAX_UPLOAD_RESOLUTION``. The
+  ``ROLA_*`` environment variables keep their names.
+* The ``Makefile`` in the repository root runs the checks that CI runs.
 * The backend requires Python 3.14 or later.
 * Lockfile updates accept only releases at least 7 days old, except
   Dependabot's npm security updates.
