@@ -13,6 +13,7 @@ from rola.entries.api.serializers import (
 )
 from rola.entries.models import Author, Submission
 from rola.judging.models import Judge, Rating, SubmissionReward
+from rola.payments.models import PAID_SUBMISSION
 
 
 class RatingSerializer(BaseSerializer):
@@ -66,7 +67,7 @@ class RatingSerializer(BaseSerializer):
         if (
             submission
             and not Submission.objects.filter(
-                pk=submission.pk, submissionset__payment__paid=True
+                PAID_SUBMISSION, pk=submission.pk
             ).exists()
         ):
             raise serializers.ValidationError(

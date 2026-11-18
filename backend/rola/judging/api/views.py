@@ -29,13 +29,12 @@ from rola.judging.api.serializers import (
     ThemeResultsSerializer,
 )
 from rola.judging.models import Judge, Rating
+from rola.payments.models import PAID_SUBMISSION
 
 # Results publish only entries in a paid submission set, as judging lists
 # only those. Exists instead of a join, so an entry in several paid sets is
 # listed once and its ratings are summed once.
-IS_PAID = Exists(
-    Submission.objects.filter(pk=OuterRef("pk"), submissionset__payment__paid=True)
-)
+IS_PAID = Exists(Submission.objects.filter(PAID_SUBMISSION, pk=OuterRef("pk")))
 
 
 class RatingViewSet(viewsets.ModelViewSet):
@@ -66,10 +65,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             contest__in=Contest.objects.in_judging()
         )
         return (
-            Submission.objects.filter(
-                theme__in=theme_qs,
-                submissionset__payment__paid=True,
-            )
+            Submission.objects.filter(PAID_SUBMISSION, theme__in=theme_qs)
             .annotate(
                 random=SHA1(
                     Concat(Cast("pk", CharField()), Value(str(self.request.user.pk)))
@@ -93,9 +89,7 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         judge_qs = Judge.objects.filter(judge=self.request.user)
         # A subquery keeps the payment join from multiplying the rating count.
         paid_counts = (
-            Submission.objects.filter(
-                theme=OuterRef("pk"), submissionset__payment__paid=True
-            )
+            Submission.objects.filter(PAID_SUBMISSION, theme=OuterRef("pk"))
             .order_by()
             .values("theme")
             .annotate(total=Count("pk"))
