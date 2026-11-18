@@ -20,7 +20,7 @@ import {
   ResultsThemeSubmission,
 } from '../../../shared/api/types';
 import groupBy from '../../../shared/utils/groupBy';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 import { getThemeResults } from '../api';
 
 interface RouteMatchParams {

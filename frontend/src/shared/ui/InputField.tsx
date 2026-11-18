@@ -1,8 +1,13 @@
-import type { InputChange } from '../models';
 import React from 'react';
 
 import { TextField } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+
+// The change a text field reports: the field's name and its new value.
+export interface InputChange {
+  name: string;
+  value: string;
+}
 
 export interface InputFieldProps {
   sx: SxProps<Theme>;

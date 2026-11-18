@@ -9,7 +9,7 @@ import { Contest, SubmissionSet } from '../../../shared/api/types';
 
 import { requestError } from '../../../shared/api/errors';
 import { getSubmissionSet } from '../api';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 
 interface RouteMatchParams {
   contestId: string;

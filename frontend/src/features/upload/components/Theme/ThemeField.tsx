@@ -3,7 +3,8 @@ import React from 'react';
 import ThemeCard from './ThemeCard';
 import SubmissionField from '../Submission/SubmissionField';
 
-import { InputChange, ThemeModel } from '../../models';
+import { ThemeModel } from '../../models';
+import type { InputChange } from '../../../../shared/ui/InputField';
 
 export interface ThemeFieldProps {
   theme: ThemeModel;

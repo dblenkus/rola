@@ -16,7 +16,7 @@ import {
 import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 
 interface RouteMatchParams {
   contestId: string;

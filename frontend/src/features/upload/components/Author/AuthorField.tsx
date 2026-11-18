@@ -4,10 +4,11 @@ import { WithTranslation, withTranslation } from 'react-i18next';
 
 import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 
-import InputField from '../InputField';
+import InputField from '../../../../shared/ui/InputField';
 
 import { formCardSx } from '../../../../shared/ui/styles';
-import { AuthorModel, DateChange, InputChange } from '../../models';
+import { AuthorModel, DateChange } from '../../models';
+import type { InputChange } from '../../../../shared/ui/InputField';
 import DatePicker from '../DatePicker';
 import AutocompleteField from '../AutocompleteInput';
 

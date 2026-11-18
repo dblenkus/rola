@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import { CircularProgress, TextField } from '@mui/material';
 
-import { InputChange } from '../models';
+import type { InputChange } from '../../../shared/ui/InputField';
 import { getInstitutions } from '../api';
 
 export interface AutocompleteFieldProps {

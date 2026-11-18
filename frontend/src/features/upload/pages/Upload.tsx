@@ -14,15 +14,16 @@ import {
   uploadSubmit,
 } from '../state/actions';
 
-import { userContext } from '../../auth/components/AuthProvider';
+import { userContext } from '../../auth';
 import { requestError } from '../../../shared/api/errors';
 
-import { DateChange, InputChange } from '../models';
+import { DateChange } from '../models';
+import type { InputChange } from '../../../shared/ui/InputField';
 import { Contest } from '../../../shared/api/types';
 
 import ContestField from '../components/Contest/ContestField';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 
 interface RouteMatchParams {
   contestId: string;

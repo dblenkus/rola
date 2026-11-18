@@ -1,8 +1,3 @@
-export interface InputChange {
-  name: string;
-  value: string;
-}
-
 export interface DateChange {
   name: string;
   value: Date;

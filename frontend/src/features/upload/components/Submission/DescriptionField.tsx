@@ -2,9 +2,10 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
-import { SubmissionModel, InputChange } from '../../models';
+import { SubmissionModel } from '../../models';
+import type { InputChange } from '../../../../shared/ui/InputField';
 
-import InputField from '../InputField';
+import InputField from '../../../../shared/ui/InputField';
 
 export interface DescriptionFieldProps {
   submission: SubmissionModel;
