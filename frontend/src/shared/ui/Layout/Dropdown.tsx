@@ -10,7 +10,7 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 
 import { useAppDispatch } from '../../../app/store';
 import { uploadReset } from '../../../store/upload/actions';
-import { userContext } from '../../../components/Auth/AuthProvider';
+import { userContext } from '../../../features/auth/components/AuthProvider';
 
 const MenuLink = styled(Link)({
   textDecoration: 'none',

@@ -1,4 +1,4 @@
-import type { InputChange } from '../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -7,11 +7,11 @@ import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
 
 import PasswordResetRequestForm, {
   Fields,
-} from '../components/Auth/PasswordResetRequestForm';
-import PasswordResetRequestConfirm from '../components/Auth/PasswordResetRequestConfirm';
+} from '../components/PasswordResetRequestForm';
+import PasswordResetRequestConfirm from '../components/PasswordResetRequestConfirm';
 
-import UserService from '../services/UserService';
-import { requestError } from '../shared/api/errors';
+import UserService from '../api/UserService';
+import { requestError } from '../../../shared/api/errors';
 
 type PasswordResetRequestViewProps = WithTranslation;
 

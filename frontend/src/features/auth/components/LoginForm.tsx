@@ -1,33 +1,34 @@
-import type { InputChange } from '../../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
-
 import { useTranslation } from 'react-i18next';
 
 import { Alert, Button } from '@mui/material';
 
-import InputField from '../Upload/InputField';
+import InputField from '../../../components/Upload/InputField';
 
-import { authSx } from '../../shared/ui/styles';
+import { authSx } from '../../../shared/ui/styles';
 
 export interface Fields {
-  new_password: string;
+  email: string;
+  password: string;
   [key: string]: string;
 }
 
 export interface Errors {
-  new_password: null | Array<string>;
+  email: null | Array<string>;
+  password: null | Array<string>;
   non_field_errors: null | Array<string>;
   [key: string]: string[] | null;
 }
 
-interface PasswordReserFormProps {
+interface LoginFormProps {
   fields: Fields;
   errors: Errors;
   onChange: (event: InputChange) => void;
   onSubmit: () => Promise<void>;
 }
 
-const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
+const LoginForm: React.FC<LoginFormProps> = (props) => {
   const { t } = useTranslation();
   const { errors, fields, onChange, onSubmit } = props;
 
@@ -43,11 +44,21 @@ const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
   return (
     <form onSubmit={handleSubmit}>
       <InputField
-        name="new_password"
-        label={t('new_password')}
-        value={fields.new_password}
-        error={getError('new_password')}
-        autoComplete="new-password"
+        name="email"
+        label={t('email')}
+        value={fields.email}
+        error={getError('email')}
+        autoComplete="email"
+        autoFocus
+        required
+        onChange={onChange}
+      />
+      <InputField
+        name="password"
+        label={t('password')}
+        value={fields.password}
+        error={getError('password')}
+        autoComplete="current-password"
         type="password"
         required
         onChange={onChange}
@@ -66,10 +77,10 @@ const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
         color="primary"
         sx={authSx.submit}
       >
-        {t('password_reset')}
+        {t('login')}
       </Button>
     </form>
   );
 };
 
-export default PasswordResetForm;
+export default LoginForm;

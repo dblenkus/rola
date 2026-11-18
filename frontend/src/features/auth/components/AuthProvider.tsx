@@ -7,14 +7,14 @@ import {
   type ReactNode,
 } from 'react';
 
-import UserService, { type LoginPayload } from '../../services/UserService';
+import UserService, { type LoginPayload } from '../api/UserService';
 import {
   loadToken,
   removeStored,
   sessionChanged,
   StorageBlocked,
   type Session,
-} from '../../shared/api/token';
+} from '../../../shared/api/token';
 
 interface AuthContext {
   user: Session | null;
