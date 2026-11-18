@@ -1,16 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-========================
-Contests API serializers
-========================
-
-.. autoclass:: rola.contests.api.serializers.ThemeSerializer
-    :members:
-
-.. autoclass:: rola.contests.api.serializers.ContestSerializer
-    :members:
-
-"""
+"""Serialize contests, themes and institutions."""
 
 from rest_framework import serializers
 

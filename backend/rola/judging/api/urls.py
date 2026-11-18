@@ -1,4 +1,4 @@
-""".. Ignore pydocstyle D400."""
+"""List the judging and results API routes."""
 
 from rola.judging.api.views import (
     ContestViewSet,

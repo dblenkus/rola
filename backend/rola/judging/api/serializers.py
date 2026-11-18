@@ -1,13 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-======================
-Rating API serializers
-======================
-
-.. autoclass:: rola.judging.api.serializers.RatingSerializer
-    :members:
-
-"""
+"""Serialize ratings, judging lists and published results."""
 
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field

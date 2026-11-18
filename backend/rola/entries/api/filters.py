@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-===================
-Entries API filters
-===================
-
-"""
+"""Filter the entries API endpoints."""
 
 from django_filters import rest_framework as filters
 

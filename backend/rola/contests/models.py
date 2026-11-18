@@ -1,16 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-===============
-Contests models
-===============
-
-.. autoclass:: rola.contests.models.Contest
-    :members:
-
-.. autoclass:: rola.contests.models.Theme
-    :members:
-
-"""
+"""Store contests, their themes and participating institutions."""
 
 from django.db import models
 from django.db.models import Count

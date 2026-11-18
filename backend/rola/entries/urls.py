@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-============
-Entries URLs
-============
-
-"""
+"""Route the contest download."""
 
 from django.urls import path
 

@@ -1,4 +1,4 @@
-""".. Ignore pydocstyle D400."""
+"""Serve the rating, judging and results endpoints."""
 
 from django.db.models import (
     CharField,

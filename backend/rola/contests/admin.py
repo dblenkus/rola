@@ -1,16 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==============
-Contests admin
-==============
-
-.. autoclass:: rola.contests.admin.ThemeInline
-    :members:
-
-.. autoclass:: rola.contests.admin.ContestAdmin
-    :members:
-
-"""
+"""Configure contests and their themes in the Django admin."""
 
 from django.contrib import admin
 from django.urls import reverse
@@ -91,7 +79,6 @@ class ContestAdmin(admin.ModelAdmin):
         )
 
     download_action.short_description = "Download"
-    download_action.allow_tags = True
 
 
 admin.site.register(Contest, ContestAdmin)

@@ -1,19 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==============
-Entries models
-==============
-
-.. autoclass:: rola.entries.models.Author
-    :members:
-
-.. autoclass:: rola.entries.models.Submission
-    :members:
-
-.. autoclass:: rola.entries.models.File
-    :members:
-
-"""
+"""Store authors, submissions, submission sets and photographs."""
 
 import hashlib
 import io
@@ -209,10 +194,6 @@ class File(BaseModel):
             )
 
         super().save(*args, **kwargs)
-
-    def get_long_edge(self):
-        """Return longer edge of the image."""
-        return max(self.file.width, self.file.height)
 
     def __str__(self):
         """Return string representation of File object."""

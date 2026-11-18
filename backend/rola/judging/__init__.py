@@ -1,7 +1,1 @@
-""".. Ignore pydocstyle D400.
-
-=======
-Judging
-=======
-
-"""
+"""Rate submissions and publish the results and rewards."""

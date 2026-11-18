@@ -1,10 +1,4 @@
-""".. Ignore pydocstyle D400.
-
-==================
-Rating API filters
-==================
-
-"""
+"""Filter the rating API endpoint."""
 
 from django_filters import rest_framework as filters
 
