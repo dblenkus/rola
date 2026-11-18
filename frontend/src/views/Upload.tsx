@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import { Alert } from '@mui/material';
 
-import type { AppDispatch, AppState } from '../store';
+import type { AppDispatch, AppState } from '../app/store';
 import {
   authorUpdate,
   imageUpdate,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import '../../../i18n/config';
+import '../../../app/i18n/config';
 import type { ImageModel } from '../../../types/models';
 import ImageField from './ImageField';
 

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-import store from '../../store/index';
+import store from '../../app/store';
 import { addNotificationError } from '../../store/notifications/actions';
 import { loadToken, rejectToken } from './token';
 

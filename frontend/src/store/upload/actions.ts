@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { AppThunk } from '..';
+import { AppThunk } from '../../app/store';
 import {
   addNotificationError,
   addNotificationInfo,
@@ -8,7 +8,7 @@ import {
   addNotificationWarning,
 } from '../notifications/actions';
 
-import i18n from '../../i18n/config';
+import i18n from '../../app/i18n/config';
 import { loadToken, rejectToken } from '../../shared/api/token';
 import { Contest, Theme } from '../../shared/api/types';
 import {

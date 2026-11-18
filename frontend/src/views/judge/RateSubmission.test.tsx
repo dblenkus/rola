@@ -16,8 +16,8 @@ import {
   Routes,
 } from 'react-router';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import '../../i18n/config';
-import { createAppStore, type AppStore } from '../../store';
+import '../../app/i18n/config';
+import { createAppStore, type AppStore } from '../../app/store';
 import { httpError, page, serveApi } from '../../test/api';
 import { contest, jurySubmission } from '../../test/fixtures';
 import type {

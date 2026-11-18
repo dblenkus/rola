@@ -4,7 +4,7 @@ import { connect, ConnectedProps } from 'react-redux';
 
 import { Alert, Typography } from '@mui/material';
 
-import { AppState, AppDispatch } from '../../store';
+import { AppState, AppDispatch } from '../../app/store';
 
 import {
   initializeStore,

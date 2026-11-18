@@ -8,7 +8,7 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 
-import { useAppDispatch } from '../../../store';
+import { useAppDispatch } from '../../../app/store';
 import { uploadReset } from '../../../store/upload/actions';
 import { userContext } from '../../../components/Auth/AuthProvider';
 

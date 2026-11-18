@@ -1,9 +1,9 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import '../i18n/config';
-import App from '../App';
-import store from '../store';
+import '../app/i18n/config';
+import App from '../app/App';
+import store from '../app/store';
 import { deleteMessage } from '../store/notifications/actions';
 import { uploadReset } from '../store/upload/actions';
 import {
