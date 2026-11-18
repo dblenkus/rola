@@ -1,5 +1,6 @@
 """Store contests, their themes and participating institutions."""
 
+from django.contrib import admin
 from django.db import models
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -121,13 +122,10 @@ class Contest(BaseModel):
         """Return Contest's title."""
         return self.title
 
+    @admin.display(boolean=True, ordering="end_date", description=_("active"))
     def is_active(self):
         """Check if contest is active."""
         return self.start_date <= timezone.now() <= self.end_date
-
-    is_active.admin_order_field = "end_date"
-    is_active.boolean = True
-    is_active.short_description = _("active")
 
     def accepts_entries(self, now=None):
         """Check whether entries may be created, changed or deleted.
@@ -145,11 +143,10 @@ class Contest(BaseModel):
         """Check whether the contest's results are published."""
         return self.publish_date <= timezone.now()
 
+    @admin.display(description=_("number of submissons"))
     def number_of_photos(self):
         """Return number of photos submitted to the current contest."""
         return self.themes.aggregate(count=Count("submission"))["count"]
-
-    number_of_photos.short_description = _("number of submissons")
 
 
 class Theme(BaseModel):

@@ -24,15 +24,15 @@ from .settings import accounts_settings
 logger = logging.getLogger(__name__)
 
 
-class UserManager(BaseUserManager):
+class UserManager(BaseUserManager["User"]):
     """Manager for User model."""
 
     @classmethod
-    def normalize_email(cls, email: str) -> str:
+    def normalize_email(cls, email: str | None) -> str:
         """Lowercase the address without changing dots or plus tags."""
         return super().normalize_email(email).lower()
 
-    def get_by_natural_key(self, username: str) -> User:
+    def get_by_natural_key(self, username: str | None) -> User:
         """Find an account independently of email capitalization."""
         return self.get(email__iexact=self.normalize_email(username))
 

@@ -5,7 +5,7 @@ from rest_framework import exceptions, permissions
 from rola.contests.models import Contest
 
 
-def require_open_contest(contest):
+def require_open_contest(contest: Contest) -> None:
     """Answer 403 unless the contest accepts entries.
 
     :raises PermissionDenied: If the contest does not accept entries now.

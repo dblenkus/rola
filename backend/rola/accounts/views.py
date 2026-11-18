@@ -87,7 +87,9 @@ class LoginView(views.APIView):
             )
         ],
     ),
-    create=extend_schema(responses={201: None}, auth=[{}]),
+    # An empty security requirement marks registration as anonymous, which
+    # drf-spectacular supports although its annotation lists names only.
+    create=extend_schema(responses={201: None}, auth=[{}]),  # type: ignore[list-item]
     update=extend_schema(responses=UserSerializer),
     partial_update=extend_schema(responses=UserSerializer),
 )

@@ -1,6 +1,7 @@
 """Filter backends for the API."""
 
 from collections.abc import Sequence
+from typing import Any
 
 from django.db.models import QuerySet
 from rest_framework import filters
@@ -16,7 +17,7 @@ class OrderingFilter(filters.OrderingFilter):
     """
 
     def get_ordering(
-        self, request: Request, queryset: QuerySet, view: APIView
+        self, request: Request, queryset: QuerySet[Any], view: APIView
     ) -> Sequence[str] | None:
         """Return the requested or view ordering followed by ``pk``."""
         ordering = super().get_ordering(request, queryset, view)
