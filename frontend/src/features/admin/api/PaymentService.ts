@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { Payment, PaginatedResponse } from '../shared/api/types';
+import { Payment, PaginatedResponse } from '../../../shared/api/types';
 
-import { apiClient } from '../shared/api/client';
+import { apiClient } from '../../../shared/api/client';
 
 export default {
   updatePayment(submissionSetId: number, paid: boolean): AxiosPromise<Payment> {
