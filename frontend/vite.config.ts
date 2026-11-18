@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: Object.fromEntries(
-      ['/api', '/core', '/django-admin', '/media', '/static2'].map((path) => [
+      ['/api', '/django-admin', '/media', '/static2'].map((path) => [
         path,
         { target },
       ]),
