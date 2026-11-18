@@ -14,7 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import { Contest } from '../../shared/api/types';
+import { Contest } from '../../../shared/api/types';
 
 interface ContestCardProps {
   contest: Contest;

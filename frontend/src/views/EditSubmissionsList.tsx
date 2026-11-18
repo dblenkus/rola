@@ -22,7 +22,7 @@ import ConfirmDialog from '../shared/ui/ConfirmDialog';
 import LoadingProgress from '../shared/ui/LoadingProgress';
 
 import { tableButtonSx } from '../shared/ui/styles';
-import ContestService from '../services/ContestService';
+import ContestService from '../features/contests/api/ContestService';
 import SubmissionService from '../services/SubmissionService';
 import { requestError } from '../shared/api/errors';
 import { Author, Contest, Submission } from '../shared/api/types';

@@ -15,7 +15,7 @@ import {
 } from '../store/upload/actions';
 
 import { userContext } from '../features/auth/components/AuthProvider';
-import ContestService from '../services/ContestService';
+import ContestService from '../features/contests/api/ContestService';
 import { requestError } from '../shared/api/errors';
 
 import { DateChange, InputChange } from '../types/models';

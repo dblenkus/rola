@@ -6,7 +6,7 @@ import { Alert, Grid, Typography } from '@mui/material';
 import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 
 import SubmissionSetService from '../../services/SubmissionSetService';
-import ContestService from '../../services/ContestService';
+import ContestService from '../../features/contests/api/ContestService';
 import { requestError } from '../../shared/api/errors';
 import { Contest, SubmissionSet } from '../../shared/api/types';
 import SubmissionSetTable from '../../components/SubmissionSetTable/SubmissionSetTable';

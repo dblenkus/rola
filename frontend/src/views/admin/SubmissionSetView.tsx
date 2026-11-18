@@ -8,7 +8,7 @@ import { Alert, Card, Grid } from '@mui/material';
 import { Contest, SubmissionSet } from '../../shared/api/types';
 
 import SubmissionSetService from '../../services/SubmissionSetService';
-import ContestService from '../../services/ContestService';
+import ContestService from '../../features/contests/api/ContestService';
 import { requestError } from '../../shared/api/errors';
 
 interface RouteMatchParams {
