@@ -1,4 +1,4 @@
-"""Route the versioned API, the contest download and the Django admin."""
+"""Route the versioned API and the Django admin."""
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -24,7 +24,6 @@ urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("api/v1/user/login", user_views.LoginView.as_view(), name="login"),
     path("api/v1/", include(router.urls)),
-    path("core/", include("rola.entries.urls", namespace="entries")),
 ]
 
 if settings.DEBUG:

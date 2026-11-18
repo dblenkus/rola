@@ -37,7 +37,7 @@ from rola.judging.models import (
     ThemeResults,
 )
 from rola.payments.models import Payment
-from tests.factories import PASSWORD, pay, payload, photo, submitted
+from tests.factories import PASSWORD, create_user, pay, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
 
@@ -618,8 +618,11 @@ def test_export_requires_organizer_and_includes_every_file(world):
     item = submitted(world)
     files = [photo(world.owner, "first.jpg"), photo(world.owner, "second.jpg")]
     item.files.add(*files)
-    url = f"/core/contest/{world.contest.pk}/download"
-    world.client.force_login(world.owner)
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
+    staff = create_user("staff")
+    staff.is_staff = True
+    staff.save()
+    world.client.force_login(staff)
     assert world.client.get(url).status_code == 403
     world.client.force_login(world.admin)
     response = world.client.get(url)
@@ -635,10 +638,36 @@ def test_export_requires_organizer_and_includes_every_file(world):
             assert abs(written - datetime.now()) < timedelta(minutes=5)
 
 
+def test_contest_admin_download_button_links_to_the_download(world):
+    browser = Client()
+    browser.force_login(world.admin)
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
+    for page in (
+        "/django-admin/contests/contest/",
+        f"/django-admin/contests/contest/{world.contest.pk}/change/",
+    ):
+        response = browser.get(page)
+        assert response.status_code == 200
+        assert f'<a class="button" href="{url}">Download</a>' in response.text
+
+
+def test_export_sends_a_non_staff_organizer_to_the_admin_login(world):
+    item = submitted(world)
+    item.files.add(photo(world.owner))
+    world.contest.user = world.owner
+    world.contest.save()
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
+    browser = Client()
+    browser.force_login(world.owner)
+    response = browser.get(url)
+    assert response.status_code == 302
+    assert response.headers["Location"] == f"{reverse('admin:login')}?next={url}"
+
+
 def test_export_sends_a_logged_out_organizer_to_the_admin_login(world):
     item = submitted(world)
     item.files.add(photo(world.owner))
-    url = f"/core/contest/{world.contest.pk}/download"
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
     browser = Client()
     response = browser.get(url)
     login_url = f"{reverse('admin:login')}?next={url}"
@@ -671,7 +700,7 @@ def test_export_builds_the_archive_without_holding_it_in_memory(world):
         ]
     )
     world.client.force_login(world.admin)
-    url = f"/core/contest/{world.contest.pk}/download"
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
     # The first request imports and compiles modules, which tracing would count.
     world.client.get(url).getvalue()
     tracemalloc.start()
@@ -699,7 +728,9 @@ def test_export_command_writes_the_contest_archive(world, tmp_path):
     item = submitted(world)
     item.files.add(photo(world.owner, "first.jpg"), photo(world.owner, "second.jpg"))
     world.client.force_login(world.admin)
-    response = world.client.get(f"/core/contest/{world.contest.pk}/download")
+    response = world.client.get(
+        f"/django-admin/contests/contest/{world.contest.pk}/download/"
+    )
     assert response.status_code == 200
     exports = tmp_path / "exports"
     exports.mkdir()

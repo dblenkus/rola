@@ -10,7 +10,6 @@ DEBUG = boolean("ROLA_DEBUG")
 SECRET_KEY = os.environ["ROLA_SECRET_KEY"]
 ALLOWED_HOSTS = comma_separated("ALLOWED_HOSTS")
 AUTH_USER_MODEL = "accounts.User"
-LOGIN_URL = "admin:login"
 
 INSTALLED_APPS = [
     "rola.accounts.apps.RolaAdminConfig",

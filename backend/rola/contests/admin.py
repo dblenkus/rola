@@ -1,10 +1,12 @@
-"""Configure contests and their themes in the Django admin."""
+"""Configure contests and their themes in the Django admin.
+
+The contest download needs the entries, so :mod:`rola.entries.admin`
+registers Contest with a subclass of :class:`ContestAdmin` that adds it.
+"""
 
 from django.contrib import admin
-from django.urls import reverse
-from django.utils.html import format_html
 
-from rola.contests.models import Contest, Theme
+from rola.contests.models import Theme
 
 
 class ThemeInline(admin.TabularInline):
@@ -41,19 +43,16 @@ class ContestAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Download", {"fields": ("download_action",)}),
     ]
-    readonly_fields = ("download_action",)
 
     inlines = [ThemeInline]
 
-    list_display = (
+    list_display: tuple[str, ...] = (
         "title",
         "start_date",
         "end_date",
         "is_active",
         "number_of_photos",
-        "download_action",
     )
     list_filter = ["start_date", "end_date", "publish_date"]
     search_fields = ["title"]
@@ -70,15 +69,3 @@ class ContestAdmin(admin.ModelAdmin):
             return self.fieldsets
 
         return self.fieldsets_new
-
-    def download_action(self, obj):
-        """Generate 'Download' button."""
-        return format_html(
-            '<a class="button" href="{}">Download</a>',
-            reverse("entries:download-contest", args=[obj.pk]),
-        )
-
-    download_action.short_description = "Download"
-
-
-admin.site.register(Contest, ContestAdmin)
