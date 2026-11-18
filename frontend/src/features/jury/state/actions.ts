@@ -1,37 +1,17 @@
 import { AppState, AppThunk } from '../../../app/store';
 import ContestService from '../../contests/api/ContestService';
 import JudgeSubmissionService from '../api/JudgeSubmissionService';
-import { Contest, JurySubmission, Theme } from '../../../shared/api/types';
+import { JurySubmission } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
 
-import {
-  JuryActionTypes,
-  PERFORM_INITIALIZE,
-  SET_SUBMISSION,
-  SET_PREVIOUS_SUBMISSION,
-  SET_NEXT_SUBMISSION,
-} from './types';
+import { performInitialize } from './reducer';
 
-export const performInitialize = (
-  contest: Contest,
-  theme: Theme,
-  submissions: JurySubmission[],
-  currentIndex: number,
-): JuryActionTypes => ({
-  type: PERFORM_INITIALIZE,
-  payload: { contest, theme, submissions, currentIndex },
-});
-
-export const setSubmission = (submissionId: number): JuryActionTypes => ({
-  type: SET_SUBMISSION,
-  payload: { submissionId },
-});
-export const setPreviousSubmission = (): JuryActionTypes => ({
-  type: SET_PREVIOUS_SUBMISSION,
-});
-export const setNextSubmission = (): JuryActionTypes => ({
-  type: SET_NEXT_SUBMISSION,
-});
+export {
+  performInitialize,
+  setSubmission,
+  setPreviousSubmission,
+  setNextSubmission,
+} from './reducer';
 
 // Counts initializations, so that one that finishes after a newer one
 // started neither replaces the newer theme nor reports its failure.

@@ -7,12 +7,9 @@ import {
 } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import notifications from '../features/notifications/state/reducer';
-import upload from '../features/upload/state/reducer';
-import {
-  AUTHOR_UPDATE,
-  IMAGE_STORE,
-  UPLOAD_SET_CONTEST,
-} from '../features/upload/state/types';
+import upload, { uploadSetContest } from '../features/upload/state/reducer';
+import { authorUpdate } from '../features/upload/state/reducerAuthor';
+import { imageStore } from '../features/upload/state/reducerImage';
 import jury from '../features/jury/state/reducer';
 
 const rootReducer = combineReducers({ notifications, upload, jury });
@@ -36,7 +33,11 @@ export const createAppStore = () =>
             value instanceof File || isImmutableDefault(value),
         },
         serializableCheck: {
-          ignoredActions: [AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST],
+          ignoredActions: [
+            authorUpdate.type,
+            imageStore.type,
+            uploadSetContest.type,
+          ],
           ignoredPaths: ['upload.contest'],
         },
       }),

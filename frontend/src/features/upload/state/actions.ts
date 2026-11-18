@@ -10,43 +10,31 @@ import {
 
 import i18n from '../../../app/i18n/config';
 import { loadToken, rejectToken } from '../../../shared/api/token';
-import { Contest, Theme } from '../../../shared/api/types';
-import {
-  ContestModel,
-  DateChange,
-  ImageError,
-  ImageMeta,
-  InputChange,
-  SubmissionMeta,
-} from '../models';
 import imageReader from '../utils/imageReader';
 import upload, { SessionChanged } from '../utils/upload';
 import validate from '../utils/validate';
 
 import {
-  AUTHOR_UPDATE,
-  IMAGE_INIT,
-  THEME_INIT,
-  SUBMISSION_INIT,
-  SUBMISSION_UPDATE,
-  UPLOAD_COMPLETE,
-  UPLOAD_INIT,
-  UPLOAD_RESET,
-  UPLOAD_SET_CONTEST,
-  UPLOAD_SET_UPLOADING,
-  UPLOAD_UNSET_UPLOADING,
-  UploadActionTypes,
-  IMAGE_STORE,
-} from './types';
+  uploadComplete,
+  uploadSetContest,
+  uploadSetUploading,
+  uploadUnsetUploading,
+} from './reducer';
+import { imageStore } from './reducerImage';
 import { getEmptyImageError } from './utils';
 
-export const uploadInit = (
-  contest: Contest,
-  owner: string,
-): UploadActionTypes => ({
-  type: UPLOAD_INIT,
-  payload: { contest, owner, uploadKey: crypto.randomUUID() },
-});
+export {
+  uploadComplete,
+  uploadInit,
+  uploadReset,
+  uploadSetContest,
+  uploadSetUploading,
+  uploadUnsetUploading,
+} from './reducer';
+export { authorUpdate } from './reducerAuthor';
+export { imageInit, imageStore } from './reducerImage';
+export { submissionInit, submissionUpdate } from './reducerSubmission';
+export { themeInit } from './reducerTheme';
 
 // Tokens are never extended, and the photographs sent before a token
 // expires mid-upload stay stored without a submission. An upload therefore
@@ -138,74 +126,6 @@ export const uploadSubmit =
       }
     }
   };
-
-export const uploadSetContest = (payload: ContestModel): UploadActionTypes => ({
-  type: UPLOAD_SET_CONTEST,
-  payload,
-});
-
-export const uploadReset = (): UploadActionTypes => ({
-  type: UPLOAD_RESET,
-});
-
-export const uploadComplete = (uploadKey: string): UploadActionTypes => ({
-  type: UPLOAD_COMPLETE,
-  payload: { uploadKey },
-});
-
-export const uploadSetUploading = (): UploadActionTypes => ({
-  type: UPLOAD_SET_UPLOADING,
-});
-
-export const uploadUnsetUploading = (): UploadActionTypes => ({
-  type: UPLOAD_UNSET_UPLOADING,
-});
-
-export const authorUpdate = (
-  payload: InputChange | DateChange,
-): UploadActionTypes => ({
-  type: AUTHOR_UPDATE,
-  payload,
-});
-
-export const themeInit = (payload: Theme): UploadActionTypes => ({
-  type: THEME_INIT,
-  payload,
-});
-
-export const submissionInit = (payload: SubmissionMeta): UploadActionTypes => ({
-  type: SUBMISSION_INIT,
-  payload,
-});
-
-export const submissionUpdate = (
-  theme_id: number,
-  submission_id: number,
-  payload: InputChange,
-): UploadActionTypes => ({
-  type: SUBMISSION_UPDATE,
-  theme_id,
-  submission_id,
-  payload,
-});
-
-export const imageInit = (payload: ImageMeta): UploadActionTypes => ({
-  type: IMAGE_INIT,
-  payload,
-});
-
-export const imageStore = (
-  theme_id: number,
-  submission_id: number,
-  image_id: number,
-  payload: { file: File | undefined; url: string; errors: ImageError },
-): UploadActionTypes => ({
-  type: IMAGE_STORE,
-  theme_id,
-  submission_id,
-  image_id,
-  payload,
-});
 
 // Counts the choices made for each photograph slot of each form. Reading a
 // large photograph takes long enough for the user to remove it or choose

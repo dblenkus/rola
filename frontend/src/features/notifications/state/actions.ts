@@ -1,37 +1,15 @@
-import {
-  ADD_NOTIFICATION,
-  DELETE_NOTIFICATION,
-  NotificationsActionTypes,
-  SeverityLevels,
-} from './types';
+import { addNotification } from './reducer';
 
-const addNotification = (
-  message: string,
-  severity: SeverityLevels,
-): NotificationsActionTypes => ({
-  type: ADD_NOTIFICATION,
-  payload: { message, severity },
-});
+export { deleteMessage } from './reducer';
 
-export const addNotificationError = (
-  newMessage: string,
-): NotificationsActionTypes => addNotification(newMessage, 'error');
+export const addNotificationError = (newMessage: string) =>
+  addNotification(newMessage, 'error');
 
-export const addNotificationWarning = (
-  newMessage: string,
-): NotificationsActionTypes => addNotification(newMessage, 'warning');
+export const addNotificationWarning = (newMessage: string) =>
+  addNotification(newMessage, 'warning');
 
-export const addNotificationInfo = (
-  newMessage: string,
-): NotificationsActionTypes => addNotification(newMessage, 'info');
+export const addNotificationInfo = (newMessage: string) =>
+  addNotification(newMessage, 'info');
 
-export const addNotificationSuccess = (
-  newMessage: string,
-): NotificationsActionTypes => addNotification(newMessage, 'success');
-
-export const deleteMessage = (
-  notificationId: number,
-): NotificationsActionTypes => ({
-  type: DELETE_NOTIFICATION,
-  meta: { notificationId },
-});
+export const addNotificationSuccess = (newMessage: string) =>
+  addNotification(newMessage, 'success');

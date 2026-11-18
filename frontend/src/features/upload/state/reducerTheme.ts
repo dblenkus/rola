@@ -1,18 +1,18 @@
-import { ThemeModel } from '../models';
+import { createSlice, isAnyOf, type PayloadAction } from '@reduxjs/toolkit';
 
-import { submissionInit } from './actions';
-import { THEME_INIT, UploadActionTypes } from './types';
-import submissionReducer from './reducerSubmission';
+import { Theme } from '../../../shared/api/types';
+import { imageStore } from './reducerImage';
+import submissionReducer, {
+  submissionInit,
+  submissionUpdate,
+} from './reducerSubmission';
 import { getEmptyTheme } from './utils';
 
-const initialState = getEmptyTheme();
-
-const reducer = (
-  state = initialState,
-  action: UploadActionTypes,
-): ThemeModel => {
-  switch (action.type) {
-    case THEME_INIT: {
+const themeSlice = createSlice({
+  name: 'upload/theme',
+  initialState: getEmptyTheme,
+  reducers: {
+    themeInit: (state, action: PayloadAction<Theme>) => {
       const {
         id,
         is_series: isSeries = false,
@@ -42,19 +42,22 @@ const reducer = (
           ),
         ),
       };
-    }
-    default: {
-      if ('submission_id' in action) {
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addMatcher(
+      isAnyOf(submissionUpdate, imageStore),
+      (state, action) => {
         const submissions = state.submissions.map((submission) => {
-          return submission.meta.id === action.submission_id
+          return submission.meta.id === action.meta.submissionId
             ? submissionReducer(submission, action)
             : submission;
         });
         return { ...state, submissions };
-      }
-      return state;
-    }
-  }
-};
+      },
+    );
+  },
+});
 
-export default reducer;
+export const { themeInit } = themeSlice.actions;
+export default themeSlice.reducer;

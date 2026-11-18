@@ -1,9 +1,15 @@
-import { SubmissionModel } from '../models';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { imageInit } from './actions';
-import { SUBMISSION_INIT, SUBMISSION_UPDATE, UploadActionTypes } from './types';
-import imageReducer from './reducerImage';
+import { InputChange, SubmissionMeta, SubmissionModel } from '../models';
+import imageReducer, { imageInit, imageStore } from './reducerImage';
 import { getEmptySubmission } from './utils';
+
+// The submission an action is for; the upload and theme reducers route the
+// action to that submission by it.
+export interface SubmissionTarget {
+  themeId: number;
+  submissionId: number;
+}
 
 interface RequiredFields {
   titleRequired: boolean;
@@ -26,14 +32,11 @@ const requiredFields = ({
   };
 };
 
-const initialSate = getEmptySubmission();
-
-const reducer = (
-  state = initialSate,
-  action: UploadActionTypes,
-): SubmissionModel => {
-  switch (action.type) {
-    case SUBMISSION_INIT: {
+const submissionSlice = createSlice({
+  name: 'upload/submission',
+  initialState: getEmptySubmission,
+  reducers: {
+    submissionInit: (state, action: PayloadAction<SubmissionMeta>) => {
       const { imageNumber } = action.payload;
       const imageMeta = {
         isNew: true,
@@ -46,31 +49,45 @@ const reducer = (
           imageReducer(undefined, imageInit({ ...imageMeta, id: image_id })),
         ),
       };
-    }
-    case SUBMISSION_UPDATE: {
-      const { name, value } = action.payload;
-      const submission = { ...state, [name]: value };
-      return {
-        ...submission,
-        meta: { ...state.meta, ...requiredFields(submission), isChanged: true },
-      };
-    }
-    default: {
-      if ('image_id' in action) {
-        const images = state.images.map((image) => {
-          return image.meta.id === action.image_id
-            ? imageReducer(image, action)
-            : image;
-        });
-        const submission = { ...state, images };
+    },
+    submissionUpdate: {
+      reducer: (
+        state,
+        action: PayloadAction<InputChange, string, SubmissionTarget>,
+      ) => {
+        const { name, value } = action.payload;
+        const submission = { ...state, [name]: value };
         return {
           ...submission,
-          meta: { ...state.meta, ...requiredFields(submission) },
+          meta: {
+            ...state.meta,
+            ...requiredFields(submission),
+            isChanged: true,
+          },
         };
-      }
-      return state;
-    }
-  }
-};
+      },
+      prepare: (
+        themeId: number,
+        submissionId: number,
+        payload: InputChange,
+      ) => ({ payload, meta: { themeId, submissionId } }),
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(imageStore, (state, action) => {
+      const images = state.images.map((image) => {
+        return image.meta.id === action.meta.imageId
+          ? imageReducer(image, action)
+          : image;
+      });
+      const submission = { ...state, images };
+      return {
+        ...submission,
+        meta: { ...state.meta, ...requiredFields(submission) },
+      };
+    });
+  },
+});
 
-export default reducer;
+export const { submissionInit, submissionUpdate } = submissionSlice.actions;
+export default submissionSlice.reducer;
