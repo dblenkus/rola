@@ -12,7 +12,7 @@ import RegisterActivateFailed from '../components/Auth/RegisterActivateFailed';
 import RegisterActivateSuccess from '../components/Auth/RegisterActivateSuccess';
 
 import UserService from '../services/UserService';
-import { requestError } from '../services/errors';
+import { requestError } from '../shared/api/errors';
 
 interface RegisterActivateViewProps extends WithTranslation {
   location: Location;

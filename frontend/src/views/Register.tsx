@@ -11,7 +11,7 @@ import RegisterForm, { Errors, Fields } from '../components/Auth/RegisterForm';
 import RegisterConfirm from '../components/Auth/RegisterConfirm';
 
 import UserService from '../services/UserService';
-import { formErrors } from '../services/errors';
+import { formErrors } from '../shared/api/errors';
 
 type RegisterViewProps = WithTranslation;
 

@@ -7,7 +7,7 @@ import { Button } from '@mui/material';
 
 import InputField from '../Upload/InputField';
 
-import { authSx } from '../../styles/general';
+import { authSx } from '../../shared/ui/styles';
 
 export interface Fields {
   email: string;

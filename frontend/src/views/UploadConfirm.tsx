@@ -1,10 +1,10 @@
 import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import LoadingProgress from '../components/LoadingProgress';
+import LoadingProgress from '../shared/ui/LoadingProgress';
 import ContestService from '../services/ContestService';
-import { requestError } from '../services/errors';
-import { Contest } from '../types/api';
+import { requestError } from '../shared/api/errors';
+import { Contest } from '../shared/api/types';
 
 import ConfirmationHtml from '../components/Upload/ConfirmationHtml';
 

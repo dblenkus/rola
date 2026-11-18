@@ -15,7 +15,7 @@ import {
   withStatus,
 } from '../test/api';
 import { author, contest } from '../test/fixtures';
-import type { Contest, Theme } from '../types/api';
+import type { Contest, Theme } from '../shared/api/types';
 
 const winter: Contest = { ...contest, id: 3, title: 'Winter photographs' };
 

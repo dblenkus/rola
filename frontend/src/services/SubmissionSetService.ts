@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { PaginatedResponse, SubmissionSet } from '../types/api';
+import { PaginatedResponse, SubmissionSet } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   getSubmissionSet(submissionSetId: string): AxiosPromise<SubmissionSet> {

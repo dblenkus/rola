@@ -1,7 +1,7 @@
 import axios, { AxiosPromise } from 'axios';
 import { useEffect, useState } from 'react';
 
-import { BaseResource, PaginatedResponse } from '../types/api';
+import { BaseResource, PaginatedResponse } from './types';
 import { requestError } from './errors';
 
 interface PaginationProps<R> {

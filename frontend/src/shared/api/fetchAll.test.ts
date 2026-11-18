@@ -1,7 +1,7 @@
 import type { AxiosAdapter } from 'axios';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { apiClient } from '../services/Base';
-import type { PaginatedResponse } from '../types/api';
+import { apiClient } from './client';
+import type { PaginatedResponse } from './types';
 import fetchAll from './fetchAll';
 
 const origin = window.location.origin;

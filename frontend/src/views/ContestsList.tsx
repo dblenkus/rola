@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { Alert, Grid, Typography } from '@mui/material';
 
 import ContestCard from '../components/Upload/ContestCard';
-import LoadingProgress from '../components/LoadingProgress';
+import LoadingProgress from '../shared/ui/LoadingProgress';
 import ContestService from '../services/ContestService';
-import { reportUnexpected } from '../services/errors';
-import type { Contest } from '../types/api';
-import fetchAll from '../utils/fetchAll';
+import { reportUnexpected } from '../shared/api/errors';
+import type { Contest } from '../shared/api/types';
+import fetchAll from '../shared/api/fetchAll';
 
 export default function ContestsListView() {
   const [contests, setContests] = useState<Contest[] | null>(null);

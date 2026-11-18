@@ -13,15 +13,15 @@ import {
 } from '@mui/material';
 
 import ContestService from '../../services/ContestService';
-import LoadingProgress from '../../components/LoadingProgress';
+import LoadingProgress from '../../shared/ui/LoadingProgress';
 import ResultsThemeService from '../../services/ResultsThemeService';
-import { requestError } from '../../services/errors';
+import { requestError } from '../../shared/api/errors';
 import {
   Contest,
   ResultsAuthor,
   ResultsThemeSubmission,
-} from '../../types/api';
-import groupBy from '../../utils/groupBy';
+} from '../../shared/api/types';
+import groupBy from '../../shared/utils/groupBy';
 
 interface RouteMatchParams {
   contestId: string;

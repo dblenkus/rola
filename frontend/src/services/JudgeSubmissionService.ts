@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { JurySubmission, PaginatedResponse } from '../types/api';
+import { JurySubmission, PaginatedResponse } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   getSubmissionsByContest(

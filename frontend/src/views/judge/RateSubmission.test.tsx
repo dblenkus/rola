@@ -24,7 +24,7 @@ import type {
   JurySubmission,
   PaginatedResponse,
   Rating,
-} from '../../types/api';
+} from '../../shared/api/types';
 import RateSubmission from './RateSubmission';
 
 interface PendingRating {

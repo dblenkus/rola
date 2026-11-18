@@ -34,7 +34,7 @@ Production builds require both.
 - `npm run lint`: ESLint.
 - `npm run typecheck`: TypeScript.
 - `npm run format` and `npm run format:check`: Prettier.
-- `npm run api:generate`: regenerate `src/types/generated-api.ts` from
+- `npm run api:generate`: regenerate `src/shared/api/generated-api.ts` from
   `../backend/openapi.yaml`.
 
 The repository's `docs/contributing.rst` lists the checks that CI runs.

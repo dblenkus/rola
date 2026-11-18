@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-import store from '../store/index';
-import { addNotificationError } from '../store/notifications/actions';
+import store from '../../store/index';
+import { addNotificationError } from '../../store/notifications/actions';
 import { loadToken, rejectToken } from './token';
 
 declare module 'axios' {

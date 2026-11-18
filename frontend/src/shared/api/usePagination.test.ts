@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { httpError, page, serveApi } from '../test/api';
-import { author } from '../test/fixtures';
-import type { Author, PaginatedResponse } from '../types/api';
-import { apiClient } from './Base';
+import { httpError, page, serveApi } from '../../test/api';
+import { author } from '../../test/fixtures';
+import type { Author, PaginatedResponse } from './types';
+import { apiClient } from './client';
 import usePagination from './usePagination';
 
 const list = (path: string) => (pageNumber: number, pageSize: number) =>

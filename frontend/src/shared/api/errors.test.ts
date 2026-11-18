@@ -1,6 +1,6 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
-import { httpError } from '../test/api';
+import { httpError } from '../../test/api';
 import { requestError } from './errors';
 
 describe('request errors', () => {

@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { Institution, PaginatedResponse } from '../types/api';
+import { Institution, PaginatedResponse } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   getInstitutions(): AxiosPromise<PaginatedResponse<Institution>> {

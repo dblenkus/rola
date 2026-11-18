@@ -16,13 +16,13 @@ import {
 
 import { userContext } from '../components/Auth/AuthProvider';
 import ContestService from '../services/ContestService';
-import { requestError } from '../services/errors';
+import { requestError } from '../shared/api/errors';
 
 import { DateChange, InputChange } from '../types/models';
-import { Contest } from '../types/api';
+import { Contest } from '../shared/api/types';
 
 import ContestField from '../components/Upload/Contest/ContestField';
-import LoadingProgress from '../components/LoadingProgress';
+import LoadingProgress from '../shared/ui/LoadingProgress';
 
 interface RouteMatchParams {
   contestId: string;

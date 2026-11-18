@@ -13,7 +13,7 @@ import '../../i18n/config';
 import { createAppStore } from '../../store';
 import { httpError, page, serveApi } from '../../test/api';
 import { contest, jurySubmission } from '../../test/fixtures';
-import type { JurySubmission, PaginatedResponse } from '../../types/api';
+import type { JurySubmission, PaginatedResponse } from '../../shared/api/types';
 import RateSubmission from './RateSubmission';
 import ViewTheme from './ViewTheme';
 

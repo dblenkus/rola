@@ -14,7 +14,7 @@ import PasswordResetForm, {
 import PasswordResetSuccess from '../components/Auth/PasswordResetSuccess';
 
 import UserService from '../services/UserService';
-import { formErrors } from '../services/errors';
+import { formErrors } from '../shared/api/errors';
 
 interface PasswordResetProps extends WithTranslation {
   location: Location;

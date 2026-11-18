@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
 import { page, serveApi } from '../../test/api';
 import { author, submission } from '../../test/fixtures';
-import type { ResultsSubmission } from '../../types/api';
+import type { ResultsSubmission } from '../../shared/api/types';
 import ThemeOverview from './ThemeOverview';
 
 it('shows a series of more than six photographs in full', async () => {

@@ -1,4 +1,4 @@
-import { Contest } from '../../types/api';
+import { Contest } from '../../shared/api/types';
 import { ContestMeta, ThemeModel } from '../../types/models';
 
 import {

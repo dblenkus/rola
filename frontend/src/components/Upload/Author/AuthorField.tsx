@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 
 import InputField from '../InputField';
 
-import { formCardSx } from '../../../styles/general';
+import { formCardSx } from '../../../shared/ui/styles';
 import { AuthorModel, DateChange, InputChange } from '../../../types/models';
 import DatePicker from '../DatePicker';
 import AutocompleteField from '../AutocompleteInput';

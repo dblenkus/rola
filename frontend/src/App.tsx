@@ -4,8 +4,8 @@ import { Provider } from 'react-redux';
 
 import { Box, CssBaseline, Container } from '@mui/material';
 
-import Header from './components/Layout/Header';
-import Footer from './components/Layout/Footer';
+import Header from './shared/ui/Layout/Header';
+import Footer from './shared/ui/Layout/Footer';
 
 import ContestsListView from './views/ContestsList';
 import ContestDetailsView from './views/ContestDetails';

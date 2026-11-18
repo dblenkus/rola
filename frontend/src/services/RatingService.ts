@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { Rating, PaginatedResponse } from '../types/api';
+import { Rating, PaginatedResponse } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   getForSubmission(

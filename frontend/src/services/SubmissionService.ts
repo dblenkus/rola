@@ -1,9 +1,13 @@
-import type { components } from '../types/generated-api';
+import type { components } from '../shared/api/generated-api';
 import { AxiosPromise } from 'axios';
 
-import { PaginatedResponse, Submission, SubmissionWrite } from '../types/api';
+import {
+  PaginatedResponse,
+  Submission,
+  SubmissionWrite,
+} from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export type SubmissionCreatePayload =
   components['schemas']['SubmissionRequest'];

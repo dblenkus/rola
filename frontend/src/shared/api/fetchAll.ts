@@ -1,7 +1,7 @@
 import { AxiosPromise } from 'axios';
 
-import { PaginatedResponse } from '../types/api';
-import { apiBaseURL, apiClient } from '../services/Base';
+import { PaginatedResponse } from './types';
+import { apiBaseURL, apiClient } from './client';
 
 const fetchAll = async <T>(
   resource: () => AxiosPromise<PaginatedResponse<T>>,

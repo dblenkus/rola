@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { ResultsSubmission, PaginatedResponse } from '../types/api';
+import { ResultsSubmission, PaginatedResponse } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   get(submissionId: string): AxiosPromise<ResultsSubmission> {

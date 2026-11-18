@@ -161,7 +161,7 @@ jobs:
         working-directory: frontend
       - run: npm run api:generate
         working-directory: frontend
-      - run: git diff --exit-code -- frontend/src/types/generated-api.ts
+      - run: git diff --exit-code -- frontend/src/shared/api/generated-api.ts
 
   images:
     name: images (${{ matrix.component }})

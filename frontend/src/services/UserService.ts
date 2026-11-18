@@ -1,8 +1,8 @@
-import type { components } from '../types/generated-api';
+import type { components } from '../shared/api/generated-api';
 import { AxiosPromise } from 'axios';
 
-import { apiClient } from './Base';
-import type { AuthToken } from './token';
+import { apiClient } from '../shared/api/client';
+import type { AuthToken } from '../shared/api/token';
 
 type Schemas = components['schemas'];
 export type LoginPayload = Schemas['LoginRequest'];

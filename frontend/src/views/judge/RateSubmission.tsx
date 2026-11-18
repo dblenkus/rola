@@ -19,9 +19,9 @@ import {
   type InitializeResult,
 } from '../../store/jury/actions';
 import RatingService from '../../services/RatingService';
-import { contentUnavailable, requestError } from '../../services/errors';
-import useKeyPress from '../../hooks/useKeyPress';
-import LoadingProgress from '../../components/LoadingProgress';
+import { contentUnavailable, requestError } from '../../shared/api/errors';
+import useKeyPress from '../../shared/hooks/useKeyPress';
+import LoadingProgress from '../../shared/ui/LoadingProgress';
 
 interface RouteMatchParams {
   contestId: string;

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { page, serveApi } from '../../test/api';
-import type { Institution } from '../../types/api';
+import type { Institution } from '../../shared/api/types';
 import AutocompleteField from './AutocompleteInput';
 
 const school: Institution = {
