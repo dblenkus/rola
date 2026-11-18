@@ -3,10 +3,10 @@ import { useParams } from 'react-router';
 
 import { Alert, Box, Typography } from '@mui/material';
 
-import LoadingProgress from '../../shared/ui/LoadingProgress';
-import ResultsSubmissionService from '../../services/ResultsSubmissionService';
-import { requestError } from '../../shared/api/errors';
-import { ResultsSubmission } from '../../shared/api/types';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import ResultsSubmissionService from '../api/ResultsSubmissionService';
+import { requestError } from '../../../shared/api/errors';
+import { ResultsSubmission } from '../../../shared/api/types';
 
 interface RouteMatchParams {
   submissionId: string;

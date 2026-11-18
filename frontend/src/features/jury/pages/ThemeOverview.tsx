@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 
 import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ResultsSubmissionService from '../../../services/ResultsSubmissionService';
+import ResultsSubmissionService from '../../results/api/ResultsSubmissionService';
 import { requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
 

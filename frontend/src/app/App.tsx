@@ -12,7 +12,7 @@ import ContestDetailsView from '../features/contests/pages/ContestDetails';
 import LoginView from '../features/auth/pages/Login';
 import RegisterView from '../features/auth/pages/Register';
 import RegisterActivateView from '../features/auth/pages/RegisterActivate';
-import ResultsListView from '../views/ResultsList';
+import ResultsListView from '../features/results/pages/ResultsList';
 import UploadView from '../features/upload/pages/Upload';
 import UploadConfirmView from '../features/upload/pages/UploadConfirm';
 import EditSubmissionsList from '../features/upload/pages/EditSubmissionsList';
@@ -30,9 +30,9 @@ import PrivateRoute from '../features/auth/components/PrivateRoute';
 
 import store from './store';
 import ThemeOverview from '../features/jury/pages/ThemeOverview';
-import ThemeResultsView from '../views/results/ThemeResults';
-import SelectResultsThemeView from '../views/results/SelectTheme';
-import SubmissionResultsView from '../views/results/SubmissionResults';
+import ThemeResultsView from '../features/results/pages/ThemeResults';
+import SelectResultsThemeView from '../features/results/pages/SelectTheme';
+import SubmissionResultsView from '../features/results/pages/SubmissionResults';
 
 const raterPath = '/judge/contest/:contestId/theme/:themeId/rate';
 
