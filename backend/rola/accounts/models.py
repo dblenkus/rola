@@ -103,7 +103,7 @@ class Location(models.Model):
     country = models.CharField(max_length=100)
 
     def __str__(self):
-        """String representation of the object."""
+        """Return the street, postal code, city and country on one line."""
         return f"{self.address}, {self.postal_code} {self.city}, {self.country}"
 
 
