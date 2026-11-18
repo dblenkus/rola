@@ -13,7 +13,6 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import SHA1, Cast, Coalesce, Concat
-from django.utils import timezone
 from rest_framework import mixins, permissions, viewsets
 
 from rola.contests.api.filters import ContestFilter
@@ -63,9 +62,8 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         """Return queryset for submissions that can be shown to judge."""
         judge_qs = Judge.objects.filter(judge=self.request.user)
-        theme_qs = Theme.objects.filter(
-            contest__in=judge_qs.values("contest"),
-            contest__publish_date__gte=timezone.now(),
+        theme_qs = Theme.objects.filter(contest__in=judge_qs.values("contest")).filter(
+            contest__in=Contest.objects.in_judging()
         )
         return (
             Submission.objects.filter(
@@ -110,10 +108,11 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 filter=Q(submission__rating__user=self.request.user),
             ),
         ).order_by("pk")
-        return Contest.objects.filter(
-            pk__in=judge_qs.values("contest"),
-            publish_date__gte=timezone.now(),
-        ).prefetch_related(Prefetch("themes", queryset=themes))
+        return (
+            Contest.objects.filter(pk__in=judge_qs.values("contest"))
+            .in_judging()
+            .prefetch_related(Prefetch("themes", queryset=themes))
+        )
 
 
 class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -140,7 +139,7 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def get_queryset(self):
         """Return published themes that have results."""
         return self.queryset.filter(
-            contest__publish_date__lte=timezone.now(), results__isnull=False
+            contest__in=Contest.objects.results_published(), results__isnull=False
         )
 
 
@@ -170,4 +169,6 @@ class SubmissionResultsViewSet(
 
     def get_queryset(self):
         """Return accepted, paid submissions of published contests."""
-        return self.queryset.filter(theme__contest__publish_date__lte=timezone.now())
+        return self.queryset.filter(
+            theme__contest__in=Contest.objects.results_published()
+        )
