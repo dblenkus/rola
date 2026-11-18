@@ -1,6 +1,19 @@
-"""Remove identifying metadata from JPEG photographs without decoding them."""
+"""Check, strip, thumbnail and name the uploaded photographs.
 
+:func:`strip_metadata` removes identifying metadata from a JPEG photograph
+without decoding it.
+"""
+
+import hashlib
+import io
+import os
 import struct
+import time
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image, ImageOps
 
 #: EXIF tag that says how to rotate the image for display.
 ORIENTATION = 0x0112
@@ -171,3 +184,75 @@ def _orientation_exif(orientation: int) -> bytes:
         + b"MM\x00\x2a"
         + struct.pack(">IHHHIHHI", 8, 1, ORIENTATION, 3, 1, orientation, 0, 0)
     )
+
+
+def validate_image(file):
+    """Validate the upload size, format and longest image edge.
+
+    The photograph must be a JPEG file whose metadata can be stripped.
+    """
+    max_size = settings.ENTRIES_MAX_UPLOAD_SIZE
+    if file.size > max_size:
+        raise ValidationError(f"Max size of file is {max_size}B.")
+
+    # Pillow reports a JPEG file that holds further pictures, as many
+    # cameras write it, as MPO; stripping keeps only its first picture.
+    if file.image.format not in ("JPEG", "MPO"):
+        raise ValidationError("Photographs must be JPEG files.")
+
+    max_res = settings.ENTRIES_MAX_UPLOAD_RESOLUTION
+    if max(file.image.size) > max_res:
+        raise ValidationError(f"Max photo resolution is {max_res}px.")
+
+    file.seek(0)
+    try:
+        strip_metadata(file.read())
+    except ValueError as error:
+        raise ValidationError("The photograph is not a valid JPEG file.") from error
+    finally:
+        file.seek(0)
+
+
+def create_thumbnail(photograph):
+    """Return a JPEG thumbnail of the photograph, at most 400 pixels on each edge.
+
+    :param photograph: The stored photograph's file, without its metadata.
+    :return: The thumbnail, named like the photograph.
+    """
+    thumb = io.BytesIO()
+    with Image.open(photograph) as image:
+        # The thumbnail carries no EXIF data, so its pixels take the
+        # orientation that viewers apply to the stored photograph.
+        ImageOps.exif_transpose(image, in_place=True)
+        image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+        image.save(thumb, format="jpeg", quality=80, optimize=True, progressive=True)
+    return InMemoryUploadedFile(
+        thumb, None, photograph.name, "image/jpeg", thumb.tell(), None
+    )
+
+
+def _generate_filename(instance, filename, prefix):
+    """Generate unique filename with given prefix."""
+    md5 = hashlib.md5()
+    md5.update(struct.pack("f", time.time()))
+    was_closed = instance.file.closed
+    try:
+        if was_closed:
+            instance.file.open("rb")
+        for chunk in instance.file.chunks():
+            md5.update(chunk)
+    finally:
+        if was_closed:
+            instance.file.close()
+    extension = os.path.splitext(filename)[1]
+    return os.path.join(prefix, md5.hexdigest() + extension)
+
+
+def generate_file_filename(instance, filename):
+    """Generate filename for uploaded photo."""
+    return _generate_filename(instance, filename, "photos")
+
+
+def generate_thumb_filename(instance, filename):
+    """Generate filename for thumbnails of uploaded photos."""
+    return _generate_filename(instance, filename, "thumbs")
