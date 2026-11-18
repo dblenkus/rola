@@ -34,10 +34,15 @@ from rola.judging.models import (
     ThemeResults,
 )
 from rola.payments.models import Payment
-from tests.accounts.test_account_security import (
+from tests.factories import (
+    PASSWORD,
+    create_user,
+    pay,
+    payload,
+    photo,
+    submitted,
     wait_until_blocked_by_this_connection,
 )
-from tests.factories import PASSWORD, create_user, pay, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
 

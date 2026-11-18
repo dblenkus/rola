@@ -1,8 +1,11 @@
-"""Build accounts, photographs and submissions for backend tests."""
+"""Build accounts, photographs and submissions, and share helpers between tests."""
 
 import io
+import time
 
+import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from PIL import Image
 
 from rola.accounts.models import User
@@ -58,3 +61,36 @@ def pay(submission):
     )
     group.submissions.add(submission)
     return Payment.objects.create(submissionset=group, paid=True)
+
+
+def first_link(message):
+    """Return the first HTTPS link in a plain-text email body."""
+    return next(
+        line for line in message.body.splitlines() if line.startswith("https://")
+    )
+
+
+def registration(email, address):
+    """Return a valid registration request for a new account."""
+    return {
+        "email": email,
+        "password": "Original!73",
+        "first_name": "New",
+        "last_name": "Account",
+        **address,
+    }
+
+
+def wait_until_blocked_by_this_connection(pid):
+    """Wait until database backend ``pid`` waits for a lock this connection holds."""
+    deadline = time.monotonic() + 10
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_backend_pid()")
+        (own_pid,) = cursor.fetchone()
+        while True:
+            cursor.execute("SELECT pg_blocking_pids(%s)", [pid])
+            if own_pid in cursor.fetchone()[0]:
+                return
+            if time.monotonic() > deadline:
+                pytest.fail("The other connection never waited for this one.")
+            time.sleep(0.01)
