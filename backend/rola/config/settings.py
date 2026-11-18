@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     "rola.contests",
+    "rola.entries",
     "rola.payments",
     "rola.judging",
     "rola.accounts",
@@ -125,6 +126,8 @@ SPECTACULAR_SETTINGS = {
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
+# The catalogue covers the strings of several apps, so it is the project's.
+LOCALE_PATHS = [BASE_DIR / "rola" / "locale"]
 USE_TZ = True
 
 MAILERS = {

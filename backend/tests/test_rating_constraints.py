@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
-from rola.contests.models import Author, Contest, Submission, Theme
+from rola.contests.models import Contest, Theme
+from rola.entries.models import Author, Submission
 from rola.judging.models import Judge, Rating
 
 

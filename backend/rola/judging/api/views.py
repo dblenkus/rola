@@ -16,8 +16,10 @@ from django.db.models.functions import SHA1, Cast, Coalesce, Concat
 from django.utils import timezone
 from rest_framework import mixins, permissions, viewsets
 
-from rola.contests.api.filters import ContestFilter, SubmissionFilter
-from rola.contests.models import Contest, Submission, Theme
+from rola.contests.api.filters import ContestFilter
+from rola.contests.models import Contest, Theme
+from rola.entries.api.filters import SubmissionFilter
+from rola.entries.models import Submission
 from rola.judging.api.filters import RatingFilter
 from rola.judging.api.permissions import CanModifyRating, IsActiveJudge
 from rola.judging.api.serializers import (

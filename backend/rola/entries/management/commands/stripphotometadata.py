@@ -7,8 +7,8 @@ import tempfile
 from django.core.files.storage import FileSystemStorage
 from django.core.management.base import BaseCommand
 
-from rola.contests.images import strip_metadata
-from rola.contests.models import File
+from rola.entries.images import strip_metadata
+from rola.entries.models import File
 
 
 class Command(BaseCommand):

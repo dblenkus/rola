@@ -1,15 +1,15 @@
 """.. Ignore pydocstyle D400.
 
-==============
-Core API views
-==============
+====================
+Contests API filters
+====================
 
 """
 
 from django.utils import timezone
 from django_filters import rest_framework as filters
 
-from rola.contests.models import Institution, Submission, SubmissionSet
+from rola.contests.models import Institution, Theme
 
 TEXT_LOOKUPS = [
     "exact",
@@ -34,28 +34,6 @@ class InstitutionFilter(filters.FilterSet):
         }
 
 
-class SubmissionFilter(filters.FilterSet):
-    """Filter for Submission API endpoint."""
-
-    contest = filters.CharFilter(field_name="theme__contest")
-
-    class Meta:
-        """Configure submission filters."""
-
-        model = Submission
-        fields = ["theme"]
-
-
-class SubmissionSetFilter(filters.FilterSet):
-    """Filter for SubmissionSet API endpoint."""
-
-    class Meta:
-        """Filter submission sets by contest."""
-
-        model = SubmissionSet
-        fields = ["contest"]
-
-
 class ContestFilter(filters.FilterSet):
     """Filter for Contest API endpoint."""
 
@@ -70,8 +48,8 @@ class ContestFilter(filters.FilterSet):
         if self.request.user.is_anonymous:
             return queryset.none() if value else queryset
 
-        contests = Submission.objects.filter(user=self.request.user).values(
-            "theme__contest"
+        contests = Theme.objects.filter(submission__user=self.request.user).values(
+            "contest"
         )
         if value:
             return queryset.filter(pk__in=contests)

@@ -1,8 +1,8 @@
 """.. Ignore pydocstyle D400.
 
-=========
-Core URLs
-=========
+============
+Entries URLs
+============
 
 """
 
@@ -10,7 +10,7 @@ from django.urls import path
 
 from . import views
 
-app_name = "contests"
+app_name = "entries"
 urlpatterns = [
     path(
         "contest/<int:contest_id>/download",

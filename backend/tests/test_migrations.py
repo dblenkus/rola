@@ -10,7 +10,7 @@ from django.db.migrations.exceptions import InconsistentMigrationHistory
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.recorder import MigrationRecorder
 
-SCHEMA_APPS = ["accounts", "contests", "payments", "judging"]
+SCHEMA_APPS = ["accounts", "contests", "entries", "payments", "judging"]
 
 
 @pytest.mark.django_db

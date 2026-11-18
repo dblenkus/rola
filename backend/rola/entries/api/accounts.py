@@ -9,7 +9,7 @@ from django.utils import timezone
 from rest_framework import exceptions
 
 from rola.accounts import views as user_views
-from rola.contests.models import Submission
+from rola.entries.models import Submission
 
 
 class UserViewSet(user_views.UserViewSet):
