@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { DateChange, InputChange } from '../models';
+import { DateChange } from '../models';
+import type { InputChange } from '../../../shared/ui/InputField';
 import { getEmptyAuthor } from './utils';
 
 const authorSlice = createSlice({

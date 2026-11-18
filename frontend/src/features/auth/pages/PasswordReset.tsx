@@ -1,4 +1,4 @@
-import type { InputChange } from '../../upload/models';
+import type { InputChange } from '../../../shared/ui/InputField';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';

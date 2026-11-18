@@ -27,7 +27,7 @@ import { Author, Contest, Submission } from '../../../shared/api/types';
 import { asyncMap } from '../../../shared/utils/async';
 import fetchAll from '../../../shared/api/fetchAll';
 import groupBy from '../../../shared/utils/groupBy';
-import { getActiveContests } from '../../contests/api';
+import { getActiveContests } from '../../contests';
 import { deleteSubmission, getSubmissionsByContest } from '../api';
 
 type EditSubmissionListProps = WithTranslation;

@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { SubmissionModel, InputChange } from '../../models';
+import { SubmissionModel } from '../../models';
+import type { InputChange } from '../../../../shared/ui/InputField';
 
 import ImageField from '../Image/ImageField';
 

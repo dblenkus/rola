@@ -1,10 +1,10 @@
-import type { InputChange } from '../../upload/models';
+import type { InputChange } from '../../../shared/ui/InputField';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Alert, Button } from '@mui/material';
 
-import InputField from '../../upload/components/InputField';
+import InputField from '../../../shared/ui/InputField';
 
 import { authSx } from '../../../shared/ui/styles';
 

@@ -10,7 +10,8 @@ import {
   Typography,
 } from '@mui/material';
 
-import { InputChange, ContestModel, DateChange } from '../../models';
+import { ContestModel, DateChange } from '../../models';
+import type { InputChange } from '../../../../shared/ui/InputField';
 
 import AuthorField from '../Author/AuthorField';
 import ThemeField from '../Theme/ThemeField';

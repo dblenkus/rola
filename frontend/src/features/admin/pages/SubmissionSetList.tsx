@@ -11,7 +11,7 @@ import SubmissionSetTable from '../components/SubmissionSetTable';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { deleteSubmissionSet } from '../api';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 
 interface RouteMatchParams {
   contestId: string;

@@ -5,7 +5,7 @@ import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import { requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
-import { getResultsOverview } from '../../results/api';
+import { getResultsOverview } from '../../results';
 
 interface RouteMatchParams {
   contestId: string;

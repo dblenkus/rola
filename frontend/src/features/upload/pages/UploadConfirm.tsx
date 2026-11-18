@@ -6,7 +6,7 @@ import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
 
 import ConfirmationHtml from '../components/ConfirmationHtml';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 
 interface RouteMatchParams {
   contestId: string;

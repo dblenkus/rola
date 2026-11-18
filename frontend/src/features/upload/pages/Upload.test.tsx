@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
 import App from '../../../app/App';
 import store from '../../../app/store';
-import { deleteMessage } from '../../notifications/state/actions';
+import { deleteMessage } from '../../notifications';
 import { uploadReset } from '../state/actions';
 import {
   httpError,

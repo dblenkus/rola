@@ -3,7 +3,7 @@ import { JurySubmission } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
 
 import { performInitialize } from './reducer';
-import { getContest } from '../../contests/api';
+import { getContest } from '../../contests';
 import { getJurySubmissionsByTheme } from '../api';
 
 export {
