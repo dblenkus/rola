@@ -25,7 +25,7 @@ import AdminSubmissionSetList from '../views/admin/SubmissionSetList';
 import AdminSubmissionSetView from '../views/admin/SubmissionSetView';
 
 import AuthProvider from '../components/Auth/AuthProvider';
-import Notifications from '../components/Notifications/Notifications';
+import Notifications from '../features/notifications/components/Notifications';
 import PrivateRoute from '../components/Auth/PrivateRoute';
 
 import store from './store';

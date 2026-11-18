@@ -6,7 +6,7 @@ import {
   type UnknownAction,
 } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
-import notifications from '../store/notifications/reducer';
+import notifications from '../features/notifications/state/reducer';
 import upload from '../store/upload/reducer';
 import {
   AUTHOR_UPDATE,

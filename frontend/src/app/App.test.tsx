@@ -5,7 +5,7 @@ import './i18n/config';
 import App from './App';
 import { apiClient } from '../shared/api/client';
 import store from './store';
-import { deleteMessage } from '../store/notifications/actions';
+import { deleteMessage } from '../features/notifications/state/actions';
 import { blockStorage, httpError, page, serveApi, signIn } from '../test/api';
 import {
   author,

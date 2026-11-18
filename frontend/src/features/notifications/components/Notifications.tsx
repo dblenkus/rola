@@ -1,7 +1,7 @@
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import { useAppDispatch, useAppSelector } from '../../app/store';
-import { deleteMessage } from '../../store/notifications/actions';
+import { useAppDispatch, useAppSelector } from '../../../app/store';
+import { deleteMessage } from '../state/actions';
 
 export default function Notifications() {
   const dispatch = useAppDispatch();
