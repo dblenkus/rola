@@ -24,9 +24,6 @@ from PIL import Image
 from rest_framework.test import APIClient
 
 from rola.accounts.models import Email, User
-from rola.accounts.tests.test_account_security import (
-    wait_until_blocked_by_this_connection,
-)
 from rola.contests.models import Contest, Institution, Theme
 from rola.entries.models import Author, File, Submission, SubmissionSet
 from rola.judging.models import (
@@ -37,6 +34,9 @@ from rola.judging.models import (
     ThemeResults,
 )
 from rola.payments.models import Payment
+from tests.accounts.test_account_security import (
+    wait_until_blocked_by_this_connection,
+)
 from tests.factories import PASSWORD, create_user, pay, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db

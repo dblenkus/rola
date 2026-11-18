@@ -41,7 +41,6 @@ exclude-newer-package = { django = false }
 
 [tool.setuptools.packages.find]
 include = ["rola*"]
-exclude = ["*.tests", "*.tests.*"]
 
 [tool.setuptools.package-data]
 "rola" = ["locale/sl/LC_MESSAGES/django.*"]
@@ -52,7 +51,7 @@ DJANGO_SETTINGS_MODULE = "rola.config.test_settings"
 django_find_project = false
 addopts = ["--import-mode=importlib"]
 pythonpath = ["."]
-testpaths = ["rola/accounts/tests", "rola/contests/tests", "tests"]
+testpaths = ["tests"]
 strict = true
 filterwarnings = [
     "error::DeprecationWarning",
@@ -72,7 +71,7 @@ convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
 "!rola/{common,contests,entries,payments,judging}/**" = ["D"]
-"**/tests/**" = ["D"]
+"tests/**" = ["D"]
 
 [tool.mypy]
 python_version = "3.14"
