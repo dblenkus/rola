@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import '../../app/i18n/config';
-import { jurySubmission } from '../../test/fixtures';
+import '../../../app/i18n/config';
+import { jurySubmission } from '../../../test/fixtures';
 import SubmissionRater from './SubmissionRater';
 
 afterEach(() => {

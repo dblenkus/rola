@@ -12,9 +12,9 @@ import {
   TableRow,
 } from '@mui/material';
 
-import JudgeContestService from '../../services/JudgeContestService';
-import { requestError } from '../../shared/api/errors';
-import { JuryContest } from '../../shared/api/types';
+import JudgeContestService from '../api/JudgeContestService';
+import { requestError } from '../../../shared/api/errors';
+import { JuryContest } from '../../../shared/api/types';
 
 const SelectTheme: React.FC = () => {
   const [contests, setContests] = useState<JuryContest[]>([]);

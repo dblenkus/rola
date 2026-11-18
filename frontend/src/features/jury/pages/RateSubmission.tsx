@@ -4,9 +4,9 @@ import { connect, ConnectedProps } from 'react-redux';
 
 import { Alert } from '@mui/material';
 
-import SubmissionRater from '../../components/Jury/SubmissionRater';
+import SubmissionRater from '../components/SubmissionRater';
 
-import { AppState, AppDispatch } from '../../app/store';
+import { AppState, AppDispatch } from '../../../app/store';
 
 import {
   getCurrentSubmission,
@@ -17,11 +17,11 @@ import {
   setNextSubmission,
   setPreviousSubmission,
   type InitializeResult,
-} from '../../store/jury/actions';
-import RatingService from '../../services/RatingService';
-import { contentUnavailable, requestError } from '../../shared/api/errors';
-import useKeyPress from '../../shared/hooks/useKeyPress';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
+} from '../state/actions';
+import RatingService from '../api/RatingService';
+import { contentUnavailable, requestError } from '../../../shared/api/errors';
+import useKeyPress from '../../../shared/hooks/useKeyPress';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
 
 interface RouteMatchParams {
   contestId: string;

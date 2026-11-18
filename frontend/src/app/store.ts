@@ -13,7 +13,7 @@ import {
   IMAGE_STORE,
   UPLOAD_SET_CONTEST,
 } from '../features/upload/state/types';
-import jury from '../store/jury/reducer';
+import jury from '../features/jury/state/reducer';
 
 const rootReducer = combineReducers({ notifications, upload, jury });
 export type AppState = ReturnType<typeof rootReducer>;

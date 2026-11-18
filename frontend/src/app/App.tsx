@@ -18,9 +18,9 @@ import UploadConfirmView from '../features/upload/pages/UploadConfirm';
 import EditSubmissionsList from '../features/upload/pages/EditSubmissionsList';
 import PasswordResetRequestView from '../features/auth/pages/PasswordResetRequest';
 import PasswordResetView from '../features/auth/pages/PasswordReset';
-import SelectThemeView from '../views/judge/SelectTheme';
-import ViewThemeView from '../views/judge/ViewTheme';
-import RateSubmissionView from '../views/judge/RateSubmission';
+import SelectThemeView from '../features/jury/pages/SelectTheme';
+import ViewThemeView from '../features/jury/pages/ViewTheme';
+import RateSubmissionView from '../features/jury/pages/RateSubmission';
 import AdminSubmissionSetList from '../views/admin/SubmissionSetList';
 import AdminSubmissionSetView from '../views/admin/SubmissionSetView';
 
@@ -29,7 +29,7 @@ import Notifications from '../features/notifications/components/Notifications';
 import PrivateRoute from '../features/auth/components/PrivateRoute';
 
 import store from './store';
-import ThemeOverview from '../views/judge/ThemeOverview';
+import ThemeOverview from '../features/jury/pages/ThemeOverview';
 import ThemeResultsView from '../views/results/ThemeResults';
 import SelectResultsThemeView from '../views/results/SelectTheme';
 import SubmissionResultsView from '../views/results/SubmissionResults';
