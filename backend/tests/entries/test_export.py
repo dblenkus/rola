@@ -75,6 +75,22 @@ def test_export_sends_a_non_staff_organizer_to_the_admin_login(world):
     assert response.headers["Location"] == f"{reverse('admin:login')}?next={url}"
 
 
+def test_export_lets_a_staff_organizer_download_their_contest(world):
+    item = submitted(world)
+    item.files.add(photo(world.owner))
+    organizer = create_user("organizer")
+    organizer.is_staff = True
+    organizer.save()
+    world.contest.user = organizer
+    world.contest.save()
+    url = f"/django-admin/contests/contest/{world.contest.pk}/download/"
+    browser = Client()
+    browser.force_login(organizer)
+    response = browser.get(url)
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "application/x-zip-compressed"
+
+
 def test_export_sends_a_logged_out_organizer_to_the_admin_login(world):
     item = submitted(world)
     item.files.add(photo(world.owner))
