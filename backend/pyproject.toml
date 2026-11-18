@@ -37,7 +37,6 @@ docs = ["Sphinx>=9.2,<10", "sphinx-rtd-theme>=3.1,<4"]
 
 [tool.uv]
 exclude-newer = "7 days"
-exclude-newer-package = { django = false }
 
 [tool.setuptools.packages.find]
 include = ["rola*"]
