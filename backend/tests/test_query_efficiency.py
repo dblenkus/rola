@@ -10,16 +10,16 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from drf_user.models import Location
-from rolca.core.models import Author, SubmissionSet, Theme
-from rolca.payment.models import Payment
-from rolca.rating.models import (
+from rola.accounts.models import Location
+from rola.contests.models import Author, SubmissionSet, Theme
+from rola.judging.models import (
     AuthorReward,
     Judge,
     Rating,
     SubmissionReward,
     ThemeResults,
 )
+from rola.payments.models import Payment
 from tests.factories import pay, photo, submitted
 
 pytestmark = pytest.mark.django_db

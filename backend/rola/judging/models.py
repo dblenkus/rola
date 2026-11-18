@@ -1,0 +1,103 @@
+""".. Ignore pydocstyle D400.
+
+=============
+Rating models
+=============
+
+.. autoclass:: rola.judging.models.Judge
+    :members:
+
+.. autoclass:: rola.judging.models.Rating
+    :members:
+
+"""
+
+from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
+from rola.contests.models import Author, BaseModel, Contest, Submission, Theme
+
+
+class Judge(BaseModel):
+    """Model for assigning judges to contests."""
+
+    contest = models.ForeignKey(
+        Contest, on_delete=models.CASCADE, related_name="judges"
+    )
+
+    judge = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+
+
+class Rating(BaseModel):
+    """Model for rating submissions."""
+
+    class Meta:
+        """Rating Meta options."""
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["judge", "submission"], name="judging_unique_judge_submission"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1, rating__lte=10),
+                name="judging_rating_between_1_and_10",
+            ),
+        ]
+
+    judge = models.ForeignKey(Judge, on_delete=models.CASCADE, related_name="ratings")
+
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+
+
+class ThemeResults(BaseModel):
+    """Model for theme results."""
+
+    theme = models.OneToOneField(
+        Theme, on_delete=models.CASCADE, related_name="results"
+    )
+
+    accepted_threshold = models.SmallIntegerField()
+
+
+class SubmissionReward(BaseModel):
+    """Model for submission rewards."""
+
+    GOLD = 1
+    SILVER = 2
+    BRONZE = 3
+    HONORABLE_MENTION = 4
+    KIND_CHOICES = [
+        (GOLD, "Gold"),
+        (SILVER, "Silver"),
+        (BRONZE, "Bronze"),
+        (HONORABLE_MENTION, "Honorable Mention"),
+    ]
+
+    submission = models.OneToOneField(
+        Submission, on_delete=models.CASCADE, related_name="reward"
+    )
+
+    kind = models.SmallIntegerField(choices=KIND_CHOICES)
+
+    label = models.CharField(max_length=100)
+
+
+class AuthorReward(BaseModel):
+    """Model for submission rewards."""
+
+    author = models.OneToOneField(
+        Author, on_delete=models.CASCADE, related_name="reward"
+    )
+
+    theme = models.ForeignKey(
+        Theme, on_delete=models.CASCADE, related_name="author_reward"
+    )
+
+    label = models.CharField(max_length=100)

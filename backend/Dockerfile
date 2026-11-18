@@ -44,4 +44,4 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--no-control-socket", \
     "--timeout", "120", \
     "--access-logfile", "-", \
     "--access-logformat", "%(h)s %(l)s %(u)s %(t)s \"%(m)s %(U)s %(H)s\" %(s)s %(b)s \"%(a)s\"", \
-    "rola.wsgi:application"]
+    "rola.config.wsgi:application"]

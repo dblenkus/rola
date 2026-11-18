@@ -2,4 +2,4 @@
 Reference
 =========
 
-.. automodule:: rolca.core
+.. automodule:: rola.contests

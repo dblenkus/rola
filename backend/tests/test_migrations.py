@@ -10,7 +10,7 @@ from django.db.migrations.exceptions import InconsistentMigrationHistory
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.recorder import MigrationRecorder
 
-SCHEMA_APPS = ["drf_user", "core", "payment", "rating"]
+SCHEMA_APPS = ["accounts", "contests", "payments", "judging"]
 
 
 @pytest.mark.django_db
@@ -30,6 +30,6 @@ def test_migrate_rejects_a_database_with_the_historical_chains():
 def test_rating_schema_installs_pgcrypto():
     # makemigrations does not generate CryptoExtension, so regenerating the
     # migration drops it, and judging (ordered by SHA1()) fails on PostgreSQL.
-    migration = MigrationLoader(None).get_migration("rating", "0001_schema")
+    migration = MigrationLoader(None).get_migration("judging", "0001_schema")
 
     assert any(isinstance(op, CryptoExtension) for op in migration.operations)

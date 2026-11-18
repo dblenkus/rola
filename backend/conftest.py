@@ -7,7 +7,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from rolca.core.models import Author, Contest, Theme
+from rola.contests.models import Author, Contest, Theme
 from tests.factories import create_user
 
 

@@ -23,9 +23,11 @@ from django.utils.text import slugify
 from PIL import Image
 from rest_framework.test import APIClient
 
-from drf_user.models import Email, User
-from drf_user.tests.test_account_security import wait_until_blocked_by_this_connection
-from rolca.core.models import (
+from rola.accounts.models import Email, User
+from rola.accounts.tests.test_account_security import (
+    wait_until_blocked_by_this_connection,
+)
+from rola.contests.models import (
     Author,
     Contest,
     File,
@@ -34,14 +36,14 @@ from rolca.core.models import (
     SubmissionSet,
     Theme,
 )
-from rolca.payment.models import Payment
-from rolca.rating.models import (
+from rola.judging.models import (
     AuthorReward,
     Judge,
     Rating,
     SubmissionReward,
     ThemeResults,
 )
+from rola.payments.models import Payment
 from tests.factories import PASSWORD, pay, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
@@ -103,7 +105,9 @@ def test_confirmation_failure_keeps_the_committed_submission(
     )
     world.contest.save()
     with (
-        patch("drf_user.models.send_mail", side_effect=SMTPException("unavailable")),
+        patch(
+            "rola.accounts.models.send_mail", side_effect=SMTPException("unavailable")
+        ),
         django_capture_on_commit_callbacks(execute=True) as callbacks,
     ):
         response = world.client.post(
@@ -174,7 +178,7 @@ def test_submission_database_failure_rolls_back_files_and_records(
     with (
         django_capture_on_commit_callbacks(execute=True) as callbacks,
         patch(
-            "rolca.core.api.views.SubmissionSet.objects.create",
+            "rola.contests.api.views.SubmissionSet.objects.create",
             side_effect=RuntimeError("database failure"),
         ),
         pytest.raises(RuntimeError, match="database failure"),

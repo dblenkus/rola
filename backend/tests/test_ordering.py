@@ -6,9 +6,9 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from rolca.core.models import Submission, SubmissionSet
-from rolca.payment.models import Payment
-from rolca.rating.models import Judge, Rating, ThemeResults
+from rola.contests.models import Submission, SubmissionSet
+from rola.judging.models import Judge, Rating, ThemeResults
+from rola.payments.models import Payment
 
 pytestmark = pytest.mark.django_db
 
