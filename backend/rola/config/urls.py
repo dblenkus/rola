@@ -7,24 +7,18 @@ from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 from rola.accounts import views as user_views
-from rola.contests.api import urls as contests_api_urls
-from rola.entries.api import urls as entries_api_urls
+from rola.contests.api import routes as contests_routes
+from rola.entries.api import routes as entries_routes
 from rola.entries.api.accounts import UserViewSet
-from rola.judging.api import urls as judging_api_urls
-from rola.payments.api import urls as payments_api_urls
+from rola.judging.api import routes as judging_routes
+from rola.payments.api import routes as payments_routes
 
 router = SimpleRouter(trailing_slash=False)
 router.register("user", UserViewSet, basename="user")
-
-route_lists = [
-    entries_api_urls.routeList,
-    contests_api_urls.routeList,
-    payments_api_urls.routeList,
-    judging_api_urls.routeList,
-]
-for route_list in route_lists:
-    for prefix, viewset in route_list:
-        router.register(prefix, viewset, basename=prefix.replace("/", "-"))
+entries_routes.register(router)
+contests_routes.register(router)
+payments_routes.register(router)
+judging_routes.register(router)
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
