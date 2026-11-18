@@ -6,7 +6,7 @@ import { Alert } from '@mui/material';
 
 import SubmissionRater from '../../components/Jury/SubmissionRater';
 
-import { AppState, AppDispatch } from '../../store';
+import { AppState, AppDispatch } from '../../app/store';
 
 import {
   getCurrentSubmission,

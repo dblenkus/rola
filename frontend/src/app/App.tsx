@@ -4,35 +4,35 @@ import { Provider } from 'react-redux';
 
 import { Box, CssBaseline, Container } from '@mui/material';
 
-import Header from './shared/ui/Layout/Header';
-import Footer from './shared/ui/Layout/Footer';
+import Header from '../shared/ui/Layout/Header';
+import Footer from '../shared/ui/Layout/Footer';
 
-import ContestsListView from './views/ContestsList';
-import ContestDetailsView from './views/ContestDetails';
-import LoginView from './views/Login';
-import RegisterView from './views/Register';
-import RegisterActivateView from './views/RegisterActivate';
-import ResultsListView from './views/ResultsList';
-import UploadView from './views/Upload';
-import UploadConfirmView from './views/UploadConfirm';
-import EditSubmissionsList from './views/EditSubmissionsList';
-import PasswordResetRequestView from './views/PasswordResetRequest';
-import PasswordResetView from './views/PasswordReset';
-import SelectThemeView from './views/judge/SelectTheme';
-import ViewThemeView from './views/judge/ViewTheme';
-import RateSubmissionView from './views/judge/RateSubmission';
-import AdminSubmissionSetList from './views/admin/SubmissionSetList';
-import AdminSubmissionSetView from './views/admin/SubmissionSetView';
+import ContestsListView from '../views/ContestsList';
+import ContestDetailsView from '../views/ContestDetails';
+import LoginView from '../views/Login';
+import RegisterView from '../views/Register';
+import RegisterActivateView from '../views/RegisterActivate';
+import ResultsListView from '../views/ResultsList';
+import UploadView from '../views/Upload';
+import UploadConfirmView from '../views/UploadConfirm';
+import EditSubmissionsList from '../views/EditSubmissionsList';
+import PasswordResetRequestView from '../views/PasswordResetRequest';
+import PasswordResetView from '../views/PasswordReset';
+import SelectThemeView from '../views/judge/SelectTheme';
+import ViewThemeView from '../views/judge/ViewTheme';
+import RateSubmissionView from '../views/judge/RateSubmission';
+import AdminSubmissionSetList from '../views/admin/SubmissionSetList';
+import AdminSubmissionSetView from '../views/admin/SubmissionSetView';
 
-import AuthProvider from './components/Auth/AuthProvider';
-import Notifications from './components/Notifications/Notifications';
-import PrivateRoute from './components/Auth/PrivateRoute';
+import AuthProvider from '../components/Auth/AuthProvider';
+import Notifications from '../components/Notifications/Notifications';
+import PrivateRoute from '../components/Auth/PrivateRoute';
 
 import store from './store';
-import ThemeOverview from './views/judge/ThemeOverview';
-import ThemeResultsView from './views/results/ThemeResults';
-import SelectResultsThemeView from './views/results/SelectTheme';
-import SubmissionResultsView from './views/results/SubmissionResults';
+import ThemeOverview from '../views/judge/ThemeOverview';
+import ThemeResultsView from '../views/results/ThemeResults';
+import SelectResultsThemeView from '../views/results/SelectTheme';
+import SubmissionResultsView from '../views/results/SubmissionResults';
 
 const raterPath = '/judge/contest/:contestId/theme/:themeId/rate';
 

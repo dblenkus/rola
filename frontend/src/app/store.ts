@@ -6,10 +6,14 @@ import {
   type UnknownAction,
 } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
-import notifications from './notifications/reducer';
-import upload from './upload/reducer';
-import { AUTHOR_UPDATE, IMAGE_STORE, UPLOAD_SET_CONTEST } from './upload/types';
-import jury from './jury/reducer';
+import notifications from '../store/notifications/reducer';
+import upload from '../store/upload/reducer';
+import {
+  AUTHOR_UPDATE,
+  IMAGE_STORE,
+  UPLOAD_SET_CONTEST,
+} from '../store/upload/types';
+import jury from '../store/jury/reducer';
 
 const rootReducer = combineReducers({ notifications, upload, jury });
 export type AppState = ReturnType<typeof rootReducer>;

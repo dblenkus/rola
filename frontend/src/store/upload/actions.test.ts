@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createAppStore } from '..';
+import { createAppStore } from '../../app/store';
 import { contest } from '../../test/fixtures';
 import imageReader from '../../utils/imageReader';
 import { imageUpdate, uploadInit, uploadReset } from './actions';

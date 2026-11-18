@@ -3,22 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
 import App from './App';
-import { apiClient } from './shared/api/client';
+import { apiClient } from '../shared/api/client';
 import store from './store';
-import { deleteMessage } from './store/notifications/actions';
-import { blockStorage, httpError, page, serveApi, signIn } from './test/api';
+import { deleteMessage } from '../store/notifications/actions';
+import { blockStorage, httpError, page, serveApi, signIn } from '../test/api';
 import {
   author,
   contest,
   jurySubmission,
   submission,
   submissionSet,
-} from './test/fixtures';
+} from '../test/fixtures';
 import type {
   PaginatedResponse,
   Payment,
   ResultsThemeSubmission,
-} from './shared/api/types';
+} from '../shared/api/types';
 
 beforeEach(() => {
   localStorage.clear();

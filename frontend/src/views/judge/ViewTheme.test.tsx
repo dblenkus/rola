@@ -9,8 +9,8 @@ import {
   Routes,
 } from 'react-router';
 import { expect, it } from 'vitest';
-import '../../i18n/config';
-import { createAppStore } from '../../store';
+import '../../app/i18n/config';
+import { createAppStore } from '../../app/store';
 import { httpError, page, serveApi } from '../../test/api';
 import { contest, jurySubmission } from '../../test/fixtures';
 import type { JurySubmission, PaginatedResponse } from '../../shared/api/types';

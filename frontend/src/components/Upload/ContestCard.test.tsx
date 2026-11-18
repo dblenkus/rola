@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import '../../i18n/config';
+import '../../app/i18n/config';
 import { contest } from '../../test/fixtures';
 import ContestCard from './ContestCard';
 

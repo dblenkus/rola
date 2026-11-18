@@ -1,4 +1,4 @@
-import { AppState, AppThunk } from '..';
+import { AppState, AppThunk } from '../../app/store';
 import ContestService from '../../services/ContestService';
 import JudgeSubmissionService from '../../services/JudgeSubmissionService';
 import { Contest, JurySubmission, Theme } from '../../shared/api/types';

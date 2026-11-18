@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createAppStore } from '../store';
+import { createAppStore } from '../app/store';
 import {
   authorUpdate,
   imageStore,
