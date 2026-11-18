@@ -9,8 +9,8 @@ import {
 } from '../notifications/actions';
 
 import i18n from '../../i18n/config';
-import { loadToken, rejectToken } from '../../services/token';
-import { Contest, Theme } from '../../types/api';
+import { loadToken, rejectToken } from '../../shared/api/token';
+import { Contest, Theme } from '../../shared/api/types';
 import {
   ContestModel,
   DateChange,

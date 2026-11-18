@@ -14,9 +14,9 @@ import {
 } from '@mui/material';
 
 import ContestService from '../../services/ContestService';
-import { requestError } from '../../services/errors';
-import { Contest } from '../../types/api';
-import LoadingProgress from '../../components/LoadingProgress';
+import { requestError } from '../../shared/api/errors';
+import { Contest } from '../../shared/api/types';
+import LoadingProgress from '../../shared/ui/LoadingProgress';
 
 interface RouteMatchParams {
   contestId: string;

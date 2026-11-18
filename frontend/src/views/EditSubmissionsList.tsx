@@ -18,17 +18,17 @@ import {
   Typography,
 } from '@mui/material';
 
-import ConfirmDialog from '../components/Notifications/ConfirmDialog';
-import LoadingProgress from '../components/LoadingProgress';
+import ConfirmDialog from '../shared/ui/ConfirmDialog';
+import LoadingProgress from '../shared/ui/LoadingProgress';
 
-import { tableButtonSx } from '../styles/general';
+import { tableButtonSx } from '../shared/ui/styles';
 import ContestService from '../services/ContestService';
 import SubmissionService from '../services/SubmissionService';
-import { requestError } from '../services/errors';
-import { Author, Contest, Submission } from '../types/api';
-import { asyncMap } from '../utils/async';
-import fetchAll from '../utils/fetchAll';
-import groupBy from '../utils/groupBy';
+import { requestError } from '../shared/api/errors';
+import { Author, Contest, Submission } from '../shared/api/types';
+import { asyncMap } from '../shared/utils/async';
+import fetchAll from '../shared/api/fetchAll';
+import groupBy from '../shared/utils/groupBy';
 
 type EditSubmissionListProps = WithTranslation;
 

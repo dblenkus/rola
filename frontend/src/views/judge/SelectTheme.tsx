@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 
 import JudgeContestService from '../../services/JudgeContestService';
-import { requestError } from '../../services/errors';
-import { JuryContest } from '../../types/api';
+import { requestError } from '../../shared/api/errors';
+import { JuryContest } from '../../shared/api/types';
 
 const SelectTheme: React.FC = () => {
   const [contests, setContests] = useState<JuryContest[]>([]);

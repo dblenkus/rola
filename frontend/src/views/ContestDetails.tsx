@@ -4,11 +4,11 @@ import { useParams } from 'react-router';
 import { Alert, Typography } from '@mui/material';
 
 import ContestService from '../services/ContestService';
-import { reportUnexpected } from '../services/errors';
-import type { Contest } from '../types/api';
+import { reportUnexpected } from '../shared/api/errors';
+import type { Contest } from '../shared/api/types';
 
-import HeaderImage from '../components/Layout/HeaderImage';
-import LoadingProgress from '../components/LoadingProgress';
+import HeaderImage from '../shared/ui/Layout/HeaderImage';
+import LoadingProgress from '../shared/ui/LoadingProgress';
 import NoticeHtml from '../components/Upload/NoticeHtml';
 import UploadButton from '../components/Upload/UploadButton';
 

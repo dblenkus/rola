@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadToken } from '../../services/token';
+import { loadToken } from '../../shared/api/token';
 import { blockStorage, serveApi } from '../../test/api';
 import AuthProvider, { userContext } from './AuthProvider';
 import PrivateRoute from './PrivateRoute';

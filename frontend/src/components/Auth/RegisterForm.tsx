@@ -7,7 +7,7 @@ import { Alert, Button, Grid } from '@mui/material';
 
 import InputField from '../Upload/InputField';
 
-import { authSx } from '../../styles/general';
+import { authSx } from '../../shared/ui/styles';
 
 export interface Fields {
   first_name: string;

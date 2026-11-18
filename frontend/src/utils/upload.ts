@@ -5,7 +5,7 @@ import SubmissionService, {
   type SubmissionCreatePayload,
 } from '../services/SubmissionService';
 import AuthorService from '../services/AuthorService';
-import { loadToken, type Session } from '../services/token';
+import { loadToken, type Session } from '../shared/api/token';
 import type { ContestModel } from '../types/models';
 
 // Another account signed in, or the session ended, during the upload.

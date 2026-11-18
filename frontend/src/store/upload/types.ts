@@ -1,4 +1,4 @@
-import { Contest, Theme } from '../../types/api';
+import { Contest, Theme } from '../../shared/api/types';
 import {
   ContestModel,
   DateChange,

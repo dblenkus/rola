@@ -15,11 +15,11 @@ import {
   TableRow,
 } from '@mui/material';
 
-import { Payment, SubmissionSet } from '../../types/api';
+import { Payment, SubmissionSet } from '../../shared/api/types';
 import SubmissionSetTableRow from './SubmissionSetTableRow';
-import LoadingProgress from '../LoadingProgress';
-import usePagination from '../../services/usePagination';
-import { requestError } from '../../services/errors';
+import LoadingProgress from '../../shared/ui/LoadingProgress';
+import usePagination from '../../shared/api/usePagination';
+import { requestError } from '../../shared/api/errors';
 import PaymentService from '../../services/PaymentService';
 import SubmissionSetService from '../../services/SubmissionSetService';
 

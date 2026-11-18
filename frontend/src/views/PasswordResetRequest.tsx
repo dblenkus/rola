@@ -11,7 +11,7 @@ import PasswordResetRequestForm, {
 import PasswordResetRequestConfirm from '../components/Auth/PasswordResetRequestConfirm';
 
 import UserService from '../services/UserService';
-import { requestError } from '../services/errors';
+import { requestError } from '../shared/api/errors';
 
 type PasswordResetRequestViewProps = WithTranslation;
 

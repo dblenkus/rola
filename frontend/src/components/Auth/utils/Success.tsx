@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Button, Typography } from '@mui/material';
 
-import { authSx } from '../../../styles/general';
+import { authSx } from '../../../shared/ui/styles';
 
 interface RegisterActivateSuccessProps {
   title: string;

@@ -14,7 +14,7 @@ import {
   sessionChanged,
   StorageBlocked,
   type Session,
-} from '../../services/token';
+} from '../../shared/api/token';
 
 interface AuthContext {
   user: Session | null;

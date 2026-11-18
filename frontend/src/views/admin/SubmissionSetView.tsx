@@ -5,11 +5,11 @@ import { withTranslation, WithTranslation } from 'react-i18next';
 
 import { Alert, Card, Grid } from '@mui/material';
 
-import { Contest, SubmissionSet } from '../../types/api';
+import { Contest, SubmissionSet } from '../../shared/api/types';
 
 import SubmissionSetService from '../../services/SubmissionSetService';
 import ContestService from '../../services/ContestService';
-import { requestError } from '../../services/errors';
+import { requestError } from '../../shared/api/errors';
 
 interface RouteMatchParams {
   contestId: string;

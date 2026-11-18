@@ -4,8 +4,8 @@ import {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { onTestFinished, vi } from 'vitest';
-import { apiBaseURL, apiClient } from '../services/Base';
-import type { PaginatedResponse } from '../types/api';
+import { apiBaseURL, apiClient } from '../shared/api/client';
+import type { PaginatedResponse } from '../shared/api/types';
 
 type Handler = (config: InternalAxiosRequestConfig, url: URL) => unknown;
 

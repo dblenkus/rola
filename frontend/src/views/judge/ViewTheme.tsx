@@ -11,12 +11,12 @@ import {
   setSubmission,
   type InitializeResult,
 } from '../../store/jury/actions';
-import LoadingProgress from '../../components/LoadingProgress';
+import LoadingProgress from '../../shared/ui/LoadingProgress';
 import ThemeGallery from '../../components/Jury/ThemeGallery';
 import RatingService from '../../services/RatingService';
-import { contentUnavailable, requestError } from '../../services/errors';
-import { Rating } from '../../types/api';
-import fetchAll from '../../utils/fetchAll';
+import { contentUnavailable, requestError } from '../../shared/api/errors';
+import { Rating } from '../../shared/api/types';
+import fetchAll from '../../shared/api/fetchAll';
 
 interface RouteMatchParams {
   contestId: string;

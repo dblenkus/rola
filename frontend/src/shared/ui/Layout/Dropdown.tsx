@@ -8,9 +8,9 @@ import { IconButton, Menu, MenuItem } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 
-import { useAppDispatch } from '../../store';
-import { uploadReset } from '../../store/upload/actions';
-import { userContext } from '../Auth/AuthProvider';
+import { useAppDispatch } from '../../../store';
+import { uploadReset } from '../../../store/upload/actions';
+import { userContext } from '../../../components/Auth/AuthProvider';
 
 const MenuLink = styled(Link)({
   textDecoration: 'none',

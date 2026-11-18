@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
 import App from './App';
-import { apiClient } from './services/Base';
+import { apiClient } from './shared/api/client';
 import store from './store';
 import { deleteMessage } from './store/notifications/actions';
 import { blockStorage, httpError, page, serveApi, signIn } from './test/api';
@@ -18,7 +18,7 @@ import type {
   PaginatedResponse,
   Payment,
   ResultsThemeSubmission,
-} from './types/api';
+} from './shared/api/types';
 
 beforeEach(() => {
   localStorage.clear();

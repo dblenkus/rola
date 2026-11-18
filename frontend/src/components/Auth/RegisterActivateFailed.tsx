@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Typography } from '@mui/material';
 
-import { authSx } from '../../styles/general';
+import { authSx } from '../../shared/ui/styles';
 
 const RegisterActivateFailed: React.FC = () => {
   const { t } = useTranslation();

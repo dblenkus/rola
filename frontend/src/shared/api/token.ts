@@ -1,4 +1,4 @@
-import type { components } from '../types/generated-api';
+import type { components } from './generated-api';
 
 export type AuthToken = components['schemas']['Token'];
 

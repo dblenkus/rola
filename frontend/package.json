@@ -16,7 +16,7 @@
     "typecheck": "tsc -b",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "api:generate": "openapi-typescript ../backend/openapi.yaml -o src/types/generated-api.ts"
+    "api:generate": "openapi-typescript ../backend/openapi.yaml -o src/shared/api/generated-api.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

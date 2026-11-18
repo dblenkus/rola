@@ -1,8 +1,8 @@
 import { AxiosPromise } from 'axios';
 
-import { JuryContest, PaginatedResponse } from '../types/api';
+import { JuryContest, PaginatedResponse } from '../shared/api/types';
 
-import { apiClient } from './Base';
+import { apiClient } from '../shared/api/client';
 
 export default {
   getContests(): AxiosPromise<PaginatedResponse<JuryContest>> {

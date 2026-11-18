@@ -14,8 +14,8 @@ import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
 import { userContext } from '../components/Auth/AuthProvider';
 import LoginForm, { Errors, Fields } from '../components/Auth/LoginForm';
-import { formErrors } from '../services/errors';
-import { StorageBlocked } from '../services/token';
+import { formErrors } from '../shared/api/errors';
+import { StorageBlocked } from '../shared/api/token';
 
 interface LoginViewProps extends WithTranslation {
   location: Location;

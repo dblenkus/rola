@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { blockStorage } from '../test/api';
+import { blockStorage } from '../../test/api';
 import { loadToken, rejectToken, sessionChanged } from './token';
 
 beforeEach(() => localStorage.clear());

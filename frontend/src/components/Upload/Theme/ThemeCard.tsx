@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 
-import { formCardSx } from '../../../styles/general';
+import { formCardSx } from '../../../shared/ui/styles';
 
 export interface ThemeCardProps {
   title: string;

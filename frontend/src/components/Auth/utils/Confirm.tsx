@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 
 import { Typography } from '@mui/material';
 
-import { authSx } from '../../../styles/general';
+import { authSx } from '../../../shared/ui/styles';
 
 interface RegisterConfirmProps {
   title: string;

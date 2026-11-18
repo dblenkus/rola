@@ -8,7 +8,7 @@ import {
 
 import imageReader from './imageReader';
 import { anyImage, countImages } from './image';
-import { asyncMap } from './async';
+import { asyncMap } from '../shared/utils/async';
 
 interface BaseError {
   hasError: boolean;

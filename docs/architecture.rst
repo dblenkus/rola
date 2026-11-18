@@ -42,7 +42,7 @@ The API contract
 ================
 
 ``backend/openapi.yaml`` is generated from the backend by drf-spectacular,
-and ``frontend/src/types/generated-api.ts`` is generated from it by
+and ``frontend/src/shared/api/generated-api.ts`` is generated from it by
 openapi-typescript. Both files are committed, and CI regenerates them and
 fails on any difference, so a serializer change cannot reach the frontend
 unnoticed. The schema is generated with the PostgreSQL backend, because it

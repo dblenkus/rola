@@ -1,7 +1,7 @@
 import { AxiosPromise } from 'axios';
 
-import { apiClient } from './Base';
-import { Image } from '../types/api';
+import { apiClient } from '../shared/api/client';
+import { Image } from '../shared/api/types';
 
 // RFC 6266: filename* carries the full name percent-encoded, because browsers
 // reject header values outside ISO-8859-1, and filename is an ASCII fallback.

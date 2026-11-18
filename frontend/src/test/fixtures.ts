@@ -5,7 +5,7 @@ import type {
   JurySubmission,
   Submission,
   SubmissionSet,
-} from '../types/api';
+} from '../shared/api/types';
 
 export const contest: Contest = {
   id: 1,

@@ -1,4 +1,4 @@
-import { Contest, JurySubmission, Theme } from '../../types/api';
+import { Contest, JurySubmission, Theme } from '../../shared/api/types';
 
 export interface JuryState {
   contest: Contest | null;
