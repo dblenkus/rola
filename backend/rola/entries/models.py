@@ -1,55 +1,25 @@
 """Store authors, submissions, submission sets and photographs."""
 
-import hashlib
-import io
 import logging
-import os
-import struct
-import time
 from functools import partial
 
-from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
-from PIL import Image, ImageOps
 
 from rola.common.models import BaseModel
 from rola.contests.models import Contest, Theme
-from rola.entries.images import strip_metadata
+from rola.entries.photos import (
+    create_thumbnail,
+    generate_file_filename,
+    generate_thumb_filename,
+    strip_metadata,
+    validate_image,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _generate_filename(instance, filename, prefix):
-    """Generate unique filename with given prefix."""
-    md5 = hashlib.md5()
-    md5.update(struct.pack("f", time.time()))
-    was_closed = instance.file.closed
-    try:
-        if was_closed:
-            instance.file.open("rb")
-        for chunk in instance.file.chunks():
-            md5.update(chunk)
-    finally:
-        if was_closed:
-            instance.file.close()
-    extension = os.path.splitext(filename)[1]
-    return os.path.join(prefix, md5.hexdigest() + extension)
-
-
-def generate_file_filename(instance, filename):
-    """Generate filename for uploaded photo."""
-    return _generate_filename(instance, filename, "photos")
-
-
-def generate_thumb_filename(instance, filename):
-    """Generate filename for thumbnails of uploaded photos."""
-    return _generate_filename(instance, filename, "thumbs")
 
 
 class SubmissionSet(BaseModel):
@@ -111,33 +81,6 @@ class Submission(BaseModel):
         return self.title or f"Submission {self.pk}"
 
 
-def validate_image(file):
-    """Validate the upload size, format and longest image edge.
-
-    The photograph must be a JPEG file whose metadata can be stripped.
-    """
-    max_size = settings.ENTRIES_MAX_UPLOAD_SIZE
-    if file.size > max_size:
-        raise ValidationError(f"Max size of file is {max_size}B.")
-
-    # Pillow reports a JPEG file that holds further pictures, as many
-    # cameras write it, as MPO; stripping keeps only its first picture.
-    if file.image.format not in ("JPEG", "MPO"):
-        raise ValidationError("Photographs must be JPEG files.")
-
-    max_res = settings.ENTRIES_MAX_UPLOAD_RESOLUTION
-    if max(file.image.size) > max_res:
-        raise ValidationError(f"Max photo resolution is {max_res}px.")
-
-    file.seek(0)
-    try:
-        strip_metadata(file.read())
-    except ValueError as error:
-        raise ValidationError("The photograph is not a valid JPEG file.") from error
-    finally:
-        file.seek(0)
-
-
 class File(BaseModel):
     """Model for storing uploaded images.
 
@@ -179,19 +122,7 @@ class File(BaseModel):
             with self.file.open("rb") as upload:
                 photograph = strip_metadata(upload.read())
             self.file = ContentFile(photograph, name=self.file.name)
-
-            thumb = io.BytesIO()
-            with Image.open(self.file) as image:
-                # The thumbnail carries no EXIF data, so its pixels take the
-                # orientation that viewers apply to the stored photograph.
-                ImageOps.exif_transpose(image, in_place=True)
-                image.thumbnail((400, 400), Image.Resampling.LANCZOS)
-                image.save(
-                    thumb, format="jpeg", quality=80, optimize=True, progressive=True
-                )
-            self.thumbnail = InMemoryUploadedFile(
-                thumb, None, self.file.name, "image/jpeg", thumb.tell(), None
-            )
+            self.thumbnail = create_thumbnail(self.file)
 
         super().save(*args, **kwargs)
 
