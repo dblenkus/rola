@@ -10,11 +10,8 @@ from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
-from rola.common.permissions import IsSuperUser
-
-from .models import Token, User
-from .permissions import IsTargetUser
-from .serializers import (
+from rola.accounts.api.permissions import IsTargetUser
+from rola.accounts.api.serializers import (
     LOGIN_FAILED_MESSAGE,
     ActivationSerializer,
     ChangePasswordSerializer,
@@ -26,12 +23,14 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
-from .throttling import (
+from rola.accounts.api.throttling import (
     ActivationThrottle,
     LoginThrottle,
     RecoveryThrottle,
     RegistrationThrottle,
 )
+from rola.accounts.models import Token, User
+from rola.common.permissions import IsSuperUser
 
 
 class Conflict(APIException):

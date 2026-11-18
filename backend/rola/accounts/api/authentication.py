@@ -3,7 +3,7 @@
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework import authentication, exceptions
 
-from .models import Token
+from rola.accounts.models import Token
 
 
 class TokenAuthentication(authentication.TokenAuthentication):
@@ -27,7 +27,7 @@ class TokenAuthentication(authentication.TokenAuthentication):
 class TokenAuthenticationSchema(OpenApiAuthenticationExtension):
     """Describe the expiring token header in the API contract."""
 
-    target_class = "rola.accounts.authentication.TokenAuthentication"
+    target_class = "rola.accounts.api.authentication.TokenAuthentication"
     name = "tokenAuth"
 
     def get_security_definition(self, auto_schema):

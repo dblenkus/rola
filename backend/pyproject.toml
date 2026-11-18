@@ -86,7 +86,7 @@ module = [
     "rola.config.*",
     "rola.common.*",
     "rola.accounts.settings",
-    "rola.accounts.throttling",
+    "rola.accounts.api.throttling",
     "rola.entries.services",
     "rola.entries.photos",
     "rola.entries.archive",

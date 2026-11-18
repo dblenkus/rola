@@ -12,11 +12,11 @@ from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
-from rola.accounts.models import User
-from rola.accounts.serializers import (
+from rola.accounts.api.serializers import (
     ActivationSerializer,
     PasswordResetSerializer,
 )
+from rola.accounts.models import User
 from rola.accounts.utils.signing import (
     PASSWORD_RESET_SALT,
     USER_ACTIVATION_SALT,

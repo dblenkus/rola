@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 
-from rola.accounts.throttling import LoginThrottle
+from rola.accounts.api.throttling import LoginThrottle
 
 
 class RolaAdminSite(admin.AdminSite):
