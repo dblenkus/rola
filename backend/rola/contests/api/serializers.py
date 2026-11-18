@@ -14,21 +14,8 @@ Contests API serializers
 
 from rest_framework import serializers
 
+from rola.common.serializers import BaseSerializer
 from rola.contests.models import Contest, Institution, Theme
-
-
-class BaseSerializer(serializers.ModelSerializer):
-    """Base serializer for Rolca models."""
-
-    user = serializers.HiddenField(
-        default=serializers.CreateOnlyDefault(serializers.CurrentUserDefault())
-    )
-
-    class Meta:
-        """Serializer configuration."""
-
-        fields = ["id", "user", "created", "modified"]
-        read_only_fields = ["id"]
 
 
 class InstitutionSerializer(BaseSerializer):

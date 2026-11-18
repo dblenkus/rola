@@ -13,7 +13,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import exceptions, serializers
 
-from rola.contests.api.serializers import BaseSerializer
+from rola.common.serializers import BaseSerializer
 from rola.contests.api.serializers import ContestSerializer as CoreContestSerializer
 from rola.contests.api.serializers import ThemeSerializer as CoreThemeSerializer
 from rola.entries.api.serializers import FileSerializer

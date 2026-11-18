@@ -12,8 +12,8 @@ Contests API views
 from django.db.models import Count, Prefetch
 from rest_framework import mixins, viewsets
 
+from rola.common.permissions import AdminOrReadOnly
 from rola.contests.api.filters import ContestFilter, InstitutionFilter
-from rola.contests.api.permissions import AdminOrReadOnly
 from rola.contests.api.serializers import ContestSerializer, InstitutionSerializer
 from rola.contests.models import Contest, Institution, Theme
 

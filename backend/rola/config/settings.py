@@ -13,7 +13,7 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "admin:login"
 
 INSTALLED_APPS = [
-    "rola.apps.RolaAdminConfig",
+    "rola.accounts.apps.RolaAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     "rola.judging",
     "rola.accounts",
     "storages",
-    "utils",
+    "rola.common",
 ]
 
 MIDDLEWARE = [
@@ -103,9 +103,9 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.backends.DjangoFilterBackend",
-        "rola.filters.OrderingFilter",
+        "rola.common.filters.OrderingFilter",
     ),
-    "DEFAULT_PAGINATION_CLASS": "rola.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "rola.common.pagination.PageNumberPagination",
     "PAGE_SIZE": 500,
     "NUM_PROXIES": int(os.environ.get("ROLA_NUM_PROXIES", "0")),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
