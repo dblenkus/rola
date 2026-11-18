@@ -5,13 +5,13 @@ import { Alert, Grid, Typography } from '@mui/material';
 
 import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
 
-import SubmissionSetService from '../api/SubmissionSetService';
-import ContestService from '../../contests/api/ContestService';
 import { requestError } from '../../../shared/api/errors';
 import { Contest, SubmissionSet } from '../../../shared/api/types';
 import SubmissionSetTable from '../components/SubmissionSetTable';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
+import { deleteSubmissionSet } from '../api';
+import { getContest } from '../../contests/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -61,7 +61,7 @@ class SubmissionSetList extends React.Component<
         },
       } = this.props;
 
-      const { data: contest } = await ContestService.getContest(contestId);
+      const { data: contest } = await getContest(contestId);
 
       this.setState({ contest });
     } catch (error) {
@@ -82,7 +82,7 @@ class SubmissionSetList extends React.Component<
 
     this.setState({ deleteError: null });
     try {
-      await SubmissionSetService.deleteSubmissionSet(pendingSubmissionSet.id);
+      await deleteSubmissionSet(pendingSubmissionSet.id);
       this.setState(({ reloadKey }) => ({ reloadKey: reloadKey + 1 }));
     } catch (error) {
       this.setState({ deleteError: requestError(error) });

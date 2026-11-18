@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 import RegisterForm, { Errors, Fields } from '../components/RegisterForm';
 import RegisterConfirm from '../components/RegisterConfirm';
 
-import UserService from '../api/UserService';
 import { formErrors } from '../../../shared/api/errors';
+import { registerUser } from '../api';
 
 type RegisterViewProps = WithTranslation;
 
@@ -64,7 +64,7 @@ class RegisterView extends React.Component<
   handleSubmit = async (): Promise<void> => {
     const { fields } = this.state;
     try {
-      await UserService.register(fields);
+      await registerUser(fields);
       this.setState({ done: true });
     } catch (error) {
       this.setState({ errors: { ...this.state.errors, ...formErrors(error) } });

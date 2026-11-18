@@ -4,9 +4,9 @@ import { useParams } from 'react-router';
 import { Alert, Box, Typography } from '@mui/material';
 
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ResultsSubmissionService from '../api/ResultsSubmissionService';
 import { requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
+import { getResultsSubmission } from '../api';
 
 interface RouteMatchParams {
   submissionId: string;
@@ -22,7 +22,7 @@ const SubmissionResults: React.FC = () => {
 
   useEffect(() => {
     const fetch = async (): Promise<void> => {
-      const { data } = await ResultsSubmissionService.get(submissionId);
+      const { data } = await getResultsSubmission(submissionId);
       setSubmission(data);
     };
     fetch().catch((error: unknown) => setError(requestError(error)));

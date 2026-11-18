@@ -1,10 +1,10 @@
 import { AppState, AppThunk } from '../../../app/store';
-import ContestService from '../../contests/api/ContestService';
-import JudgeSubmissionService from '../api/JudgeSubmissionService';
 import { JurySubmission } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
 
 import { performInitialize } from './reducer';
+import { getContest } from '../../contests/api';
+import { getJurySubmissionsByTheme } from '../api';
 
 export {
   performInitialize,
@@ -34,12 +34,12 @@ const loadTheme =
     initialization += 1;
     const current = initialization;
     try {
-      const { data: contest } = await ContestService.getContest(contestId);
+      const { data: contest } = await getContest(contestId);
       const theme = contest.themes.find((t) => t.id.toString() === themeId);
       if (!theme) return current === initialization ? 'missing' : 'superseded';
 
       const submissionResource = () =>
-        JudgeSubmissionService.getSubmissionsByTheme(parseInt(themeId, 10));
+        getJurySubmissionsByTheme(parseInt(themeId, 10));
       const submissions = await fetchAll(submissionResource);
 
       if (current !== initialization) return 'superseded';

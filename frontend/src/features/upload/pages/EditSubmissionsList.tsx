@@ -22,13 +22,13 @@ import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 
 import { tableButtonSx } from '../../../shared/ui/styles';
-import ContestService from '../../contests/api/ContestService';
-import SubmissionService from '../api/SubmissionService';
 import { requestError } from '../../../shared/api/errors';
 import { Author, Contest, Submission } from '../../../shared/api/types';
 import { asyncMap } from '../../../shared/utils/async';
 import fetchAll from '../../../shared/api/fetchAll';
 import groupBy from '../../../shared/utils/groupBy';
+import { getActiveContests } from '../../contests/api';
+import { deleteSubmission, getSubmissionsByContest } from '../api';
 
 type EditSubmissionListProps = WithTranslation;
 
@@ -67,9 +67,9 @@ class EditSubmissionsList extends React.Component<
     this.setState({ error: null });
     try {
       const getContestSubmissions = (contest: Contest) =>
-        fetchAll(() => SubmissionService.getSubmissionsByContest(contest.id));
+        fetchAll(() => getSubmissionsByContest(contest.id));
 
-      const contests = await fetchAll(ContestService.getActiveContests);
+      const contests = await fetchAll(getActiveContests);
       const submissions = (
         await asyncMap(contests, getContestSubmissions)
       ).flat();
@@ -107,7 +107,7 @@ class EditSubmissionsList extends React.Component<
     // below shows exactly which photographs are left.
     try {
       for (const submission of pendingSubmissions) {
-        await SubmissionService.deleteSubmission(submission.id);
+        await deleteSubmission(submission.id);
       }
     } catch (error) {
       // Only the owner's submissions are listed, so a refusal means the

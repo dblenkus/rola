@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
-import ImageService from './ImageService';
+import { serveApi } from '../../test/api';
+import { uploadImage } from './api';
 
 async function uploadDisposition(name: string): Promise<string> {
   let disposition: unknown;
@@ -15,7 +15,7 @@ async function uploadDisposition(name: string): Promise<string> {
   // File.name is a DOMString, so a file picked from the file system can carry
   // one.
   Object.defineProperty(file, 'name', { value: name });
-  await ImageService.uploadImage(file);
+  await uploadImage(file);
   if (typeof disposition !== 'string') {
     throw new Error('The upload sent no Content-Disposition header');
   }

@@ -18,10 +18,10 @@ import {
   setPreviousSubmission,
   type InitializeResult,
 } from '../state/actions';
-import RatingService from '../api/RatingService';
 import { contentUnavailable, requestError } from '../../../shared/api/errors';
 import useKeyPress from '../../../shared/hooks/useKeyPress';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import { getRatingsForSubmission, updateRatingForSubmission } from '../api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -109,7 +109,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     setSaving(true);
     setSaveError(null);
     try {
-      await RatingService.updateForSubmission(ratedId, newRating);
+      await updateRatingForSubmission(ratedId, newRating);
     } catch (error) {
       setSaveError({ submissionId: ratedId, message: requestError(error) });
       return;
@@ -193,7 +193,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     if (currentId === undefined) return;
     // Judges move on before slow responses arrive; drop the ones they left.
     let active = true;
-    RatingService.getForSubmission(currentId)
+    getRatingsForSubmission(currentId)
       .then(({ data: ratings }) => {
         if (active) {
           setRating({

@@ -13,10 +13,10 @@ import {
 } from '../state/actions';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import ThemeGallery from '../components/ThemeGallery';
-import RatingService from '../api/RatingService';
 import { contentUnavailable, requestError } from '../../../shared/api/errors';
 import { Rating } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
+import { getRatingsForTheme } from '../api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -56,8 +56,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   // Fetch ratings.
   useEffect(() => {
     const fetchRatings = async (): Promise<void> => {
-      const ratingResource = () =>
-        RatingService.getForTheme(parseInt(themeId, 10));
+      const ratingResource = () => getRatingsForTheme(parseInt(themeId, 10));
       setRatings(await fetchAll(ratingResource));
     };
     fetchRatings().catch((error: unknown) => setError(requestError(error)));

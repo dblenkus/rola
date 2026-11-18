@@ -20,8 +20,11 @@ import SubmissionSetTableRow from './SubmissionSetTableRow';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import usePagination from '../../../shared/api/usePagination';
 import { requestError } from '../../../shared/api/errors';
-import PaymentService from '../api/PaymentService';
-import SubmissionSetService from '../api/SubmissionSetService';
+import {
+  getPaymentsBySubmissionSets,
+  getSubmissionSetsByContest,
+  updatePayment,
+} from '../api';
 
 interface SubmissionSetTableProps {
   contestId: number;
@@ -48,7 +51,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   });
   const source = useCallback(
     (page: number, pageSize: number) =>
-      SubmissionSetService.getByContest(contestId.toString(), page, pageSize),
+      getSubmissionSetsByContest(contestId.toString(), page, pageSize),
     [contestId],
   );
   const {
@@ -68,7 +71,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
       return { sets: submissionSets, results: [] };
 
     const submissionSetIds = submissionSets.map(({ id }) => id);
-    const { data } = await PaymentService.getBySubmissionSets(submissionSetIds);
+    const { data } = await getPaymentsBySubmissionSets(submissionSetIds);
     return { sets: submissionSets, results: data.results };
   }, [submissionSets]);
 
@@ -108,7 +111,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
   ): Promise<void> => {
     setPaymentError(null);
     try {
-      await PaymentService.updatePayment(submissionSetId, paid);
+      await updatePayment(submissionSetId, paid);
       const loaded = await fetchPayments();
       // The admin may have moved to another page while this was saved.
       setPayments((current) =>

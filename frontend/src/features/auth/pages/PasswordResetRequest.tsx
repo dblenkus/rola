@@ -10,8 +10,8 @@ import PasswordResetRequestForm, {
 } from '../components/PasswordResetRequestForm';
 import PasswordResetRequestConfirm from '../components/PasswordResetRequestConfirm';
 
-import UserService from '../api/UserService';
 import { requestError } from '../../../shared/api/errors';
+import { requestPasswordReset } from '../api';
 
 type PasswordResetRequestViewProps = WithTranslation;
 
@@ -45,7 +45,7 @@ class PasswordResetRequestView extends React.Component<
     const { fields } = this.state;
     this.setState({ error: null });
     try {
-      await UserService.requestPasswordReset(fields);
+      await requestPasswordReset(fields);
       this.setState({ done: true });
     } catch (error) {
       this.setState({ error: requestError(error) });

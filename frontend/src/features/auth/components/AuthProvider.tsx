@@ -7,7 +7,6 @@ import {
   type ReactNode,
 } from 'react';
 
-import UserService, { type LoginPayload } from '../api/UserService';
 import {
   loadToken,
   removeStored,
@@ -15,6 +14,7 @@ import {
   StorageBlocked,
   type Session,
 } from '../../../shared/api/token';
+import { loginUser, type LoginPayload } from '../api';
 
 interface AuthContext {
   user: Session | null;
@@ -49,7 +49,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
-    const { data } = await UserService.login(payload);
+    const { data } = await loginUser(payload);
     // Normalized as the backend matches accounts, so that logging in again
     // with other capitalization keeps the upload form of the same account.
     const session = { ...data, email: payload.email.trim().toLowerCase() };

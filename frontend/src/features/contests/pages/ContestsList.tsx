@@ -4,10 +4,10 @@ import { Alert, Grid, Typography } from '@mui/material';
 
 import ContestCard from '../components/ContestCard';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ContestService from '../api/ContestService';
 import { reportUnexpected } from '../../../shared/api/errors';
 import type { Contest } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
+import { getActiveContests } from '../api';
 
 export default function ContestsListView() {
   const [contests, setContests] = useState<Contest[] | null>(null);
@@ -15,7 +15,7 @@ export default function ContestsListView() {
 
   useEffect(() => {
     let active = true;
-    fetchAll(ContestService.getActiveContests)
+    fetchAll(getActiveContests)
       .then((data) => {
         if (active) setContests(data);
       })

@@ -2,11 +2,11 @@ import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ContestService from '../../contests/api/ContestService';
 import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
 
 import ConfirmationHtml from '../components/ConfirmationHtml';
+import { getContest } from '../../contests/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -23,7 +23,7 @@ const UploadConfirmView: React.FC = () => {
 
   useEffect((): void => {
     const fetchContest = async (): Promise<void> => {
-      const { data } = await ContestService.getContest(contestId);
+      const { data } = await getContest(contestId);
       setContest(data);
     };
     fetchContest().catch((error: unknown) => setError(requestError(error)));

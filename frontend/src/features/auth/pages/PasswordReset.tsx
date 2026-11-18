@@ -13,8 +13,8 @@ import PasswordResetForm, {
 } from '../components/PasswordResetForm';
 import PasswordResetSuccess from '../components/PasswordResetSuccess';
 
-import UserService from '../api/UserService';
 import { formErrors } from '../../../shared/api/errors';
+import { resetPassword } from '../api';
 
 interface PasswordResetProps extends WithTranslation {
   location: Location;
@@ -60,7 +60,7 @@ class PasswordResetView extends React.Component<
     const token = new URLSearchParams(location.search).get('token');
     if (token) {
       try {
-        await UserService.passwordReset({ ...fields, token });
+        await resetPassword({ ...fields, token });
         this.setState({ done: true });
       } catch (error) {
         this.setState({

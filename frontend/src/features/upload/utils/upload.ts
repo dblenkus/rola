@@ -1,12 +1,13 @@
 import { DateTime } from 'luxon';
 
-import ImageService from '../api/ImageService';
-import SubmissionService, {
-  type SubmissionCreatePayload,
-} from '../api/SubmissionService';
-import AuthorService from '../api/AuthorService';
 import { loadToken, type Session } from '../../../shared/api/token';
 import type { ContestModel } from '../models';
+import {
+  createAuthor,
+  createSubmissions,
+  uploadImage,
+  type SubmissionCreatePayload,
+} from '../api';
 
 // Another account signed in, or the session ended, during the upload.
 export class SessionChanged extends Error {
@@ -44,10 +45,7 @@ export default async function upload(
       for (const image of submission.images) {
         if (image.file) {
           checkSession();
-          const { data } = await ImageService.uploadImage(
-            image.file,
-            authorization,
-          );
+          const { data } = await uploadImage(image.file, authorization);
           files.push(data);
         }
       }
@@ -68,7 +66,7 @@ export default async function upload(
   const { first_name, last_name, school, mentor, club, distinction, dob } =
     contest.author;
   checkSession();
-  const { data: author } = await AuthorService.create(
+  const { data: author } = await createAuthor(
     {
       first_name,
       last_name,
@@ -81,7 +79,7 @@ export default async function upload(
     authorization,
   );
   checkSession();
-  const { status } = await SubmissionService.createSubmissions(
+  const { status } = await createSubmissions(
     submissions.map((submission) => ({ ...submission, author })),
     uploadKey,
     authorization,
