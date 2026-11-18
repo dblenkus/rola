@@ -1,9 +1,11 @@
 """Serializers shared by the apps."""
 
+from typing import Any
+
 from rest_framework import serializers
 
 
-class BaseSerializer(serializers.ModelSerializer):
+class BaseSerializer(serializers.ModelSerializer[Any]):
     """Base serializer for Rolca models."""
 
     user = serializers.HiddenField(

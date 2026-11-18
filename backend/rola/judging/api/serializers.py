@@ -217,6 +217,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
         mapping = dict(SubmissionReward.KIND_CHOICES)
         if hasattr(submission, "reward"):
             return mapping[submission.reward.kind]
+        return None
 
     def to_representation(self, submission):
         """Publish the author's school and club only if the contest shows them."""

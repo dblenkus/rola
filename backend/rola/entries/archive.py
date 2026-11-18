@@ -3,14 +3,15 @@
 import shutil
 import time
 import zipfile
+from typing import IO
 
 from django.utils.text import slugify
 
-from rola.contests.models import Theme
+from rola.contests.models import Contest, Theme
 from rola.entries.models import Submission
 
 
-def write_contest_archive(contest, archive):
+def write_contest_archive(contest: Contest, archive: IO[bytes]) -> None:
     """Write every photograph of the contest's submissions into a zip archive.
 
     The contest download in the Django admin sends the archive, and the

@@ -74,9 +74,46 @@ convention = "pep257"
 
 [tool.mypy]
 python_version = "3.14"
-files = [
-    "rola/config/environment.py",
-    "rola/accounts/settings.py",
-    "rola/accounts/throttling.py",
+packages = ["rola"]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+# The flags of --strict. mypy applies `strict = true` in an override to
+# every module, so the strict modules list the flags one by one.
+[[tool.mypy.overrides]]
+module = [
+    "rola.config.*",
+    "rola.common.*",
+    "rola.accounts.settings",
+    "rola.accounts.throttling",
+    "rola.entries.services",
+    "rola.entries.photos",
+    "rola.entries.archive",
 ]
-strict = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_return_any = true
+implicit_reexport = false
+strict_equality = true
+extra_checks = true
+
+# botocore ships no type information, so mypy reads its source.
+[[tool.mypy.overrides]]
+module = ["botocore.*"]
+follow_untyped_imports = true
+
+# django-filter ships no type information either, and its rest_framework
+# module computes __all__ at runtime, which mypy cannot read from source.
+[[tool.mypy.overrides]]
+module = ["django_filters.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "rola.config.test_settings"

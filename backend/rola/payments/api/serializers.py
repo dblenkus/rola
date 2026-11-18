@@ -1,5 +1,7 @@
 """Serialize payments for the API."""
 
+from typing import Any
+
 from rola.common.serializers import BaseSerializer
 from rola.payments.models import Payment
 
@@ -12,7 +14,7 @@ class PaymentSerializer(BaseSerializer):
 
         model = Payment
         fields = BaseSerializer.Meta.fields + ["submissionset", "paid"]
-        extra_kwargs = {"submissionset": {"validators": []}}
+        extra_kwargs: dict[str, dict[str, Any]] = {"submissionset": {"validators": []}}
 
     def create(self, validated_data):
         """Create or update payment status for one submission set."""

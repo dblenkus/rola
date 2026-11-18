@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 from rola.config.environment import absolute_url, boolean, comma_separated
 
@@ -56,7 +57,7 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = "rola.config.wsgi.application"
 
-DATABASES = {
+DATABASES: dict[str, dict[str, Any]] = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("ROLA_POSTGRESQL_NAME", "rola"),
@@ -129,7 +130,7 @@ USE_I18N = True
 LOCALE_PATHS = [BASE_DIR / "rola" / "locale"]
 USE_TZ = True
 
-MAILERS = {
+MAILERS: dict[str, dict[str, Any]] = {
     "default": {
         "BACKEND": "django.core.mail.backends.console.EmailBackend"
         if DEBUG

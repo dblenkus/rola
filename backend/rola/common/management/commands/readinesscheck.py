@@ -1,12 +1,14 @@
 """Check that the configured databases and the cache table accept queries."""
 
+from typing import Any
+
 from django.core.cache import cache
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connections
 from django.db.utils import DatabaseError
 
 
-def check_database():
+def check_database() -> None:
     """Query every configured database and close its cursor."""
     for name in connections:
         try:
@@ -18,7 +20,7 @@ def check_database():
             raise CommandError(f"Database {name} is unavailable: {error}") from error
 
 
-def check_cache():
+def check_cache() -> None:
     """Read from the database cache, which needs its own table."""
     try:
         cache.get("readinesscheck")
@@ -34,7 +36,7 @@ class Command(BaseCommand):
 
     help = "Check database and cache readiness."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         """Fail when a database or the cache table cannot answer a query."""
         check_database()
         check_cache()

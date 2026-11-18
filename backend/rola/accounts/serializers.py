@@ -1,6 +1,7 @@
 """Validate account and token API payloads."""
 
 from functools import partial
+from typing import Any
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
@@ -56,7 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
             "country",
         ]
         read_only_fields = ["id"]
-        extra_kwargs = {
+        extra_kwargs: dict[str, dict[str, Any]] = {
             "first_name": {"required": True},
             "last_name": {"required": True},
             "password": {"write_only": True, "trim_whitespace": False},

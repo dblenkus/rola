@@ -38,7 +38,7 @@ class SubmissionSet(BaseModel):
             ),
         ]
 
-    submissions = models.ManyToManyField("Submission")
+    submissions = models.ManyToManyField("entries.Submission")
 
     contest = models.ForeignKey(
         Contest, on_delete=models.CASCADE, related_name="submission_sets"

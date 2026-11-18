@@ -92,7 +92,7 @@ def validate_activation_token(token: str, *, lock: bool = False) -> User:
         email = signing.loads(
             token,
             salt=USER_ACTIVATION_SALT,
-            max_age=accounts_settings.ACTIVATION_TOKEN_EXPIRES_SECONDS.total_seconds(),
+            max_age=accounts_settings.ACTIVATION_TOKEN_EXPIRES_SECONDS,
         )
         if not isinstance(email, str):
             raise ValueError("Invalid token payload.")
@@ -112,7 +112,7 @@ def validate_reset_token(token: str, *, lock: bool = False) -> User:
         data = signing.loads(
             token,
             salt=PASSWORD_RESET_SALT,
-            max_age=accounts_settings.RESET_TOKEN_EXPIRES_SECONDS.total_seconds(),
+            max_age=accounts_settings.RESET_TOKEN_EXPIRES_SECONDS,
         )
         if (
             not isinstance(data, dict)

@@ -9,11 +9,16 @@ import io
 import os
 import struct
 import time
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.base import File
+from django.core.files.uploadedfile import InMemoryUploadedFile, UploadedFile
 from PIL import Image, ImageOps
+
+if TYPE_CHECKING:
+    from rola.entries import models
 
 #: EXIF tag that says how to rotate the image for display.
 ORIENTATION = 0x0112
@@ -186,22 +191,27 @@ def _orientation_exif(orientation: int) -> bytes:
     )
 
 
-def validate_image(file):
+def validate_image(file: UploadedFile[bytes]) -> None:
     """Validate the upload size, format and longest image edge.
 
     The photograph must be a JPEG file whose metadata can be stripped.
     """
+    # An upload from a request always knows its size.
+    assert file.size is not None
     max_size = settings.ENTRIES_MAX_UPLOAD_SIZE
     if file.size > max_size:
         raise ValidationError(f"Max size of file is {max_size}B.")
 
+    # Django's forms.ImageField, which the API's ImageField runs, opens the
+    # upload with Pillow and keeps the image on it.
+    image: Image.Image = file.image  # type: ignore[attr-defined]
     # Pillow reports a JPEG file that holds further pictures, as many
     # cameras write it, as MPO; stripping keeps only its first picture.
-    if file.image.format not in ("JPEG", "MPO"):
+    if image.format not in ("JPEG", "MPO"):
         raise ValidationError("Photographs must be JPEG files.")
 
     max_res = settings.ENTRIES_MAX_UPLOAD_RESOLUTION
-    if max(file.image.size) > max_res:
+    if max(image.size) > max_res:
         raise ValidationError(f"Max photo resolution is {max_res}px.")
 
     file.seek(0)
@@ -213,7 +223,7 @@ def validate_image(file):
         file.seek(0)
 
 
-def create_thumbnail(photograph):
+def create_thumbnail(photograph: File[bytes]) -> InMemoryUploadedFile:
     """Return a JPEG thumbnail of the photograph, at most 400 pixels on each edge.
 
     :param photograph: The stored photograph's file, without its metadata.
@@ -231,7 +241,7 @@ def create_thumbnail(photograph):
     )
 
 
-def _generate_filename(instance, filename, prefix):
+def _generate_filename(instance: models.File, filename: str, prefix: str) -> str:
     """Generate unique filename with given prefix."""
     md5 = hashlib.md5()
     md5.update(struct.pack("f", time.time()))
@@ -248,11 +258,11 @@ def _generate_filename(instance, filename, prefix):
     return os.path.join(prefix, md5.hexdigest() + extension)
 
 
-def generate_file_filename(instance, filename):
+def generate_file_filename(instance: models.File, filename: str) -> str:
     """Generate filename for uploaded photo."""
     return _generate_filename(instance, filename, "photos")
 
 
-def generate_thumb_filename(instance, filename):
+def generate_thumb_filename(instance: models.File, filename: str) -> str:
     """Generate filename for thumbnails of uploaded photos."""
     return _generate_filename(instance, filename, "thumbs")
