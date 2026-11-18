@@ -18,40 +18,49 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The new schema has the same tables and columns, with five differences that
-decide how the data is copied:
+The new schema has the same columns, with six differences that decide how
+the data is copied:
 
-* Seven tables (``core_author``, ``core_contest``, ``core_submission``,
-  ``core_submissionset``, ``core_theme``, ``rating_authorreward`` and
-  ``rating_submissionreward``) order their columns differently. The copy
-  must match columns by name. ``pg_restore`` does, because ``pg_dump`` writes
-  every ``COPY`` with its column list; a data-only plain dump with
-  ``--inserts`` would not.
-* ``core_submissionset`` has a new column, ``upload_key``, which recognizes
-  a repeated upload request. The dump has no such column, so the copied sets
-  get ``NULL``, which the unique constraint
-  ``core_submissionset_unique_upload_key`` on the account and the key allows
-  in any number of rows.
-* The submission table started as ``core_photo``, and the old database
-  still names its sequence, keys and indexes ``core_photo_*``. The dump's
-  ``SEQUENCE SET`` entry for ``core_photo_id_seq`` has no target in the new
-  database, which names the sequence ``core_submission_id_seq``. The copy
-  therefore leaves out every ``SEQUENCE SET`` entry and resets all sequences
-  from the copied keys afterwards. SQL written against the old object names
-  does not work on the new database.
+* The tables have new names, because the apps have new labels (see `Old and
+  new names`_). The procedure renames the tables in ``rola_old``, the scratch
+  copy of the old database, and copies the data from there into the new
+  database. It never renames anything in the old database, which a rollback
+  needs as it is.
+* Seven tables (``entries_author``, ``contests_contest``,
+  ``entries_submission``, ``entries_submissionset``, ``contests_theme``,
+  ``judging_authorreward`` and ``judging_submissionreward``) order their
+  columns differently. The copy must match columns by name. ``pg_restore``
+  does, because ``pg_dump`` writes every ``COPY`` with its column list; a
+  data-only plain dump with ``--inserts`` would not.
+* ``entries_submissionset`` has a new column, ``upload_key``, which
+  recognizes a repeated upload request. The old data has no such column, so
+  the copied sets get ``NULL``, which the unique constraint
+  ``entries_submissionset_unique_upload_key`` on the account and the key
+  allows in any number of rows.
+* Renaming a table keeps the names of its sequence, keys and indexes, and
+  the old database names them after the old tables. The submission table
+  started as ``core_photo``, so its sequence, keys and indexes are named
+  ``core_photo_*`` there. The new database names every one of them after the
+  new tables, such as ``entries_submission_id_seq``, so the ``SEQUENCE SET``
+  entries of the dumps, for ``core_photo_id_seq`` among others, have no
+  target. The copy therefore leaves out every ``SEQUENCE SET`` entry and
+  resets all sequences from the copied keys afterwards. SQL written against
+  the old object names does not work on the new database.
 * The project's own tables have 64-bit primary keys; Django's
   ``auth_group``, ``auth_permission``, ``django_content_type`` and
   ``django_admin_log`` keep 32-bit keys. The old values copy unchanged.
-* ``rating_rating`` holds at most one rating per judge and submission, through
-  the unique constraint ``rating_unique_judge_submission``, and its ``rating``
-  column is a ``smallint`` from 1 to 10, through the check constraint
-  ``rating_rating_between_1_and_10``. The old schema had an ``integer``
-  column and neither constraint, and a single duplicate or out-of-range score
-  makes the copy fail, so the old data is checked for both first.
+* ``judging_rating`` holds at most one rating per judge and submission,
+  through the unique constraint ``judging_unique_judge_submission``, and its
+  ``rating`` column is a ``smallint`` from 1 to 10, through the check
+  constraint ``judging_rating_between_1_and_10``. The old ``rating_rating``
+  table had an ``integer`` column and neither constraint, and a single
+  duplicate or out-of-range score makes the copy fail, so the old data is
+  checked for both first.
 
 Content types and permissions are created by ``migrate`` and get new ids, so
 their tables are not copied. The group and user permissions are remapped
-through their natural keys (app label, model and codename) instead.
+through their natural keys (app label, model and codename) instead, after
+the old app labels are changed to the new ones in ``rola_old``.
 
 Login tokens, Django admin sessions and the admin log are not copied, so
 everyone logs in again after the transfer. Email addresses are stored in
@@ -64,6 +73,70 @@ The production database holds entrants' personal data, so a rehearsal
 outside an environment approved for that data uses synthetic data only.
 Before the real transfer, reset a new stack that a rehearsal filled, as
 "Prepare the new stack" describes.
+
+Old and new names
+=================
+
+Every table keeps its columns, and its name takes the new app label as
+prefix; the many-to-many tables follow their model's table. A table that is
+not listed here, such as ``auth_group`` or ``django_session``, keeps its
+name:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Old table
+     - New table
+   * - ``drf_user_email``, ``drf_user_location``, ``drf_user_token``,
+       ``drf_user_user``, ``drf_user_user_groups``,
+       ``drf_user_user_user_permissions``
+     - ``accounts_email``, ``accounts_location``, ``accounts_token``,
+       ``accounts_user``, ``accounts_user_groups``,
+       ``accounts_user_user_permissions``
+   * - ``core_contest``, ``core_institution``, ``core_theme``
+     - ``contests_contest``, ``contests_institution``, ``contests_theme``
+   * - ``core_author``, ``core_file``, ``core_submission``,
+       ``core_submissionset``, ``core_submissionset_submissions``
+     - ``entries_author``, ``entries_file``, ``entries_submission``,
+       ``entries_submissionset``, ``entries_submissionset_submissions``
+   * - ``payment_payment``
+     - ``payments_payment``
+   * - ``rating_authorreward``, ``rating_judge``, ``rating_rating``,
+       ``rating_submissionreward``, ``rating_themeresults``
+     - ``judging_authorreward``, ``judging_judge``, ``judging_rating``,
+       ``judging_submissionreward``, ``judging_themeresults``
+
+The app labels in ``django_content_type``, which the permissions' natural
+keys hold, change the same way:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Old app label
+     - New app label
+   * - ``drf_user``
+     - ``accounts``
+   * - ``core``
+     - ``contests`` for the models ``contest``, ``institution`` and
+       ``theme``; ``entries`` for ``author``, ``file``, ``submission`` and
+       ``submissionset``
+   * - ``payment``
+     - ``payments``
+   * - ``rating``
+     - ``judging``
+
+The constraints that the project names itself take the new label too:
+``core_submissionset_unique_upload_key`` becomes
+``entries_submissionset_unique_upload_key``, ``rating_unique_judge_submission``
+becomes ``judging_unique_judge_submission``, and
+``rating_rating_between_1_and_10`` becomes
+``judging_rating_between_1_and_10``. ``unique_name_kind`` on the institutions
+keeps its name. The names that Django generates for keys, indexes and
+sequences start with the new table names, and their hash suffixes differ.
+
+Until "Rename the tables in the scratch copy", the old database and
+``rola_old`` use the old names, and the commands before that step name the
+old tables. From that step on, the commands use the new names.
 
 Prepare the new stack
 =====================
@@ -120,7 +193,7 @@ transfer. This must print 0:
 
 .. code-block:: shell
 
-   docker compose exec -T db psql -U rola -d rola -Atc "SELECT count(*) FROM drf_user_user"
+   docker compose exec -T db psql -U rola -d rola -Atc "SELECT count(*) FROM accounts_user"
 
 If it prints anything else, an earlier rehearsal or abandoned run filled the
 new stack, and the copy would fail on its rows. Reset the new stack. Run
@@ -201,7 +274,9 @@ Check the old data
 
 Restore the dump into a scratch database next to the new one, replacing one
 left from an earlier attempt. The checks and the permission remapping read
-from it:
+from it, and the copy comes from it once its tables are renamed. Until then
+it has the old table names, as the old database does, and the checks below
+use them:
 
 .. code-block:: shell
 
@@ -323,6 +398,67 @@ Tell their organizers before the switch:
    ORDER BY c.id;
    SQL
 
+Rename the tables in the scratch copy
+=====================================
+
+Rename the old tables in ``rola_old`` to the new names, and change the old
+app labels of its content types to the new ones (see `Old and new names`_),
+in one transaction. Run this against ``rola_old`` only, never against the
+old database. A content type of a ``core`` model that is not listed keeps
+its old label, so the permission remapping lists its permissions:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -v ON_ERROR_STOP=1 -U rola -d rola_old <<'SQL'
+   BEGIN;
+   ALTER TABLE drf_user_email RENAME TO accounts_email;
+   ALTER TABLE drf_user_location RENAME TO accounts_location;
+   ALTER TABLE drf_user_token RENAME TO accounts_token;
+   ALTER TABLE drf_user_user RENAME TO accounts_user;
+   ALTER TABLE drf_user_user_groups RENAME TO accounts_user_groups;
+   ALTER TABLE drf_user_user_user_permissions RENAME TO accounts_user_user_permissions;
+   ALTER TABLE core_contest RENAME TO contests_contest;
+   ALTER TABLE core_institution RENAME TO contests_institution;
+   ALTER TABLE core_theme RENAME TO contests_theme;
+   ALTER TABLE core_author RENAME TO entries_author;
+   ALTER TABLE core_file RENAME TO entries_file;
+   ALTER TABLE core_submission RENAME TO entries_submission;
+   ALTER TABLE core_submissionset RENAME TO entries_submissionset;
+   ALTER TABLE core_submissionset_submissions RENAME TO entries_submissionset_submissions;
+   ALTER TABLE payment_payment RENAME TO payments_payment;
+   ALTER TABLE rating_authorreward RENAME TO judging_authorreward;
+   ALTER TABLE rating_judge RENAME TO judging_judge;
+   ALTER TABLE rating_rating RENAME TO judging_rating;
+   ALTER TABLE rating_submissionreward RENAME TO judging_submissionreward;
+   ALTER TABLE rating_themeresults RENAME TO judging_themeresults;
+   UPDATE django_content_type SET app_label = CASE
+       WHEN app_label = 'drf_user' THEN 'accounts'
+       WHEN app_label = 'payment' THEN 'payments'
+       WHEN app_label = 'rating' THEN 'judging'
+       WHEN model IN ('contest', 'institution', 'theme') THEN 'contests'
+       WHEN model IN ('author', 'file', 'submission', 'submissionset') THEN 'entries'
+       ELSE app_label
+   END
+   WHERE app_label IN ('drf_user', 'core', 'payment', 'rating');
+   COMMIT;
+   SQL
+
+If a table is missing, the transaction stops and renames nothing: find out
+why before going on. This must print no rows, or a table of the old schema
+was left with its old name:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -U rola -d rola_old -c \
+       "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name ~ '^(drf_user|core|payment|rating)_'"
+
+Dump the data of the renamed copy, so that the restore finds every table
+under its new name:
+
+.. code-block:: shell
+
+   docker compose exec -T db pg_dump -U rola -d rola_old -Fc --data-only -f /tmp/rola-renamed.dump
+
 Name the tables to copy, in a variable that the later steps use too, and
 check that the dump holds no table that this procedure does not know. The
 second command must print nothing and exit with status 0. It skips
@@ -332,20 +468,20 @@ before going on.
 
 .. code-block:: shell
 
-   COPIED='auth_group|drf_user_location|drf_user_email|drf_user_user|drf_user_user_groups|core_author|core_contest|core_file|core_institution|core_submission|core_submissionset|core_submissionset_submissions|core_theme|payment_payment|rating_authorreward|rating_judge|rating_rating|rating_submissionreward|rating_themeresults'
-   docker compose exec -T db sh -c "pg_restore -l /tmp/rola-old.dump > /tmp/rola-old.list && ! grep ' TABLE DATA ' /tmp/rola-old.list | grep -vE ' TABLE DATA public ($COPIED|auth_group_permissions|drf_user_user_user_permissions|auth_permission|django_content_type|django_migrations|django_session|drf_user_token|django_admin_log|backup_filebackup) '"
+   COPIED='auth_group|accounts_location|accounts_email|accounts_user|accounts_user_groups|entries_author|contests_contest|entries_file|contests_institution|entries_submission|entries_submissionset|entries_submissionset_submissions|contests_theme|payments_payment|judging_authorreward|judging_judge|judging_rating|judging_submissionreward|judging_themeresults'
+   docker compose exec -T db sh -c "pg_restore -l /tmp/rola-renamed.dump > /tmp/rola-renamed.list && ! grep ' TABLE DATA ' /tmp/rola-renamed.list | grep -vE ' TABLE DATA public ($COPIED|auth_group_permissions|accounts_user_user_permissions|auth_permission|django_content_type|django_migrations|django_session|accounts_token|django_admin_log|backup_filebackup) '"
 
 Copy the data
 =============
 
-#. Restore only the ``TABLE DATA`` entries of the copied tables, in one
-   transaction. The list file must have 19 lines:
+#. Restore only the ``TABLE DATA`` entries of the copied tables from the
+   renamed dump, in one transaction. The list file must have 19 lines:
 
    .. code-block:: shell
 
-      docker compose exec -T db sh -c "pg_restore -l /tmp/rola-old.dump | grep -E ' TABLE DATA public ($COPIED) ' > /tmp/restore.list && wc -l < /tmp/restore.list"
+      docker compose exec -T db sh -c "grep -E ' TABLE DATA public ($COPIED) ' /tmp/rola-renamed.list > /tmp/restore.list && wc -l < /tmp/restore.list"
       docker compose exec -T db pg_restore -U rola -d rola --single-transaction \
-          --exit-on-error -L /tmp/restore.list /tmp/rola-old.dump
+          --exit-on-error -L /tmp/restore.list /tmp/rola-renamed.dump
 
    The foreign keys are checked when the transaction commits, so the order
    of the tables does not matter. If anything fails, nothing is written.
@@ -355,16 +491,16 @@ Copy the data
    .. code-block:: shell
 
       docker compose exec -T db psql -U rola -d rola -c \
-          "UPDATE drf_user_user SET email = lower(email) WHERE email <> lower(email)"
+          "UPDATE accounts_user SET email = lower(email) WHERE email <> lower(email)"
 
 #. Remap the group and user permissions by natural key. Export them from the
-   scratch database:
+   scratch database, whose content types have the new app labels:
 
    .. code-block:: shell
 
       docker compose exec -T db psql -v ON_ERROR_STOP=1 -U rola -d rola_old <<'SQL'
       \copy (SELECT gp.group_id, ct.app_label, ct.model, p.codename FROM auth_group_permissions gp JOIN auth_permission p ON p.id = gp.permission_id JOIN django_content_type ct ON ct.id = p.content_type_id) TO '/tmp/group_permissions.csv' WITH (FORMAT csv)
-      \copy (SELECT up.user_id, ct.app_label, ct.model, p.codename FROM drf_user_user_user_permissions up JOIN auth_permission p ON p.id = up.permission_id JOIN django_content_type ct ON ct.id = p.content_type_id) TO '/tmp/user_permissions.csv' WITH (FORMAT csv)
+      \copy (SELECT up.user_id, ct.app_label, ct.model, p.codename FROM accounts_user_user_permissions up JOIN auth_permission p ON p.id = up.permission_id JOIN django_content_type ct ON ct.id = p.content_type_id) TO '/tmp/user_permissions.csv' WITH (FORMAT csv)
       SQL
 
    Then insert them with the new permission ids:
@@ -382,7 +518,7 @@ Copy the data
           FROM auth_permission p JOIN django_content_type ct ON ct.id = p.content_type_id;
       INSERT INTO auth_group_permissions (group_id, permission_id)
           SELECT o.group_id, k.id FROM old_group_permission o JOIN permission_key k USING (app_label, model, codename);
-      INSERT INTO drf_user_user_user_permissions (user_id, permission_id)
+      INSERT INTO accounts_user_user_permissions (user_id, permission_id)
           SELECT o.user_id, k.id FROM old_user_permission o JOIN permission_key k USING (app_label, model, codename);
       SELECT 'group' AS kind, group_id AS id, app_label, model, codename FROM old_group_permission
           WHERE (app_label, model, codename) NOT IN (SELECT app_label, model, codename FROM permission_key)
@@ -394,7 +530,8 @@ Copy the data
 
    The last query lists the permissions that have no counterpart in the new
    schema. Permissions of removed models, such as the backup feature's, are
-   expected there; anything else needs a look before going on.
+   expected there, with their old app label; anything else needs a look
+   before going on.
 
 #. Reset every sequence past the copied keys, so that new rows do not collide
    with them:
@@ -402,7 +539,7 @@ Copy the data
    .. code-block:: shell
 
       docker compose run --rm --no-deps -T migrate \
-          python manage.py sqlsequencereset auth admin contenttypes drf_user core payment rating \
+          python manage.py sqlsequencereset auth admin contenttypes accounts contests entries payments judging \
           | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U rola -d rola
 
 #. If the photographs were on disk, store them in the new stack's media
@@ -473,7 +610,8 @@ Copy the data
 Verify and switch
 =================
 
-#. Compare the row counts of every table in the old and the new database:
+#. Compare the row counts of every table in the renamed scratch copy and the
+   new database:
 
    .. code-block:: shell
 
@@ -489,7 +627,7 @@ Verify and switch
    The ``grep`` lists the other tables from both databases.
 
    Only the tables that are not copied may differ: ``django_admin_log``,
-   ``django_migrations``, ``django_session`` and ``drf_user_token``, the
+   ``django_migrations``, ``django_session`` and ``accounts_token``, the
    new ``rola_cache``, and ``backup_filebackup`` if the old database has
    it. ``auth_permission`` and ``django_content_type`` may differ by the
    permissions and models that no longer exist, and the two permission
@@ -503,10 +641,10 @@ Verify and switch
    .. code-block:: shell
 
       docker compose exec -T db psql -U rola -d rola -c \
-          "DELETE FROM drf_user_location l WHERE NOT EXISTS (SELECT 1 FROM drf_user_user u WHERE u.location_id = l.id)"
+          "DELETE FROM accounts_location l WHERE NOT EXISTS (SELECT 1 FROM accounts_user u WHERE u.location_id = l.id)"
 
    psql prints the number of deleted addresses as ``DELETE <n>``. From here
-   on, ``drf_user_location`` holds that many rows fewer than in the old
+   on, ``accounts_location`` holds that many rows fewer than in the old
    database, so a repeated count comparison prints that table.
 
 #. If the old deployment runs on the same server and still publishes port
@@ -530,7 +668,7 @@ Verify and switch
 
    .. code-block:: shell
 
-      docker compose exec -T db sh -c "dropdb -U rola --if-exists rola_old && rm -f /tmp/rola-old.dump /tmp/rola-old.list /tmp/restore.list /tmp/group_permissions.csv /tmp/user_permissions.csv"
+      docker compose exec -T db sh -c "dropdb -U rola --if-exists rola_old && rm -f /tmp/rola-old.dump /tmp/rola-renamed.dump /tmp/rola-renamed.list /tmp/restore.list /tmp/group_permissions.csv /tmp/user_permissions.csv"
       rm -rf "$TRANSFER"
 
    Run both commands also when you abandon a run, at whatever step: they
@@ -557,8 +695,8 @@ message that the mail server refused as ``Unable to send account email``:
 .. code-block:: shell
 
    docker compose exec -T backend python manage.py shell -c "
-   from drf_user.models import User
-   from drf_user.utils.signing import send_activation_email
+   from rola.accounts.models import User
+   from rola.accounts.utils.signing import send_activation_email
    send_activation_email(User.objects.get(email__iexact='<address>', is_active=False))
    "
 
