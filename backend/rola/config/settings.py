@@ -93,7 +93,7 @@ if boolean("ROLA_DISABLE_PASSWORD_VALIDATORS"):
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rola.accounts.authentication.TokenAuthentication"
+        "rola.accounts.api.authentication.TokenAuthentication"
     ],
     # The browsable API's forms list related objects from unfiltered querysets,
     # which would show any account the titles of every submission.

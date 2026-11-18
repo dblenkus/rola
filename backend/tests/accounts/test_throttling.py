@@ -13,13 +13,13 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from rola.accounts.models import User
-from rola.accounts.throttling import (
+from rola.accounts.api.throttling import (
     ActivationThrottle,
     LoginThrottle,
     RecoveryThrottle,
     RegistrationThrottle,
 )
+from rola.accounts.models import User
 from rola.accounts.utils.signing import (
     generate_activation_token,
 )

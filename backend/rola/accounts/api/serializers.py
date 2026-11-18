@@ -11,8 +11,8 @@ from django.db import IntegrityError, models, transaction
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from .models import Location, Token, User
-from .utils.signing import (
+from rola.accounts.models import Location, Token, User
+from rola.accounts.utils.signing import (
     send_activation_email,
     send_existing_account_email,
     send_reset_email,

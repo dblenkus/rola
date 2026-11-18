@@ -14,15 +14,15 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from rola.accounts.models import Token, User
-from rola.accounts.serializers import (
+from rola.accounts.api.serializers import (
     ChangePasswordSerializer,
     PasswordResetSerializer,
 )
+from rola.accounts.api.views import UserViewSet
+from rola.accounts.models import Token, User
 from rola.accounts.utils.signing import (
     generate_reset_token,
 )
-from rola.accounts.views import UserViewSet
 from tests.factories import wait_until_blocked_by_this_connection
 
 
@@ -138,7 +138,7 @@ def test_login_refuses_a_password_changed_after_the_credential_check(account, fl
         return user
 
     with patch(
-        "rola.accounts.serializers.authenticate", authenticate_then_replace_password
+        "rola.accounts.api.serializers.authenticate", authenticate_then_replace_password
     ):
         response = APIClient().post(
             reverse("login"), {"email": account.email, "password": "Original!73"}
