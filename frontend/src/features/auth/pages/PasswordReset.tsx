@@ -1,4 +1,4 @@
-import type { InputChange } from '../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -10,11 +10,11 @@ import { Card, CardContent, CardHeader, Grid } from '@mui/material';
 import PasswordResetForm, {
   Errors,
   Fields,
-} from '../components/Auth/PasswordResetForm';
-import PasswordResetSuccess from '../components/Auth/PasswordResetSuccess';
+} from '../components/PasswordResetForm';
+import PasswordResetSuccess from '../components/PasswordResetSuccess';
 
-import UserService from '../services/UserService';
-import { formErrors } from '../shared/api/errors';
+import UserService from '../api/UserService';
+import { formErrors } from '../../../shared/api/errors';
 
 interface PasswordResetProps extends WithTranslation {
   location: Location;

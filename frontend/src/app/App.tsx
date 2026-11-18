@@ -9,24 +9,24 @@ import Footer from '../shared/ui/Layout/Footer';
 
 import ContestsListView from '../views/ContestsList';
 import ContestDetailsView from '../views/ContestDetails';
-import LoginView from '../views/Login';
-import RegisterView from '../views/Register';
-import RegisterActivateView from '../views/RegisterActivate';
+import LoginView from '../features/auth/pages/Login';
+import RegisterView from '../features/auth/pages/Register';
+import RegisterActivateView from '../features/auth/pages/RegisterActivate';
 import ResultsListView from '../views/ResultsList';
 import UploadView from '../views/Upload';
 import UploadConfirmView from '../views/UploadConfirm';
 import EditSubmissionsList from '../views/EditSubmissionsList';
-import PasswordResetRequestView from '../views/PasswordResetRequest';
-import PasswordResetView from '../views/PasswordReset';
+import PasswordResetRequestView from '../features/auth/pages/PasswordResetRequest';
+import PasswordResetView from '../features/auth/pages/PasswordReset';
 import SelectThemeView from '../views/judge/SelectTheme';
 import ViewThemeView from '../views/judge/ViewTheme';
 import RateSubmissionView from '../views/judge/RateSubmission';
 import AdminSubmissionSetList from '../views/admin/SubmissionSetList';
 import AdminSubmissionSetView from '../views/admin/SubmissionSetView';
 
-import AuthProvider from '../components/Auth/AuthProvider';
+import AuthProvider from '../features/auth/components/AuthProvider';
 import Notifications from '../features/notifications/components/Notifications';
-import PrivateRoute from '../components/Auth/PrivateRoute';
+import PrivateRoute from '../features/auth/components/PrivateRoute';
 
 import store from './store';
 import ThemeOverview from '../views/judge/ThemeOverview';

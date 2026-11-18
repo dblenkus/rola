@@ -14,7 +14,7 @@ import {
   uploadSubmit,
 } from '../store/upload/actions';
 
-import { userContext } from '../components/Auth/AuthProvider';
+import { userContext } from '../features/auth/components/AuthProvider';
 import ContestService from '../services/ContestService';
 import { requestError } from '../shared/api/errors';
 

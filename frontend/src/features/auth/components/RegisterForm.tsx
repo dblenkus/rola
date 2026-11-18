@@ -1,13 +1,13 @@
-import type { InputChange } from '../../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 
 import { Alert, Button, Grid } from '@mui/material';
 
-import InputField from '../Upload/InputField';
+import InputField from '../../../components/Upload/InputField';
 
-import { authSx } from '../../shared/ui/styles';
+import { authSx } from '../../../shared/ui/styles';
 
 export interface Fields {
   first_name: string;

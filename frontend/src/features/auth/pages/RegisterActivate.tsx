@@ -8,11 +8,11 @@ import { Navigate, useLocation, type Location } from 'react-router';
 
 import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
 
-import RegisterActivateFailed from '../components/Auth/RegisterActivateFailed';
-import RegisterActivateSuccess from '../components/Auth/RegisterActivateSuccess';
+import RegisterActivateFailed from '../components/RegisterActivateFailed';
+import RegisterActivateSuccess from '../components/RegisterActivateSuccess';
 
-import UserService from '../services/UserService';
-import { requestError } from '../shared/api/errors';
+import UserService from '../api/UserService';
+import { requestError } from '../../../shared/api/errors';
 
 interface RegisterActivateViewProps extends WithTranslation {
   location: Location;

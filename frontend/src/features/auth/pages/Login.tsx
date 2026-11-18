@@ -1,4 +1,4 @@
-import type { InputChange } from '../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -12,10 +12,10 @@ import {
 
 import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
-import { userContext } from '../components/Auth/AuthProvider';
-import LoginForm, { Errors, Fields } from '../components/Auth/LoginForm';
-import { formErrors } from '../shared/api/errors';
-import { StorageBlocked } from '../shared/api/token';
+import { userContext } from '../components/AuthProvider';
+import LoginForm, { Errors, Fields } from '../components/LoginForm';
+import { formErrors } from '../../../shared/api/errors';
+import { StorageBlocked } from '../../../shared/api/token';
 
 interface LoginViewProps extends WithTranslation {
   location: Location;

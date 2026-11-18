@@ -1,4 +1,4 @@
-import type { InputChange } from '../types/models';
+import type { InputChange } from '../../../types/models';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
@@ -7,11 +7,11 @@ import { Link as RouterLink } from 'react-router';
 
 import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
 
-import RegisterForm, { Errors, Fields } from '../components/Auth/RegisterForm';
-import RegisterConfirm from '../components/Auth/RegisterConfirm';
+import RegisterForm, { Errors, Fields } from '../components/RegisterForm';
+import RegisterConfirm from '../components/RegisterConfirm';
 
-import UserService from '../services/UserService';
-import { formErrors } from '../shared/api/errors';
+import UserService from '../api/UserService';
+import { formErrors } from '../../../shared/api/errors';
 
 type RegisterViewProps = WithTranslation;
 
