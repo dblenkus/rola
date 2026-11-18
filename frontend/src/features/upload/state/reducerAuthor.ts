@@ -1,25 +1,21 @@
-import { AuthorModel } from '../models';
-import { AUTHOR_UPDATE, UploadActionTypes } from './types';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
+import { DateChange, InputChange } from '../models';
 import { getEmptyAuthor } from './utils';
 
-const initialSate = getEmptyAuthor();
-
-const reducer = (
-  state = initialSate,
-  action: UploadActionTypes,
-): AuthorModel => {
-  switch (action.type) {
-    case AUTHOR_UPDATE: {
+const authorSlice = createSlice({
+  name: 'upload/author',
+  initialState: getEmptyAuthor,
+  reducers: {
+    authorUpdate: (state, action: PayloadAction<InputChange | DateChange>) => {
       const { name, value } = action.payload;
       return {
         ...state,
         [name]: value,
       };
-    }
-    default: {
-      return state;
-    }
-  }
-};
+    },
+  },
+});
 
-export default reducer;
+export const { authorUpdate } = authorSlice.actions;
+export default authorSlice.reducer;

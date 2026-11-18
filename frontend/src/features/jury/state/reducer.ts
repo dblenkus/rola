@@ -1,11 +1,13 @@
-import {
-  JuryActionTypes,
-  JuryState,
-  PERFORM_INITIALIZE,
-  SET_SUBMISSION,
-  SET_PREVIOUS_SUBMISSION,
-  SET_NEXT_SUBMISSION,
-} from './types';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
+import { Contest, JurySubmission, Theme } from '../../../shared/api/types';
+
+export interface JuryState {
+  contest: Contest | null;
+  theme: Theme | null;
+  submissions: JurySubmission[] | null;
+  currentIndex: number;
+}
 
 const initialState: JuryState = {
   contest: null,
@@ -14,32 +16,54 @@ const initialState: JuryState = {
   currentIndex: 0,
 };
 
-const reducer = (state = initialState, action: JuryActionTypes): JuryState => {
-  switch (action.type) {
-    case PERFORM_INITIALIZE:
-      return { ...state, ...action.payload };
-    case SET_SUBMISSION: {
-      const { submissions } = state;
-      const { submissionId } = action.payload;
-      const newIndex =
-        submissions?.findIndex((s) => s.id === submissionId) ?? -1;
-      return { ...state, currentIndex: Math.max(newIndex, 0) };
-    }
+const jurySlice = createSlice({
+  name: 'jury',
+  initialState,
+  reducers: {
+    performInitialize: {
+      reducer: (
+        state,
+        action: PayloadAction<{
+          contest: Contest;
+          theme: Theme;
+          submissions: JurySubmission[];
+          currentIndex: number;
+        }>,
+      ) => ({ ...state, ...action.payload }),
+      prepare: (
+        contest: Contest,
+        theme: Theme,
+        submissions: JurySubmission[],
+        currentIndex: number,
+      ) => ({ payload: { contest, theme, submissions, currentIndex } }),
+    },
+    setSubmission: {
+      reducer: (state, action: PayloadAction<{ submissionId: number }>) => {
+        const { submissions } = state;
+        const { submissionId } = action.payload;
+        const newIndex =
+          submissions?.findIndex((s) => s.id === submissionId) ?? -1;
+        state.currentIndex = Math.max(newIndex, 0);
+      },
+      prepare: (submissionId: number) => ({ payload: { submissionId } }),
+    },
     // A move requested before a reload changed the list stays within it.
-    case SET_PREVIOUS_SUBMISSION:
-      return { ...state, currentIndex: Math.max(state.currentIndex - 1, 0) };
-    case SET_NEXT_SUBMISSION:
-      return {
-        ...state,
-        currentIndex: Math.min(
-          state.currentIndex + 1,
-          Math.max((state.submissions?.length ?? 0) - 1, 0),
-        ),
-      };
+    setPreviousSubmission: (state) => {
+      state.currentIndex = Math.max(state.currentIndex - 1, 0);
+    },
+    setNextSubmission: (state) => {
+      state.currentIndex = Math.min(
+        state.currentIndex + 1,
+        Math.max((state.submissions?.length ?? 0) - 1, 0),
+      );
+    },
+  },
+});
 
-    default:
-      return state;
-  }
-};
-
-export default reducer;
+export const {
+  performInitialize,
+  setSubmission,
+  setPreviousSubmission,
+  setNextSubmission,
+} = jurySlice.actions;
+export default jurySlice.reducer;
