@@ -9,7 +9,7 @@ import { styled } from '@mui/material/styles';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 
 import { useAppDispatch } from '../../../app/store';
-import { uploadReset } from '../../../store/upload/actions';
+import { uploadReset } from '../../../features/upload/state/actions';
 import { userContext } from '../../../features/auth/components/AuthProvider';
 
 const MenuLink = styled(Link)({
