@@ -18,11 +18,7 @@ from rest_framework.response import Response
 from rola.entries import services
 from rola.entries.api.filters import SubmissionFilter, SubmissionSetFilter
 from rola.entries.api.parsers import ImageUploadParser
-from rola.entries.api.permissions import (
-    IsSubmissionOwnerOrReadOnly,
-    refuse_closed_entries,
-    require_open_contest,
-)
+from rola.entries.api.permissions import IsSubmissionOwnerOrReadOnly
 from rola.entries.api.querysets import with_submission_details
 from rola.entries.api.serializers import (
     AuthorSerializer,
@@ -103,7 +99,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
         Deleting an author deletes its submissions and their photographs,
         and the results show the author's name.
         """
-        refuse_closed_entries(author.submission_set.all())
+        services.refuse_closed_entries(author.submission_set.all())
 
 
 @extend_schema_view(
@@ -237,7 +233,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
             raise exceptions.PermissionDenied(
                 "You can only delete your own submissions."
             )
-        require_open_contest(instance.theme.contest)
+        services.require_open_contest(instance.theme.contest)
 
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -280,7 +276,7 @@ class SubmissionSetViewSet(
         # Organizers remove duplicate and mistaken sets here, as the Django
         # admin does not list submission sets.
         if not (request.user.is_superuser and not instance.contest.results_published()):
-            require_open_contest(instance.contest)
+            services.require_open_contest(instance.contest)
 
         instance.submissions.all().delete()
         self.perform_destroy(instance)

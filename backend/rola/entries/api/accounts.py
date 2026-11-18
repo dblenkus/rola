@@ -1,14 +1,14 @@
 """Apply contest rules to the account endpoints.
 
 ``rola.accounts`` knows nothing about contests, so the rules that tie an account
-to its entries live in the host project.
+to its entries live here.
 """
 
 from django.db.models import Q
 
 from rola.accounts import views as user_views
-from rola.entries.api.permissions import refuse_closed_entries
 from rola.entries.models import Submission
+from rola.entries.services import refuse_closed_entries
 
 
 class UserViewSet(user_views.UserViewSet):
