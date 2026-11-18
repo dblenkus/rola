@@ -171,7 +171,7 @@ def test_submission_database_failure_rolls_back_files_and_records(
     with (
         django_capture_on_commit_callbacks(execute=True) as callbacks,
         patch(
-            "rola.entries.api.views.SubmissionSet.objects.create",
+            "rola.entries.services.SubmissionSet.objects.create",
             side_effect=RuntimeError("database failure"),
         ),
         pytest.raises(RuntimeError, match="database failure"),

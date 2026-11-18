@@ -2,10 +2,7 @@
 
 import logging
 import uuid
-from collections import Counter
-from functools import partial
 
-from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Prefetch
 from drf_spectacular.types import OpenApiTypes
@@ -18,6 +15,7 @@ from drf_spectacular.utils import (
 from rest_framework import exceptions, mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
+from rola.entries import services
 from rola.entries.api.filters import SubmissionFilter, SubmissionSetFilter
 from rola.entries.api.parsers import ImageUploadParser
 from rola.entries.api.permissions import (
@@ -170,19 +168,10 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         upload creates nothing and returns that upload's submissions. Once all
         of them are deleted, the request is entered as a new upload.
         """
-        self._lock_account()
+        services.lock_account(request.user)
         upload_key = self._upload_key()
         if upload_key is not None:
-            uploaded = SubmissionSet.objects.filter(
-                user=request.user, upload_key=upload_key
-            ).first()
-            if uploaded is not None and not uploaded.submissions.exists():
-                # Deleting submissions keeps their set, which a payment may
-                # refer to, so an empty set means the earlier upload was
-                # withdrawn: this request is entered anew, and its set takes
-                # over the key.
-                SubmissionSet.objects.filter(pk=uploaded.pk).update(upload_key=None)
-                uploaded = None
+            uploaded = services.find_upload(request.user, upload_key)
             # Answered before validation: the photographs of a repeated request
             # may be attached by now, and its contest may have closed.
             if uploaded is not None:
@@ -194,61 +183,18 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_200_OK,
                 )
 
-        serializer_kwargs = {}
-        if isinstance(request.data, list):
-            serializer_kwargs.update(many=True, allow_empty=False)
-
+        many = isinstance(request.data, list)
+        serializer_kwargs = {"many": True, "allow_empty": False} if many else {}
         serializer = self.get_serializer(data=request.data, **serializer_kwargs)
         serializer.is_valid(raise_exception=True)
-        items = (
-            serializer.validated_data
-            if serializer_kwargs
-            else [serializer.validated_data]
-        )
-        contest = items[0]["theme"].contest
-        if any(item["theme"].contest_id != contest.pk for item in items):
-            raise exceptions.ValidationError(
-                "All submissions must belong to the same contest."
-            )
-        require_open_contest(contest)
-        if any(item["author"] != items[0]["author"] for item in items):
-            raise exceptions.ValidationError(
-                "All submissions must have the same author."
-            )
-        files = [file for item in items for file in item["files"]]
-        if len({file.pk for file in files}) != len(files):
-            raise exceptions.ValidationError(
-                "Each file may only be used once in a submission set."
-            )
-        new_photos = Counter()
-        for item in items:
-            new_photos[item["theme"]] += len(item["files"])
-        for theme, count in new_photos.items():
-            self._limit_photos(items[0]["author"], theme, count)
-        self._lock_files(files)
-        self.perform_create(serializer)
+        items = serializer.validated_data if many else [serializer.validated_data]
+        submissions = services.enter_submissions(request.user, items, upload_key)
 
-        instances = serializer.instance if serializer_kwargs else [serializer.instance]
-        first_instance = instances[0]
-
-        submission_set = SubmissionSet.objects.create(
-            author=first_instance.author,
-            user=first_instance.user,
-            contest=contest,
-            upload_key=upload_key,
-        )
-        submission_set.submissions.add(*instances)
-
-        if contest.confirmation_email and request.user.email:
-            transaction.on_commit(
-                partial(contest.confirmation_email.send, request.user.email),
-                robust=True,
-            )
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        data = self.get_serializer(
+            submissions if many else submissions[0], many=many
+        ).data
+        headers = self.get_success_headers(data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
     def _upload_key(self):
         """Return the request's Idempotency-Key, or ``None`` without one.
@@ -265,55 +211,10 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                 "The Idempotency-Key header must be a UUID."
             ) from error
 
-    def _lock_account(self):
-        """Serialize the requester's submission writes.
-
-        Concurrent writes would otherwise each count the photographs in a
-        theme without the ones that the other is adding.
-        """
-        get_user_model().objects.select_for_update().get(pk=self.request.user.pk)
-
-    def _limit_photos(self, author, theme, count, submission=None):
-        """Refuse more than the theme's number of photographs per author.
-
-        The limit counts photographs, not submissions: a series is one
-        submission with up to that many photographs.
-        """
-        entered = File.objects.filter(
-            submission__author=author, submission__theme=theme
-        )
-        if submission is not None:
-            entered = entered.exclude(submission=submission)
-        if entered.count() + count > theme.n_photos:
-            raise exceptions.ValidationError(
-                {
-                    "files": [
-                        f'Too many photographs for the theme "{theme.title}", '
-                        f"which accepts {theme.n_photos} per author."
-                    ]
-                }
-            )
-
-    def _lock_files(self, files, submission=None):
-        """Recheck attachment state under a lock to prevent concurrent file reuse."""
-        locked = list(
-            File.objects.select_for_update()
-            .filter(pk__in=[file.pk for file in files])
-            .order_by("pk")
-        )
-        if len(locked) != len(files) or any(
-            file.user_id != self.request.user.pk
-            or file.submission_id not in (None, submission)
-            for file in locked
-        ):
-            raise exceptions.ValidationError(
-                {"files": ["An upload is no longer available."]}
-            )
-
     @transaction.atomic
     def update(self, request, *args, **kwargs):
         """Serialize file reassignment with other submission writes."""
-        self._lock_account()
+        services.lock_account(request.user)
         return super().update(request, *args, **kwargs)
 
     def perform_update(self, serializer):
@@ -323,9 +224,9 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         if "files" in data or "theme" in data:
             count = len(data["files"]) if "files" in data else instance.files.count()
             theme = data.get("theme", instance.theme)
-            self._limit_photos(instance.author, theme, count, instance)
+            services.limit_photos(instance.author, theme, count, instance)
         if "files" in data:
-            self._lock_files(data["files"], instance.pk)
+            services.lock_files(self.request.user, data["files"], instance.pk)
         serializer.save()
 
     def destroy(self, request, *args, **kwargs):
