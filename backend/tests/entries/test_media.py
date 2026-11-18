@@ -20,10 +20,13 @@ from PIL import ExifTags, Image, ImageCms
 from rola.accounts.models import User
 from rola.contests.models import Contest
 from rola.entries.models import Author, File, SubmissionSet
-from tests.accounts.test_account_security import (
+from tests.factories import (
+    create_user,
+    payload,
+    photo,
+    submitted,
     wait_until_blocked_by_this_connection,
 )
-from tests.factories import create_user, payload, photo, submitted
 
 pytestmark = pytest.mark.django_db
 
