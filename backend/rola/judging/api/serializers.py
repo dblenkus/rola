@@ -1,12 +1,12 @@
 """Serialize ratings, judging lists and published results."""
 
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import exceptions, serializers
 
 from rola.common.serializers import BaseSerializer
 from rola.contests.api.serializers import ContestSerializer as CoreContestSerializer
 from rola.contests.api.serializers import ThemeSerializer as CoreThemeSerializer
+from rola.contests.models import Contest
 from rola.entries.api.serializers import FileSerializer
 from rola.entries.api.serializers import (
     SubmissionSerializer as CoreSubmissionSerializer,
@@ -55,7 +55,7 @@ class RatingSerializer(BaseSerializer):
             and not Judge.objects.filter(
                 judge=self.context["request"].user,
                 contest=submission.theme.contest,
-                contest__publish_date__gt=timezone.now(),
+                contest__in=Contest.objects.results_unpublished(),
             ).exists()
         ):
             raise serializers.ValidationError(

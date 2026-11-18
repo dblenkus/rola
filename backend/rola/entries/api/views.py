@@ -7,8 +7,7 @@ from functools import partial
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Prefetch, Q
-from django.utils import timezone
+from django.db.models import Prefetch
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -23,6 +22,7 @@ from rola.entries.api.filters import SubmissionFilter, SubmissionSetFilter
 from rola.entries.api.parsers import ImageUploadParser
 from rola.entries.api.permissions import (
     IsSubmissionOwnerOrReadOnly,
+    refuse_closed_entries,
     require_open_contest,
 )
 from rola.entries.api.querysets import with_submission_details
@@ -105,16 +105,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
         Deleting an author deletes its submissions and their photographs,
         and the results show the author's name.
         """
-        now = timezone.now()
-        # Publishing the results closes the entries before the end date.
-        closed = author.submission_set.filter(
-            Q(theme__contest__end_date__lt=now)
-            | Q(theme__contest__publish_date__lte=now)
-        )
-        if closed.exists():
-            raise exceptions.PermissionDenied(
-                "Entries in a closed contest can no longer be changed."
-            )
+        refuse_closed_entries(author.submission_set.all())
 
 
 @extend_schema_view(
@@ -387,9 +378,7 @@ class SubmissionSetViewSet(
 
         # Organizers remove duplicate and mistaken sets here, as the Django
         # admin does not list submission sets.
-        if not (
-            request.user.is_superuser and timezone.now() < instance.contest.publish_date
-        ):
+        if not (request.user.is_superuser and not instance.contest.results_published()):
             require_open_contest(instance.contest)
 
         instance.submissions.all().delete()

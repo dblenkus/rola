@@ -1,11 +1,55 @@
 """Store contests, their themes and participating institutions."""
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from rola.common.models import BaseModel
+
+
+class ContestQuerySet(models.QuerySet):
+    """Select contests by the dates that open and close each of their stages.
+
+    The comparisons differ on purpose at the boundary instants, so each
+    caller picks the rule by name rather than writing the dates again.
+    """
+
+    def active(self):
+        """Return contests between their start and end dates, both included."""
+        now = timezone.now()
+        return self.filter(start_date__lte=now, end_date__gte=now)
+
+    def inactive(self):
+        """Return contests that have not started yet or have ended."""
+        now = timezone.now()
+        return self.exclude(start_date__lte=now, end_date__gte=now)
+
+    def closed(self):
+        """Return contests whose entries are final.
+
+        A contest closes after its end date, or when its results are
+        published if that comes first. A contest that has not started yet is
+        not closed.
+        """
+        now = timezone.now()
+        return self.filter(Q(end_date__lt=now) | Q(publish_date__lte=now))
+
+    def in_judging(self):
+        """Return contests whose judging lists are open.
+
+        The lists stay open up to and including the publish instant, unlike
+        :meth:`results_unpublished`, which ends just before it.
+        """
+        return self.filter(publish_date__gte=timezone.now())
+
+    def results_unpublished(self):
+        """Return contests whose results are not published yet."""
+        return self.filter(publish_date__gt=timezone.now())
+
+    def results_published(self):
+        """Return contests whose results are published."""
+        return self.filter(publish_date__lte=timezone.now())
 
 
 class Contest(BaseModel):
@@ -22,6 +66,8 @@ class Contest(BaseModel):
         ordering = ["id"]
         verbose_name = _("contest")
         verbose_name_plural = _("contests")
+
+    objects = ContestQuerySet.as_manager()
 
     #: title of the contest
     title = models.CharField(_("Title"), max_length=100)
@@ -94,6 +140,10 @@ class Contest(BaseModel):
         if now is None:
             now = timezone.now()
         return self.start_date <= now <= self.end_date and now < self.publish_date
+
+    def results_published(self):
+        """Check whether the contest's results are published."""
+        return self.publish_date <= timezone.now()
 
     def number_of_photos(self):
         """Return number of photos submitted to the current contest."""

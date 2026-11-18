@@ -1,8 +1,8 @@
 """Check who may judge a contest and change a rating."""
 
-from django.utils import timezone
 from rest_framework import permissions
 
+from rola.contests.models import Contest
 from rola.judging.models import Judge
 
 
@@ -15,7 +15,7 @@ class CanModifyRating(permissions.BasePermission):
             return True
         return (
             obj.judge.judge_id == request.user.pk
-            and obj.judge.contest.publish_date > timezone.now()
+            and not obj.judge.contest.results_published()
         )
 
 
@@ -27,6 +27,6 @@ class IsActiveJudge(permissions.BasePermission):
         return (
             request.user.is_authenticated
             and Judge.objects.filter(
-                judge=request.user, contest__publish_date__gte=timezone.now()
+                judge=request.user, contest__in=Contest.objects.in_judging()
             ).exists()
         )

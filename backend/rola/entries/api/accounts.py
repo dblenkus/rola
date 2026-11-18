@@ -5,10 +5,9 @@ to its entries live in the host project.
 """
 
 from django.db.models import Q
-from django.utils import timezone
-from rest_framework import exceptions
 
 from rola.accounts import views as user_views
+from rola.entries.api.permissions import refuse_closed_entries
 from rola.entries.models import Submission
 
 
@@ -21,15 +20,7 @@ class UserViewSet(user_views.UserViewSet):
         Deleting the account deletes its authors and submissions with their
         photographs, which judging and results still show.
         """
-        now = timezone.now()
-        # Publishing the results closes the entries before the end date.
-        closed = Submission.objects.filter(
-            Q(user=instance) | Q(author__user=instance),
-            Q(theme__contest__end_date__lt=now)
-            | Q(theme__contest__publish_date__lte=now),
+        refuse_closed_entries(
+            Submission.objects.filter(Q(user=instance) | Q(author__user=instance))
         )
-        if closed.exists():
-            raise exceptions.PermissionDenied(
-                "Entries in a closed contest can no longer be changed."
-            )
         super().perform_destroy(instance)
