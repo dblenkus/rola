@@ -126,13 +126,6 @@ class SubmissionSerializer(BaseSerializer):
                 )
         return attrs
 
-    def create(self, validated_data):
-        """Create a submission and attach its validated uploads."""
-        files = validated_data.pop("files")
-        submission = Submission.objects.create(**validated_data)
-        submission.files.add(*files)
-        return submission
-
     def update(self, instance, validated_data):
         """Replace uploaded-file relations only when supplied by the client.
 
