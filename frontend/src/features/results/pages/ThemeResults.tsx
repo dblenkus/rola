@@ -12,9 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import ContestService from '../../contests/api/ContestService';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ResultsThemeService from '../api/ResultsThemeService';
 import { requestError } from '../../../shared/api/errors';
 import {
   Contest,
@@ -22,6 +20,8 @@ import {
   ResultsThemeSubmission,
 } from '../../../shared/api/types';
 import groupBy from '../../../shared/utils/groupBy';
+import { getContest } from '../../contests/api';
+import { getThemeResults } from '../api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -48,7 +48,7 @@ const ThemeResults: React.FC = () => {
 
   useEffect(() => {
     const fetch = async (): Promise<void> => {
-      const { data } = await ResultsThemeService.getResults(themeId);
+      const { data } = await getThemeResults(themeId);
       setSubmissionsByAuthor(
         groupBy(data.submissions, (submission) => submission.author.id).sort(
           ([a], [b]) =>
@@ -62,7 +62,7 @@ const ThemeResults: React.FC = () => {
 
   useEffect(() => {
     const fetchContest = async (): Promise<void> => {
-      const { data } = await ContestService.getContest(contestId);
+      const { data } = await getContest(contestId);
       setContest(data);
     };
     fetchContest().catch((error: unknown) => setError(requestError(error)));

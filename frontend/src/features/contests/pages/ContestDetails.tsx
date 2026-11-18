@@ -3,7 +3,6 @@ import { useParams } from 'react-router';
 
 import { Alert, Typography } from '@mui/material';
 
-import ContestService from '../api/ContestService';
 import { reportUnexpected } from '../../../shared/api/errors';
 import type { Contest } from '../../../shared/api/types';
 
@@ -11,6 +10,7 @@ import HeaderImage from '../../../shared/ui/Layout/HeaderImage';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import NoticeHtml from '../components/NoticeHtml';
 import UploadButton from '../components/UploadButton';
+import { getContest } from '../api';
 
 export default function ContestDetails() {
   const { contestId } = useParams();
@@ -28,7 +28,7 @@ function ContestPage({ contestId }: { contestId: string }) {
 
   useEffect(() => {
     let active = true;
-    ContestService.getContest(contestId)
+    getContest(contestId)
       .then(({ data }) => {
         if (active) setContest(data);
       })

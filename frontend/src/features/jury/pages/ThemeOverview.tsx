@@ -3,9 +3,9 @@ import { useParams } from 'react-router';
 
 import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import ResultsSubmissionService from '../../results/api/ResultsSubmissionService';
 import { requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
+import { getResultsOverview } from '../../results/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -24,7 +24,7 @@ const ThemeOverview: React.FC = () => {
   // Initialize the state.
   useEffect(() => {
     const fetch = async (): Promise<void> => {
-      const { data } = await ResultsSubmissionService.getOverview(themeId);
+      const { data } = await getResultsOverview(themeId);
       setSubmissions(data.results);
     };
     fetch().catch((error: unknown) => setError(requestError(error)));

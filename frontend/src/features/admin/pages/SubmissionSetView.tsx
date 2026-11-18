@@ -7,9 +7,9 @@ import { Alert, Card, Grid } from '@mui/material';
 
 import { Contest, SubmissionSet } from '../../../shared/api/types';
 
-import SubmissionSetService from '../api/SubmissionSetService';
-import ContestService from '../../contests/api/ContestService';
 import { requestError } from '../../../shared/api/errors';
+import { getSubmissionSet } from '../api';
+import { getContest } from '../../contests/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -63,9 +63,8 @@ class SubmissionList extends React.Component<
     } = this.props;
 
     try {
-      const { data: contest } = await ContestService.getContest(contestId);
-      const { data: submissionSet } =
-        await SubmissionSetService.getSubmissionSet(submissionSetId);
+      const { data: contest } = await getContest(contestId);
+      const { data: submissionSet } = await getSubmissionSet(submissionSetId);
       this.setState({ contest, submissionSet });
     } catch (error) {
       this.setState({ error: requestError(error) });

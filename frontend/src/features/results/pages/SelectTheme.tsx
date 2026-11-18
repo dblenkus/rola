@@ -13,10 +13,10 @@ import {
   TableRow,
 } from '@mui/material';
 
-import ContestService from '../../contests/api/ContestService';
 import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import { getContest } from '../../contests/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -34,7 +34,7 @@ const SelectTheme: React.FC = () => {
 
   useEffect(() => {
     const fetchContest = async (): Promise<void> => {
-      const { data } = await ContestService.getContest(contestId);
+      const { data } = await getContest(contestId);
       setContest(data);
     };
     fetchContest().catch((error: unknown) => setError(requestError(error)));

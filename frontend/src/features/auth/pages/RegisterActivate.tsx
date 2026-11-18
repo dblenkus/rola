@@ -11,8 +11,8 @@ import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
 import RegisterActivateFailed from '../components/RegisterActivateFailed';
 import RegisterActivateSuccess from '../components/RegisterActivateSuccess';
 
-import UserService from '../api/UserService';
 import { requestError } from '../../../shared/api/errors';
+import { activateUser } from '../api';
 
 interface RegisterActivateViewProps extends WithTranslation {
   location: Location;
@@ -39,7 +39,7 @@ class RegisterActivateView extends React.Component<
     const token = new URLSearchParams(location.search).get('token');
     if (token) {
       try {
-        await UserService.activateUser({ token });
+        await activateUser({ token });
         this.setState({ succeeded: true });
       } catch (error) {
         if (!axios.isAxiosError(error)) throw error;

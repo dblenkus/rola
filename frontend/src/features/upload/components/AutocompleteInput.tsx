@@ -4,7 +4,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { CircularProgress, TextField } from '@mui/material';
 
 import { InputChange } from '../models';
-import InstitutionService from '../api/InstitutionService';
+import { getInstitutions } from '../api';
 
 export interface AutocompleteFieldProps {
   name: string;
@@ -43,7 +43,7 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
 
     if (!loading) return undefined;
 
-    InstitutionService.getInstitutions()
+    getInstitutions()
       .then(({ data }) => {
         if (active) setOptions(data.results.map(({ name }) => name));
       })

@@ -12,9 +12,9 @@ import {
   TableRow,
 } from '@mui/material';
 
-import JudgeContestService from '../api/JudgeContestService';
 import { requestError } from '../../../shared/api/errors';
 import { JuryContest } from '../../../shared/api/types';
+import { getJuryContests } from '../api';
 
 const SelectTheme: React.FC = () => {
   const [contests, setContests] = useState<JuryContest[]>([]);
@@ -23,7 +23,7 @@ const SelectTheme: React.FC = () => {
 
   useEffect(() => {
     const fetchContests = async (): Promise<void> => {
-      const { data } = await JudgeContestService.getContests();
+      const { data } = await getJuryContests();
       setContests(data.results);
     };
     fetchContests().catch((error: unknown) => setError(requestError(error)));

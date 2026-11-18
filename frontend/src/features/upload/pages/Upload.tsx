@@ -15,7 +15,6 @@ import {
 } from '../state/actions';
 
 import { userContext } from '../../auth/components/AuthProvider';
-import ContestService from '../../contests/api/ContestService';
 import { requestError } from '../../../shared/api/errors';
 
 import { DateChange, InputChange } from '../models';
@@ -23,6 +22,7 @@ import { Contest } from '../../../shared/api/types';
 
 import ContestField from '../components/Contest/ContestField';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import { getContest } from '../../contests/api';
 
 interface RouteMatchParams {
   contestId: string;
@@ -49,7 +49,7 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
     const { account, uploadInit } = this.props;
     const { contestId } = this.props.match.params;
     try {
-      const { data: contest } = await ContestService.getContest(contestId);
+      const { data: contest } = await getContest(contestId);
       if (!this.mounted) return;
       uploadInit(contest, account);
     } catch (error) {
