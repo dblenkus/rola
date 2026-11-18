@@ -15,13 +15,13 @@ import {
   TableRow,
 } from '@mui/material';
 
-import { Payment, SubmissionSet } from '../../shared/api/types';
+import { Payment, SubmissionSet } from '../../../shared/api/types';
 import SubmissionSetTableRow from './SubmissionSetTableRow';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
-import usePagination from '../../shared/api/usePagination';
-import { requestError } from '../../shared/api/errors';
-import PaymentService from '../../services/PaymentService';
-import SubmissionSetService from '../../services/SubmissionSetService';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import usePagination from '../../../shared/api/usePagination';
+import { requestError } from '../../../shared/api/errors';
+import PaymentService from '../api/PaymentService';
+import SubmissionSetService from '../api/SubmissionSetService';
 
 interface SubmissionSetTableProps {
   contestId: number;

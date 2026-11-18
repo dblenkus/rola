@@ -21,8 +21,8 @@ import PasswordResetView from '../features/auth/pages/PasswordReset';
 import SelectThemeView from '../features/jury/pages/SelectTheme';
 import ViewThemeView from '../features/jury/pages/ViewTheme';
 import RateSubmissionView from '../features/jury/pages/RateSubmission';
-import AdminSubmissionSetList from '../views/admin/SubmissionSetList';
-import AdminSubmissionSetView from '../views/admin/SubmissionSetView';
+import AdminSubmissionSetList from '../features/admin/pages/SubmissionSetList';
+import AdminSubmissionSetView from '../features/admin/pages/SubmissionSetView';
 
 import AuthProvider from '../features/auth/components/AuthProvider';
 import Notifications from '../features/notifications/components/Notifications';

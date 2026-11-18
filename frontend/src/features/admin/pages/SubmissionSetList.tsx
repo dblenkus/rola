@@ -3,14 +3,14 @@ import React from 'react';
 
 import { Alert, Grid, Typography } from '@mui/material';
 
-import ConfirmDialog from '../../shared/ui/ConfirmDialog';
+import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
 
-import SubmissionSetService from '../../services/SubmissionSetService';
-import ContestService from '../../features/contests/api/ContestService';
-import { requestError } from '../../shared/api/errors';
-import { Contest, SubmissionSet } from '../../shared/api/types';
-import SubmissionSetTable from '../../components/SubmissionSetTable/SubmissionSetTable';
-import LoadingProgress from '../../shared/ui/LoadingProgress';
+import SubmissionSetService from '../api/SubmissionSetService';
+import ContestService from '../../contests/api/ContestService';
+import { requestError } from '../../../shared/api/errors';
+import { Contest, SubmissionSet } from '../../../shared/api/types';
+import SubmissionSetTable from '../components/SubmissionSetTable';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import { WithTranslation, withTranslation } from 'react-i18next';
 
 interface RouteMatchParams {

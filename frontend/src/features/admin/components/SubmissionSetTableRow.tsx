@@ -7,8 +7,8 @@ import { Button, Checkbox, TableCell, TableRow } from '@mui/material';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 
-import { tableButtonSx } from '../../shared/ui/styles';
-import { Payment, SubmissionSet } from '../../shared/api/types';
+import { tableButtonSx } from '../../../shared/ui/styles';
+import { Payment, SubmissionSet } from '../../../shared/api/types';
 
 interface SubmissionSetTableRowProps {
   contestId: number;
