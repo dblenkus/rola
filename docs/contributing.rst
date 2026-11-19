@@ -53,9 +53,9 @@ The replaced volume stays behind unused; ``docker volume prune`` removes it.
 Native development
 ==================
 
-The backend needs uv 0.13.6, which downloads the Python version it needs. If
+The backend needs uv 0.13.9, which downloads the Python version it needs. If
 another uv version is installed, run every ``uv`` command below as ``uvx
---from uv==0.13.6 uv``. From ``backend/``, against the database of the
+--from uv==0.13.9 uv``. From ``backend/``, against the database of the
 development stack:
 
 .. code-block:: shell
@@ -92,7 +92,7 @@ repository root holds the commands, and each check step of the workflow runs
 one of its targets; only the wheel check, the image builds and the Compose
 checks are written in the workflow itself. Run the same targets locally,
 from the repository root, before opening a pull request. With another uv
-than 0.13.6, pass ``UV="uvx --from uv==0.13.6 uv"`` to every ``make``
+than 0.13.9, pass ``UV="uvx --from uv==0.13.9 uv"`` to every ``make``
 command. The targets set ``ROLA_SECRET_KEY``,
 ``ROLA_FRONTEND_URL`` and the database variables of the development stack
 unless the environment already does.
@@ -324,14 +324,14 @@ Pinned tools
 Dependabot updates the lockfiles, the Dockerfile base images, the Compose
 images and the actions. These pins move by hand:
 
-* uv 0.13.6 is pinned in three places: the ``uv`` stage in
+* uv 0.13.9 is pinned in three places: the ``uv`` stage in
   ``backend/Dockerfile``, the ``version`` inputs of setup-uv in
   ``.github/workflows/build.yml``, and this page. Dependabot updates only the
   Dockerfile; update the other two in the same pull request. An older uv
   writes an older lockfile revision, and setup-uv without a version installs
   the newest uv, which may be inside the release-age window. The uv version
   also sets the Python patch releases that CI tests, because CI uses only
-  uv's own Python builds: 3.14.10 and 3.15.2 with uv 0.13.6.
+  uv's own Python builds: 3.14.10 and 3.15.2 with uv 0.13.9.
 * Node.js 26.13.0 is in ``frontend/.node-version``, which CI reads, and in
   ``frontend/Dockerfile``, which Dependabot updates. Keep them equal, and
   update the version that ``frontend/README.md`` and this page name with
