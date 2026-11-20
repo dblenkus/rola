@@ -1,0 +1,21 @@
+/*
+ * The vendored grid is six fixed columns for the organiser's 440 px panel.
+ * On a full page the column count follows the width, and the cells keep the
+ * 3:2 shape of a 35 mm frame instead of the panel's 48 px strip. The
+ * entrant's 64 px wells keep their own fixed size.
+ */
+.ui-thumb-grid--page {
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+}
+
+.ui-thumb-grid--page .rl-thumb:not(.rl-thumb--64) .rl-thumb__box {
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
+/* phone: two or three columns of a 288–398 px content width */
+@media (width < 40rem) {
+  .ui-thumb-grid--page {
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+  }
+}
