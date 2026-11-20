@@ -15,9 +15,9 @@ API changes
 * The authors in theme and submission results have only ``id``,
   ``first_name``, ``last_name``, ``school``, ``club``, ``country``, ``reward``
   and ``reward_theme``; their date of birth, mentor, distinction, email and
-  timestamps are no longer public. ``/api/v1/submission`` lists only the
-  requester's own submissions, also after publication and for
-  administrators, and another account's submission answers 404.
+  timestamps are no longer public. ``GET /api/v1/submissions`` lists only
+  the requester's own submissions, also after publication and for
+  administrators, and deleting another account's submission answers 404.
 * Theme and submission results publish only entries in a paid submission
   set, as judging lists only those, and ``submission_count`` in theme
   results counts only those. Theme results list their entries as
@@ -88,51 +88,66 @@ API changes
   instead of 500.
 * Paginated lists break ordering ties by primary key, so paging through a
   list sorted with ``?ordering=`` no longer repeats or skips rows.
-* Validation errors for a batch submission, a list in the request body, are
-  an object keyed by the index of each failing item instead of a list with an
-  entry per item, as Django REST framework 3.18 reports them.
+* The entries endpoints move to plural paths: ``POST /api/v1/authors``,
+  ``POST /api/v1/files``, ``GET /api/v1/submissions``,
+  ``DELETE /api/v1/submissions/{id}``, ``GET`` and ``POST``
+  ``/api/v1/submission-sets``, and ``GET`` and ``DELETE``
+  ``/api/v1/submission-sets/{id}``. The singular ``/api/v1/author``,
+  ``/api/v1/file``, ``/api/v1/submission`` and ``/api/v1/submissionset``
+  paths answer 404.
+* An upload is ``POST /api/v1/submission-sets`` with a body of ``author``,
+  the id of one of the requester's authors, and ``submissions``, a non-empty
+  list of ``SubmissionCreateRequest`` items with ``theme``, ``title``,
+  ``description`` and ``files``, the ids of the requester's unattached
+  uploads. It answers 201 with the created set as
+  ``GET /api/v1/submission-sets/{id}`` answers it, its submissions in the
+  order of the request. It replaces ``POST /api/v1/submission``, which took
+  one submission or a list, each with its own ``author``, wrote the author
+  and photographs as ``{"id": …}`` objects, and answered with the
+  submissions in the ``SubmissionWrite`` shape, with ids in place of the
+  author and photographs. The submissions and their set are created in one
+  transaction: an empty list, submissions in two contests and a photograph
+  used twice answer 400 and create nothing. A submission needs at least one
+  photograph: an empty ``files`` list answers 400, and used to be accepted.
+  A submission's field errors are under ``submissions``, keyed by its index.
+* Removed operations: the author list, and ``GET``, ``PUT``, ``PATCH`` and
+  ``DELETE`` on an author; reading, creating, replacing and updating a
+  single submission; and the ``?theme=`` filter of the submission list.
+  ``GET /api/v1/authors``, ``POST /api/v1/submissions`` and ``GET``,
+  ``PUT`` and ``PATCH`` on ``/api/v1/submissions/{id}`` answer 405, and
+  ``/api/v1/authors/{id}`` answers 404. The submission list ignores
+  ``?theme=``, and ``/api/v1/judge/submission`` and
+  ``/api/v1/results/submission`` no longer declare ``?contest=`` and ignore
+  it.
 * Every error on a submission's ``files`` is a list of messages, as on the
-  other fields. An upload deleted while a submission request attached it
-  used to answer ``{"files": "An upload is no longer available."}``, with a
+  other fields. An upload deleted while an upload request attached it used
+  to answer ``{"files": "An upload is no longer available."}``, with a
   string.
-* Submissions can be created, changed and deleted only while their contest
-  accepts entries: from its start date to its end date, and before its
-  results are published. Outside that window these requests answer 403 with
-  the detail "This contest is not accepting entries."; superusers can still
-  delete a submission set until publication. Only the owner can change or
-  delete a submission. An author can enter at most a theme's ``max_photos``
-  photographs in it, and more answer 400. Submissions used to be accepted at
-  any time and in any number, and could be changed or deleted until
-  publication, also while the jury rated them.
-* ``PUT``, ``PATCH`` and ``DELETE`` on ``/api/v1/author/{id}`` answer 403
-  once the author has submissions in a contest that no longer accepts
-  entries because it has ended or its results are published.
-  These requests used to succeed at any time, so an entrant could delete
-  entries that the jury was rating or the results showed, with their
-  ratings and rewards, or change the name shown in the results.
+* Submissions can be entered and deleted only while their contest accepts
+  entries: from its start date to its end date, and before its results are
+  published. Outside that window these requests answer 403 with the detail
+  "This contest is not accepting entries."; superusers can still delete a
+  submission set until publication. Only the owner can delete a submission.
+  An author can enter at most a theme's ``max_photos`` photographs in it,
+  and more answer 400. Submissions used to be accepted at any time and in
+  any number, and could be changed or deleted until publication, also while
+  the jury rated them.
 * Deleting an account also deletes its postal address, which used to stay
   in the database after the account was gone.
-* A submission's author and photographs must belong to the requester, a
-  photograph can belong to only one submission, and an update cannot change
-  the author or the contest. Such requests answer 400.
-* ``PUT`` and ``PATCH`` on ``/api/v1/submission/{id}`` delete the uploads
-  that the new ``files`` list leaves out, with their stored photographs and
-  thumbnails. They used to stay stored without a submission until the
-  account was deleted.
-* ``POST /api/v1/file`` accepts JPEG files only and answers 400 for another
+* An upload's author and photographs must belong to the requester, and a
+  photograph can belong to only one submission. Such requests answer 400.
+* ``POST /api/v1/files`` accepts JPEG files only and answers 400 for another
   image format or a damaged JPEG file. Other formats used to be stored or to
   fail with 500, as a truncated JPEG file did. The stored photograph that
   ``file`` links to no longer carries the upload's identifying metadata.
-* A submission request, single or batch, creates its submissions and their
-  submission set in one transaction. An empty batch, a batch that mixes
-  contests or authors, and a photograph used twice answer 400 and create
-  nothing.
-* ``POST /api/v1/submission`` accepts an optional ``Idempotency-Key`` header
-  with a UUID. A request that repeats the key of an earlier upload by the
-  same account creates nothing and sends no email: it answers 200 with that
-  upload's submissions, also after the contest has closed. A key that is not
-  a UUID answers 400. A retry after a lost response used to enter the
-  submissions again and send a second confirmation email.
+* ``POST /api/v1/submission-sets`` accepts an optional ``Idempotency-Key``
+  header with a UUID. A request that repeats the key of an earlier upload by
+  the same account creates nothing and sends no email: it answers 200 with
+  that upload's set, also after the contest has closed. Once all of the
+  set's submissions are deleted, a request with the key is entered as a new
+  upload. A key
+  that is not a UUID answers 400. A retry after a lost response used to
+  enter the submissions again and send a second confirmation email.
 * Only a judge of the contest can create or change a rating, only for a paid
   submission, as the judging list shows, and only until the results are
   published, and a rating cannot move to another submission. Rating an
@@ -179,21 +194,21 @@ API changes
   ``school_visible``. Their themes and theme results: ``n_photos`` to
   ``max_photos`` and ``submissions_number`` to ``submission_count``, and
   ``ratings_number`` to ``rating_count`` in judges' themes. Authors in
-  ``/api/v1/author`` and in submissions and submission sets: ``dob`` to
+  ``/api/v1/authors`` and in submissions and submission sets: ``dob`` to
   ``date_of_birth``. ``/api/v1/payment``: ``submissionset`` to
   ``submission_set``, and its filters ``?submissionset=`` and
   ``?submissionset__in=`` to ``?submission_set=`` and
   ``?submission_set__in=``.
-* Request bodies are JSON, except the JPEG body of ``POST /api/v1/file``. A
+* Request bodies are JSON, except the JPEG body of ``POST /api/v1/files``. A
   form-encoded or multipart body answers 415; such bodies used to be
   accepted.
 * Only ``/api/v1/results/submission`` takes ``?ordering=``. The other lists
   ignore it and keep their default order; they used to sort by any of their
   fields.
-* The id filters take integers: ``?contest=`` and ``?theme=`` on
-  ``/api/v1/submission``, ``/api/v1/judge/submission`` and
-  ``/api/v1/results/submission``, ``?contest=`` on ``/api/v1/submissionset``,
-  ``?theme=`` and ``?submission=`` on ``/api/v1/rating``, and
+* The id filters take integers: ``?contest=`` on ``/api/v1/submissions`` and
+  ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judge/submission``
+  and ``/api/v1/results/submission``, ``?theme=`` and ``?submission=`` on
+  ``/api/v1/rating``, and
   ``?submission_set=`` and the comma-separated ``?submission_set__in=`` on
   ``/api/v1/payment``. Any other value answers 400 with an error for that
   filter alone, and an id that matches nothing, or nothing the caller may

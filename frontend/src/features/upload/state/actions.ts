@@ -107,10 +107,11 @@ export const uploadSubmit =
       if (!axios.isAxiosError(error)) {
         throw error;
       }
-      // The server checks the contest's entry window when the submissions
-      // are created, and the contest may have closed since the form opened.
+      // The server checks the contest's entry window when the submission
+      // set is created, and the contest may have closed since the form opened.
       const closed =
-        error.config?.url === '/submission' && error.response?.status === 403;
+        error.config?.url === '/submission-sets' &&
+        error.response?.status === 403;
       if (current()) {
         dispatch(
           addNotificationError(

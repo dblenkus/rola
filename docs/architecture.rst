@@ -46,10 +46,10 @@ whose methods name the rules about which rows qualify, such as the contests
 in judging. ``services.py`` holds writes that enforce rules across models,
 such as an upload's photograph limit and its idempotency key, and the rules
 that the API checks before a change, such as whether a contest still accepts
-entries. The ``api`` package holds the serializers, views, filters and
-permissions, and ``routes.py``, which registers the app's endpoints on the
-project's router. The ``accounts`` API package also holds the token
-authentication and the rate limits.
+entries. The ``api`` package holds the serializers, views, and the filters
+and permissions that the app needs, and ``routes.py``, which registers the
+app's endpoints on the project's router. The ``accounts`` API package also
+holds the token authentication and the rate limits.
 The tests are in ``backend/tests``, one directory per app.
 
 The API under ``/api/v1`` accepts one credential, the login token, in the

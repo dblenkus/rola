@@ -43,9 +43,10 @@ Inside an app:
   methods instead of repeating date comparisons.
 - `services.py`: writes that enforce rules across models, and the entry
   rules that the API checks (`entries/services.py`'s
-  `require_open_contest`, `refuse_closed_entries`).
-- `api/`: `serializers.py`, `views.py`, `filters.py`, `permissions.py`, and
-  `routes.py`, whose `register(router)` adds the app's endpoints.
+  `require_open_contest`).
+- `api/`: `serializers.py`, `views.py`, `filters.py` and `permissions.py` as
+  the app needs them, and `routes.py`, whose `register(router)` adds the
+  app's endpoints.
   `config/urls.py` calls each app's `register`. `accounts/api/` also holds
   `authentication.py` (the token authentication) and `throttling.py` (the
   rate limits, which the admin login and password change in `sites.py`

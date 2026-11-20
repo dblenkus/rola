@@ -2,15 +2,9 @@
 
 from rest_framework import serializers
 
+from rola.common.ids import ID_RANGE
 from rola.common.serializers import BaseSerializer
-from rola.contests.models import Theme
 from rola.entries.models import Author, File, Submission, SubmissionSet
-
-
-class IdRelatedSerializer(serializers.Serializer):
-    """Refer to a related object by its id."""
-
-    id = serializers.IntegerField()
 
 
 class FileSerializer(BaseSerializer):
@@ -55,9 +49,11 @@ class AuthorSerializer(BaseSerializer):
 
 
 class SubmissionSerializer(BaseSerializer):
-    """Serializer for Submission objects."""
+    """Represent a submission with its author and photographs."""
 
-    theme = serializers.PrimaryKeyRelatedField(queryset=Theme.objects.all())
+    # Typed as fields, as the published results replace both.
+    author: serializers.Field = AuthorSerializer()
+    files: serializers.Field = FileSerializer(many=True)
 
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""
@@ -71,93 +67,12 @@ class SubmissionSerializer(BaseSerializer):
             "files",
         ]
 
-    def get_fields(self):
-        """Dynamically adapt fields based on the current request."""
-        fields = super().get_fields()
-
-        if self.context["request"].method == "GET":
-            fields["author"] = AuthorSerializer()
-            fields["files"] = FileSerializer(many=True)
-        else:
-            fields["author"] = IdRelatedSerializer()
-            fields["files"] = IdRelatedSerializer(many=True)
-
-        return fields
-
-    def validate_files(self, value):
-        """Reject missing, foreign, duplicate, or already attached uploads."""
-        file_ids = [file["id"] for file in value]
-        if len(file_ids) != len(set(file_ids)):
-            raise serializers.ValidationError("Each file may only be used once.")
-        files = list(
-            File.objects.filter(id__in=file_ids, user=self.context["request"].user)
-        )
-        if len(files) != len(file_ids):
-            raise serializers.ValidationError("Files must exist and belong to you.")
-        allowed_submission = self.instance.pk if self.instance else None
-        if any(file.submission_id not in (None, allowed_submission) for file in files):
-            raise serializers.ValidationError(
-                "A file is already attached to another submission."
-            )
-        return files
-
-    def validate_author(self, value):
-        """Resolve only authors owned by the current user."""
-        try:
-            return Author.objects.get(pk=value["id"], user=self.context["request"].user)
-        except Author.DoesNotExist as error:
-            raise serializers.ValidationError(
-                "Author must exist and belong to you."
-            ) from error
-
-    def validate(self, attrs):
-        """Keep existing submission groups consistent when editing."""
-        if self.instance:
-            if "author" in attrs and attrs["author"].pk != self.instance.author_id:
-                raise serializers.ValidationError(
-                    {"author": "The author cannot be changed."}
-                )
-            if (
-                "theme" in attrs
-                and attrs["theme"].contest_id != self.instance.theme.contest_id
-            ):
-                raise serializers.ValidationError(
-                    {"theme": "The contest cannot be changed."}
-                )
-        return attrs
-
-    def update(self, instance, validated_data):
-        """Replace uploaded-file relations only when supplied by the client.
-
-        Uploads left out of the new list are deleted with their stored images.
-        """
-        files = validated_data.pop("files", None)
-        instance = super().update(instance, validated_data)
-        if files is not None:
-            instance.files.exclude(pk__in=[file.pk for file in files]).delete()
-            instance.files.add(*files)
-        return instance
-
-
-# Used only in the API schema: writes respond with SubmissionSerializer, whose
-# fields depend on the request method, which the schema generator cannot see.
-class SubmissionWriteSerializer(BaseSerializer):
-    """Submission as writes return it, with the author and the files as ids."""
-
-    author = IdRelatedSerializer()
-    files = IdRelatedSerializer(many=True)
-
-    class Meta(BaseSerializer.Meta):
-        """Serializer configuration."""
-
-        model = Submission
-        fields = SubmissionSerializer.Meta.fields
-
 
 class SubmissionSetSerializer(BaseSerializer):
-    """Serializer for SubmissionSet objects."""
+    """Represent a submission set with its submissions and author."""
 
     submissions = SubmissionSerializer(many=True)
+    author = AuthorSerializer()
 
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""
@@ -165,13 +80,53 @@ class SubmissionSetSerializer(BaseSerializer):
         model = SubmissionSet
         fields = BaseSerializer.Meta.fields + ["submissions", "author", "contest"]
 
-    def get_fields(self):
-        """Dynamically adapt fields based on the current request."""
-        fields = super().get_fields()
 
-        if self.context["request"].method == "GET":
-            fields["author"] = AuthorSerializer()
-        else:
-            fields["author"] = IdRelatedSerializer()
+def _id_field() -> serializers.IntegerField:
+    """Return a field for an id, refusing values the databases cannot store."""
+    return serializers.IntegerField(
+        min_value=ID_RANGE["min_value"], max_value=ID_RANGE["max_value"]
+    )
 
-        return fields
+
+class SubmissionCreateSerializer(serializers.ModelSerializer[Submission]):
+    """One submission of an upload, with its theme and photographs as ids."""
+
+    files = serializers.ListField(child=_id_field(), allow_empty=False)
+
+    class Meta:
+        """Serializer configuration."""
+
+        model = Submission
+        fields = ["theme", "title", "description", "files"]
+
+    def validate_files(self, value: list[int]) -> list[File]:
+        """Resolve the requester's own uploads that no submission holds yet."""
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Each file may only be used once.")
+        files = list(
+            File.objects.filter(id__in=value, user=self.context["request"].user)
+        )
+        if len(files) != len(value):
+            raise serializers.ValidationError("Files must exist and belong to you.")
+        if any(file.submission_id is not None for file in files):
+            raise serializers.ValidationError(
+                "A file is already attached to another submission."
+            )
+        by_id = {file.pk: file for file in files}
+        return [by_id[pk] for pk in value]
+
+
+class SubmissionSetCreateSerializer(serializers.Serializer[None]):
+    """An upload: the author, as an id, and the submissions entered together."""
+
+    author = _id_field()
+    submissions = SubmissionCreateSerializer(many=True, allow_empty=False)
+
+    def validate_author(self, value: int) -> Author:
+        """Resolve only authors owned by the requester."""
+        try:
+            return Author.objects.get(pk=value, user=self.context["request"].user)
+        except Author.DoesNotExist as error:
+            raise serializers.ValidationError(
+                "Author must exist and belong to you."
+            ) from error

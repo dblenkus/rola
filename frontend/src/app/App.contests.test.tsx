@@ -118,12 +118,12 @@ describe('contest pages', () => {
     signIn();
     serveApi({
       'GET /contests': () => page([contest]),
-      'GET /submission': (_config, url) =>
+      'GET /submissions': (_config, url) =>
         url.searchParams.get('page') === '2'
           ? page([submission(12, 'Second')])
           : {
               ...page([submission(11, 'First')]),
-              next: '/api/v1/submission?contest=1&page=2',
+              next: '/api/v1/submissions?contest=1&page=2',
             },
     });
     open('/user/submissions');

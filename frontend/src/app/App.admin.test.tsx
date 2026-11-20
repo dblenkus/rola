@@ -22,14 +22,14 @@ describe('admin submission list', () => {
     signIn();
     const adapter = serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': () => page([submissionSet]),
+      'GET /submission-sets': () => page([submissionSet]),
       'GET /payment': () => page([]),
-      'DELETE /submissionset/5': () => null,
+      'DELETE /submission-sets/5': () => null,
     });
     const listRequests = () =>
       adapter.mock.calls.filter(
         ([config]) =>
-          config.method === 'get' && config.url === '/submissionset',
+          config.method === 'get' && config.url === '/submission-sets',
       ).length;
     const user = userEvent.setup();
     open('/admin/contest/1/submissions');
@@ -65,7 +65,7 @@ describe('admin submission list', () => {
     serveApi({
       'GET /contests/1': () => contest,
       // Like the API, answers a page past the end with 404.
-      'GET /submissionset': (config) => {
+      'GET /submission-sets': (config) => {
         const pageNumber: number = config.params.page;
         const pageSize: number = config.params.page_size;
         const results = sets.slice(
@@ -78,7 +78,7 @@ describe('admin submission list', () => {
         return { ...page(results), count: sets.length };
       },
       'GET /payment': () => page([]),
-      'DELETE /submissionset/21': () => {
+      'DELETE /submission-sets/21': () => {
         sets = sets.slice(0, 20);
         return null;
       },
@@ -108,7 +108,7 @@ describe('admin submission list', () => {
     let paid = true;
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': () => page([submissionSet]),
+      'GET /submission-sets': () => page([submissionSet]),
       'GET /payment': (): PaginatedResponse<Payment> =>
         page([
           {
@@ -137,7 +137,7 @@ describe('admin submission list', () => {
     signIn();
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': () => page([]),
+      'GET /submission-sets': () => page([]),
     });
     open('/admin/contest/1/submissions');
     expect(await screen.findByText('0-0 of 0')).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe('admin submission list', () => {
     let attempts = 0;
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': () => page([submissionSet]),
+      'GET /submission-sets': () => page([submissionSet]),
       'GET /payment': () => page([]),
       'POST /payment': (config) => {
         attempts += 1;
@@ -180,9 +180,9 @@ describe('admin submission list', () => {
     signIn();
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': () => page([submissionSet]),
+      'GET /submission-sets': () => page([submissionSet]),
       'GET /payment': () => page([]),
-      'DELETE /submissionset/5': (config) => {
+      'DELETE /submission-sets/5': (config) => {
         throw httpError(config, 403, { detail: 'Forbidden' });
       },
     });
@@ -214,7 +214,7 @@ describe('admin submission list', () => {
     let failFirstPage: (() => void) | undefined;
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': (config) => {
+      'GET /submission-sets': (config) => {
         const pageNumber: number = config.params.page;
         const pageSize: number = config.params.page_size;
         return {
@@ -262,7 +262,7 @@ describe('admin submission list', () => {
     let finishUpdate: (() => void) | undefined;
     const adapter = serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': (config) => {
+      'GET /submission-sets': (config) => {
         const pageNumber: number = config.params.page;
         const pageSize: number = config.params.page_size;
         return {

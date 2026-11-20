@@ -34,12 +34,12 @@ def test_expired_login_tokens_are_rejected(account):
         user=account, expires=now() - timedelta(seconds=1)
     )
     client = bearer_client(token.key)
-    assert client.get(reverse("author-list")).status_code == 401
+    assert client.get(reverse("submission-list")).status_code == 401
     account.is_active = False
     account.save(update_fields=["is_active"])
     token.expires = now() + timedelta(days=1)
     token.save(update_fields=["expires"])
-    assert client.get(reverse("author-list")).status_code == 401
+    assert client.get(reverse("submission-list")).status_code == 401
 
 
 def test_token_description_does_not_reveal_its_key(account):
@@ -100,7 +100,7 @@ def test_stored_digest_is_not_a_credential(account):
     token = Token.objects.create_token(user=account)
     client = client_sending(f"Bearer {TOKEN_PREFIX}{token.digest}")
 
-    assert client.get(reverse("author-list")).status_code == 401
+    assert client.get(reverse("submission-list")).status_code == 401
 
 
 def test_token_without_the_prefix_is_refused_without_a_query(
@@ -110,7 +110,7 @@ def test_token_without_the_prefix_is_refused_without_a_query(
     client = client_sending(f"Bearer {token.key.removeprefix(TOKEN_PREFIX)}")
 
     with django_assert_num_queries(0):
-        response = client.get(reverse("author-list"))
+        response = client.get(reverse("submission-list"))
 
     assert response.status_code == 401
     assert response.data == {"detail": "Invalid token"}

@@ -17,10 +17,10 @@ from django.utils import timezone
 from PIL import Image
 
 from rola.accounts.models import User
-from rola.contests.models import Contest
-from rola.entries.models import Author, File, SubmissionSet
+from rola.entries.models import File, SubmissionSet
 from tests.factories import (
     create_user,
+    entry,
     payload,
     photo,
     submitted,
@@ -47,7 +47,7 @@ def assert_stored(names, expected):
     assert [default_storage.exists(name) for name in names] == [expected] * len(names)
 
 
-@pytest.mark.parametrize("endpoint", ["submission", "submissionset"])
+@pytest.mark.parametrize("endpoint", ["submissions", "submission-sets"])
 def test_deleting_a_submission_removes_its_images_from_storage(
     world, endpoint, django_capture_on_commit_callbacks
 ):
@@ -60,7 +60,7 @@ def test_deleting_a_submission_removes_its_images_from_storage(
     group.submissions.add(item)
     names = stored_names(image)
     assert_stored(names, True)
-    target = item if endpoint == "submission" else group
+    target = item if endpoint == "submissions" else group
     with django_capture_on_commit_callbacks(execute=True):
         response = world.client.delete(f"/api/v1/{endpoint}/{target.pk}")
     assert response.status_code == 204
@@ -84,33 +84,13 @@ def test_a_failed_photograph_delete_still_deletes_the_thumbnail(
 
     monkeypatch.setattr(FileSystemStorage, "delete", delete_failing_for_photographs)
     with django_capture_on_commit_callbacks(execute=True):
-        response = world.client.delete(f"/api/v1/submission/{item.pk}")
+        response = world.client.delete(f"/api/v1/submissions/{item.pk}")
     assert response.status_code == 204
     assert_stored([photograph], True)
     assert_stored([thumbnail], False)
     errors = [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR]
     assert any(photograph in message for message in errors)
     assert not any(thumbnail in message for message in errors)
-
-
-def test_replacing_a_photograph_deletes_the_old_one(
-    world, django_capture_on_commit_callbacks
-):
-    item = submitted(world)
-    kept, replaced = photo(world.owner), photo(world.owner)
-    item.files.add(kept, replaced)
-    new = photo(world.owner)
-    with django_capture_on_commit_callbacks(execute=True):
-        response = world.client.patch(
-            f"/api/v1/submission/{item.pk}",
-            {"files": [{"id": kept.pk}, {"id": new.pk}]},
-            format="json",
-        )
-    assert response.status_code == 200, response.data
-    assert set(item.files.values_list("pk", flat=True)) == {kept.pk, new.pk}
-    assert not File.objects.filter(pk=replaced.pk).exists()
-    assert_stored(stored_names(replaced), False)
-    assert_stored(stored_names(kept) + stored_names(new), True)
 
 
 def test_images_stay_when_the_delete_is_rolled_back(
@@ -158,51 +138,6 @@ def entered_photograph(world):
     )
     group.submissions.add(item)
     return image
-
-
-@pytest.mark.parametrize(
-    "schedule",
-    [
-        # Closed but not yet published: the jury may still be rating them.
-        {"end_date": -timedelta(hours=1)},
-        # Published before the end date, which closes entries as well.
-        {"end_date": timedelta(days=1), "publish_date": -timedelta(hours=1)},
-    ],
-    ids=["ended", "published_before_end"],
-)
-@pytest.mark.parametrize("method", ["delete", "patch"])
-def test_closed_entries_survive_author_changes_and_deletes(
-    world, schedule, method, django_capture_on_commit_callbacks
-):
-    image = entered_photograph(world)
-    now = timezone.now()
-    Contest.objects.filter(pk=world.contest.pk).update(
-        **{field: now + offset for field, offset in schedule.items()}
-    )
-    url = f"/api/v1/author/{world.author.pk}"
-    data = {"first_name": "Renamed"} if method == "patch" else None
-    with django_capture_on_commit_callbacks(execute=True):
-        response = getattr(world.client, method)(url, data, format="json")
-    assert response.status_code == 403
-    assert response.data["detail"] == (
-        "Entries in a closed contest can no longer be changed."
-    )
-    assert User.objects.filter(pk=world.owner.pk).exists()
-    assert Author.objects.get(pk=world.author.pk).first_name == "Alice"
-    assert SubmissionSet.objects.filter(submissions__files=image).exists()
-    assert_stored(stored_names(image), True)
-
-
-def test_deleting_an_author_of_open_entries_deletes_its_photographs(
-    world, django_capture_on_commit_callbacks
-):
-    names = stored_names(entered_photograph(world))
-    with django_capture_on_commit_callbacks(execute=True):
-        response = world.client.delete(f"/api/v1/author/{world.author.pk}")
-    assert response.status_code == 204
-    assert not Author.objects.filter(pk=world.author.pk).exists()
-    assert not File.objects.exists()
-    assert_stored(names, False)
 
 
 def test_deleting_an_account_of_open_entries_deletes_its_photographs(
@@ -372,8 +307,8 @@ def test_cleanup_keeps_an_old_upload_that_a_submission_is_attaching(world):
     with ThreadPoolExecutor(max_workers=1) as executor:
         with transaction.atomic():
             response = world.client.post(
-                "/api/v1/submission",
-                payload(world, files=[{"id": image.pk}]),
+                "/api/v1/submission-sets",
+                payload(world, entry(world, files=[image.pk])),
                 format="json",
             )
             cleanup = executor.submit(clean_up_on_another_connection)
@@ -387,4 +322,5 @@ def test_cleanup_keeps_an_old_upload_that_a_submission_is_attaching(world):
         "Unattached uploads deleted: 0",
         "Unreferenced images deleted: 0",
     ]
-    assert File.objects.get(pk=image.pk).submission_id == response.data["id"]
+    (submission,) = response.data["submissions"]
+    assert File.objects.get(pk=image.pk).submission_id == submission["id"]

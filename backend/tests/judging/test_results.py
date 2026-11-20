@@ -179,11 +179,9 @@ def test_published_submissions_stay_private_to_their_owner(world):
     world.contest.save()
     for account in [world.other, world.admin]:
         world.client.force_authenticate(account)
-        assert world.client.get("/api/v1/submission").data["results"] == []
-        response = world.client.get(f"/api/v1/submission/{item.pk}")
-        assert response.status_code == 404
+        assert world.client.get("/api/v1/submissions").data["results"] == []
     world.client.force_authenticate(world.owner)
-    response = world.client.get("/api/v1/submission")
+    response = world.client.get("/api/v1/submissions")
     assert [row["id"] for row in response.data["results"]] == [item.pk]
 
 

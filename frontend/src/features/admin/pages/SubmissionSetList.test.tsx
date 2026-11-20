@@ -29,7 +29,7 @@ function payment(submissionSetId: number, paid: boolean): Payment {
 function serveSets(all: SubmissionSet[], payments: Payment[] = []) {
   return serveApi({
     'GET /contests/1': () => contest,
-    'GET /submissionset': (config) => {
+    'GET /submission-sets': (config) => {
       const pageNumber: number = config.params.page;
       const pageSize: number = config.params.page_size;
       return {
@@ -148,7 +148,7 @@ it('requests the chosen number of rows from the first page', async () => {
   expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(21);
   const lastList = adapter.mock.calls
     .map(([config]) => config)
-    .filter(({ url }) => url === '/submissionset')
+    .filter(({ url }) => url === '/submission-sets')
     .at(-1);
   expect(lastList?.params).toMatchObject({ page: 1, page_size: 50 });
 });

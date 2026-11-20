@@ -21,42 +21,21 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/author": {
+    "/api/v1/authors": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API viewset for Author objects. */
-        get: operations["author_list"];
+        get?: never;
         put?: never;
-        /** @description API viewset for Author objects. */
-        post: operations["author_create"];
+        /** @description Create an author of the requester's submissions. */
+        post: operations["authors_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v1/author/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description API viewset for Author objects. */
-        get: operations["author_retrieve"];
-        /** @description API viewset for Author objects. */
-        put: operations["author_update"];
-        post?: never;
-        /** @description API viewset for Author objects. */
-        delete: operations["author_destroy"];
-        options?: never;
-        head?: never;
-        /** @description API viewset for Author objects. */
-        patch: operations["author_partial_update"];
         trace?: never;
     };
     "/api/v1/contests": {
@@ -93,7 +72,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/file": {
+    "/api/v1/files": {
         parameters: {
             query?: never;
             header?: never;
@@ -102,8 +81,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description API viewset for File objects. */
-        post: operations["file_create"];
+        /** @description Upload a photograph for a later submission. */
+        post: operations["files_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -322,76 +301,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/submission": {
+    "/api/v1/submission-sets": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API view Submission objects. */
-        get: operations["submission_list"];
+        /** @description Upload, list and delete the requester's submission sets. */
+        get: operations["submission_sets_list"];
         put?: never;
         /**
-         * @description Create one coherent submission set, atomically, for either payload shape.
+         * @description Enter an upload's submissions and their set atomically.
          *
          *     A request that repeats the Idempotency-Key of the requester's earlier
-         *     upload creates nothing and returns that upload's submissions. Once all
-         *     of them are deleted, the request is entered as a new upload.
+         *     upload creates nothing and returns that upload's set. Once all of its
+         *     submissions are deleted, the request is entered as a new upload.
          */
-        post: operations["submission_create"];
+        post: operations["submission_sets_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/submission/{id}": {
+    "/api/v1/submission-sets/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API view Submission objects. */
-        get: operations["submission_retrieve"];
-        /** @description Serialize file reassignment with other submission writes. */
-        put: operations["submission_update"];
-        post?: never;
-        /** @description Delete the requester's submission while its contest accepts entries. */
-        delete: operations["submission_destroy"];
-        options?: never;
-        head?: never;
-        /** @description API view Submission objects. */
-        patch: operations["submission_partial_update"];
-        trace?: never;
-    };
-    "/api/v1/submissionset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List and delete the requesting user's submission sets. */
-        get: operations["submissionset_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/submissionset/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description List and delete the requesting user's submission sets. */
-        get: operations["submissionset_retrieve"];
+        /** @description Upload, list and delete the requester's submission sets. */
+        get: operations["submission_sets_retrieve"];
         put?: never;
         post?: never;
         /**
@@ -399,7 +341,41 @@ export interface paths {
          *
          *     Superusers may delete any set until the results are published.
          */
-        delete: operations["submissionset_destroy"];
+        delete: operations["submission_sets_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List and delete the requester's own submissions. */
+        get: operations["submissions_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description List and delete the requester's own submissions. */
+        delete: operations["submissions_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -541,14 +517,6 @@ export interface components {
             /** Format: uri */
             thumbnail?: string | null;
         };
-        /** @description Refer to a related object by its id. */
-        IdRelated: {
-            id: number;
-        };
-        /** @description Refer to a related object by its id. */
-        IdRelatedRequest: {
-            id: number;
-        };
         /** @description Serializer for Institution objects. */
         Institution: {
             readonly id: number;
@@ -621,21 +589,6 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
-        };
-        PaginatedAuthorList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["Author"][];
         };
         PaginatedContestList: {
             /** @example 123 */
@@ -777,17 +730,6 @@ export interface components {
             token: string;
             new_password: string;
         };
-        /** @description Serializer for Author objects. */
-        PatchedAuthorRequest: {
-            first_name?: string;
-            last_name?: string;
-            /** Format: date */
-            date_of_birth?: string | null;
-            school?: string | null;
-            mentor?: string | null;
-            club?: string | null;
-            distinction?: string | null;
-        };
         /** @description Serializer for Payment objects. */
         PatchedPaymentRequest: {
             submission_set?: number;
@@ -797,14 +739,6 @@ export interface components {
         PatchedRatingRequest: {
             submission?: number;
             rating?: number;
-        };
-        /** @description Serializer for Submission objects. */
-        PatchedSubmissionRequest: {
-            author?: components["schemas"]["IdRelatedRequest"];
-            theme?: number;
-            title?: string | null;
-            description?: string | null;
-            files?: components["schemas"]["IdRelatedRequest"][];
         };
         /** @description Serializer for Payment objects. */
         Payment: {
@@ -841,7 +775,7 @@ export interface components {
             /** Format: email */
             email: string;
         };
-        /** @description Serializer for Submission objects. */
+        /** @description Represent a submission with its author and photographs. */
         Submission: {
             readonly id: number;
             /** Format: date-time */
@@ -854,13 +788,12 @@ export interface components {
             description?: string | null;
             files: components["schemas"]["File"][];
         };
-        /** @description Serializer for Submission objects. */
-        SubmissionRequest: {
-            author: components["schemas"]["IdRelatedRequest"];
+        /** @description One submission of an upload, with its theme and photographs as ids. */
+        SubmissionCreateRequest: {
             theme: number;
             title?: string | null;
             description?: string | null;
-            files: components["schemas"]["IdRelatedRequest"][];
+            files: number[];
         };
         /** @description Serialize published submission results and awards. */
         SubmissionResults: {
@@ -881,7 +814,7 @@ export interface components {
             readonly reward_kind: string | null;
             readonly reward_label: string | null;
         };
-        /** @description Serializer for SubmissionSet objects. */
+        /** @description Represent a submission set with its submissions and author. */
         SubmissionSet: {
             readonly id: number;
             /** Format: date-time */
@@ -892,18 +825,11 @@ export interface components {
             author: components["schemas"]["Author"];
             contest: number;
         };
-        /** @description Submission as writes return it, with the author and the files as ids. */
-        SubmissionWrite: {
-            readonly id: number;
-            /** Format: date-time */
-            readonly created: string;
-            /** Format: date-time */
-            readonly modified: string;
-            author: components["schemas"]["IdRelated"];
-            theme: number;
-            title?: string | null;
-            description?: string | null;
-            files: components["schemas"]["IdRelated"][];
+        /** @description An upload: the author, as an id, and the submissions entered together. */
+        SubmissionSetCreateRequest: {
+            /** Format: int64 */
+            author: number;
+            submissions: components["schemas"]["SubmissionCreateRequest"][];
         };
         /** @description Serializer for Theme objects. */
         Theme: {
@@ -1001,31 +927,7 @@ export interface operations {
             };
         };
     };
-    author_list: {
-        parameters: {
-            query?: {
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedAuthorList"];
-                };
-            };
-        };
-    };
-    author_create: {
+    authors_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -1039,101 +941,6 @@ export interface operations {
         };
         responses: {
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Author"];
-                };
-            };
-        };
-    };
-    author_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this author. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Author"];
-                };
-            };
-        };
-    };
-    author_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this author. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuthorRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Author"];
-                };
-            };
-        };
-    };
-    author_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this author. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    author_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this author. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedAuthorRequest"];
-            };
-        };
-        responses: {
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1190,7 +997,7 @@ export interface operations {
             };
         };
     };
-    file_create: {
+    files_create: {
         parameters: {
             query?: never;
             header: {
@@ -1267,7 +1074,6 @@ export interface operations {
     judge_submission_list: {
         parameters: {
             query?: {
-                contest?: number;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1627,7 +1433,6 @@ export interface operations {
     results_submission_list: {
         parameters: {
             query?: {
-                contest?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -1696,164 +1501,7 @@ export interface operations {
             };
         };
     };
-    submission_list: {
-        parameters: {
-            query?: {
-                contest?: number;
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
-                theme?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedSubmissionList"];
-                };
-            };
-        };
-    };
-    submission_create: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Identifies the upload, so that a retry after a lost response returns the submissions instead of entering them again. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["SubmissionRequest"] | components["schemas"]["SubmissionRequest"][];
-            };
-        };
-        responses: {
-            /** @description The submissions of the requester's earlier upload with this Idempotency-Key; a list when the request body is a list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionWrite"] | components["schemas"]["SubmissionWrite"][];
-                };
-            };
-            /** @description A list when the request body is a list. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionWrite"] | components["schemas"]["SubmissionWrite"][];
-                };
-            };
-        };
-    };
-    submission_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this submission. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Submission"];
-                };
-            };
-        };
-    };
-    submission_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this submission. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionWrite"];
-                };
-            };
-        };
-    };
-    submission_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this submission. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    submission_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this submission. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedSubmissionRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionWrite"];
-                };
-            };
-        };
-    };
-    submissionset_list: {
+    submission_sets_list: {
         parameters: {
             query?: {
                 contest?: number;
@@ -1878,7 +1526,42 @@ export interface operations {
             };
         };
     };
-    submissionset_retrieve: {
+    submission_sets_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Identifies the upload, so that a retry after a lost response returns the submission set instead of entering it again. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionSetCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The set of the requester's earlier upload with this Idempotency-Key. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionSet"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionSet"];
+                };
+            };
+        };
+    };
+    submission_sets_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -1900,12 +1583,58 @@ export interface operations {
             };
         };
     };
-    submissionset_destroy: {
+    submission_sets_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 /** @description A unique integer value identifying this submission set. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    submissions_list: {
+        parameters: {
+            query?: {
+                contest?: number;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSubmissionList"];
+                };
+            };
+        };
+    };
+    submissions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this submission. */
                 id: number;
             };
             cookie?: never;

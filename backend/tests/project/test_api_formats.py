@@ -28,12 +28,12 @@ def test_the_api_answers_only_json(world):
 
 def test_request_bodies_are_json_only(world):
     form = world.client.post(
-        "/api/v1/author",
+        "/api/v1/authors",
         "first_name=Form&last_name=Encoded",
         content_type="application/x-www-form-urlencoded",
     )
     multipart = world.client.post(
-        "/api/v1/author",
+        "/api/v1/authors",
         {"first_name": "Multi", "last_name": "Part"},
         format="multipart",
     )
@@ -44,7 +44,7 @@ def test_request_bodies_are_json_only(world):
     jpeg = io.BytesIO()
     Image.new("RGB", (100, 100)).save(jpeg, "JPEG")
     upload = world.client.post(
-        "/api/v1/file",
+        "/api/v1/files",
         jpeg.getvalue(),
         content_type="image/jpeg",
         headers={"Content-Disposition": 'attachment; filename="photo.jpg"'},

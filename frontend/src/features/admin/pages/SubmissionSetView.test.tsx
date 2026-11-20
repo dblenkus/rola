@@ -23,7 +23,7 @@ function renderView(): void {
 function serveSet(data: SubmissionSet): void {
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /submissionset/5': () => data,
+    'GET /submission-sets/5': () => data,
   });
 }
 
@@ -41,7 +41,7 @@ it('shows loading until the set arrives', async () => {
   let answer: (() => void) | undefined;
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /submissionset/5': () =>
+    'GET /submission-sets/5': () =>
       new Promise((resolve) => {
         answer = () => resolve(submissionSet);
       }),
@@ -162,7 +162,7 @@ it('shows a failed load on a page named Submission', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /submissionset/5': (config) => {
+    'GET /submission-sets/5': (config) => {
       throw httpError(config, 404);
     },
   });

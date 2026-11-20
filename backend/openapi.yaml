@@ -21,39 +21,12 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/author:
-    get:
-      operationId: author_list
-      description: API viewset for Author objects.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      tags:
-      - author
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedAuthorList'
-          description: ''
+  /api/v1/authors:
     post:
-      operationId: author_create
-      description: API viewset for Author objects.
+      operationId: authors_create
+      description: Create an author of the requester's submissions.
       tags:
-      - author
+      - authors
       requestBody:
         content:
           application/json:
@@ -69,98 +42,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Author'
           description: ''
-  /api/v1/author/{id}:
-    get:
-      operationId: author_retrieve
-      description: API viewset for Author objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this author.
-        required: true
-      tags:
-      - author
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Author'
-          description: ''
-    put:
-      operationId: author_update
-      description: API viewset for Author objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this author.
-        required: true
-      tags:
-      - author
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Author'
-          description: ''
-    patch:
-      operationId: author_partial_update
-      description: API viewset for Author objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this author.
-        required: true
-      tags:
-      - author
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedAuthorRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Author'
-          description: ''
-    delete:
-      operationId: author_destroy
-      description: API viewset for Author objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this author.
-        required: true
-      tags:
-      - author
-      security:
-      - tokenAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/contests:
     get:
       operationId: contests_list
@@ -217,10 +98,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Contest'
           description: ''
-  /api/v1/file:
+  /api/v1/files:
     post:
-      operationId: file_create
-      description: API viewset for File objects.
+      operationId: files_create
+      description: Upload a photograph for a later submission.
       parameters:
       - in: header
         name: Content-Disposition
@@ -229,7 +110,7 @@ paths:
         description: Names the photograph, for example attachment; filename="photo.jpg".
         required: true
       tags:
-      - file
+      - files
       requestBody:
         content:
           image/jpeg:
@@ -307,10 +188,6 @@ paths:
       operationId: judge_submission_list
       description: List paid submissions assigned to an active judge.
       parameters:
-      - in: query
-        name: contest
-        schema:
-          type: integer
       - name: page
         required: false
         in: query
@@ -683,10 +560,6 @@ paths:
       operationId: results_submission_list
       description: List and retrieve accepted, paid submissions after publication.
       parameters:
-      - in: query
-        name: contest
-        schema:
-          type: integer
       - name: ordering
         required: false
         in: query
@@ -767,189 +640,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ThemeResults'
           description: ''
-  /api/v1/submission:
+  /api/v1/submission-sets:
     get:
-      operationId: submission_list
-      description: API view Submission objects.
-      parameters:
-      - in: query
-        name: contest
-        schema:
-          type: integer
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - in: query
-        name: theme
-        schema:
-          type: integer
-      tags:
-      - submission
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedSubmissionList'
-          description: ''
-    post:
-      operationId: submission_create
-      description: |-
-        Create one coherent submission set, atomically, for either payload shape.
-
-        A request that repeats the Idempotency-Key of the requester's earlier
-        upload creates nothing and returns that upload's submissions. Once all
-        of them are deleted, the request is entered as a new upload.
-      parameters:
-      - in: header
-        name: Idempotency-Key
-        schema:
-          type: string
-          format: uuid
-        description: Identifies the upload, so that a retry after a lost response
-          returns the submissions instead of entering them again.
-      tags:
-      - submission
-      requestBody:
-        content:
-          application/json:
-            schema:
-              oneOf:
-              - $ref: '#/components/schemas/SubmissionRequest'
-              - type: array
-                items:
-                  $ref: '#/components/schemas/SubmissionRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                oneOf:
-                - $ref: '#/components/schemas/SubmissionWrite'
-                - type: array
-                  items:
-                    $ref: '#/components/schemas/SubmissionWrite'
-          description: The submissions of the requester's earlier upload with this
-            Idempotency-Key; a list when the request body is a list.
-        '201':
-          content:
-            application/json:
-              schema:
-                oneOf:
-                - $ref: '#/components/schemas/SubmissionWrite'
-                - type: array
-                  items:
-                    $ref: '#/components/schemas/SubmissionWrite'
-          description: A list when the request body is a list.
-  /api/v1/submission/{id}:
-    get:
-      operationId: submission_retrieve
-      description: API view Submission objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this submission.
-        required: true
-      tags:
-      - submission
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Submission'
-          description: ''
-    put:
-      operationId: submission_update
-      description: Serialize file reassignment with other submission writes.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this submission.
-        required: true
-      tags:
-      - submission
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionWrite'
-          description: ''
-    patch:
-      operationId: submission_partial_update
-      description: API view Submission objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this submission.
-        required: true
-      tags:
-      - submission
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSubmissionRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionWrite'
-          description: ''
-    delete:
-      operationId: submission_destroy
-      description: Delete the requester's submission while its contest accepts entries.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this submission.
-        required: true
-      tags:
-      - submission
-      security:
-      - tokenAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/submissionset:
-    get:
-      operationId: submissionset_list
-      description: List and delete the requesting user's submission sets.
+      operationId: submission_sets_list
+      description: Upload, list and delete the requester's submission sets.
       parameters:
       - in: query
         name: contest
@@ -968,7 +662,7 @@ paths:
         schema:
           type: integer
       tags:
-      - submissionset
+      - submission-sets
       security:
       - tokenAuth: []
       responses:
@@ -978,10 +672,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSubmissionSetList'
           description: ''
-  /api/v1/submissionset/{id}:
+    post:
+      operationId: submission_sets_create
+      description: |-
+        Enter an upload's submissions and their set atomically.
+
+        A request that repeats the Idempotency-Key of the requester's earlier
+        upload creates nothing and returns that upload's set. Once all of its
+        submissions are deleted, the request is entered as a new upload.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+          format: uuid
+        description: Identifies the upload, so that a retry after a lost response
+          returns the submission set instead of entering it again.
+      tags:
+      - submission-sets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionSetCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionSet'
+          description: The set of the requester's earlier upload with this Idempotency-Key.
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionSet'
+          description: ''
+  /api/v1/submission-sets/{id}:
     get:
-      operationId: submissionset_retrieve
-      description: List and delete the requesting user's submission sets.
+      operationId: submission_sets_retrieve
+      description: Upload, list and delete the requester's submission sets.
       parameters:
       - in: path
         name: id
@@ -990,7 +723,7 @@ paths:
         description: A unique integer value identifying this submission set.
         required: true
       tags:
-      - submissionset
+      - submission-sets
       security:
       - tokenAuth: []
       responses:
@@ -1001,7 +734,7 @@ paths:
                 $ref: '#/components/schemas/SubmissionSet'
           description: ''
     delete:
-      operationId: submissionset_destroy
+      operationId: submission_sets_destroy
       description: |-
         Delete a set and its submissions while its contest accepts entries.
 
@@ -1014,7 +747,57 @@ paths:
         description: A unique integer value identifying this submission set.
         required: true
       tags:
-      - submissionset
+      - submission-sets
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/submissions:
+    get:
+      operationId: submissions_list
+      description: List and delete the requester's own submissions.
+      parameters:
+      - in: query
+        name: contest
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - submissions
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubmissionList'
+          description: ''
+  /api/v1/submissions/{id}:
+    delete:
+      operationId: submissions_destroy
+      description: List and delete the requester's own submissions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this submission.
+        required: true
+      tags:
+      - submissions
       security:
       - tokenAuth: []
       responses:
@@ -1295,22 +1078,6 @@ components:
       - file
       - id
       - modified
-    IdRelated:
-      type: object
-      description: Refer to a related object by its id.
-      properties:
-        id:
-          type: integer
-      required:
-      - id
-    IdRelatedRequest:
-      type: object
-      description: Refer to a related object by its id.
-      properties:
-        id:
-          type: integer
-      required:
-      - id
     Institution:
       type: object
       description: Serializer for Institution objects.
@@ -1498,29 +1265,6 @@ components:
       required:
       - email
       - password
-    PaginatedAuthorList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Author'
     PaginatedContestList:
       type: object
       required:
@@ -1743,38 +1487,6 @@ components:
       required:
       - new_password
       - token
-    PatchedAuthorRequest:
-      type: object
-      description: Serializer for Author objects.
-      properties:
-        first_name:
-          type: string
-          minLength: 1
-          maxLength: 30
-        last_name:
-          type: string
-          minLength: 1
-          maxLength: 30
-        date_of_birth:
-          type: string
-          format: date
-          nullable: true
-        school:
-          type: string
-          nullable: true
-          maxLength: 100
-        mentor:
-          type: string
-          nullable: true
-          maxLength: 100
-        club:
-          type: string
-          nullable: true
-          maxLength: 100
-        distinction:
-          type: string
-          nullable: true
-          maxLength: 100
     PatchedPaymentRequest:
       type: object
       description: Serializer for Payment objects.
@@ -1793,25 +1505,6 @@ components:
           type: integer
           maximum: 10
           minimum: 1
-    PatchedSubmissionRequest:
-      type: object
-      description: Serializer for Submission objects.
-      properties:
-        author:
-          $ref: '#/components/schemas/IdRelatedRequest'
-        theme:
-          type: integer
-        title:
-          type: string
-          nullable: true
-          maxLength: 100
-        description:
-          type: string
-          nullable: true
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/IdRelatedRequest'
     Payment:
       type: object
       description: Serializer for Payment objects.
@@ -1898,7 +1591,7 @@ components:
       - email
     Submission:
       type: object
-      description: Serializer for Submission objects.
+      description: Represent a submission with its author and photographs.
       properties:
         id:
           type: integer
@@ -1933,12 +1626,11 @@ components:
       - id
       - modified
       - theme
-    SubmissionRequest:
+    SubmissionCreateRequest:
       type: object
-      description: Serializer for Submission objects.
+      description: One submission of an upload, with its theme and photographs as
+        ids.
       properties:
-        author:
-          $ref: '#/components/schemas/IdRelatedRequest'
         theme:
           type: integer
         title:
@@ -1951,9 +1643,11 @@ components:
         files:
           type: array
           items:
-            $ref: '#/components/schemas/IdRelatedRequest'
+            type: integer
+            maximum: 9223372036854775807
+            minimum: -9223372036854775808
+            format: int64
       required:
-      - author
       - files
       - theme
     SubmissionResults:
@@ -2018,7 +1712,7 @@ components:
       - theme
     SubmissionSet:
       type: object
-      description: Serializer for SubmissionSet objects.
+      description: Represent a submission set with its submissions and author.
       properties:
         id:
           type: integer
@@ -2046,44 +1740,22 @@ components:
       - id
       - modified
       - submissions
-    SubmissionWrite:
+    SubmissionSetCreateRequest:
       type: object
-      description: Submission as writes return it, with the author and the files as
-        ids.
+      description: 'An upload: the author, as an id, and the submissions entered together.'
       properties:
-        id:
-          type: integer
-          readOnly: true
-        created:
-          type: string
-          format: date-time
-          readOnly: true
-        modified:
-          type: string
-          format: date-time
-          readOnly: true
         author:
-          $ref: '#/components/schemas/IdRelated'
-        theme:
           type: integer
-        title:
-          type: string
-          nullable: true
-          maxLength: 100
-        description:
-          type: string
-          nullable: true
-        files:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        submissions:
           type: array
           items:
-            $ref: '#/components/schemas/IdRelated'
+            $ref: '#/components/schemas/SubmissionCreateRequest'
       required:
       - author
-      - created
-      - files
-      - id
-      - modified
-      - theme
+      - submissions
     Theme:
       type: object
       description: Serializer for Theme objects.

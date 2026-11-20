@@ -7,14 +7,14 @@ import {
   Institution,
   PaginatedResponse,
   Submission,
-  SubmissionWrite,
+  SubmissionSet,
 } from '../../shared/api/types';
 
 import { apiClient } from '../../shared/api/client';
 
 type AuthorCreatePayload = components['schemas']['AuthorRequest'];
-export type SubmissionCreatePayload =
-  components['schemas']['SubmissionRequest'];
+export type SubmissionSetCreatePayload =
+  components['schemas']['SubmissionSetCreateRequest'];
 
 export function createAuthor(
   user: AuthorCreatePayload,
@@ -26,7 +26,7 @@ export function createAuthor(
     ),
   );
   return apiClient.post(
-    '/author',
+    '/authors',
     payload,
     authorization === undefined
       ? {}
@@ -53,7 +53,7 @@ export function uploadImage(
   image: File,
   authorization?: string,
 ): AxiosPromise<Image> {
-  return apiClient.post('/file', image, {
+  return apiClient.post('/files', image, {
     // A large photograph on a slow connection may take minutes.
     timeout: 0,
     headers: {
@@ -70,14 +70,15 @@ export function getInstitutions(): AxiosPromise<
   return apiClient.get('/institutions', { params: { page_size: 1000 } });
 }
 
-// The server answers a repeated idempotency key with the submissions it
-// stored for it, so a retry after a lost response submits nothing twice.
-export function createSubmissions(
-  submissions: SubmissionCreatePayload[],
+// The server answers a repeated idempotency key with the submission set it
+// stored for it, with status 200 instead of 201, so a retry after a lost
+// response submits nothing twice.
+export function createSubmissionSet(
+  submissionSet: SubmissionSetCreatePayload,
   idempotencyKey: string,
   authorization?: string,
-): AxiosPromise<SubmissionWrite[]> {
-  return apiClient.post('/submission', submissions, {
+): AxiosPromise<SubmissionSet> {
+  return apiClient.post('/submission-sets', submissionSet, {
     headers: {
       'Idempotency-Key': idempotencyKey,
       ...(authorization === undefined ? {} : { Authorization: authorization }),
@@ -85,14 +86,12 @@ export function createSubmissions(
   });
 }
 
-export function deleteSubmission(
-  submissionsId: number,
-): AxiosPromise<Submission[]> {
-  return apiClient.delete(`/submission/${submissionsId}`);
+export function deleteSubmission(submissionsId: number): AxiosPromise<void> {
+  return apiClient.delete(`/submissions/${submissionsId}`);
 }
 
 export function getSubmissionsByContest(
   contentId: number,
 ): AxiosPromise<PaginatedResponse<Submission>> {
-  return apiClient.get('/submission', { params: { contest: contentId } });
+  return apiClient.get('/submissions', { params: { contest: contentId } });
 }

@@ -6,9 +6,9 @@ import {
 import type { ContestModel } from '../models';
 import {
   createAuthor,
-  createSubmissions,
+  createSubmissionSet,
   uploadImage,
-  type SubmissionCreatePayload,
+  type SubmissionSetCreatePayload,
 } from '../api';
 
 // Another account signed in, or the session ended, during the upload.
@@ -29,9 +29,9 @@ export function apiDate(date: Date): string {
 }
 
 // Photographs go up one at a time, so a failure stops the upload before
-// any later file, the author or the submissions are created. A retry sends
-// the photographs and the author again, but the form's upload key keeps the
-// submissions from being stored twice. Resolves to whether the server had
+// any later file, the author or the submission set are created. A retry
+// sends the photographs and the author again, but the form's upload key keeps
+// the submission set from being stored twice. Resolves to whether the server had
 // already stored them, in which case this request changed nothing.
 export default async function upload(
   contest: ContestModel,
@@ -49,7 +49,7 @@ export default async function upload(
     }
   };
 
-  const submissions: Omit<SubmissionCreatePayload, 'author'>[] = [];
+  const submissions: SubmissionSetCreatePayload['submissions'] = [];
   for (const theme of contest.themes) {
     for (const submission of theme.submissions) {
       const files = [];
@@ -57,7 +57,7 @@ export default async function upload(
         if (image.file) {
           checkSession();
           const { data } = await uploadImage(image.file, authorization);
-          files.push(data);
+          files.push(data.id);
         }
       }
       if (files.length) {
@@ -97,8 +97,8 @@ export default async function upload(
     authorization,
   );
   checkSession();
-  const { status } = await createSubmissions(
-    submissions.map((submission) => ({ ...submission, author })),
+  const { status } = await createSubmissionSet(
+    { author: author.id, submissions },
     uploadKey,
     authorization,
   );
