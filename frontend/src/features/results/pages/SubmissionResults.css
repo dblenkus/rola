@@ -1,15 +1,25 @@
 /*
- * The photo whole on paper, nothing on it. On phones the page margin is the
- * 16 px around it; wider, 32 px more.
+ * The photo whole on paper, nothing on it, inside the page column. A photo
+ * is never taller than the window below the app bar with the page's padding
+ * above and below it, so it can be seen whole without scrolling. On wide
+ * screens a single photo has its wall label beside it in a 376 px column;
+ * a series, and narrower screens, put the label under the photos.
  */
+.results-submission {
+  /* compact: the 64 px app bar and the page's 32 px padding. */
+  --results-photo-max-height: calc(
+    100dvh - var(--space-16) - 2 * var(--space-8)
+  );
+}
+
 .results-photos {
-  padding: var(--space-8);
+  margin-bottom: var(--space-8);
 }
 
 .results-photo {
   display: block;
   max-width: 100%;
-  max-height: 85dvh;
+  max-height: var(--results-photo-max-height);
   margin-inline: auto;
   object-fit: contain;
   border-radius: var(--radius-none);
@@ -32,7 +42,6 @@
 /* The wall label, in line with the photos' edge. */
 .results-label {
   max-width: 40rem;
-  padding-inline: var(--space-8);
   color: var(--text);
 }
 
@@ -53,19 +62,44 @@
   margin: var(--space-3) 0 0;
 }
 
+/* wide */
+@media (width >= 64rem) {
+  .results-submission {
+    /* The 64 px app bar and the page's 48 px padding. */
+    --results-photo-max-height: calc(
+      100dvh - var(--space-16) - 2 * var(--space-12)
+    );
+  }
+
+  .results-submission--single {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 376px;
+    align-items: start;
+    column-gap: var(--space-12);
+  }
+
+  .results-submission--single .results-photos {
+    margin-bottom: 0;
+  }
+}
+
 /* phone */
 @media (width < 40rem) {
+  .results-submission {
+    /* The app bar scrolls away; the tab bar and the page's 24 px padding
+       stay. */
+    --results-photo-max-height: calc(
+      100dvh - var(--shell-tabbar-space) - 2 * var(--space-6)
+    );
+  }
+
   .results-photos {
-    padding: 0 0 var(--space-4);
+    margin-bottom: var(--space-4);
   }
 
   .results-photos--series {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
-  }
-
-  .results-label {
-    padding-inline: 0;
   }
 
   /* h2-mobile (20 / 28); a media query cannot switch the type class. */

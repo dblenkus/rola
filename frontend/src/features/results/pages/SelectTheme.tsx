@@ -37,8 +37,18 @@ const SelectTheme: React.FC = () => {
     fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
-  if (error) return <Message severity="error">{error}</Message>;
-  if (!contest) return <LoadingProgress />;
+  if (error || !contest) {
+    // Until the contest is known, the page is named generically.
+    return (
+      <Page title={t('results')} titleHidden>
+        {error ? (
+          <Message severity="error">{error}</Message>
+        ) : (
+          <LoadingProgress />
+        )}
+      </Page>
+    );
+  }
 
   return (
     <Page title={contest.title}>

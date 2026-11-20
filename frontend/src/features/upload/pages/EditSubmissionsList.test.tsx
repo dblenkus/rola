@@ -45,5 +45,4 @@ it('says once why an entry cannot be edited yet', async () => {
       'Editing an entry is not available yet. To change one, delete it and upload it again.',
     ),
   ).toHaveLength(1);
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });

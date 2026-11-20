@@ -21,6 +21,7 @@ import Table, {
 import groupBy from '../../../shared/utils/groupBy';
 import { getContest } from '../../contests';
 import { getThemeResults } from '../api';
+import authorDetails from '../authorDetails';
 import './ThemeResults.css';
 
 interface RouteMatchParams {
@@ -118,8 +119,18 @@ const ThemeResults: React.FC = () => {
     );
   };
 
-  if (error) return <Message severity="error">{error}</Message>;
-  if (!theme || !contest) return <LoadingProgress />;
+  if (error || !theme || !contest) {
+    // Until the theme is known, the page is named generically.
+    return (
+      <Page title={t('results')} titleHidden>
+        {error ? (
+          <Message severity="error">{error}</Message>
+        ) : (
+          <LoadingProgress />
+        )}
+      </Page>
+    );
+  }
 
   return (
     <Page title={theme.title} lead={contest.title}>
@@ -129,22 +140,23 @@ const ThemeResults: React.FC = () => {
             {theme.submissionsByAuthor.map((submissions) => {
               const author = getAuthor(submissions);
               const reward = getAuthorReward(author);
-              let authorDetails = `${author.country}`;
-              if (contest.school_show)
-                authorDetails = `${author.school || '/'}`;
-              if (author.club)
-                authorDetails = t('author_details_with_club', {
-                  details: authorDetails,
-                  club: author.club,
-                });
+              const details = authorDetails(t, {
+                place: contest.school_show ? author.school : author.country,
+                club: author.club,
+              });
               return (
                 <React.Fragment key={author.id}>
                   <TableRow>
                     <TableCell header>
-                      {author.last_name}, {author.first_name}{' '}
-                      <span className="results-author__details">
-                        ({authorDetails})
-                      </span>
+                      {author.last_name}, {author.first_name}
+                      {details && (
+                        <>
+                          {' '}
+                          <span className="results-author__details">
+                            ({details})
+                          </span>
+                        </>
+                      )}
                     </TableCell>
                     <TableCell align="end">
                       {reward && <AwardMark name={reward} />}

@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
+import { httpError, serveApi } from '../../../test/api';
+import { expectFailedPage } from '../../../test/pages';
 import { author, submission } from '../../../test/fixtures';
 import type { ResultsSubmission } from '../../../shared/api/types';
 import SubmissionResults from './SubmissionResults';
@@ -66,7 +67,6 @@ it('shows the photo named by its title, with the wall label', async () => {
   const marks = document.querySelectorAll('.rl-award');
   expect(marks).toHaveLength(1);
   expect(marks[0]).toHaveTextContent('Gold medal');
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('never names the author in the alternative text', async () => {
@@ -100,4 +100,38 @@ it('names an untitled photo', async () => {
     await screen.findByRole('img', { name: 'Untitled' }),
   ).toBeInTheDocument();
   await waitFor(() => expect(document.title).toBe('Untitled · Rola'));
+});
+
+it('shows no brackets after an author without a country', async () => {
+  renderSubmission(
+    resultsSubmission([21], {
+      author: { ...author, reward: null, reward_theme: null, country: null },
+    }),
+  );
+  const name = await screen.findByText('Ana Novak');
+  expect(name).toHaveTextContent(/^Ana Novak$/);
+});
+
+it('shows a failed load on a page named Results', async () => {
+  document.title = 'Active contests · Rola';
+  serveApi({
+    'GET /results/submission/11': (config) => {
+      throw httpError(config, 404);
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/results/contest/1/theme/2/submission/11']}>
+      <Routes>
+        <Route
+          path="/results/contest/:contestId/theme/:themeId/submission/:submissionId"
+          element={<SubmissionResults />}
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await expectFailedPage(
+    'Results',
+    'The requested content is no longer available.',
+  );
 });

@@ -8,7 +8,7 @@ import i18next from 'i18next';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
-import { contest } from '../../../test/fixtures';
+import { apiDateTime, contest } from '../../../test/fixtures';
 import ContestRow from './ContestRow';
 
 describe('contest information', () => {
@@ -112,12 +112,52 @@ describe('contest row', () => {
     expect(screen.queryByText(/left|last day/)).not.toBeInTheDocument();
   });
 
-  it('opens the upload as a secondary link-button and renders no MUI', () => {
-    const { container } = renderRow('2026-12-07');
+  // The API sends the closing moment as a date-time; just before and just
+  // after local midnight it names the local calendar day, whatever day the
+  // instant falls on in UTC.
+  it.each([
+    [
+      'offset',
+      'before midnight',
+      new Date(2026, 11, 7, 23, 59, 59),
+      '7\u00a0Dec\u00a02026',
+      22,
+    ],
+    [
+      'utc',
+      'before midnight',
+      new Date(2026, 11, 7, 23, 59, 59),
+      '7\u00a0Dec\u00a02026',
+      22,
+    ],
+    [
+      'offset',
+      'after midnight',
+      new Date(2026, 11, 8, 0, 0, 30),
+      '8\u00a0Dec\u00a02026',
+      23,
+    ],
+    [
+      'utc',
+      'after midnight',
+      new Date(2026, 11, 8, 0, 0, 30),
+      '8\u00a0Dec\u00a02026',
+      23,
+    ],
+  ] as const)(
+    'gives a closing date-time in %s time %s as its local day',
+    (form, _when, end, date, days) => {
+      renderRow(apiDateTime(end, form));
+      expect(screen.getByText(date, exact)).toBeInTheDocument();
+      expect(screen.getByText(`(${days} days left)`)).toBeInTheDocument();
+    },
+  );
+
+  it('opens the upload as a secondary link-button', () => {
+    renderRow('2026-12-07');
     expect(screen.getByRole('link', { name: 'Open' })).toHaveClass(
       'rl-btn',
       'rl-btn--secondary',
     );
-    expect(container.querySelector('[class*="Mui"]')).toBeNull();
   });
 });

@@ -1,7 +1,4 @@
-export interface DateChange {
-  name: string;
-  value: Date;
-}
+export type { DateChange } from '../../shared/ui/DateField';
 
 export interface FileChange {
   file: File;
@@ -88,7 +85,8 @@ export interface AuthorError {
 export interface AuthorModel {
   first_name: string;
   last_name: string;
-  dob: Date | undefined;
+  // Null while no complete date is entered.
+  dob: Date | null;
   school?: string;
   mentor?: string;
   club?: string;

@@ -1,12 +1,3 @@
-/*
- * The sign-in and account pages. The small logo (40 px tall) sits space-6
- * above the title at every width: more than the 20 px clear space the logo
- * needs on every side. The page's top padding is at least that above it.
- */
-.auth-page__logo {
-  margin-bottom: var(--space-6);
-}
-
 /* A page's error above the form or result it belongs to. */
 .auth-page__message {
   margin-bottom: var(--space-4);

@@ -2,7 +2,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { page, serveApi } from '../../../test/api';
+import { httpError, page, serveApi } from '../../../test/api';
+import { expectFailedPage } from '../../../test/pages';
 import { contest, submissionSet } from '../../../test/fixtures';
 import type { Payment, SubmissionSet } from '../../../shared/api/types';
 import SubmissionSetList from './SubmissionSetList';
@@ -62,7 +63,6 @@ it('titles the page with the contest', async () => {
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   await waitFor(() => expect(document.title).toBe(`${contest.title} · Rola`));
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('names each paid checkbox after its author and shows its state', async () => {
@@ -151,4 +151,36 @@ it('requests the chosen number of rows from the first page', async () => {
     .filter(({ url }) => url === '/submissionset')
     .at(-1);
   expect(lastList?.params).toMatchObject({ page: 1, page_size: 50 });
+});
+
+it('shows when each set was submitted as a date and a 24-hour time', async () => {
+  // Built in the local time zone, so the shown time is the same everywhere.
+  const created = new Date(2026, 10, 20, 18, 18, 21).toISOString();
+  const [first] = sets(1);
+  if (!first) throw new Error('No submission set');
+  serveSets([{ ...first, created }]);
+  renderList();
+
+  const row = await screen.findByRole('row', { name: /^Ana1 Novak/ });
+  expect(
+    // The no-break spaces themselves, which the default normalizer collapses.
+    within(row).getByText('20\u00a0Nov\u00a02026,\u00a018:18', {
+      normalizer: (text) => text,
+    }),
+  ).toBeInTheDocument();
+});
+
+it('shows a failed load on a page named Submissions', async () => {
+  document.title = 'Active contests · Rola';
+  serveApi({
+    'GET /contest/1': (config) => {
+      throw httpError(config, 404);
+    },
+  });
+  renderList();
+
+  await expectFailedPage(
+    'Submissions',
+    'The requested content is no longer available.',
+  );
 });

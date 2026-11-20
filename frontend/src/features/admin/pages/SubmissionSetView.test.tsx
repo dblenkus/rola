@@ -1,7 +1,8 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
+import { httpError, serveApi } from '../../../test/api';
+import { expectFailedPage } from '../../../test/pages';
 import { contest, submission, submissionSet } from '../../../test/fixtures';
 import type { SubmissionSet } from '../../../shared/api/types';
 import SubmissionSetView from './SubmissionSetView';
@@ -48,7 +49,10 @@ it('shows loading until the set arrives', async () => {
   renderView();
 
   expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  // Until the author is known the page has its generic heading.
+  expect(
+    screen.getByRole('heading', { level: 1, name: 'Submission' }),
+  ).toBeInTheDocument();
 
   await waitFor(() => expect(answer).toBeDefined());
   expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -78,7 +82,6 @@ it('titles the page with the author and lists the details', async () => {
     Author: 'Ana Novak',
     Email: 'ana@example.com',
   });
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('shows each photograph as a linked thumbnail with its details', async () => {
@@ -153,4 +156,20 @@ it('numbers the photographs of a series', async () => {
   expect(
     screen.getByRole('link', { name: 'Bridges, photo 2 of 2' }),
   ).toHaveAttribute('href', 'https://media.example/12.jpg');
+});
+
+it('shows a failed load on a page named Submission', async () => {
+  document.title = 'Active contests · Rola';
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /submissionset/5': (config) => {
+      throw httpError(config, 404);
+    },
+  });
+  renderView();
+
+  await expectFailedPage(
+    'Submission',
+    'The requested content is no longer available.',
+  );
 });

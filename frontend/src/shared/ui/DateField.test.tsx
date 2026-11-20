@@ -13,7 +13,7 @@ function renderField({
 }: {
   value?: Date | null;
   error?: string | null;
-  onChange?: (change: { name: string; value: Date }) => void;
+  onChange?: (change: { name: string; value: Date | null }) => void;
   locale?: string;
 } = {}) {
   render(
@@ -104,6 +104,74 @@ describe('date field', () => {
     expect(
       screen.getAllByRole('spinbutton').map((segment) => segment.textContent),
     ).toEqual(['4', '3', '2001']);
+  });
+
+  describe('after a date was given', () => {
+    // A field whose form stores what it reports, starting from 4 March 2001.
+    function renderStored() {
+      const onChange = vi.fn();
+      function StoredField() {
+        const [value, setValue] = useState<Date | null>(new Date(2001, 2, 4));
+        return (
+          <I18nProvider locale="sl-SI">
+            <DateField
+              name="dob"
+              label="Date of birth"
+              value={value}
+              error={null}
+              autoComplete="bday"
+              onChange={(change) => {
+                onChange(change);
+                setValue(change.value);
+              }}
+            />
+          </I18nProvider>
+        );
+      }
+      render(<StoredField />);
+      const segments = screen.getAllByRole('spinbutton');
+      const [day, month, year] = segments;
+      if (!day || !month || !year) throw new Error('The field has no segments');
+      return { onChange, day, month, year };
+    }
+
+    it('reports no date once the segments are cleared', async () => {
+      const { onChange, year } = renderStored();
+      const user = userEvent.setup();
+      await user.click(year);
+      await user.keyboard('{Backspace}{Backspace}{Backspace}{Backspace}');
+      await user.keyboard('{Shift>}{Tab}{/Shift}{Backspace}');
+      await user.keyboard('{Shift>}{Tab}{/Shift}{Backspace}');
+
+      expect(onChange).toHaveBeenLastCalledWith({ name: 'dob', value: null });
+      expect(
+        screen.getAllByRole('spinbutton').map((segment) => segment.textContent),
+      ).not.toContain('2001');
+    });
+
+    it('reports no date while the year is incomplete', async () => {
+      const { onChange, year } = renderStored();
+      const user = userEvent.setup();
+      await user.click(year);
+      await user.keyboard('198');
+
+      expect(onChange).toHaveBeenLastCalledWith({ name: 'dob', value: null });
+      // The segments keep what was typed.
+      expect(year).toHaveTextContent('198');
+    });
+
+    it('reports the date again once the year is complete', async () => {
+      const { onChange, year } = renderStored();
+      const user = userEvent.setup();
+      await user.click(year);
+      await user.keyboard('1985');
+
+      expect(onChange).toHaveBeenLastCalledWith({
+        name: 'dob',
+        value: new Date(1985, 2, 4),
+      });
+      expect(year).toHaveTextContent('1985');
+    });
   });
 
   it('shows a date by its local calendar day', () => {

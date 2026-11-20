@@ -19,6 +19,12 @@
   overflow-wrap: break-word;
 }
 
+/* The name link is as tall as the title's 24 px line, a full pointer
+   target; an inline link would be only as tall as its glyphs. */
+.contests-row__title .rl-contest-row__name {
+  display: inline-block;
+}
+
 /* ContestRow's type line: small, text-muted, 2 px below the name. */
 .contests-row__description {
   margin: 2px 0 0;
@@ -50,7 +56,6 @@
 
   /* The name's 24 px line grows to the 44 px tap target without moving. */
   .contests-row__title .rl-contest-row__name {
-    display: inline-block;
     padding-block: calc((var(--touch-target) - 24px) / 2);
     margin-block: calc((var(--touch-target) - 24px) / -2);
   }

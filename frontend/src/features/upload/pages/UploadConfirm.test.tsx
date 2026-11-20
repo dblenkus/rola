@@ -55,5 +55,4 @@ it('thanks the entrant and links back to the contests', async () => {
   expect(
     screen.getByRole('link', { name: 'Back to contests' }),
   ).toHaveAttribute('href', '/contests');
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });

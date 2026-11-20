@@ -111,3 +111,21 @@ export const submissionSet: SubmissionSet = {
   author,
   contest: 1,
 };
+
+// An instant as the API sends a date-time, such as a contest's `end_date`:
+// with the local zone's offset ("2026-12-07T23:59:59+01:00"), or in UTC
+// ("2026-12-07T22:59:59.000Z"), which near midnight falls on another
+// calendar day than the local one.
+export function apiDateTime(date: Date, form: 'offset' | 'utc'): string {
+  if (form === 'utc') return date.toISOString();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const offset = -date.getTimezoneOffset();
+  const sign = offset < 0 ? '-' : '+';
+  const hours = pad(Math.floor(Math.abs(offset) / 60));
+  const minutes = pad(Math.abs(offset) % 60);
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}` +
+    `${sign}${hours}:${minutes}`
+  );
+}

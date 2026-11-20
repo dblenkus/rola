@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Payment, SubmissionSet } from '../../../shared/api/types';
 import Button from '../../../shared/ui/Button';
 import Checkbox from '../../../shared/ui/Checkbox';
+import { formatDateTime, parseApiDate } from '../../../shared/utils/formatDate';
 import { TableCell, TableRow } from '../../../shared/ui/Table';
 import './SubmissionSetTableRow.css';
 
@@ -34,7 +35,8 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
   onPaidChange,
   onDelete,
 }: SubmissionSetTableRowProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage === 'sl' ? 'sl' : 'en';
 
   const author = getSubmissionSetAuthor(submissionSet);
   const paid = !!payment && payment.paid === true;
@@ -48,7 +50,7 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
         {author}
       </TableCell>
       <TableCell label={t('submited')}>
-        {new Date(submissionSet.created).toLocaleString()}
+        {formatDateTime(parseApiDate(submissionSet.created), language)}
       </TableCell>
       <TableCell label={t('n_themes')}>{themeNumber}</TableCell>
       <TableCell label={t('n_submissions')}>

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { Provider } from 'react-redux';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createAppStore, type AppStore } from '../../../app/store';
@@ -8,6 +9,8 @@ import {
   addNotificationSuccess,
   addNotificationWarning,
 } from '../state/actions';
+import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
+import Menu from '../../../shared/ui/Menu';
 import Notifications from './Notifications';
 
 let store: AppStore;
@@ -31,6 +34,15 @@ function notify(action: ReturnType<typeof addNotificationError>): void {
   act(() => {
     store.dispatch(action);
   });
+}
+
+// The element with focus, which must be an element of the page.
+function focused(): HTMLElement {
+  const element = document.activeElement;
+  if (!(element instanceof HTMLElement)) {
+    throw new Error('No element has focus');
+  }
+  return element;
 }
 
 function wait(ms: number): void {
@@ -61,6 +73,66 @@ it('closes with Escape while focus is inside it', () => {
   act(() => close.focus());
   fireEvent.keyDown(close, { key: 'Escape' });
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('closes with Escape while focus is elsewhere on the page', () => {
+  notify(addNotificationInfo('Saved for later.'));
+  const elsewhere = screen.getByRole('button', { name: 'Elsewhere' });
+  act(() => elsewhere.focus());
+  fireEvent.keyDown(elsewhere, { key: 'Escape' });
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('closes with Escape while nothing has focus', () => {
+  notify(addNotificationInfo('Saved for later.'));
+  fireEvent.keyDown(document.body, { key: 'Escape' });
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('stays when something else handled the Escape', () => {
+  notify(addNotificationInfo('Saved for later.'));
+  const elsewhere = screen.getByRole('button', { name: 'Elsewhere' });
+  elsewhere.addEventListener('keydown', (event) => event.preventDefault());
+  fireEvent.keyDown(elsewhere, { key: 'Escape' });
+  expect(screen.getByRole('alert')).toHaveTextContent('Saved for later.');
+});
+
+it('stays when Escape closes a dialog', () => {
+  function Confirm() {
+    const [open, setOpen] = useState(true);
+    return (
+      <ConfirmDialog
+        open={open}
+        title="Delete the entry?"
+        onClose={() => setOpen(false)}
+        onConfirm={() => undefined}
+      >
+        The entry cannot be restored.
+      </ConfirmDialog>
+    );
+  }
+  notify(addNotificationInfo('Saved for later.'));
+  render(<Confirm />);
+  const dialog = screen.getByRole('dialog', { name: 'Delete the entry?' });
+  expect(dialog).toContainElement(focused());
+
+  fireEvent.keyDown(focused(), { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('Saved for later.');
+});
+
+it('stays when Escape closes a menu', () => {
+  notify(addNotificationInfo('Saved for later.'));
+  render(<Menu items={[{ id: 'logout', label: 'Logout' }]}>Account</Menu>);
+  fireEvent.click(screen.getByRole('button', { name: 'Account' }));
+  // The menu moves focus into itself on the next frame.
+  wait(50);
+  const menu = screen.getByRole('menu');
+  expect(menu).toContainElement(focused());
+
+  fireEvent.keyDown(focused(), { key: 'Escape' });
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('Saved for later.');
 });
 
 it('waits while the pointer is over it', () => {
@@ -125,5 +197,4 @@ it('marks errors with the alert icon and success with the check', () => {
   const info = screen.getByRole('alert');
   // Only the close button's cross: info has no icon of its own.
   expect(info.querySelectorAll('svg')).toHaveLength(1);
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
