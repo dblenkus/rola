@@ -522,7 +522,7 @@ describe('photograph upload', () => {
         .map(([config]) => config)
         .filter((config) => config.method === 'post')
         .map((config) => [config.url, config.headers.get('Authorization')]),
-    ).toEqual([['/file', 'Token signed-in']]);
+    ).toEqual([['/file', 'Bearer signed-in']]);
     expect(window.location.pathname).toBe('/contest/1/upload');
     expect(screen.getByRole('textbox', { name: /first name/i })).toHaveValue(
       '',

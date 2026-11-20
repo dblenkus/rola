@@ -3008,7 +3008,5 @@ components:
       - postal_code
   securitySchemes:
     tokenAuth:
-      type: apiKey
-      in: header
-      name: Authorization
-      description: Use the value Token followed by a space and the login token.
+      type: http
+      scheme: bearer

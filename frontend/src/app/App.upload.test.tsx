@@ -128,7 +128,7 @@ describe('submissions edit list', () => {
     const adapter = serveApi({
       'GET /contest': () => page([contest]),
       'GET /submission': (config) =>
-        config.headers.get('Authorization') === 'Token next-account'
+        config.headers.get('Authorization') === 'Bearer next-account'
           ? page([{ ...submission(12, 'River'), author: mia }])
           : page([submission(11, 'Forest')]),
     });
@@ -149,6 +149,6 @@ describe('submissions edit list', () => {
         .map(([config]) => config)
         .filter((config) => config.url === '/submission')
         .map((config) => config.headers.get('Authorization')),
-    ).toEqual(['Token signed-in', 'Token next-account']);
+    ).toEqual(['Bearer signed-in', 'Bearer next-account']);
   });
 });

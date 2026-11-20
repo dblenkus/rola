@@ -1,5 +1,6 @@
 """User models."""
 
+import hashlib
 import logging
 import secrets
 import uuid
@@ -22,6 +23,14 @@ from django.utils.timezone import now
 from .settings import accounts_settings
 
 logger = logging.getLogger(__name__)
+
+# Every login token starts with this; the authenticator refuses any other string.
+TOKEN_PREFIX = "rola_st_"
+
+
+def token_digest(token: str) -> str:
+    """Return the SHA-256 hex digest that the database stores for a token."""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 class UserManager(BaseUserManager["User"]):
@@ -203,11 +212,18 @@ class TokenManager(models.Manager):
     """Manager for Token model."""
 
     def create_token(self, **kwargs):
-        """Issue a token using the configured expiry unless explicitly supplied."""
+        """Issue a token using the configured expiry unless explicitly supplied.
+
+        The token string is on the ``key`` attribute of the returned instance
+        and nowhere else: the database stores only its digest.
+        """
         if "expires" not in kwargs:
             kwargs["expires"] = now() + accounts_settings.TOKEN_EXPIRES_SECONDS
 
-        return self.create(**kwargs)
+        key = TOKEN_PREFIX + secrets.token_hex(32)
+        token = self.create(digest=token_digest(key), **kwargs)
+        token._key = key
+        return token
 
     def expire_for_user(self, user: User) -> None:
         """Expire all tokens for the given user."""
@@ -217,7 +233,11 @@ class TokenManager(models.Manager):
 class Token(models.Model):
     """Authorization token model."""
 
-    key = models.CharField(max_length=40, primary_key=True)
+    # Set by ``create_token`` on the instance it returns. A token loaded from
+    # the database keeps this default, because its string is not stored.
+    _key: str | None = None
+
+    digest = models.CharField(max_length=64)
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
@@ -229,11 +249,36 @@ class Token(models.Model):
 
     objects = TokenManager()
 
-    def save(self, *args, **kwargs):
-        """Generate the key if it doesn't exist and save the model."""
-        if not self.key:
-            self.key = secrets.token_hex(20)
-        return super().save(*args, **kwargs)
+    class Meta:
+        """Token's meta options."""
+
+        constraints = [
+            # A character column defaults to the empty string, which a row
+            # created without a digest would otherwise store.
+            models.CheckConstraint(
+                condition=~models.Q(digest=""), name="accounts_token_digest_not_empty"
+            ),
+            # A constraint rather than ``unique=True``, which on PostgreSQL
+            # also adds a ``varchar_pattern_ops`` index that no lookup uses:
+            # tokens are only found by an equal digest.
+            models.UniqueConstraint(
+                fields=["digest"], name="accounts_token_digest_unique"
+            ),
+        ]
+
+    @property
+    def key(self) -> str:
+        """Return the token string of a token that ``create_token`` issued.
+
+        :raises ValueError: If the token was loaded from the database, which
+            keeps only its digest. Not an ``AttributeError``, which DRF turns
+            into an omitted field of a read-only serializer field.
+        """
+        if self._key is None:
+            raise ValueError(
+                "A stored token has no key because only its digest is kept."
+            )
+        return self._key
 
     @property
     def is_expired(self):
@@ -241,5 +286,5 @@ class Token(models.Model):
         return self.expires <= now()
 
     def __str__(self):
-        """Describe the token without revealing its key."""
+        """Describe the token without revealing its key or digest."""
         return f"Token issued {self.created}"

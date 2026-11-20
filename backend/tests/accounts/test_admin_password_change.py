@@ -63,7 +63,7 @@ def token_client(user):
     """Authenticate API calls with a new login token of the given account."""
     client = APIClient()
     client.credentials(
-        HTTP_AUTHORIZATION=f"Token {Token.objects.create_token(user=user).key}"
+        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=user).key}"
     )
     return client
 

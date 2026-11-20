@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { blockStorage } from '../../test/api';
-import { loadToken, rejectToken, sessionChanged } from './token';
+import {
+  authorizationHeader,
+  loadToken,
+  rejectToken,
+  sessionChanged,
+} from './token';
 
 beforeEach(() => localStorage.clear());
 
@@ -51,6 +56,14 @@ describe('persisted authentication', () => {
   });
 });
 
+describe('authorization header', () => {
+  it('presents a login token as a Bearer credential', () => {
+    expect(authorizationHeader('rola_st_example')).toBe(
+      'Bearer rola_st_example',
+    );
+  });
+});
+
 describe('rejected sessions', () => {
   it('clears the session that sent the rejected request', () => {
     localStorage.setItem(
@@ -61,7 +74,7 @@ describe('rejected sessions', () => {
         email: 'ana@example.com',
       }),
     );
-    rejectToken('Token current');
+    rejectToken('Bearer current');
     expect(loadToken()).toBeNull();
   });
 
@@ -72,7 +85,7 @@ describe('rejected sessions', () => {
       email: 'ana@example.com',
     };
     localStorage.setItem('token', JSON.stringify(token));
-    rejectToken('Token old-session');
+    rejectToken('Bearer old-session');
     expect(loadToken()).toEqual(token);
   });
 });

@@ -67,11 +67,16 @@ export function loadToken(): Session | null {
   return null;
 }
 
+// The Authorization header value that presents a login token to the API.
+export function authorizationHeader(token: string): string {
+  return `Bearer ${token}`;
+}
+
 // Only the session that sent the rejected request is cleared, so a late 401
 // from before a new login cannot log the user out again.
 export function rejectToken(authorization: unknown): void {
   const current = loadToken();
-  if (current && authorization === `Token ${current.token}`) {
+  if (current && authorization === authorizationHeader(current.token)) {
     removeStored();
     window.dispatchEvent(new Event(sessionChanged));
   }

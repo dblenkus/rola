@@ -1,6 +1,10 @@
 import { DateTime } from 'luxon';
 
-import { loadToken, type Session } from '../../../shared/api/token';
+import {
+  authorizationHeader,
+  loadToken,
+  type Session,
+} from '../../../shared/api/token';
 import type { ContestModel } from '../models';
 import {
   createAuthor,
@@ -31,7 +35,7 @@ export default async function upload(
   // so none acts for an account that signs in meanwhile, in this tab or
   // another. The upload also stops once its account is no longer the one
   // signed in: a logout or another login ends its use of this browser.
-  const authorization = `Token ${session.token}`;
+  const authorization = authorizationHeader(session.token);
   const checkSession = () => {
     if (loadToken()?.email !== session.email) {
       throw new SessionChanged();
