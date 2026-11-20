@@ -123,5 +123,14 @@
   "ui_pagination": "Strani",
   "ui_pagination_previous": "Na prejšnjo stran",
   "ui_pagination_next": "Na naslednjo stran",
-  "ui_close": "Zapri"
+  "ui_close": "Zapri",
+  "shell_home": "Rola, domov",
+  "shell_main_navigation": "Glavna navigacija",
+  "shell_language": "Jezik",
+  "shell_not_found_title": "Strani ni mogoče najti",
+  "shell_not_found_text": "Stran, ki jo iščeš, ne obstaja ali je bila premaknjena.",
+  "shell_not_found_home": "Na domačo stran",
+  "shell_error_title": "Nekaj je šlo narobe",
+  "shell_error_text": "Te strani ni bilo mogoče prikazati. Naloži jo znova in poskusi še enkrat.",
+  "shell_error_reload": "Naloži znova"
 }

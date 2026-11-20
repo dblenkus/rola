@@ -1,0 +1,142 @@
+/*
+ * The app shell: the app bar, the main navigation (the tab bar on phones),
+ * the main landmark and the footer's place. The bar's own look comes from
+ * the rl-appbar classes in components.css; these rules place it per
+ * breakpoint.
+ */
+
+:root {
+  /* The phone's tab bar without the safe area: 56 px links under a 1 px
+     hairline. */
+  --shell-tabbar-height: 57px;
+}
+
+/* The column between the top of the page and its bottom. --shell-tabbar-space
+   is what the fixed tab bar covers at the bottom of the screen; a sticky
+   bottom bar on a page sits above it with `bottom: var(--shell-tabbar-space)`. */
+.shell {
+  --shell-tabbar-space: 0px;
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+/* Grows to push the footer to the bottom of a short page. */
+.shell-main {
+  flex: 1 0 auto;
+}
+
+/* Focus lands here after a navigation and from the skip link. main is not a
+   control, so a programmatic focus draws no ring. */
+.shell-main:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Compact and wide: the bar stays at the top while the page scrolls. Nothing
+   above the tab bar may set transform, filter or contain, which would make
+   it the fixed tab bar's containing block. */
+.shell-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-left: max(var(--ui-page-margin), var(--safe-left));
+  padding-right: max(var(--ui-page-margin), var(--safe-right));
+}
+
+.shell-account {
+  display: flex;
+  align-items: center;
+}
+
+.shell-account__email {
+  display: none;
+}
+
+/* compact: the bar's groups closer together, so the Slovenian labels fit at
+   640 px. */
+@media (width >= 40rem) and (width < 64rem) {
+  .shell-appbar {
+    gap: var(--space-4);
+  }
+
+  .shell-nav {
+    gap: var(--space-6);
+  }
+}
+
+/* wide */
+@media (width >= 64rem) {
+  .shell-account__email {
+    display: inline;
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* phone */
+@media (width < 40rem) {
+  .shell {
+    --shell-tabbar-space: calc(var(--shell-tabbar-height) + var(--safe-bottom));
+    /* Under the footer, so the tab bar covers neither it nor the page. */
+    padding-bottom: var(--shell-tabbar-space);
+  }
+
+  /* The tab bar is the fixed chrome here, so the bar scrolls away. */
+  .shell-appbar {
+    position: relative;
+    z-index: auto;
+    height: calc(56px + var(--safe-top));
+    gap: var(--space-4);
+    padding-top: var(--safe-top);
+    padding-left: max(var(--space-4), var(--safe-left));
+    padding-right: max(var(--space-4), var(--safe-right));
+  }
+
+  .shell-nav {
+    position: fixed;
+    z-index: 10;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 0 var(--safe-right) var(--safe-bottom) var(--safe-left);
+    border-top: var(--stroke-hairline) solid var(--line);
+    background: var(--paper);
+  }
+
+  /* Long Slovenian labels take two lines instead of being cut. The current
+     tab's bar runs along its top edge. */
+  .shell-nav__link {
+    justify-content: center;
+    min-height: calc(var(--shell-tabbar-height) - var(--stroke-hairline));
+    padding: 0 var(--space-2);
+    border-top: var(--stroke-strip) solid transparent;
+    border-bottom: 0;
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .shell-nav__link[aria-current='page'] {
+    border-top-color: var(--ink);
+  }
+
+  .shell-lang-option {
+    min-width: var(--touch-target);
+    height: var(--touch-target);
+  }
+
+  /* A task screen brings its own header and bottom bar. */
+  .shell--task {
+    --shell-tabbar-space: 0px;
+    padding-bottom: 0;
+  }
+
+  .shell--task .shell-appbar {
+    display: none;
+  }
+}

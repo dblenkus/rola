@@ -1,0 +1,10 @@
+/* margin-top: auto keeps it at the bottom of a flex column that fills the
+   screen, such as #root. */
+.ui-footer {
+  margin-top: auto;
+  padding-block: var(--space-6);
+  padding-left: max(var(--ui-page-margin), var(--safe-left));
+  padding-right: max(var(--ui-page-margin), var(--safe-right));
+  border-top: var(--stroke-hairline) solid var(--line);
+  color: var(--text-muted);
+}

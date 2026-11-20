@@ -1,5 +1,13 @@
 import { act, render } from '@testing-library/react';
+import { beforeAll } from 'vitest';
 import App from '../app/App';
+import { preloadPages } from '../app/routes';
+
+// The pages load lazily. Importing them once up front keeps a cold dynamic
+// import from outlasting the tests' findBy timeouts.
+beforeAll(async () => {
+  await preloadPages();
+});
 
 // Renders the whole app at the given location.
 export function open(path: string): void {

@@ -119,5 +119,14 @@
   "ui_pagination": "Pages",
   "ui_pagination_previous": "Go to previous page",
   "ui_pagination_next": "Go to next page",
-  "ui_close": "Close"
+  "ui_close": "Close",
+  "shell_home": "Rola, home",
+  "shell_main_navigation": "Main navigation",
+  "shell_language": "Language",
+  "shell_not_found_title": "Page not found",
+  "shell_not_found_text": "The page you are looking for does not exist or has moved.",
+  "shell_not_found_home": "Go to the home page",
+  "shell_error_title": "Something went wrong",
+  "shell_error_text": "This page could not be shown. Reload it to try again.",
+  "shell_error_reload": "Reload"
 }

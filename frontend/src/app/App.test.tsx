@@ -78,9 +78,10 @@ describe('page layout', () => {
     signIn();
     open('/judge/contest/1/theme/2/rate?submission=11');
     const image = await screen.findByRole('img', { name: 'First photograph' });
-    const main = image.closest('.MuiContainer-root');
-    expect(main).not.toBeNull();
-    expect(main).not.toHaveClass('MuiContainer-maxWidthLg');
+    const main = screen.getByRole('main');
+    expect(main).toContainElement(image);
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
     // An absolutely positioned rater takes no space, so the footer that
     // follows the container is drawn over it.
     const positions: string[] = [];
@@ -95,29 +96,30 @@ describe('page layout', () => {
     expect(positions).not.toContain('fixed');
   });
 
-  it('keeps other pages in the lg container', async () => {
+  it('keeps other pages between the header and the footer', async () => {
     serveApi({ 'GET /contest': () => page([contest]) });
     open('/contests');
     const heading = await screen.findByRole('heading', { name: contest.title });
-    expect(heading.closest('.MuiContainer-root')).toHaveClass(
-      'MuiContainer-maxWidthLg',
-    );
+    expect(screen.getByRole('main')).toContainElement(heading);
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
   // That no page scrolls sideways on a 360 or 390 pixel wide phone is
   // checked in a browser.
-  it('wraps the header and keeps its button labels on one line', async () => {
+  it('puts the main navigation in the header and marks the current page', async () => {
     serveApi({ 'GET /contest': () => page([contest]) });
     open('/contests');
     await screen.findByRole('heading', { name: contest.title });
     const header = screen.getByRole('banner');
-    expect(header.querySelector('.MuiToolbar-root')).toHaveStyle({
-      flexWrap: 'wrap',
+    const nav = within(header).getByRole('navigation', {
+      name: 'Main navigation',
     });
     for (const name of ['Active contests', 'Edit submissions', 'Results']) {
-      expect(within(header).getByRole('link', { name })).toHaveStyle({
-        whiteSpace: 'nowrap',
-      });
+      expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
     }
+    expect(
+      within(nav).getByRole('link', { name: 'Active contests' }),
+    ).toHaveAttribute('aria-current', 'page');
   });
 });
