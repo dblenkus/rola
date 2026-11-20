@@ -1,0 +1,55 @@
+/* The judge's bar: 56 px below the wide layout, 64 px in it (the vendored
+   rl-appbar height), under the top safe area. */
+.judge-bar {
+  flex: none;
+  gap: var(--space-3);
+  height: calc(56px + var(--safe-top));
+  padding: var(--safe-top) var(--space-4) 0;
+}
+
+/* The 44 × 44 px back target, its chevron on the bar's margin. */
+.judge-bar__back {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin-left: -10px;
+  color: var(--on-viewing);
+}
+
+.judge-bar__back:hover {
+  color: var(--on-viewing-muted);
+}
+
+.judge-bar__back > svg {
+  display: block;
+}
+
+.judge-bar__context {
+  flex: 0 1 auto;
+}
+
+/* A long contest or theme name keeps to one line in the fixed bar. */
+.judge-bar__line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.judge-bar__wide {
+  display: none;
+}
+
+@media (width >= 64rem) and (height >= 37.5rem) {
+  .judge-bar {
+    gap: var(--space-6);
+    height: calc(var(--space-16) + var(--safe-top));
+    padding-inline: var(--space-6);
+  }
+
+  .judge-bar__wide {
+    display: flex;
+  }
+}

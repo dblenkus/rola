@@ -116,8 +116,10 @@ it('opens the rater on the clicked photograph only once it has loaded', async ()
   answer(page(photographs));
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
   await user.keyboard('5');
-  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
-  expect(saves).toEqual([{ submission: 11, rating: 5 }]);
+  await waitFor(() => expect(saves).toEqual([{ submission: 11, rating: 5 }]));
+  // A score stays on its photograph; the judge moves on with Next.
+  expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
+  expect(screen.queryByRole('img', { name: 'Second' })).not.toBeInTheDocument();
 });
 
 it('shows no ratings error from a theme the gallery has left', async () => {

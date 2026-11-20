@@ -33,6 +33,10 @@ export function getRatingsForTheme(
   return apiClient.get('/rating', { params: { theme: themeId } });
 }
 
+export function deleteRating(ratingId: number): AxiosPromise<void> {
+  return apiClient.delete(`/rating/${ratingId}`);
+}
+
 export function updateRatingForSubmission(
   submissionId: number,
   rating: number,

@@ -7,6 +7,7 @@
     "src/vite-env.d.ts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
+    "src/**/*.testutils.tsx",
     "src/test"
   ],
   "exclude": []

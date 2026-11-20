@@ -1,0 +1,25 @@
+.judge-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* Below the wide layout the view shows no key hints, key caps or legend;
+   the switch stays for a keyboard attached to a small screen. */
+.judge-legend__keys {
+  display: none;
+}
+
+/* A touch screen without a pointer that hovers has no keyboard to switch. */
+@media (pointer: coarse) and (hover: none) {
+  .judge-legend__toggle {
+    display: none;
+  }
+}
+
+@media (width >= 64rem) and (height >= 37.5rem) {
+  .judge-legend__keys {
+    display: block;
+  }
+}
