@@ -7,7 +7,7 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from rola.accounts.models import Location, Token, User
+from rola.accounts.models import Location, Token, User, token_digest
 from rola.accounts.utils.signing import (
     generate_activation_token,
     generate_reset_token,
@@ -87,7 +87,8 @@ def test_login_and_recovery_ignore_email_case(
         reverse("login"), {"email": email, "password": "Original!73"}
     )
     assert response.status_code == 200
-    assert Token.objects.get(key=response.data["token"]).user_id == account.pk
+    issued = Token.objects.get(digest=token_digest(response.data["token"]))
+    assert issued.user_id == account.pk
 
     with django_capture_on_commit_callbacks(execute=True):
         response = client.post(reverse("user-request-password-reset"), {"email": email})

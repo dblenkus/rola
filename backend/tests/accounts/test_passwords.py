@@ -19,7 +19,7 @@ from rola.accounts.api.serializers import (
     PasswordResetSerializer,
 )
 from rola.accounts.api.views import UserViewSet
-from rola.accounts.models import Token, User
+from rola.accounts.models import Token, User, token_digest
 from rola.accounts.utils.signing import (
     generate_reset_token,
 )
@@ -99,7 +99,7 @@ def test_profile_update_waiting_on_a_password_change_keeps_it(flow):
     )
     client = APIClient()
     client.credentials(
-        HTTP_AUTHORIZATION=f"Token {Token.objects.create_token(user=user).key}"
+        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=user).key}"
     )
     backend_pids = queue.SimpleQueue()
 
@@ -171,7 +171,8 @@ def test_login_upgrades_an_outdated_password_hash(account, outdated_hash):
     )
 
     assert response.status_code == 200
-    assert Token.objects.get(key=response.data["token"]).user_id == account.pk
+    issued = Token.objects.get(digest=token_digest(response.data["token"]))
+    assert issued.user_id == account.pk
     account.refresh_from_db()
     assert account.password.startswith("scrypt$")
     assert account.check_password("Original!73")
@@ -219,7 +220,8 @@ def test_overlapping_logins_both_upgrade_an_outdated_hash(account, outdated_hash
 
     assert [other.status_code for other in other_logins] == [200]
     assert response.status_code == 200
-    assert Token.objects.get(key=response.data["token"]).user_id == account.pk
+    issued = Token.objects.get(digest=token_digest(response.data["token"]))
+    assert issued.user_id == account.pk
     account.refresh_from_db()
     assert account.password.startswith("scrypt$")
     assert account.check_password("Original!73")

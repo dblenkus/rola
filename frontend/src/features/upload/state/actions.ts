@@ -9,7 +9,11 @@ import {
 } from '../../notifications';
 
 import i18n from '../../../app/i18n/config';
-import { loadToken, rejectToken } from '../../../shared/api/token';
+import {
+  authorizationHeader,
+  loadToken,
+  rejectToken,
+} from '../../../shared/api/token';
 import imageReader from '../utils/imageReader';
 import upload, { SessionChanged } from '../utils/upload';
 import validate from '../utils/validate';
@@ -60,7 +64,7 @@ export const uploadSubmit =
       return false;
     }
     if (Date.parse(session.expires) - Date.now() < uploadSessionMargin) {
-      rejectToken(`Token ${session.token}`);
+      rejectToken(authorizationHeader(session.token));
       dispatch(
         addNotificationWarning(
           'Your session is about to expire. Please log in again.',

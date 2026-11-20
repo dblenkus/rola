@@ -17,12 +17,9 @@ def paths(schema):
     return schema["paths"]
 
 
-def test_token_authentication_is_described_as_an_authorization_header(schema):
-    assert schema["components"]["securitySchemes"]["tokenAuth"] == {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization",
-        "description": "Use the value Token followed by a space and the login token.",
+def test_token_authentication_is_described_as_a_bearer_token(schema):
+    assert schema["components"]["securitySchemes"] == {
+        "tokenAuth": {"type": "http", "scheme": "bearer"}
     }
 
 

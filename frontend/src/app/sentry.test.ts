@@ -77,11 +77,11 @@ it('sends error events without credentials or URL tokens', async () => {
   window.history.pushState(null, '', '/judge/contest/1?token=history-secret');
   window.history.pushState(null, '', '/password-reset?token=reset-secret');
   const error = new AxiosError('Request failed', 'ERR_BAD_RESPONSE', {
-    headers: new AxiosHeaders({ Authorization: 'Token credential-secret' }),
+    headers: new AxiosHeaders({ Authorization: 'Bearer credential-secret' }),
   });
 
   await fetch(`${window.location.origin}/api/v1/contest`, {
-    headers: { Authorization: 'Token credential-secret' },
+    headers: { Authorization: 'Bearer credential-secret' },
   });
   Sentry.captureException(error);
   await Sentry.flush(2000);

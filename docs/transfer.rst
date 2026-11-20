@@ -18,8 +18,8 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The new schema has the same columns, with six differences that decide how
-the data is copied:
+The copied tables have the same columns in the new schema, with six
+differences that decide how the data is copied:
 
 * The tables have new names, because the apps have new labels (see `Old and
   new names`_). The procedure renames the tables in ``rola_old``, the scratch
@@ -63,9 +63,12 @@ through their natural keys (app label, model and codename) instead, after
 the old app labels are changed to the new ones in ``rola_old``.
 
 Login tokens, Django admin sessions and the admin log are not copied, so
-everyone logs in again after the transfer. Email addresses are stored in
-lowercase, so two accounts whose addresses differ only in case must be
-resolved by hand before the transfer.
+everyone logs in again after the transfer. ``accounts_token`` also has
+different columns from the old ``drf_user_token``: it stores the SHA-256
+digest of each token under a numeric key, where the old table stored the
+token itself as the key, so the old rows would not fit it. Email addresses
+are stored in lowercase, so two accounts whose addresses differ only in case
+must be resolved by hand before the transfer.
 
 Rehearse the whole procedure before the real transfer, on copies of the old
 database and photographs, with buckets that the real transfer does not use.
@@ -77,10 +80,10 @@ Before the real transfer, reset a new stack that a rehearsal filled, as
 Old and new names
 =================
 
-Every table keeps its columns, and its name takes the new app label as
-prefix; the many-to-many tables follow their model's table. A table that is
-not listed here, such as ``auth_group`` or ``django_session``, keeps its
-name:
+Every table's name takes the new app label as prefix, and every table except
+``accounts_token``, which is not copied, keeps its columns; the many-to-many
+tables follow their model's table. A table that is not listed here, such as
+``auth_group`` or ``django_session``, keeps its name:
 
 .. list-table::
    :header-rows: 1

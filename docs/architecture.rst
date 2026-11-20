@@ -56,6 +56,13 @@ viewset that ``entries`` extends and lists the login path, which the project
 routes before the router's paths.
 The tests are in ``backend/tests``, one directory per app.
 
+The API under ``/api/v1`` accepts one credential, the login token, in the
+header ``Authorization: Bearer <token>``. A login answers with the token and
+the time it expires, two days later. The token is ``rola_st_`` followed by 64
+hexadecimal digits. The ``accounts_token`` table stores its SHA-256 digest
+instead of the token, so a token cannot be read from the database or from a
+copy of it.
+
 PostgreSQL holds all state. The ``rola_cache`` table, created by
 ``createcachetable``, keeps the rate-limit counters, so every Gunicorn worker
 sees the same counts. Sessions, which only the Django admin uses, are stored
@@ -67,10 +74,11 @@ Frontend
 
 The frontend in ``frontend/`` is a client-rendered React application built
 with Vite. It calls the API under ``/api/v1`` on its own origin and
-authenticates with a token that it keeps in the browser's local storage. The
-backend therefore sends no CORS headers: in production nginx serves the
-application and the API from one origin, and in development the Vite
-development server forwards the backend paths to Django.
+authenticates with the login token, which it keeps in the browser's local
+storage and sends as ``Authorization: Bearer <token>``. The backend therefore
+sends no CORS headers: in production nginx serves the application and the API
+from one origin, and in development the Vite development server forwards the
+backend paths to Django.
 
 ``frontend/src`` is organized by feature:
 

@@ -22,7 +22,7 @@ def client(account):
     """Authenticate API calls as the fixture account."""
     client = APIClient()
     client.credentials(
-        HTTP_AUTHORIZATION=f"Token {Token.objects.create_token(user=account).key}"
+        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=account).key}"
     )
     return client
 

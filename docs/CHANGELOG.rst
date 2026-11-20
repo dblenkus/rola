@@ -135,7 +135,16 @@ API changes
   submission, read through the configured storage.
 * The API sends no CORS headers; the frontend calls it from the same origin.
 * ``/api-auth/``, Django REST framework's session login, is removed. The API
-  accepts only token authentication.
+  accepts only the login token.
+* The login token is sent as ``Authorization: Bearer <token>``.
+  ``Authorization: Token <token>`` is no longer recognised: a request with it
+  is handled as anonymous. A 401 carries ``WWW-Authenticate: Bearer``.
+* A login token is ``rola_st_`` followed by 64 hexadecimal digits instead of
+  40 hexadecimal digits, and a credential without that prefix answers 401
+  "Invalid token".
+* The database stores the SHA-256 digest of a login token instead of the
+  token, so a token cannot be read from the ``accounts_token`` table or from
+  a copy of the database.
 * The API answers JSON only. Django REST framework's browsable HTML pages,
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
@@ -143,7 +152,8 @@ API changes
 * ``?current=`` on the account list is described as a presence flag: any
   non-empty value limits the list to the caller's own account.
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
-  backend's integer bounds; the backend serves no schema at runtime.
+  backend's integer bounds; the backend serves no schema at runtime. Its
+  security scheme ``tokenAuth`` is the HTTP ``bearer`` scheme.
 
 Deployment changes
 ------------------

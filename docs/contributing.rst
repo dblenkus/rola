@@ -214,9 +214,12 @@ Each app has a single migration, ``0001_schema``, and the production data is
 transferred into a database created from these migrations
 (:doc:`transfer`). Until that first production deployment, a model change
 regenerates its app's ``0001_schema`` in the same commit instead of adding a
-second migration. Once a deployed database has applied ``0001_schema``,
-regenerating it would break that database: add ordinary migrations from then
-on. An upgrade applies them with ``docker compose run --rm migrate`` while
+second migration. A database that applied the previous ``0001_schema`` does
+not change when the file is regenerated, so recreate the development
+database after such a change, for example with ``docker compose down -v``,
+which deletes its volumes. Once a deployed database has applied
+``0001_schema``, regenerating it would break that database: add ordinary
+migrations from then on. An upgrade applies them with ``docker compose run --rm migrate`` while
 the previous release still serves requests ("Upgrades" in
 :doc:`deployment`), so each migration must work with both releases. Drop or
 rename a column only in a release after the one that stopped using it, and

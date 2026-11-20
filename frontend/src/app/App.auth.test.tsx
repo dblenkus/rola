@@ -47,7 +47,7 @@ describe('sessions', () => {
     expect(
       await screen.findByRole('heading', { name: contest.title }),
     ).toBeInTheDocument();
-    expect(sent).toEqual(['Token revoked', undefined]);
+    expect(sent).toEqual(['Bearer revoked', undefined]);
     expect(localStorage.getItem('token')).toBeNull();
     expect(window.location.pathname).toBe('/contests');
   });

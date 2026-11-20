@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-import { loadToken, rejectToken } from './token';
+import { authorizationHeader, loadToken, rejectToken } from './token';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -34,7 +34,7 @@ apiClient.interceptors.request.use((config) => {
   if (!config.headers.has('Authorization')) {
     const token = loadToken();
     if (token) {
-      config.headers.set('Authorization', `Token ${token.token}`);
+      config.headers.set('Authorization', authorizationHeader(token.token));
     }
   }
   return config;
