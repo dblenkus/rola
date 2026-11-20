@@ -1,0 +1,16 @@
+/*
+ * The cascade layers, lowest first. main.tsx imports this file before any
+ * other CSS, so the order is set before a rule uses a layer.
+ *
+ * - base: element defaults and resets (app.css).
+ * - design-system: the generated tokens.css and the vendored components.css,
+ *   in that order, unchanged.
+ *
+ * Every other rule of the app is unlayered and so beats both layers,
+ * whatever its specificity and wherever the build puts its file: the
+ * production build links the CSS of shared chunks before the entry's.
+ */
+@layer base, design-system;
+
+@import url('./tokens.css') layer(design-system);
+@import url('./components.css') layer(design-system);
