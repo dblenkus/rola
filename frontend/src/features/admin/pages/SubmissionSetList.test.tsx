@@ -61,7 +61,7 @@ it('titles the page with the contest', async () => {
     await screen.findByRole('heading', { level: 1, name: contest.title }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe(`${contest.title} · Rola`);
+  await waitFor(() => expect(document.title).toBe(`${contest.title} · Rola`));
   expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 

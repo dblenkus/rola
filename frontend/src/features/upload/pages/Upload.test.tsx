@@ -1,8 +1,7 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
-import App from '../../../app/App';
 import store from '../../../app/store';
 import { deleteMessage } from '../../notifications';
 import { uploadReset } from '../state/actions';
@@ -14,6 +13,7 @@ import {
   signIn,
   withStatus,
 } from '../../../test/api';
+import { open } from '../../../test/app';
 import { author, contest } from '../../../test/fixtures';
 import type { Contest, Theme } from '../../../shared/api/types';
 
@@ -84,11 +84,6 @@ async function fillSubmissions(user: UserEvent): Promise<void> {
   for (const [index, title] of titles.entries()) {
     await user.type(title, `Photograph ${index}`);
   }
-}
-
-function open(path: string): void {
-  window.history.replaceState(null, '', path);
-  render(<App />);
 }
 
 // A response settles through promise callbacks only, so one macrotask later

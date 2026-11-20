@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 import '../../../app/i18n/config';
@@ -46,7 +46,7 @@ it('heads the page with one title and names the document after it', async () => 
     await screen.findByRole('heading', { level: 1, name: 'Judging' }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Judging · Rola');
+  await waitFor(() => expect(document.title).toBe('Judging · Rola'));
   expect(
     screen.getByRole('heading', { level: 2, name: 'Autumn photographs' }),
   ).toBeInTheDocument();

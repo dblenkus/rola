@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
@@ -28,7 +28,7 @@ it('reports an activated account and offers the way to login', async () => {
     }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Acount activation · Rola');
+  await waitFor(() => expect(document.title).toBe('Acount activation · Rola'));
   expect(container.querySelector('[class*="Mui"]')).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Go to Login' }));
   expect(await screen.findByText('Login page')).toBeInTheDocument();

@@ -80,7 +80,7 @@ describe('upload page header', () => {
     });
     expect(heading).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-    expect(document.title).toBe(`${contest.title} · Rola`);
+    await waitFor(() => expect(document.title).toBe(`${contest.title} · Rola`));
     expect(
       screen.getByRole('link', { name: 'Back to contest' }),
     ).toHaveAttribute('href', '/contest/1/details');
@@ -186,6 +186,12 @@ describe('entry row', () => {
       throw new Error('The form has fewer than two photograph inputs');
     }
     await user.upload(first, photograph('harbour.jpg'));
+    // The first photograph decodes asynchronously; it must have decoded
+    // before the next decode size applies.
+    expect(
+      await within(row(0)).findByRole('img', { name: 'Photo 01, landscape' }),
+    ).toBeInTheDocument();
+    expect(within(row(0)).getByText('3000 × 2000 px')).toBeInTheDocument();
     decodedSize = { width: 2000, height: 3000 };
     await user.upload(second, photograph('tower.jpg'));
 

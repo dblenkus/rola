@@ -4,10 +4,12 @@ import App from '../app/App';
 import { preloadPages } from '../app/routes';
 
 // The pages load lazily. Importing them once up front keeps a cold dynamic
-// import from outlasting the tests' findBy timeouts.
+// import from outlasting the tests' findBy timeouts. The cold import of every
+// page is the slow part of a file's setup (see routes.test.tsx), so it has a
+// longer timeout than the default 10 s.
 beforeAll(async () => {
   await preloadPages();
-});
+}, 30_000);
 
 // Renders the whole app at the given location.
 export function open(path: string): void {

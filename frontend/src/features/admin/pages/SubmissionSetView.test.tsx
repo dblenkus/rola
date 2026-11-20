@@ -68,7 +68,7 @@ it('titles the page with the author and lists the details', async () => {
 
   await screen.findByRole('heading', { level: 1, name: 'Ana Novak' });
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Ana Novak · Rola');
+  await waitFor(() => expect(document.title).toBe('Ana Novak · Rola'));
   const details = screen.getAllByRole('definition')[0]?.closest('dl');
   if (!(details instanceof HTMLElement)) {
     throw new Error('The page has no definition list');
