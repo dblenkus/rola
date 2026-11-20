@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { connect, ConnectedProps } from 'react-redux';
-
-import { Alert, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import { AppState, AppDispatch } from '../../../app/store';
 
@@ -12,11 +11,15 @@ import {
   type InitializeResult,
 } from '../state/actions';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
+import ScoringProgress from '../components/ScoringProgress';
 import ThemeGallery from '../components/ThemeGallery';
 import { contentUnavailable, requestError } from '../../../shared/api/errors';
 import { Rating } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
 import { getRatingsForTheme } from '../api';
+import './ViewTheme.css';
 
 interface RouteMatchParams {
   contestId: string;
@@ -33,8 +36,9 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   // Until this view's own initialization has stored its theme, the store
   // holds the theme opened before, or this one as it was.
   const [loaded, setLoaded] = useState(false);
-  const [ratings, setRatings] = useState<Rating[]>([]);
-  const [redirect, setRedirect] = useState<string | null>(null);
+  // Until they arrive, no photo is shown as unscored.
+  const [ratings, setRatings] = useState<Rating[] | null>(null);
+  const { t } = useTranslation();
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
@@ -62,31 +66,41 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
     fetchRatings().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
-  if (redirect) return <Navigate to={redirect} />;
+  const raterLink = (submissionId: number): string =>
+    `/judge/contest/${contestId}/theme/${themeId}/rate?submission=${submissionId}`;
 
-  const handleClick = (submissionId: number): void => {
-    setSubmission(submissionId);
-    setRedirect(
-      `/judge/contest/${contestId}/theme/${themeId}/rate?submission=${submissionId}`,
-    );
-  };
+  if (error) return <Message severity="error">{error}</Message>;
 
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!loaded || !submissions || !theme || !ratings) return <LoadingProgress />;
 
-  if (!loaded || !submissions) return <LoadingProgress />;
+  const scored = submissions.filter(({ id }) =>
+    ratings.some((rating) => rating.submission === id),
+  ).length;
 
   return (
-    <>
-      <Typography variant="h3" align="center" sx={{ marginBottom: 2 }}>
-        {theme?.title}
-      </Typography>
-      <ThemeGallery
-        submissions={submissions}
-        isSeries={theme?.is_series || false}
-        ratings={ratings}
-        handleClick={handleClick}
-      />
-    </>
+    <Page title={theme.title}>
+      <div className="jury-view__progress">
+        <ScoringProgress
+          scored={scored}
+          total={submissions.length}
+          caption={t('jury_scored')}
+          label={t('jury_progress', {
+            scored,
+            total: submissions.length,
+          })}
+        />
+      </div>
+      {submissions.length ? (
+        <ThemeGallery
+          submissions={submissions}
+          ratings={ratings}
+          raterLink={raterLink}
+          onOpen={setSubmission}
+        />
+      ) : (
+        <p className="body jury-view__empty">{t('jury_no_submissions')}</p>
+      )}
+    </Page>
   );
 };
 

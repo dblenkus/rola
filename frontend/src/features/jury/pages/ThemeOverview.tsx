@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
+import Thumbnail from '../../../shared/ui/Thumbnail';
+import ThumbnailGrid from '../../../shared/ui/ThumbnailGrid';
 import { requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
 import { getResultsOverview } from '../../results';
+import './ThemeOverview.css';
 
 interface RouteMatchParams {
   contestId: string;
@@ -32,57 +36,60 @@ const ThemeOverview: React.FC = () => {
     fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error) return <Message severity="error">{error}</Message>;
   if (!submissions) return <LoadingProgress />;
-  // The overview uses the public results, which list nothing until the
-  // contest's results are published.
-  if (!submissions.length)
-    return <Typography>{t('no_published_results')}</Typography>;
 
   return (
-    <Grid container>
-      {submissions.map((submission) => {
-        return (
-          <Grid key={submission.id} size={{ xs: 12 }}>
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {(submission.files ?? []).map((file) => (
-                <img
-                  key={file.id}
-                  style={{ maxWidth: '30%', margin: '5px' }}
-                  src={file.file}
-                  alt={submission.title ?? ''}
-                  onClick={() => window.open(file.file)}
-                />
-              ))}
-            </div>
-            <Typography align="center">
-              <b>{submission.title}</b>
-              <br />
-              {submission.description && (
-                <>
-                  {submission.description}
-                  <br />
-                </>
-              )}
-              {t('overview_details', {
-                points: submission.rating,
-                author: submission.author.id,
-                submission: submission.id,
-              })}
-              <br />
-              <br />
-            </Typography>
-          </Grid>
-        );
-      })}
-    </Grid>
+    <Page title={t('jury_overview_title')}>
+      {/* The overview uses the public results, which list nothing until the
+          contest's results are published. */}
+      {submissions.length ? (
+        <ol className="jury-overview">
+          {submissions.map((submission) => (
+            <li key={submission.id} className="jury-overview__entry">
+              <figure className="jury-overview__figure">
+                <ThumbnailGrid layout="page">
+                  {(submission.files ?? []).map((file) => (
+                    <a
+                      key={file.id}
+                      className="jury-overview__photo"
+                      href={file.file}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Thumbnail
+                        fit="contain"
+                        src={file.thumbnail || file.file}
+                        alt={submission.title ?? ''}
+                      />
+                    </a>
+                  ))}
+                </ThumbnailGrid>
+                <figcaption className="jury-overview__caption">
+                  <p className="jury-overview__title body">
+                    {submission.title}
+                  </p>
+                  {submission.description && (
+                    <p className="jury-overview__description body">
+                      {submission.description}
+                    </p>
+                  )}
+                  <p className="jury-overview__details small">
+                    {t('overview_details', {
+                      points: submission.rating,
+                      author: submission.author.id,
+                      submission: submission.id,
+                    })}
+                  </p>
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="body jury-overview__empty">{t('no_published_results')}</p>
+      )}
+    </Page>
   );
 };
 

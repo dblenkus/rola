@@ -1,0 +1,55 @@
+.jury-overview {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each entry under a hairline, its photographs over its label. */
+.jury-overview__entry {
+  padding-block: var(--space-6);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+}
+
+.jury-overview__entry:first-child {
+  padding-top: 0;
+}
+
+.jury-overview__figure {
+  margin: 0;
+}
+
+.jury-overview__photo {
+  display: block;
+  min-width: 0;
+}
+
+.jury-overview__caption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--text);
+}
+
+.jury-overview__caption p {
+  margin: 0;
+}
+
+.jury-overview__title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.jury-overview__description {
+  overflow-wrap: anywhere;
+}
+
+.jury-overview__details {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.jury-overview__empty {
+  margin: 0;
+  color: var(--text);
+}

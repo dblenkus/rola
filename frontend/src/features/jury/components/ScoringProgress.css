@@ -1,0 +1,21 @@
+.jury-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.jury-progress__figure {
+  margin: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The figure carries the weight; the word before it is muted. */
+.jury-progress__caption {
+  color: var(--text-muted);
+}
+
+.jury-progress__count {
+  font-weight: 500;
+}
