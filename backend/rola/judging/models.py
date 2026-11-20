@@ -12,6 +12,19 @@ from rola.entries.models import Author, Submission
 class Judge(BaseModel):
     """Model for assigning judges to contests."""
 
+    class Meta:
+        """Judge Meta options."""
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["contest", "judge"],
+                name="judging_unique_contest_judge",
+                violation_error_message=(
+                    "This account is already a judge of this contest."
+                ),
+            ),
+        ]
+
     contest = models.ForeignKey(
         Contest, on_delete=models.CASCADE, related_name="judges"
     )

@@ -238,7 +238,8 @@ database after such a change, for example with ``docker compose down -v``,
 which deletes its volumes. Recreate any other non-production database that
 applied the previous ``0001_schema``, such as a staging stack's, as well:
 ``migrate`` reports nothing to apply and the readiness check passes, but
-queries fail on the missing columns. Once a deployed database has applied
+the database keeps its old schema: queries fail on a renamed column, and a
+new constraint is missing. Once a deployed database has applied
 ``0001_schema``, regenerating it would break that database: add ordinary
 migrations from then on. An upgrade applies them with
 ``docker compose run --rm migrate`` while the previous release still serves
