@@ -13,7 +13,7 @@ const entry: ResultsSubmission = {
   author: { ...author, reward: null, reward_theme: null, country: null },
   files: [21, 22].flatMap((id) => submission(id, '').files),
   accepted: true,
-  rating: 40,
+  score: 40,
   reward_kind: null,
   reward_label: null,
 };
@@ -32,7 +32,7 @@ function renderOverview() {
 }
 
 it('heads the overview with one title and names the document after it', async () => {
-  serveApi({ 'GET /results/submission': () => page([entry]) });
+  serveApi({ 'GET /results/submissions': () => page([entry]) });
   renderOverview();
 
   expect(
@@ -43,7 +43,7 @@ it('heads the overview with one title and names the document after it', async ()
 });
 
 it('links each photograph to its full file in a new tab', async () => {
-  serveApi({ 'GET /results/submission': () => page([entry]) });
+  serveApi({ 'GET /results/submissions': () => page([entry]) });
   renderOverview();
 
   const [figure] = await screen.findAllByRole('figure');

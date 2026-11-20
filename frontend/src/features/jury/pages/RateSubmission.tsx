@@ -48,13 +48,6 @@ interface RouteMatchParams {
   themeId: string;
 }
 
-// A rating the judge has given: its id, which clearing it needs, and its
-// score.
-interface StoredRating {
-  id: number;
-  value: number;
-}
-
 // What the status region last said, by what the judge did. A move is put in
 // words once the new photograph's own rating has loaded or failed to.
 type Announced =
@@ -63,13 +56,13 @@ type Announced =
 // The theme's ratings as loaded, with what the view learned since in their
 // place.
 function withLearned(
-  ratings: ReadonlyMap<number, StoredRating>,
-  learned: ReadonlyMap<number, StoredRating | null>,
-): ReadonlyMap<number, StoredRating> {
+  ratings: ReadonlyMap<number, number>,
+  learned: ReadonlyMap<number, number | null>,
+): ReadonlyMap<number, number> {
   const updated = new Map(ratings);
   for (const [submissionId, saved] of learned) {
-    if (saved) updated.set(submissionId, saved);
-    else updated.delete(submissionId);
+    if (saved === null) updated.delete(submissionId);
+    else updated.set(submissionId, saved);
   }
   return updated;
 }
@@ -97,11 +90,12 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     message: string;
   } | null>(null);
   // Kept with its submission, so another submission never shows it. `saved`
-  // is null while the submission has no rating. A write that finishes after
-  // the judge moved on still updates it, so a return shows the result.
+  // is the score, null while the submission has no rating. A write that
+  // finishes after the judge moved on still updates it, so a return shows the
+  // result.
   const [rating, setRating] = useState<{
     submissionId: number;
-    saved: StoredRating | null;
+    saved: number | null;
   } | null>(null);
   // A failed save or clear keeps the rater on screen so the judge can try
   // again.
@@ -121,14 +115,14 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   // works without them, leaving out the count and the frames' scores.
   const [themeRatings, setThemeRatings] = useState<ReadonlyMap<
     number,
-    StoredRating
+    number
   > | null>(null);
   // Each submission's rating as this view's own reads and writes found it,
   // null for none. The theme's ratings are requested before any of them, so
   // these replace what that request answers, whenever it answers.
-  const [learned, setLearned] = useState<
-    ReadonlyMap<number, StoredRating | null>
-  >(new Map());
+  const [learned, setLearned] = useState<ReadonlyMap<number, number | null>>(
+    new Map(),
+  );
   const [announced, setAnnounced] = useState<{
     count: number;
     event: Announced;
@@ -196,14 +190,14 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   // Sends a save or a clear for a submission, whose result `send` gives.
   const write = async (
     writtenId: number,
-    send: () => Promise<StoredRating | null>,
+    send: () => Promise<number | null>,
     done: Announced,
   ): Promise<void> => {
     writing.current.add(writtenId);
     countWriteEvent(writtenId);
     setBusyIds((current) => new Set(current).add(writtenId));
     setSaveError(null);
-    let saved: StoredRating | null;
+    let saved: number | null;
     try {
       saved = await send();
     } catch (error) {
@@ -245,23 +239,25 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     void write(
       ratedId,
       async () => {
-        const { data } = await updateRatingForSubmission(ratedId, newRating);
-        return { id: data.id, value: newRating };
+        await updateRatingForSubmission(ratedId, newRating);
+        return newRating;
       },
       { kind: 'score', value: newRating },
     );
   };
 
-  // Clearing deletes the rating by its id, from the rating loaded for the
-  // submission or the one a save just returned.
   const clearRating = () => {
-    if (!submission || !shownRating || writing.current.has(submission.id))
+    if (
+      !submission ||
+      shownRating === null ||
+      writing.current.has(submission.id)
+    )
       return;
-    const ratingId = shownRating.id;
+    const clearedId = submission.id;
     void write(
-      submission.id,
+      clearedId,
       async () => {
-        await deleteRating(ratingId);
+        await deleteRating(clearedId);
         return null;
       },
       { kind: 'cleared' },
@@ -300,12 +296,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       .then((ratings) => {
         if (!active) return;
         setThemeRatings(
-          new Map(
-            ratings.map((stored) => [
-              stored.submission,
-              { id: stored.id, value: stored.rating },
-            ]),
-          ),
+          new Map(ratings.map((stored) => [stored.submission, stored.rating])),
         );
       })
       .catch(() => {
@@ -388,7 +379,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       .then(({ data: ratings }) => {
         if (!current()) return;
         const [found] = ratings.results;
-        const saved = found ? { id: found.id, value: found.rating } : null;
+        const saved = found ? found.rating : null;
         setRating({ submissionId: currentId, saved });
         setLearned((learned) => new Map(learned).set(currentId, saved));
         setLoadError(null);
@@ -461,13 +452,10 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   const title = submission.title || t('judge_untitled');
   const position = currentIndex + 1;
   const total = submissions.length;
-  const score = shownRating?.value ?? null;
+  const score = shownRating;
   const knownRatings = themeRatings && withLearned(themeRatings, learned);
   const scored = knownRatings
     ? submissions.filter(({ id }) => knownRatings.has(id)).length
-    : null;
-  const frameScores = knownRatings
-    ? new Map([...knownRatings].map(([id, stored]) => [id, stored.value]))
     : null;
 
   const announcement = (): string => {
@@ -477,8 +465,8 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     if (event.kind === 'cleared') return t('judge_score_cleared');
     const place = { id: photoId(submission.id), position, total };
     if (rating?.submissionId === submission.id) {
-      return rating.saved
-        ? t('judge_moved_scored', { ...place, score: rating.saved.value })
+      return rating.saved !== null
+        ? t('judge_moved_scored', { ...place, score: rating.saved })
         : t('judge_moved_unscored', place);
     }
     if (loadError?.submissionId === submission.id)
@@ -556,7 +544,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       <Filmstrip
         submissions={submissions}
         currentIndex={currentIndex}
-        scores={frameScores}
+        scores={knownRatings}
         frameLink={(id) => `?submission=${id}`}
         onSelect={showSubmission}
       />

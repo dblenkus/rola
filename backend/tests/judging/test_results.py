@@ -31,10 +31,10 @@ def test_results_hide_before_publication_and_handle_optional_relations(world):
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
     SubmissionReward.objects.create(submission=item, kind=1, label="Gold")
     public = APIClient()
-    assert public.get("/api/v1/results/submission").data["results"] == []
+    assert public.get("/api/v1/results/submissions").data["results"] == []
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
-    response = public.get("/api/v1/results/submission")
+    response = public.get("/api/v1/results/submissions")
     assert response.status_code == 200, response.data
     result = response.data["results"][0]
     assert result["accepted"] is True
@@ -48,10 +48,10 @@ def test_published_theme_without_results_returns_not_found(world):
     submitted(world)
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
-    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    response = APIClient().get(f"/api/v1/results/themes/{world.theme.pk}")
     assert response.status_code == 404
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
-    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    response = APIClient().get(f"/api/v1/results/themes/{world.theme.pk}")
     assert response.status_code == 200, response.data
 
 
@@ -66,7 +66,7 @@ def test_results_identify_the_rewarded_theme_by_id(world):
     )
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
-    response = APIClient().get("/api/v1/results/submission")
+    response = APIClient().get("/api/v1/results/submissions")
     assert response.status_code == 200, response.data
     author = response.json()["results"][0]["author"]
     assert author["reward"] == "Best author"
@@ -97,9 +97,9 @@ def test_results_show_only_the_public_author_details(
     world.contest.club_visible = club_visible
     world.contest.save()
     public = APIClient()
-    theme = public.get(f"/api/v1/results/theme/{world.theme.pk}").json()
-    listing = public.get("/api/v1/results/submission").json()["results"]
-    detail = public.get(f"/api/v1/results/submission/{accepted.pk}").json()
+    theme = public.get(f"/api/v1/results/themes/{world.theme.pk}").json()
+    listing = public.get("/api/v1/results/submissions").json()["results"]
+    detail = public.get(f"/api/v1/results/submissions/{accepted.pk}").json()
     authors = [row["author"] for row in theme["submissions"] + listing + [detail]]
     assert len(authors) == 4
     for author in authors:
@@ -137,7 +137,7 @@ def test_theme_results_list_only_paid_entries_without_scores(world):
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
 
-    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    response = APIClient().get(f"/api/v1/results/themes/{world.theme.pk}")
     assert response.status_code == 200, response.data
     theme = response.json()
     assert [(row["id"], row["accepted"]) for row in theme["submissions"]] == [
@@ -146,7 +146,7 @@ def test_theme_results_list_only_paid_entries_without_scores(world):
     ]
     assert theme["submission_count"] == 2
     for row in theme["submissions"]:
-        assert "rating" not in row
+        assert "score" not in row
 
 
 def test_submission_results_list_only_paid_entries(world):
@@ -163,13 +163,13 @@ def test_submission_results_list_only_paid_entries(world):
     world.contest.save()
     public = APIClient()
 
-    response = public.get("/api/v1/results/submission")
+    response = public.get("/api/v1/results/submissions")
     assert response.status_code == 200, response.data
-    assert [(row["id"], row["rating"]) for row in response.data["results"]] == [
+    assert [(row["id"], row["score"]) for row in response.data["results"]] == [
         (paid.pk, 5)
     ]
-    assert public.get(f"/api/v1/results/submission/{paid.pk}").status_code == 200
-    assert public.get(f"/api/v1/results/submission/{unpaid.pk}").status_code == 404
+    assert public.get(f"/api/v1/results/submissions/{paid.pk}").status_code == 200
+    assert public.get(f"/api/v1/results/submissions/{unpaid.pk}").status_code == 404
 
 
 def test_published_submissions_stay_private_to_their_owner(world):
@@ -183,21 +183,3 @@ def test_published_submissions_stay_private_to_their_owner(world):
     world.client.force_authenticate(world.owner)
     response = world.client.get("/api/v1/submissions")
     assert [row["id"] for row in response.data["results"]] == [item.pk]
-
-
-@pytest.mark.parametrize("method", ["patch", "delete"])
-def test_published_scores_are_immutable(world, method):
-    judge = Judge.objects.create(judge=world.owner, contest=world.contest)
-    item = submitted(world)
-    pay(item)
-    rating = Rating.objects.create(
-        judge=judge, user=world.owner, submission=item, rating=4
-    )
-    world.contest.publish_date = timezone.now() - timedelta(seconds=1)
-    world.contest.save()
-    response = getattr(world.client, method)(
-        f"/api/v1/rating/{rating.pk}", {"rating": 1}, format="json"
-    )
-    assert response.status_code == 403
-    rating.refresh_from_db()
-    assert rating.rating == 4

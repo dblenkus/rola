@@ -76,7 +76,7 @@ const ThemeOverview: React.FC = () => {
                   )}
                   <p className="jury-overview__details small">
                     {t('overview_details', {
-                      points: submission.rating,
+                      points: submission.score,
                       author: submission.author.id,
                       submission: submission.id,
                     })}

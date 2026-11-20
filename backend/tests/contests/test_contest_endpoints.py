@@ -235,6 +235,6 @@ def test_contest_components_keep_their_names_without_request_bodies(schema):
 
 
 def test_judging_contests_declare_no_contest_filters(schema):
-    operation = schema["paths"]["/api/v1/judge/contest"]["get"]
+    operation = schema["paths"]["/api/v1/judging/contests"]["get"]
 
     assert query_parameters(operation) == {"page", "page_size"}

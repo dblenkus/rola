@@ -21,7 +21,7 @@ function resultsSubmission(
     },
     files: fileIds.flatMap((id) => submission(id, '').files),
     accepted: true,
-    rating: 40,
+    score: 40,
     reward_kind: null,
     reward_label: null,
     ...overrides,
@@ -29,7 +29,7 @@ function resultsSubmission(
 }
 
 function renderSubmission(data: ResultsSubmission): void {
-  serveApi({ 'GET /results/submission/11': () => data });
+  serveApi({ 'GET /results/submissions/11': () => data });
   render(
     <MemoryRouter initialEntries={['/results/contest/1/theme/2/submission/11']}>
       <Routes>
@@ -115,7 +115,7 @@ it('shows no brackets after an author without a country', async () => {
 it('shows a failed load on a page named Results', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
-    'GET /results/submission/11': (config) => {
+    'GET /results/submissions/11': (config) => {
       throw httpError(config, 404);
     },
   });

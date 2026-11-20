@@ -11,7 +11,7 @@ import {
 import { expect, it } from 'vitest';
 import '../../../app/i18n/config';
 import { createAppStore } from '../../../app/store';
-import { httpError, page, serveApi } from '../../../test/api';
+import { httpError, page, ratingSaves, serveApi } from '../../../test/api';
 import { contest, jurySubmission } from '../../../test/fixtures';
 import type {
   JurySubmission,
@@ -44,8 +44,8 @@ it('shows nothing from the previous theme while another theme loads', async () =
   const store = createAppStore();
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
-    'GET /rating': () => page([]),
+    'GET /judging/submissions': () => page([jurySubmission(11, 'First')]),
+    'GET /judging/ratings': () => page([]),
   });
   renderGallery(store, '/judge/contest/1/theme/2');
   expect(
@@ -55,8 +55,8 @@ it('shows nothing from the previous theme while another theme loads', async () =
 
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': () => new Promise(() => {}),
-    'GET /rating': () => page([]),
+    'GET /judging/submissions': () => new Promise(() => {}),
+    'GET /judging/ratings': () => page([]),
   });
   renderGallery(store, '/judge/contest/1/theme/3');
   expect(await screen.findByRole('progressbar')).toBeInTheDocument();
@@ -75,7 +75,7 @@ it('opens the rater on the clicked photograph only once it has loaded', async ()
   ];
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': () => {
+    'GET /judging/submissions': () => {
       loads += 1;
       // The gallery's load answers at once, the rater's when the test says.
       return loads === 1
@@ -84,11 +84,11 @@ it('opens the rater on the clicked photograph only once it has loaded', async ()
             answer = resolve;
           });
     },
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11, 12], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   render(
     <Provider store={store}>
@@ -116,7 +116,9 @@ it('opens the rater on the clicked photograph only once it has loaded', async ()
   answer(page(photographs));
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
   await user.keyboard('5');
-  await waitFor(() => expect(saves).toEqual([{ submission: 11, rating: 5 }]));
+  await waitFor(() =>
+    expect(saves).toEqual([{ submission: 11, body: { rating: 5 } }]),
+  );
   // A score stays on its photograph; the judge moves on with Next.
   expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
   expect(screen.queryByRole('img', { name: 'Second' })).not.toBeInTheDocument();
@@ -127,13 +129,13 @@ it('shows no ratings error from a theme the gallery has left', async () => {
   let failFirstTheme: (() => void) | undefined;
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': (config) =>
+    'GET /judging/submissions': (config) =>
       page([
         config.params.theme === 2
           ? jurySubmission(11, 'First')
           : jurySubmission(21, 'Street'),
       ]),
-    'GET /rating': (config) =>
+    'GET /judging/ratings': (config) =>
       config.params.theme === 2
         ? new Promise((_resolve, reject) => {
             failFirstTheme = () => reject(httpError(config, 503));
@@ -174,11 +176,11 @@ it('reports a theme that is not in the contest', async () => {
   // Theme 99 belongs to another contest, so the judge's list for it is empty.
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': ({ params }) => {
+    'GET /judging/submissions': ({ params }) => {
       submissionLoads.push(params.theme);
       return page([]);
     },
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   renderGallery(store, '/judge/contest/1/theme/99');
   expect(

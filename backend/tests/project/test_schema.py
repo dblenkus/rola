@@ -87,7 +87,7 @@ def test_counts_and_acceptance_are_typed(components):
         ),
         (
             "SubmissionResults",
-            "rating",
+            "score",
             {"type": "integer", "nullable": True, "readOnly": True},
         ),
         (
@@ -139,8 +139,8 @@ def test_theme_results_list_submission_results(components):
     }
     theme_rows = components["ThemeSubmissionResults"]["properties"]
     rows = components["SubmissionResults"]["properties"]
-    assert "rating" in rows
-    assert theme_rows == {name: rows[name] for name in rows if name != "rating"}
+    assert "score" in rows
+    assert theme_rows == {name: rows[name] for name in rows if name != "score"}
 
 
 @pytest.mark.django_db

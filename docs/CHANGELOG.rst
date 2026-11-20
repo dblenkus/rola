@@ -21,13 +21,13 @@ API changes
 * Theme and submission results publish only entries in a paid submission
   set, as judging lists only those, and ``submission_count`` in theme
   results counts only those. Theme results list their entries as
-  ``ThemeSubmissionResults``, without ``rating``, the total score;
-  ``/api/v1/results/submission`` keeps it. A result author's ``school`` is
+  ``ThemeSubmissionResults``, without ``score``, the total of the ratings;
+  ``/api/v1/results/submissions`` keeps it. A result author's ``school`` is
   ``null`` unless the contest sets ``school_visible``, and ``club`` unless
   it sets ``club_visible``. The results used to include unpaid entries, theme
   results the score of every entry, accepted or not, and every author's
   school and club.
-* ``/api/v1/judge/submission`` leaves out each submission's author. Judges
+* ``/api/v1/judging/submissions`` leaves out each submission's author. Judges
   used to get the author's name, date of birth, school, mentor, club and
   distinction, which the jury view does not show.
 * The account endpoints move to resource paths, and only login answers with
@@ -54,7 +54,7 @@ API changes
   contest list keeps ``?is_active=`` and no longer declares ``?submitted=``,
   and the institution list no longer declares ``?kind=``, ``?name=`` or its
   ``name`` lookups; such parameters are ignored, as is ``?is_active=`` on
-  ``/api/v1/judge/contest``.
+  ``/api/v1/judging/contests``.
 * The account list and profile are removed: ``GET /api/v1/user`` with its
   ``?current=`` filter, ``GET``, ``PUT``, ``PATCH`` and ``DELETE`` on
   ``/api/v1/user/{id}``, and ``POST /api/v1/user/{id}/change_password``
@@ -116,8 +116,8 @@ API changes
   ``GET /api/v1/authors``, ``POST /api/v1/submissions`` and ``GET``,
   ``PUT`` and ``PATCH`` on ``/api/v1/submissions/{id}`` answer 405, and
   ``/api/v1/authors/{id}`` answers 404. The submission list ignores
-  ``?theme=``, and ``/api/v1/judge/submission`` and
-  ``/api/v1/results/submission`` no longer declare ``?contest=`` and ignore
+  ``?theme=``, and ``/api/v1/judging/submissions`` and
+  ``/api/v1/results/submissions`` no longer declare ``?contest=`` and ignore
   it.
 * Payments move to ``/api/v1/payments``, still for superusers only.
   ``GET /api/v1/payments`` lists them, filtered only by the comma-separated
@@ -134,6 +134,38 @@ API changes
   ``POST /api/v1/payments`` and ``GET``, ``PATCH`` and ``DELETE`` on
   ``/api/v1/payments/{submission_set}`` answer 405, and the list ignores
   ``?submission_set=`` and ``?paid=``.
+* Judging and results move to plural paths, with unchanged responses apart
+  from ``score`` below: ``GET /api/v1/judging/contests``,
+  ``GET /api/v1/judging/submissions``, ``GET /api/v1/judging/ratings``,
+  ``GET /api/v1/results/themes/{id}``, ``GET /api/v1/results/submissions``
+  and ``GET /api/v1/results/submissions/{id}``. The ``/api/v1/judge/…``,
+  ``/api/v1/rating`` and singular ``/api/v1/results/…`` paths answer 404.
+* A judge sets a rating with ``PUT /api/v1/judging/ratings/{submission}``,
+  with the submission's id in the path and a body of ``{"rating": …}``
+  alone; ``submission`` in the body is ignored. It answers 201 with the
+  rating when it creates it and 200 when the judge had rated the
+  submission. It answers 404 with the same body when the submission does
+  not exist, the caller is not a judge of its contest or it is not in a paid
+  submission set, also after its payment was revoked, and 403 once the
+  contest's results are published. An id of more than 18 digits answers the
+  404 of an unknown path. It replaces ``POST /api/v1/rating`` with
+  a body of ``submission`` and ``rating``, which answered 201 also when it
+  replaced a rating, and 400 for a caller who was not a judge of the
+  contest, for an unpaid submission and after publication.
+* A judge clears a rating with
+  ``DELETE /api/v1/judging/ratings/{submission}``, which answers 204 with an
+  empty body whether or not the judge had rated the submission, so a
+  repeated clear answers 204 too. It deletes only the caller's own rating
+  and answers the PUT's 404 and 403 under the same rules. It replaces
+  ``DELETE /api/v1/rating/{id}``, which took the rating's own id and
+  answered 404 once the rating was gone, also to a retried clear.
+* Removed rating operations: ``GET``, ``PUT`` and ``PATCH`` on a rating by
+  its own id. ``POST /api/v1/judging/ratings`` and ``GET`` and ``PATCH`` on
+  ``/api/v1/judging/ratings/{submission}`` answer 405.
+* The total of a submission's ratings in ``/api/v1/results/submissions`` is
+  ``score`` instead of ``rating``, the name of a single judge's rating, and
+  the list orders by it with ``?ordering=score`` or ``?ordering=-score``
+  instead of ``?ordering=rating_sum``, which is now ignored.
 * Every error on a submission's ``files`` is a list of messages, as on the
   other fields. An upload deleted while an upload request attached it used
   to answer ``{"files": "An upload is no longer available."}``, with a
@@ -163,12 +195,10 @@ API changes
   upload. A key
   that is not a UUID answers 400. A retry after a lost response used to
   enter the submissions again and send a second confirmation email.
-* Only a judge of the contest can create or change a rating, only for a paid
-  submission, as the judging list shows, and only until the results are
-  published, and a rating cannot move to another submission. Rating an
-  unpaid submission used to succeed through the API, so its score counted
-  towards acceptance in the results; now it answers 400, as does changing a
-  rating after the submission's payment was revoked.
+* Only a judge of the contest can set a rating, only for a paid submission,
+  as the judging list shows, and only until the results are published.
+  Rating an unpaid submission used to succeed through the API, so its score
+  counted towards acceptance in the results.
 * A judge has one rating per submission. Two saves of a judge's first rating
   at once used to store two ratings, which the results added up and which
   made every later change of that rating fail with 500; now the later save
@@ -204,7 +234,7 @@ API changes
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
   answers 406.
 * Fields are renamed. Contests in ``/api/v1/contests`` and
-  ``/api/v1/judge/contest``: ``dob_required`` to ``date_of_birth_required``,
+  ``/api/v1/judging/contests``: ``dob_required`` to ``date_of_birth_required``,
   ``club_show`` to ``club_visible`` and ``school_show`` to
   ``school_visible``. Their themes and theme results: ``n_photos`` to
   ``max_photos`` and ``submissions_number`` to ``submission_count``, and
@@ -216,13 +246,13 @@ API changes
 * Request bodies are JSON, except the JPEG body of ``POST /api/v1/files``. A
   form-encoded or multipart body answers 415; such bodies used to be
   accepted.
-* Only ``/api/v1/results/submission`` takes ``?ordering=``. The other lists
+* Only ``/api/v1/results/submissions`` takes ``?ordering=``. The other lists
   ignore it and keep their default order; they used to sort by any of their
   fields.
 * The id filters take integers: ``?contest=`` on ``/api/v1/submissions`` and
-  ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judge/submission``
-  and ``/api/v1/results/submission``, ``?theme=`` and ``?submission=`` on
-  ``/api/v1/rating``, and the comma-separated ``?submission_set__in=`` on
+  ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judging/submissions``
+  and ``/api/v1/results/submissions``, ``?theme=`` and ``?submission=`` on
+  ``/api/v1/judging/ratings``, and the comma-separated ``?submission_set__in=`` on
   ``/api/v1/payments``. Any other value answers 400 with an error for that
   filter alone, and an id that matches nothing, or nothing the caller may
   see, answers an empty list. A value that was not a number used to answer

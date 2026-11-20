@@ -22,8 +22,8 @@ function rating(submission: number, value: number): Rating {
 function renderTheme(submissions: JurySubmission[], ratings: Rating[]) {
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () => page(submissions),
-    'GET /rating': () => page(ratings),
+    'GET /judging/submissions': () => page(submissions),
+    'GET /judging/ratings': () => page(ratings),
   });
   render(
     <Provider store={createAppStore()}>

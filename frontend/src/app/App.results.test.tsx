@@ -53,7 +53,7 @@ describe('theme results', () => {
     const hills = result(21, 'Hills', 3, ['Ana', 'Zupan']);
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/theme/2': () => ({
+      'GET /results/themes/2': () => ({
         ...nature,
         submissions: [
           {
@@ -111,7 +111,7 @@ describe('theme results', () => {
     }
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/theme/2': () => ({
+      'GET /results/themes/2': () => ({
         ...nature,
         submissions: [
           result(21, 'Hills', 3, ['Ana', 'Zupan']),
@@ -143,7 +143,7 @@ describe('theme results', () => {
     }
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/theme/2': () => ({
+      'GET /results/themes/2': () => ({
         ...nature,
         submissions: [
           result(31, 'Bridge', 1, ['Žan', 'Žagar']),

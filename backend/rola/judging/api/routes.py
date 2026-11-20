@@ -3,20 +3,24 @@
 from rest_framework.routers import BaseRouter
 
 from rola.judging.api.views import (
-    ContestViewSet,
+    JudgingContestViewSet,
+    JudgingSubmissionViewSet,
     RatingViewSet,
     SubmissionResultsViewSet,
-    SubmissionViewSet,
     ThemeResultsViewSet,
 )
 
 
 def register(router: BaseRouter) -> None:
-    """Register the rating, judging and results endpoints."""
-    router.register("rating", RatingViewSet, basename="rating")
-    router.register("judge/contest", ContestViewSet, basename="judge-contest")
-    router.register("judge/submission", SubmissionViewSet, basename="judge-submission")
-    router.register("results/theme", ThemeResultsViewSet, basename="results-theme")
+    """Register the judging, rating and results endpoints."""
     router.register(
-        "results/submission", SubmissionResultsViewSet, basename="results-submission"
+        "judging/contests", JudgingContestViewSet, basename="judging-contest"
+    )
+    router.register(
+        "judging/submissions", JudgingSubmissionViewSet, basename="judging-submission"
+    )
+    router.register("judging/ratings", RatingViewSet, basename="judging-rating")
+    router.register("results/themes", ThemeResultsViewSet, basename="results-theme")
+    router.register(
+        "results/submissions", SubmissionResultsViewSet, basename="results-submission"
     )

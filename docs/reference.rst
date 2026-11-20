@@ -77,6 +77,9 @@ Judging
 .. automodule:: rola.judging.models
    :members:
 
+.. automodule:: rola.judging.services
+   :members:
+
 .. automodule:: rola.judging.api.views
    :members:
 

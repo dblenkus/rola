@@ -46,7 +46,7 @@ function renderTheme(
   }
   serveApi({
     'GET /contests/1': () => shownContest,
-    'GET /results/theme/2': () => ({ ...nature, submissions }),
+    'GET /results/themes/2': () => ({ ...nature, submissions }),
   });
   render(
     <MemoryRouter initialEntries={['/results/contest/1/theme/2']}>
@@ -226,7 +226,7 @@ it('shows a failed load on a page named Results', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /results/theme/2': (config) => {
+    'GET /results/themes/2': (config) => {
       throw httpError(config, 404);
     },
   });

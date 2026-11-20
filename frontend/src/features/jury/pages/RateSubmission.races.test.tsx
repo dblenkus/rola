@@ -67,7 +67,7 @@ it('keeps a saved score when a rating read that started before the save answers 
 
   await user.keyboard('{Backspace}');
   await waitFor(() => expect(pressedScore()).toBe(0));
-  expect(api.deletes).toEqual([901]);
+  expect(api.deletes).toEqual([11]);
 });
 
 it('keeps a cleared score cleared when a rating read that started before the clear answers after it', async () => {
@@ -102,7 +102,7 @@ it('keeps a cleared score cleared when a rating read that started before the cle
 
   await user.keyboard('{Backspace}');
   await settle();
-  expect(api.deletes).toEqual([501]);
+  expect(api.deletes).toEqual([11]);
 });
 
 it('reads the rating again when a save fails while a read that started before it is pending', async () => {
@@ -187,7 +187,10 @@ it('clears the next photograph while the previous save is pending', async () => 
 
   await user.keyboard('{Backspace}');
   await waitFor(() => expect(api.heldWrites()).toBe(2));
-  expect(api.writes()).toEqual(['POST /rating', 'DELETE /rating/502']);
+  expect(api.writes()).toEqual([
+    'PUT /judging/ratings/11',
+    'DELETE /judging/ratings/12',
+  ]);
   api.release();
   api.release();
   await waitFor(() => expect(pressedScore()).toBe(0));
@@ -317,5 +320,5 @@ it('shows a score cleared after the judge moved on as cleared when the judge ret
   expect(await screen.findByRole('alert')).toHaveTextContent(requestFailed);
   await user.keyboard('{Backspace}');
   await settle();
-  expect(api.deletes).toEqual([501]);
+  expect(api.deletes).toEqual([11]);
 });

@@ -18,7 +18,13 @@ import {
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
 import { createAppStore, type AppStore } from '../../../app/store';
-import { httpError, page, serveApi } from '../../../test/api';
+import {
+  httpError,
+  page,
+  ratingSaves,
+  serveApi,
+  withStatus,
+} from '../../../test/api';
 import { contest, jurySubmission } from '../../../test/fixtures';
 import type {
   JurySubmission,
@@ -97,19 +103,19 @@ it('keeps the rater after a failed rating load', async () => {
   const saves: unknown[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
-    'GET /rating': (config) => {
+    'GET /judging/ratings': (config) => {
       if (config.params.submission !== 12) return page([]);
       if (unavailable) {
         throw httpError(config, 503);
       }
       return ratings(12, 4);
     },
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    ...ratingSaves([11, 12], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -125,7 +131,7 @@ it('keeps the rater after a failed rating load', async () => {
   expect(
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
-  expect(saves).toEqual([{ submission: 12, rating: 6 }]);
+  expect(saves).toEqual([{ submission: 12, body: { rating: 6 } }]);
 
   unavailable = false;
   await user.keyboard('{ArrowLeft}');
@@ -144,8 +150,8 @@ it('keeps the rater after a failed rating load', async () => {
 it('ignores rating keys when the theme does not load', async () => {
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
-    'GET /rating': () => page([]),
+    'GET /judging/submissions': () => page([jurySubmission(11, 'First')]),
+    'GET /judging/ratings': () => page([]),
   });
   renderRater();
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
@@ -154,14 +160,14 @@ it('ignores rating keys when the theme does not load', async () => {
   const saves: unknown[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': (config) => {
+    'GET /judging/submissions': (config) => {
       throw httpError(config, 503);
     },
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -177,10 +183,10 @@ it('ignores rating keys when the theme does not load', async () => {
 it('shows each submission its own rating while the judge moves on', async () => {
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     // The theme-wide ratings answer at once; each submission's own waits.
-    'GET /rating': ({ params }) =>
+    'GET /judging/ratings': ({ params }) =>
       params.theme !== undefined
         ? page([])
         : new Promise((resolve) =>
@@ -209,12 +215,15 @@ it('stays on the shown submission when an earlier save finishes', async () => {
   const saves: (() => void)[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
-    'GET /rating': ({ params }) =>
+    'GET /judging/ratings': ({ params }) =>
       params.submission === 12 ? ratings(12, 3) : page([]),
-    'POST /rating': () =>
-      new Promise((resolve) => saves.push(() => resolve({}))),
+    ...ratingSaves(
+      [11, 12],
+      (_save, answer) =>
+        new Promise((resolve) => saves.push(() => resolve(answer))),
+    ),
   });
   const user = userEvent.setup();
   renderRater();
@@ -236,15 +245,18 @@ it('keeps the next rater on its submission when a closed rater saves late', asyn
   const saves: (() => void)[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([
         jurySubmission(11, 'First'),
         jurySubmission(12, 'Second'),
         jurySubmission(13, 'Third'),
       ]),
-    'GET /rating': () => page([]),
-    'POST /rating': () =>
-      new Promise((resolve) => saves.push(() => resolve({}))),
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves(
+      [11, 12, 13],
+      (_save, answer) =>
+        new Promise((resolve) => saves.push(() => resolve(answer))),
+    ),
   });
   const user = userEvent.setup();
   renderRater();
@@ -267,13 +279,13 @@ it('ignores new ratings while a rating save is pending', async () => {
   const answers: (() => void)[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return new Promise((resolve) => answers.push(() => resolve({})));
-    },
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11, 12], (save, answer) => {
+      saves.push(save);
+      return new Promise((resolve) => answers.push(() => resolve(answer)));
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -284,7 +296,7 @@ it('ignores new ratings while a rating save is pending', async () => {
   await user.keyboard('7');
   await user.click(scoreKey(7));
   await settle();
-  expect(saves).toEqual([{ submission: 11, rating: 5 }]);
+  expect(saves).toEqual([{ submission: 11, body: { rating: 5 } }]);
   expect(pressedScore()).toBe(0);
 
   answers[0]?.();
@@ -293,8 +305,8 @@ it('ignores new ratings while a rating save is pending', async () => {
   await user.keyboard('7');
   await waitFor(() => expect(saves).toHaveLength(2));
   expect(saves).toEqual([
-    { submission: 11, rating: 5 },
-    { submission: 11, rating: 7 },
+    { submission: 11, body: { rating: 5 } },
+    { submission: 11, body: { rating: 7 } },
   ]);
 });
 
@@ -302,17 +314,17 @@ it('ignores auto-repeated digit keys but not arrow keys', async () => {
   const saves: unknown[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([
         jurySubmission(11, 'First'),
         jurySubmission(12, 'Second'),
         jurySubmission(13, 'Third'),
       ]),
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11, 12, 13], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -325,7 +337,7 @@ it('ignores auto-repeated digit keys but not arrow keys', async () => {
   await settle();
   fireEvent.keyDown(window, { key: '7', repeat: true });
   await settle();
-  expect(saves).toEqual([{ submission: 11, rating: 7 }]);
+  expect(saves).toEqual([{ submission: 11, body: { rating: 7 } }]);
   expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
 
   fireEvent.keyDown(window, { key: 'ArrowRight', repeat: true });
@@ -339,16 +351,18 @@ it('keeps the rater after a failed save', async () => {
   let attempts = 0;
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11, 12], (_save, answer, config) => {
       attempts += 1;
       if (attempts === 1) {
-        throw httpError(config, 400);
+        throw httpError(config, 400, {
+          rating: ['Ensure this value is less than or equal to 10.'],
+        });
       }
-      return {};
-    },
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -376,6 +390,86 @@ it('keeps the rater after a failed save', async () => {
   ).not.toBeInTheDocument();
 });
 
+it.each([
+  { status: 201, saved: 'created', before: [] },
+  { status: 200, saved: 'replaced', before: [3] },
+])(
+  'puts the rating and shows it when the server reports it $saved',
+  async ({ status, before }) => {
+    const requests: unknown[] = [];
+    serveApi({
+      'GET /contests/1': () => contest,
+      'GET /judging/submissions': () =>
+        page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
+      'GET /judging/ratings': ({ params }) =>
+        params.submission === 11 && before.length
+          ? ratings(11, before[0] ?? 0)
+          : page([]),
+      'PUT /judging/ratings/11': (config) => {
+        requests.push({
+          method: config.method,
+          url: config.url,
+          body: JSON.parse(String(config.data)),
+        });
+        return withStatus(status, {
+          id: 1,
+          created: '2026-01-01T00:00:00Z',
+          modified: '2026-01-02T00:00:00Z',
+          submission: 11,
+          rating: 7,
+        });
+      },
+    });
+    const user = userEvent.setup();
+    renderRater();
+    expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+    await waitFor(() => expect(pressedScore()).toBe(before[0] ?? 0));
+
+    await user.keyboard('7');
+    await waitFor(() => expect(pressedScore()).toBe(7));
+    expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
+    expect(requests).toEqual([
+      { method: 'put', url: '/judging/ratings/11', body: { rating: 7 } },
+    ]);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  },
+);
+
+it.each([
+  {
+    status: 403,
+    detail:
+      'The results of this contest are published, so its ratings are final.',
+    shown: 'You do not have permission to perform this action.',
+  },
+  {
+    status: 404,
+    detail: 'There is no submission with this id that you can rate.',
+    shown: 'The requested content is no longer available.',
+  },
+])(
+  'keeps the rater and explains a save refused with $status',
+  async ({ status, detail, shown }) => {
+    serveApi({
+      'GET /contests/1': () => contest,
+      'GET /judging/submissions': () =>
+        page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
+      'GET /judging/ratings': () => page([]),
+      ...ratingSaves([11], (_save, _answer, config) => {
+        throw httpError(config, status, { detail });
+      }),
+    });
+    const user = userEvent.setup();
+    renderRater();
+    expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+
+    await user.keyboard('5');
+    expect(await screen.findByRole('alert')).toHaveTextContent(shown);
+    expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
+    expect(pressedScore()).toBe(0);
+  },
+);
+
 const twoThemes = {
   ...contest,
   themes: [...contest.themes, { ...contest.themes[0]!, id: 3, title: 'City' }],
@@ -384,8 +478,8 @@ const twoThemes = {
 it('shows nothing from the previous theme while another theme loads', async () => {
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
-    'GET /rating': () => page([]),
+    'GET /judging/submissions': () => page([jurySubmission(11, 'First')]),
+    'GET /judging/ratings': () => page([]),
   });
   renderRater();
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
@@ -396,19 +490,19 @@ it('shows nothing from the previous theme while another theme loads', async () =
   let answer: (data: PaginatedResponse<JurySubmission>) => void = () => {};
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': () =>
+    'GET /judging/submissions': () =>
       new Promise((resolve) => {
         answer = resolve;
       }),
     // Only a submission's own ratings belong to the theme shown.
-    'GET /rating': ({ params }) => {
+    'GET /judging/ratings': ({ params }) => {
       if (params.submission !== undefined) ratingLoads.push(params.submission);
       return page([]);
     },
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    ...ratingSaves([21], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater('/judge/contest/1/theme/3/rate');
@@ -432,9 +526,9 @@ it('keeps the latest theme when an earlier load finishes last', async () => {
   >();
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': ({ params }) =>
+    'GET /judging/submissions': ({ params }) =>
       new Promise((resolve) => answers.set(String(params.theme), resolve)),
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   renderRater('/judge/contest/1/theme/2/rate');
   await waitFor(() => expect(answers.has('2')).toBe(true));
@@ -454,13 +548,13 @@ it('shows no error from a theme load the judge has left', async () => {
   let failFirstTheme: (() => void) | undefined;
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': (config) =>
+    'GET /judging/submissions': (config) =>
       config.params.theme === 2
         ? new Promise((_resolve, reject) => {
             failFirstTheme = () => reject(httpError(config, 503));
           })
         : page([jurySubmission(21, 'Street')]),
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   const router = createMemoryRouter(
     [
@@ -492,11 +586,11 @@ it('shows no error from a theme load the judge has left', async () => {
 it('leaves the error of a failed theme behind when another theme opens', async () => {
   serveApi({
     'GET /contests/1': () => twoThemes,
-    'GET /judge/submission': (config) => {
+    'GET /judging/submissions': (config) => {
       if (config.params.theme === 2) throw httpError(config, 503);
       return page([jurySubmission(21, 'Street'), jurySubmission(22, 'Bridge')]);
     },
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   const router = createMemoryRouter(
     [
@@ -531,11 +625,11 @@ it('reports a theme that is not in the contest', async () => {
   // Theme 99 belongs to another contest, so the judge's list for it is empty.
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': ({ params }) => {
+    'GET /judging/submissions': ({ params }) => {
       submissionLoads.push(params.theme);
       return page([]);
     },
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   renderRater('/judge/contest/1/theme/99/rate');
   expect(
@@ -550,7 +644,7 @@ it('reloads expired photograph links at most once a minute', async () => {
   serveApi({
     'GET /contests/1': () => contest,
     // Every load signs the links anew, as the server does.
-    'GET /judge/submission': () => {
+    'GET /judging/submissions': () => {
       loads += 1;
       return page(
         [jurySubmission(11, 'First'), jurySubmission(12, 'Second')].map(
@@ -564,7 +658,7 @@ it('reloads expired photograph links at most once a minute', async () => {
         ),
       );
     },
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   const user = userEvent.setup();
   renderRater();
@@ -607,16 +701,16 @@ it('keeps the rater when reloading photograph links fails', async () => {
   const saves: unknown[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': (config) => {
+    'GET /judging/submissions': (config) => {
       loads += 1;
       if (failing) throw httpError(config, 503);
       return page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]);
     },
-    'GET /rating': () => page([]),
-    'POST /rating': (config) => {
-      saves.push(JSON.parse(String(config.data)));
-      return {};
-    },
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves([11, 12], (save, answer) => {
+      saves.push(save);
+      return answer;
+    }),
   });
   const user = userEvent.setup();
   renderRater();
@@ -640,7 +734,9 @@ it('keeps the rater when reloading photograph links fails', async () => {
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
   await user.keyboard('7');
-  await waitFor(() => expect(saves).toEqual([{ submission: 11, rating: 7 }]));
+  await waitFor(() =>
+    expect(saves).toEqual([{ submission: 11, body: { rating: 7 } }]),
+  );
   await user.keyboard('{ArrowRight}');
 
   // Once its photograph loads, nothing is left to retry.
@@ -664,7 +760,7 @@ it('shows a failed reload on every submission whose photograph failed during it'
   const failures: (() => void)[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': (config) => {
+    'GET /judging/submissions': (config) => {
       loads += 1;
       if (loads === 1)
         return page([
@@ -676,7 +772,7 @@ it('shows a failed reload on every submission whose photograph failed during it'
         failures.push(() => reject(httpError(config, 503))),
       );
     },
-    'GET /rating': () => page([]),
+    'GET /judging/ratings': () => page([]),
   });
   const user = userEvent.setup();
   renderRater('/judge/contest/1/theme/2/rate?submission=12');
@@ -743,8 +839,8 @@ it('stays on the submission the judge moved to while photograph links reload', a
   const held = heldReloads([threeSubmissions]);
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': held.handler,
-    'GET /rating': () => page([]),
+    'GET /judging/submissions': held.handler,
+    'GET /judging/ratings': () => page([]),
   });
   const user = userEvent.setup();
   const router = createMemoryRouter(
@@ -782,10 +878,13 @@ it('stays on the last submission when a save finishes after a reload shortened t
   const answers: (() => void)[] = [];
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /judge/submission': held.handler,
-    'GET /rating': () => page([]),
-    'POST /rating': () =>
-      new Promise((resolve) => answers.push(() => resolve({}))),
+    'GET /judging/submissions': held.handler,
+    'GET /judging/ratings': () => page([]),
+    ...ratingSaves(
+      [11, 12, 13],
+      (_save, answer) =>
+        new Promise((resolve) => answers.push(() => resolve(answer))),
+    ),
   });
   const user = userEvent.setup();
   renderRater('/judge/contest/1/theme/2/rate?submission=12');

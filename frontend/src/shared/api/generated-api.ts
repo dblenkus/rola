@@ -106,7 +106,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/judge/contest": {
+    "/api/v1/judging/contests": {
         parameters: {
             query?: never;
             header?: never;
@@ -114,7 +114,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description List contests assigned to the requesting judge. */
-        get: operations["judge_contest_list"];
+        get: operations["judging_contests_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -123,7 +123,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/judge/submission": {
+    "/api/v1/judging/ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List the caller's ratings and set the caller's rating of a submission. */
+        get: operations["judging_ratings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judging/ratings/{submission}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * @description Set the caller's rating of a submission, creating it if needed.
+         *
+         *     Answers 201 when the rating is created and 200 when it existed, 404
+         *     when the caller cannot rate the submission as a judge, and 403 once
+         *     the contest's results are published.
+         */
+        put: operations["judging_ratings_update"];
+        post?: never;
+        /**
+         * @description Clear the caller's rating of a submission, if there is one.
+         *
+         *     Answers 204 whether or not the rating existed, and otherwise as the
+         *     PUT: 404 when the caller cannot rate the submission as a judge, and
+         *     403 once the contest's results are published.
+         */
+        delete: operations["judging_ratings_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/judging/submissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -131,7 +178,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description List paid submissions assigned to an active judge. */
-        get: operations["judge_submission_list"];
+        get: operations["judging_submissions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,45 +259,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/rating": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description API viewset for Rating objects. */
-        get: operations["rating_list"];
-        put?: never;
-        /** @description API viewset for Rating objects. */
-        post: operations["rating_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/rating/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description API viewset for Rating objects. */
-        get: operations["rating_retrieve"];
-        /** @description API viewset for Rating objects. */
-        put: operations["rating_update"];
-        post?: never;
-        /** @description API viewset for Rating objects. */
-        delete: operations["rating_destroy"];
-        options?: never;
-        head?: never;
-        /** @description API viewset for Rating objects. */
-        patch: operations["rating_partial_update"];
-        trace?: never;
-    };
-    "/api/v1/results/submission": {
+    "/api/v1/results/submissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -258,7 +267,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description List and retrieve accepted, paid submissions after publication. */
-        get: operations["results_submission_list"];
+        get: operations["results_submissions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -267,7 +276,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/results/submission/{id}": {
+    "/api/v1/results/submissions/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -275,7 +284,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description List and retrieve accepted, paid submissions after publication. */
-        get: operations["results_submission_retrieve"];
+        get: operations["results_submissions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -284,7 +293,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/results/theme/{id}": {
+    "/api/v1/results/themes/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +301,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Retrieve published results for a theme. */
-        get: operations["results_theme_retrieve"];
+        get: operations["results_themes_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -730,11 +739,6 @@ export interface components {
             token: string;
             new_password: string;
         };
-        /** @description Serializer for Rating objects. */
-        PatchedRatingRequest: {
-            submission?: number;
-            rating?: number;
-        };
         /** @description Serialize a payment, whose submission set the request path names. */
         Payment: {
             readonly id: number;
@@ -749,19 +753,18 @@ export interface components {
         PaymentRequest: {
             paid: boolean;
         };
-        /** @description Serializer for Rating objects. */
+        /** @description Serialize a judge's rating, whose submission the request path names. */
         Rating: {
             readonly id: number;
             /** Format: date-time */
             readonly created: string;
             /** Format: date-time */
             readonly modified: string;
-            submission: number;
+            readonly submission: number;
             rating: number;
         };
-        /** @description Serializer for Rating objects. */
+        /** @description Serialize a judge's rating, whose submission the request path names. */
         RatingRequest: {
-            submission: number;
             rating: number;
         };
         /** @description Request recovery without exposing whether an account exists. */
@@ -803,7 +806,8 @@ export interface components {
             readonly files: components["schemas"]["File"][] | null;
             /** @description Report whether the submission reached the acceptance threshold. */
             readonly accepted: boolean;
-            readonly rating: number | null;
+            /** @description The total of the submission's ratings, or null without any. */
+            readonly score: number | null;
             /** @description Return the human-readable award kind when present. */
             readonly reward_kind: string | null;
             readonly reward_label: string | null;
@@ -850,7 +854,7 @@ export interface components {
             is_series?: boolean;
             /** Number of photos */
             max_photos: number;
-            /** @description Count submissions in this theme. */
+            /** @description Count the paid submissions in this theme. */
             readonly submission_count: number;
             readonly submissions: components["schemas"]["ThemeSubmissionResults"][];
         };
@@ -1041,7 +1045,7 @@ export interface operations {
             };
         };
     };
-    judge_contest_list: {
+    judging_contests_list: {
         parameters: {
             query?: {
                 /** @description A page number within the paginated result set. */
@@ -1065,7 +1069,90 @@ export interface operations {
             };
         };
     };
-    judge_submission_list: {
+    judging_ratings_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                submission?: number;
+                theme?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedRatingList"];
+                };
+            };
+        };
+    };
+    judging_ratings_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The id of the submission that the rating is for. */
+                submission: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingRequest"];
+            };
+        };
+        responses: {
+            /** @description The caller's rating, replaced. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rating"];
+                };
+            };
+            /** @description The caller's rating, created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rating"];
+                };
+            };
+        };
+    };
+    judging_ratings_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The id of the submission that the rating is for. */
+                submission: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller has no rating of the submission. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    judging_submissions_list: {
         parameters: {
             query?: {
                 /** @description A page number within the paginated result set. */
@@ -1196,151 +1283,7 @@ export interface operations {
             };
         };
     };
-    rating_list: {
-        parameters: {
-            query?: {
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
-                submission?: number;
-                theme?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedRatingList"];
-                };
-            };
-        };
-    };
-    rating_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingRequest"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rating"];
-                };
-            };
-        };
-    };
-    rating_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this rating. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rating"];
-                };
-            };
-        };
-    };
-    rating_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this rating. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RatingRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rating"];
-                };
-            };
-        };
-    };
-    rating_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this rating. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    rating_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this rating. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedRatingRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rating"];
-                };
-            };
-        };
-    };
-    results_submission_list: {
+    results_submissions_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -1367,7 +1310,7 @@ export interface operations {
             };
         };
     };
-    results_submission_retrieve: {
+    results_submissions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -1389,7 +1332,7 @@ export interface operations {
             };
         };
     };
-    results_theme_retrieve: {
+    results_themes_retrieve: {
         parameters: {
             query?: never;
             header?: never;
