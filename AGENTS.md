@@ -17,7 +17,8 @@ configuration:
 - `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, ordering
   filter and pagination, and the `readinesscheck` command.
 - `accounts/`: users, login tokens, registration, activation, password
-  resets and account emails; the admin site (`sites.py`).
+  resets and account emails; the password change and its revocations
+  (`services.py`); the admin site (`sites.py`).
 - `contests/`: what an organizer sets up: Contest, Theme, Institution.
 - `entries/`: what an entrant submits: Author, SubmissionSet, Submission and
   File (a photograph), with `photos.py` (validation, metadata stripping,

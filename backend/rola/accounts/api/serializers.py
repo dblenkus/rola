@@ -12,6 +12,7 @@ from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from rola.accounts.models import Location, Token, User
+from rola.accounts.services import change_password
 from rola.accounts.utils.signing import (
     send_activation_email,
     send_existing_account_email,
@@ -286,10 +287,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"current_password": "Incorrect current password."}
             )
-        user.set_password(self.validated_data["new_password"])
-        user.password_reset_counter += 1
-        user.save(update_fields=["password", "password_reset_counter"])
-        Token.objects.expire_for_user(user)
+        change_password(user, self.validated_data["new_password"])
         return user
 
 
@@ -329,9 +327,8 @@ class PasswordResetSerializer(serializers.Serializer):
         well as an activation link does.
         """
         user = validate_reset_token(self.validated_data["token"], lock=True)
-        user.set_password(self.validated_data["new_password"])
-        user.password_reset_counter += 1
-        user.is_active = True
-        user.save(update_fields=["password", "password_reset_counter", "is_active"])
-        Token.objects.expire_for_user(user)
+        change_password(user, self.validated_data["new_password"])
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=["is_active"])
         return user

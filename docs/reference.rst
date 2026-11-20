@@ -11,6 +11,9 @@ Accounts
 .. automodule:: rola.accounts.models
    :members:
 
+.. automodule:: rola.accounts.services
+   :members:
+
 .. automodule:: rola.accounts.api.views
    :members:
 

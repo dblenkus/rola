@@ -209,7 +209,7 @@ class TokenManager(models.Manager):
 
         return self.create(**kwargs)
 
-    def expire_for_user(self, user):
+    def expire_for_user(self, user: User) -> None:
         """Expire all tokens for the given user."""
         self.filter(user=user).update(expires=now())
 
