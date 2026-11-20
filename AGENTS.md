@@ -14,8 +14,9 @@ configuration:
 
 - `config/`: settings (`settings.py`, `test_settings.py`, `environment.py`),
   `urls.py`, `wsgi.py`. Not an app.
-- `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, ordering
-  filter and pagination, and the `readinesscheck` command.
+- `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, the id
+  and ordering filters (`filters.py`, with the id range in `ids.py`),
+  pagination, and the `readinesscheck` command.
 - `accounts/`: users, login tokens, registration, activation, password
   resets and account emails; the password change that the password reset
   and the admin share (`services.py`); the admin site (`sites.py`) and its
@@ -25,9 +26,10 @@ configuration:
   File (a photograph), with `photos.py` (validation, metadata stripping,
   thumbnails, file names), `archive.py` (the contest download) and
   `services.py` (the upload rules).
-- `payments/`: payments, and `PAID_SUBMISSION`, the one "paid submission"
-  filter.
-- `judging/`: judges, ratings, theme results and rewards.
+- `payments/`: payments, `PAID_SUBMISSION`, the one "paid submission"
+  filter, and `services.py` (setting a payment).
+- `judging/`: judges, ratings, theme results and rewards, with `services.py`
+  (the rating rules).
 - `locale/`: the Slovenian catalogue.
 
 Each app imports only from the apps before it in this order:
@@ -46,11 +48,10 @@ Inside an app:
   `require_open_contest`).
 - `api/`: `serializers.py`, `views.py`, `filters.py` and `permissions.py` as
   the app needs them, and `routes.py`, whose `register(router)` adds the
-  app's endpoints.
-  `config/urls.py` calls each app's `register`. `accounts/api/` also holds
-  `authentication.py` (the token authentication) and `throttling.py` (the
-  rate limits, which the admin login and password change in `sites.py`
-  share too).
+  app's endpoints; `config/urls.py` calls each app's `register`.
+  `accounts/api/` also holds `authentication.py` (the token authentication)
+  and `throttling.py` (the rate limits, which the admin login and password
+  change in `sites.py` share too).
 - `admin.py`, `management/commands/`, `migrations/0001_schema.py`.
 
 Tests live in `backend/tests/<app>/` (`accounts`, `contests`, `entries`,

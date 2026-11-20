@@ -10,67 +10,30 @@ transfer; see ``docs/transfer.rst``.
 API changes
 -----------
 
-* ``reward_theme`` in the authors of theme results is an integer, the
-  rewarded theme's id, instead of the same number as a string.
-* The authors in theme and submission results have only ``id``,
-  ``first_name``, ``last_name``, ``school``, ``club``, ``country``, ``reward``
-  and ``reward_theme``; their date of birth, mentor, distinction, email and
-  timestamps are no longer public. ``GET /api/v1/submissions`` lists only
-  the requester's own submissions, also after publication and for
-  administrators, and deleting another account's submission answers 404.
-* Theme and submission results publish only entries in a paid submission
-  set, as judging lists only those, and ``submission_count`` in theme
-  results counts only those. Theme results list their entries as
-  ``ThemeSubmissionResults``, without ``score``, the total of the ratings;
-  ``/api/v1/results/submissions`` keeps it. A result author's ``school`` is
-  ``null`` unless the contest sets ``school_visible``, and ``club`` unless
-  it sets ``club_visible``. The results used to include unpaid entries, theme
-  results the score of every entry, accepted or not, and every author's
-  school and club.
-* ``/api/v1/judging/submissions`` leaves out each submission's author. Judges
-  used to get the author's name, date of birth, school, mentor, club and
-  distinction, which the jury view does not show.
 * The account endpoints move to resource paths, and only login answers with
-  a body. Login is ``POST /api/v1/tokens`` and answers 201
-  with the token. Registration is ``POST /api/v1/users`` and answers 202.
-  Activation is ``POST /api/v1/activations`` and the password reset
+  a body. Login is ``POST /api/v1/tokens`` and answers 201 with the token.
+  Registration is ``POST /api/v1/users`` and answers 202. Activation is
+  ``POST /api/v1/activations`` and the password reset
   ``POST /api/v1/password-resets``; both answer 204. A password-reset
   request is ``POST /api/v1/password-reset-requests`` and answers 202. They
   used to be ``POST`` on ``/api/v1/user/login``, ``/api/v1/user``,
   ``/api/v1/user/activate_account``, ``/api/v1/user/password_reset`` and
   ``/api/v1/user/request_password_reset``, which answered 200, or 201 for
   registration. The five ignore the ``Authorization`` header, so a stale
-  token no longer fails a registration with 401. The logout, the one account
-  operation that needs a token, is ``DELETE /api/v1/tokens/current``.
-* The contest and institution lists move to plural paths:
-  ``GET /api/v1/contests``, ``GET /api/v1/contests/{id}`` and
-  ``GET /api/v1/institutions``, with unchanged responses. The singular
-  ``/api/v1/contest`` and ``/api/v1/institution`` paths answer 404.
-* Contests are read-only in the API: ``POST /api/v1/contests`` and ``PUT``,
-  ``PATCH`` and ``DELETE`` on ``/api/v1/contests/{id}`` answer 405 to every
-  account, and 401 without one. Superusers used to create, change and delete
-  contests there; organizers set up contests and their themes in the Django
-  admin. The
-  contest list keeps ``?is_active=`` and no longer declares ``?submitted=``,
-  and the institution list no longer declares ``?kind=``, ``?name=`` or its
-  ``name`` lookups; such parameters are ignored, as is ``?is_active=`` on
-  ``/api/v1/judging/contests``.
+  token no longer fails a registration with 401.
+* Logout, the one account operation that needs a token, is
+  ``DELETE /api/v1/tokens/current``. It expires the login token that the
+  request carries and answers 204 with an empty body. The account's other
+  tokens stay valid, and a later request with the expired token answers 401.
+  The API had no logout, so a token stayed valid until it expired, two days
+  after the login.
 * The account list and profile are removed: ``GET /api/v1/user`` with its
   ``?current=`` filter, ``GET``, ``PUT``, ``PATCH`` and ``DELETE`` on
   ``/api/v1/user/{id}``, and ``POST /api/v1/user/{id}/change_password``
   answer 404. A password is changed through the reset email, and accounts
   are deleted in the Django admin.
-* A password-reset request gets the same empty 202 response for unknown,
-  inactive and active addresses; unknown addresses used to get 404. Malformed
-  activation and reset tokens get 400.
-* Login allows 30 attempts a minute per client address, shared with the
-  Django admin login and password change, which checks the current
-  password. Registration and activation each allow 60 requests an hour per
-  client address, and password-reset requests and confirmations share 30
-  an hour. Requests beyond a limit get 429.
-* Email addresses are stored in lowercase and matched without regard to case.
-  Registering a domain-case variant of an existing address used to fail with
-  500, and a local-part variant created a second account.
+* Deleting an account also deletes its postal address, which used to stay
+  in the database after the account was gone.
 * Registration answers 202 with an empty body for every address, instead of
   the new profile, or 400 "user with this email already exists." for an
   address that has an account. Such an address gets an email with a
@@ -78,16 +41,47 @@ API changes
   now also activates an inactive account, which used to get 400 "Account is
   not activated, contact support.". Two registrations of one address at once
   no longer fail with 500.
-* Activation and reset emails link to the frontend under
-  ``ROLA_FRONTEND_URL``; the backend placeholder pages that answered 501 are
-  gone.
+* Email addresses are stored in lowercase and matched without regard to case.
+  Registering a domain-case variant of an existing address used to fail with
+  500, and a local-part variant created a second account.
 * An activation link answers 204 each time it is used until it expires. Once
   the account was active it used to answer 400 "Bad token.", so opening the
   link again, or retrying after a lost response, reported it as invalid.
-* The results of a published theme that has no results yet answer 404
-  instead of 500.
-* Paginated lists break ordering ties by primary key, so paging through a
-  list sorted with ``?ordering=`` no longer repeats or skips rows.
+* A password-reset request gets the same empty 202 response for unknown,
+  inactive and active addresses; unknown addresses used to get 404.
+  Malformed activation and reset tokens get 400.
+* Activation and reset emails link to the frontend under
+  ``ROLA_FRONTEND_URL``; the backend placeholder pages that answered 501 are
+  gone.
+* Login allows 30 attempts a minute per client address, shared with the
+  Django admin login and password change, which checks the current
+  password. Registration and activation each allow 60 requests an hour per
+  client address, and password-reset requests and confirmations share 30
+  an hour. Requests beyond a limit get 429.
+* ``/api-auth/``, Django REST framework's session login, is removed. The API
+  accepts only the login token.
+* The login token is sent as ``Authorization: Bearer <token>``.
+  ``Authorization: Token <token>`` is no longer recognised: a request with it
+  is handled as anonymous. A 401 carries ``WWW-Authenticate: Bearer``.
+* A login token is ``rola_st_`` followed by 64 hexadecimal digits instead of
+  40 hexadecimal digits, and a credential without that prefix answers 401
+  "Invalid token".
+* The database stores the SHA-256 digest of a login token instead of the
+  token, so a token cannot be read from the ``accounts_token`` table or from
+  a copy of the database.
+* The contest and institution lists move to plural paths:
+  ``GET /api/v1/contests``, ``GET /api/v1/contests/{id}`` and
+  ``GET /api/v1/institutions``, with unchanged responses apart from the
+  renamed fields below. The singular ``/api/v1/contest`` and
+  ``/api/v1/institution`` paths answer 404.
+* Contests are read-only in the API: ``POST /api/v1/contests`` and ``PUT``,
+  ``PATCH`` and ``DELETE`` on ``/api/v1/contests/{id}`` answer 405 to every
+  account, and 401 without one. Superusers used to create, change and delete
+  contests there; organizers set up contests and their themes in the Django
+  admin. The contest list keeps ``?is_active=`` and no longer declares
+  ``?submitted=``, and the institution list no longer declares ``?kind=``,
+  ``?name=`` or its ``name`` lookups; such parameters are ignored, as is
+  ``?is_active=`` on ``/api/v1/judging/contests``.
 * The entries endpoints move to plural paths: ``POST /api/v1/authors``,
   ``POST /api/v1/files``, ``GET /api/v1/submissions``,
   ``DELETE /api/v1/submissions/{id}``, ``GET`` and ``POST``
@@ -110,6 +104,20 @@ API changes
   used twice answer 400 and create nothing. A submission needs at least one
   photograph: an empty ``files`` list answers 400, and used to be accepted.
   A submission's field errors are under ``submissions``, keyed by its index.
+* ``POST /api/v1/submission-sets`` accepts an optional ``Idempotency-Key``
+  header with a UUID. A request that repeats the key of an earlier upload by
+  the same account creates nothing and sends no email: it answers 200 with
+  that upload's set, also after the contest has closed. Once all of the
+  set's submissions are deleted, a request with the key is entered as a new
+  upload. A key that is not a UUID answers 400. A retry after a lost
+  response used to enter the submissions again and send a second
+  confirmation email.
+* An upload's author and photographs must belong to the requester, and a
+  photograph can belong to only one submission. Such requests answer 400.
+* Every error on a submission's ``files`` is a list of messages, as on the
+  other fields. An upload deleted while an upload request attached it used
+  to answer ``{"files": "An upload is no longer available."}``, with a
+  string.
 * Removed operations: the author list, and ``GET``, ``PUT``, ``PATCH`` and
   ``DELETE`` on an author; reading, creating, replacing and updating a
   single submission; and the ``?theme=`` filter of the submission list.
@@ -119,6 +127,27 @@ API changes
   ``?theme=``, and ``/api/v1/judging/submissions`` and
   ``/api/v1/results/submissions`` no longer declare ``?contest=`` and ignore
   it.
+* Submissions can be entered and deleted only while their contest accepts
+  entries: from its start date to its end date, and before its results are
+  published. Outside that window these requests answer 403 with the detail
+  "This contest is not accepting entries."; superusers can still delete a
+  submission set until publication. An author can enter at most a theme's
+  ``max_photos`` photographs in it, and more answer 400. Submissions used to
+  be accepted at any time and in any number, and could be changed or
+  deleted until publication, also while the jury rated them.
+* Only the owner can delete a submission, and deleting another account's
+  submission answers 404. ``GET /api/v1/submissions`` lists only the
+  requester's own submissions, also after publication and for
+  administrators.
+* ``POST /api/v1/files`` accepts JPEG files only and answers 400 for another
+  image format or a damaged JPEG file. Other formats used to be stored or to
+  fail with 500, as a truncated JPEG file did. The stored photograph that
+  ``file`` links to no longer carries the upload's identifying metadata.
+* The contest download moves from ``/core/contest/{id}/download`` into the
+  Django admin, at ``/django-admin/contests/contest/{id}/download/``, so it
+  needs a staff login, and it answers 403 to anyone but the contest's
+  organizer and superusers. Its archive holds every photograph of each
+  submission, read through the configured storage.
 * Payments move to ``/api/v1/payments``, still for superusers only.
   ``GET /api/v1/payments`` lists them, filtered only by the comma-separated
   ``?submission_set__in=``. ``PUT /api/v1/payments/{submission_set}``, with
@@ -135,23 +164,30 @@ API changes
   ``/api/v1/payments/{submission_set}`` answer 405, and the list ignores
   ``?submission_set=`` and ``?paid=``.
 * Judging and results move to plural paths, with unchanged responses apart
-  from ``score`` below: ``GET /api/v1/judging/contests``,
-  ``GET /api/v1/judging/submissions``, ``GET /api/v1/judging/ratings``,
-  ``GET /api/v1/results/themes/{id}``, ``GET /api/v1/results/submissions``
-  and ``GET /api/v1/results/submissions/{id}``. The ``/api/v1/judge/…``,
+  from ``score`` and the renamed fields below:
+  ``GET /api/v1/judging/contests``, ``GET /api/v1/judging/submissions``,
+  ``GET /api/v1/judging/ratings``, ``GET /api/v1/results/themes/{id}``,
+  ``GET /api/v1/results/submissions`` and
+  ``GET /api/v1/results/submissions/{id}``. The ``/api/v1/judge/…``,
   ``/api/v1/rating`` and singular ``/api/v1/results/…`` paths answer 404.
+* ``/api/v1/judging/submissions`` leaves out each submission's author. Judges
+  used to get the author's name, date of birth, school, mentor, club and
+  distinction, which the jury view does not show.
 * A judge sets a rating with ``PUT /api/v1/judging/ratings/{submission}``,
   with the submission's id in the path and a body of ``{"rating": …}``
-  alone; ``submission`` in the body is ignored. It answers 201 with the
-  rating when it creates it and 200 when the judge had rated the
+  alone; ``submission`` in the body is ignored. Only a judge of the contest
+  can set a rating, only for a paid submission, as the judging list shows,
+  and only until the results are published. The request answers 201 with
+  the rating when it creates it and 200 when the judge had rated the
   submission. It answers 404 with the same body when the submission does
   not exist, the caller is not a judge of its contest or it is not in a paid
   submission set, also after its payment was revoked, and 403 once the
   contest's results are published. An id of more than 18 digits answers the
-  404 of an unknown path. It replaces ``POST /api/v1/rating`` with
-  a body of ``submission`` and ``rating``, which answered 201 also when it
-  replaced a rating, and 400 for a caller who was not a judge of the
-  contest, for an unpaid submission and after publication.
+  404 of an unknown path. It replaces ``POST /api/v1/rating`` with a body of
+  ``submission`` and ``rating``, which answered 201 also when it replaced a
+  rating, and 401 to a caller who was not a judge of the contest. Rating an
+  unpaid submission used to succeed through the API, so its score counted
+  towards acceptance in the results.
 * A judge clears a rating with
   ``DELETE /api/v1/judging/ratings/{submission}``, which answers 204 with an
   empty body whether or not the judge had rated the submission, so a
@@ -162,43 +198,6 @@ API changes
 * Removed rating operations: ``GET``, ``PUT`` and ``PATCH`` on a rating by
   its own id. ``POST /api/v1/judging/ratings`` and ``GET`` and ``PATCH`` on
   ``/api/v1/judging/ratings/{submission}`` answer 405.
-* The total of a submission's ratings in ``/api/v1/results/submissions`` is
-  ``score`` instead of ``rating``, the name of a single judge's rating, and
-  the list orders by it with ``?ordering=score`` or ``?ordering=-score``
-  instead of ``?ordering=rating_sum``, which is now ignored.
-* Every error on a submission's ``files`` is a list of messages, as on the
-  other fields. An upload deleted while an upload request attached it used
-  to answer ``{"files": "An upload is no longer available."}``, with a
-  string.
-* Submissions can be entered and deleted only while their contest accepts
-  entries: from its start date to its end date, and before its results are
-  published. Outside that window these requests answer 403 with the detail
-  "This contest is not accepting entries."; superusers can still delete a
-  submission set until publication. Only the owner can delete a submission.
-  An author can enter at most a theme's ``max_photos`` photographs in it,
-  and more answer 400. Submissions used to be accepted at any time and in
-  any number, and could be changed or deleted until publication, also while
-  the jury rated them.
-* Deleting an account also deletes its postal address, which used to stay
-  in the database after the account was gone.
-* An upload's author and photographs must belong to the requester, and a
-  photograph can belong to only one submission. Such requests answer 400.
-* ``POST /api/v1/files`` accepts JPEG files only and answers 400 for another
-  image format or a damaged JPEG file. Other formats used to be stored or to
-  fail with 500, as a truncated JPEG file did. The stored photograph that
-  ``file`` links to no longer carries the upload's identifying metadata.
-* ``POST /api/v1/submission-sets`` accepts an optional ``Idempotency-Key``
-  header with a UUID. A request that repeats the key of an earlier upload by
-  the same account creates nothing and sends no email: it answers 200 with
-  that upload's set, also after the contest has closed. Once all of the
-  set's submissions are deleted, a request with the key is entered as a new
-  upload. A key
-  that is not a UUID answers 400. A retry after a lost response used to
-  enter the submissions again and send a second confirmation email.
-* Only a judge of the contest can set a rating, only for a paid submission,
-  as the judging list shows, and only until the results are published.
-  Rating an unpaid submission used to succeed through the API, so its score
-  counted towards acceptance in the results.
 * A judge has one rating per submission. Two saves of a judge's first rating
   at once used to store two ratings, which the results added up and which
   made every later change of that rating fail with 500; now the later save
@@ -207,42 +206,33 @@ API changes
   other values answer 400. Any integer used to be stored, so a single score
   outside that range could outweigh all other judges in the totals that
   decide acceptance and ranking.
-* The contest download moves from ``/core/contest/{id}/download`` into the
-  Django admin, at ``/django-admin/contests/contest/{id}/download/``, so it
-  needs a staff login, and it answers 403 to anyone but the contest's
-  organizer and superusers. Its archive holds every photograph of each
-  submission, read through the configured storage.
-* The API sends no CORS headers; the frontend calls it from the same origin.
-* ``/api-auth/``, Django REST framework's session login, is removed. The API
-  accepts only the login token.
-* The login token is sent as ``Authorization: Bearer <token>``.
-  ``Authorization: Token <token>`` is no longer recognised: a request with it
-  is handled as anonymous. A 401 carries ``WWW-Authenticate: Bearer``.
-* A login token is ``rola_st_`` followed by 64 hexadecimal digits instead of
-  40 hexadecimal digits, and a credential without that prefix answers 401
-  "Invalid token".
-* The database stores the SHA-256 digest of a login token instead of the
-  token, so a token cannot be read from the ``accounts_token`` table or from
-  a copy of the database.
-* ``DELETE /api/v1/tokens/current`` expires the login token that the
-  request carries and answers 204 with an empty body. The account's other tokens
-  stay valid, and a later request with the expired token answers 401. The
-  API had no logout, so a token stayed valid until it expired, two days
-  after the login.
+* Theme and submission results publish only entries in a paid submission
+  set, as judging lists only those, and ``submission_count`` in theme
+  results counts only those. Theme results list their entries as
+  ``ThemeSubmissionResults``, without ``score``, the total of the ratings;
+  ``/api/v1/results/submissions`` keeps it. A result author's ``school`` is
+  ``null`` unless the contest sets ``school_visible``, and ``club`` unless
+  it sets ``club_visible``. The results used to include unpaid entries, theme
+  results the score of every entry, accepted or not, and every author's
+  school and club.
+* The authors in theme and submission results have only ``id``,
+  ``first_name``, ``last_name``, ``school``, ``club``, ``country``, ``reward``
+  and ``reward_theme``; their date of birth, mentor, distinction, email and
+  timestamps are no longer public.
+* ``reward_theme`` in the authors of theme results is an integer, the
+  rewarded theme's id, instead of the same number as a string.
+* The total of a submission's ratings in ``/api/v1/results/submissions`` is
+  ``score`` instead of ``rating``, the name of a single judge's rating, and
+  the list orders by it with ``?ordering=score`` or ``?ordering=-score``
+  instead of ``?ordering=rating_sum``, which is now ignored. It breaks ties
+  by primary key, so paging through the ordered list no longer repeats or
+  skips rows.
+* The results of a published theme that has no results yet answer 404
+  instead of 500.
 * The API answers JSON only. Django REST framework's browsable HTML pages,
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
   answers 406.
-* Fields are renamed. Contests in ``/api/v1/contests`` and
-  ``/api/v1/judging/contests``: ``dob_required`` to ``date_of_birth_required``,
-  ``club_show`` to ``club_visible`` and ``school_show`` to
-  ``school_visible``. Their themes and theme results: ``n_photos`` to
-  ``max_photos`` and ``submissions_number`` to ``submission_count``, and
-  ``ratings_number`` to ``rating_count`` in judges' themes. Authors in
-  ``/api/v1/authors`` and in submissions and submission sets: ``dob`` to
-  ``date_of_birth``. Payments in ``/api/v1/payments``: ``submissionset`` to
-  ``submission_set``, and the filter ``?submissionset__in=`` to
-  ``?submission_set__in=``.
 * Request bodies are JSON, except the JPEG body of ``POST /api/v1/files``. A
   form-encoded or multipart body answers 415; such bodies used to be
   accepted.
@@ -252,13 +242,24 @@ API changes
 * The id filters take integers: ``?contest=`` on ``/api/v1/submissions`` and
   ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judging/submissions``
   and ``/api/v1/results/submissions``, ``?theme=`` and ``?submission=`` on
-  ``/api/v1/judging/ratings``, and the comma-separated ``?submission_set__in=`` on
-  ``/api/v1/payments``. Any other value answers 400 with an error for that
-  filter alone, and an id that matches nothing, or nothing the caller may
-  see, answers an empty list. A value that was not a number used to answer
-  500 on ``?contest=`` of the submission lists and ``?theme=`` of ratings,
-  and an unknown id on the other filters answered 400 "Select a valid
-  choice.".
+  ``/api/v1/judging/ratings``, and the comma-separated
+  ``?submission_set__in=`` on ``/api/v1/payments``. Any other value answers
+  400 with an error for that filter alone, and an id that matches nothing,
+  or nothing the caller may see, answers an empty list. A value that was not
+  a number used to answer 500 on ``?contest=`` of the submission lists and
+  ``?theme=`` of ratings, and an unknown id on the other filters answered
+  400 "Select a valid choice.".
+* Fields are renamed. Contests in ``/api/v1/contests`` and
+  ``/api/v1/judging/contests``: ``dob_required`` to
+  ``date_of_birth_required``, ``club_show`` to ``club_visible`` and
+  ``school_show`` to ``school_visible``. Their themes and theme results:
+  ``n_photos`` to ``max_photos`` and ``submissions_number`` to
+  ``submission_count``, and ``ratings_number`` to ``rating_count`` in
+  judges' themes. Authors in ``/api/v1/authors`` and in submissions and
+  submission sets: ``dob`` to ``date_of_birth``. Payments in
+  ``/api/v1/payments``: ``submissionset`` to ``submission_set``, and the
+  filter ``?submissionset__in=`` to ``?submission_set__in=``.
+* The API sends no CORS headers; the frontend calls it from the same origin.
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
   backend's integer bounds; the backend serves no schema at runtime. Its
   security scheme ``tokenAuth`` is the HTTP ``bearer`` scheme.

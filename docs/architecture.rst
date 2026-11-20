@@ -16,13 +16,13 @@ holds the project configuration and one Django app per domain:
    The settings, which read the configuration from the environment, the URL
    configuration and the WSGI application. It is not an app.
 ``rola.common``
-   The base model and serializer, the shared permissions, ordering filter and
-   pagination, and the ``readinesscheck`` command that the container health
-   check runs.
+   The base model and serializer, the shared permissions, the id and ordering
+   filters, the pagination, and the ``readinesscheck`` command that the
+   container health check runs.
 ``rola.accounts``
    Accounts: registration, activation, token login, password recovery and the
-   account emails. It also installs the admin site, whose
-   login and password change share the API login's rate limit.
+   account emails. It also installs the admin site, whose login and password
+   change share the API login's rate limit.
 ``rola.contests``
    What an organizer sets up: contests, themes and institutions.
 ``rola.entries``
