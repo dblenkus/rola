@@ -65,6 +65,9 @@ Payments
 .. automodule:: rola.payments.models
    :members:
 
+.. automodule:: rola.payments.services
+   :members:
+
 .. automodule:: rola.payments.api.views
    :members:
 

@@ -24,8 +24,8 @@ def account_operations(paths):
     """Return the operations, by path and method, that the accounts app serves."""
     operations = {}
     for path, methods in paths.items():
-        # The zero UUID matches the lookup pattern of every route.
-        url = re.sub(r"\{[^}]+\}", "00000000-0000-0000-0000-000000000000", path)
+        # An integer id matches the lookup pattern of every route.
+        url = re.sub(r"\{[^}]+\}", "1", path)
         if resolve(url).func.cls.__module__.startswith("rola.accounts."):
             for method, operation in methods.items():
                 operations[path, method] = operation

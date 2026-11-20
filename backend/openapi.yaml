@@ -250,10 +250,10 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/payment:
+  /api/v1/payments:
     get:
-      operationId: payment_list
-      description: API viewset for Payment objects.
+      operationId: payments_list
+      description: List payments and set a submission set's payment, for superusers.
       parameters:
       - name: page
         required: false
@@ -268,14 +268,6 @@ paths:
         schema:
           type: integer
       - in: query
-        name: paid
-        schema:
-          type: boolean
-      - in: query
-        name: submission_set
-        schema:
-          type: integer
-      - in: query
         name: submission_set__in
         schema:
           type: array
@@ -285,7 +277,7 @@ paths:
         explode: false
         style: form
       tags:
-      - payment
+      - payments
       security:
       - tokenAuth: []
       responses:
@@ -295,11 +287,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedPaymentList'
           description: ''
-    post:
-      operationId: payment_create
-      description: API viewset for Payment objects.
+  /api/v1/payments/{submission_set}:
+    put:
+      operationId: payments_update
+      description: |-
+        Set whether a submission set is paid, creating its payment if needed.
+
+        Answers 201 when the payment is created and 200 when it existed.
+      parameters:
+      - in: path
+        name: submission_set
+        schema:
+          type: integer
+        description: The id of the submission set that the payment is for.
+        required: true
       tags:
-      - payment
+      - payments
       requestBody:
         content:
           application/json:
@@ -309,104 +312,18 @@ paths:
       security:
       - tokenAuth: []
       responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: The set's payment, updated.
         '201':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
-          description: ''
-  /api/v1/payment/{id}:
-    get:
-      operationId: payment_retrieve
-      description: API viewset for Payment objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this payment.
-        required: true
-      tags:
-      - payment
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
-          description: ''
-    put:
-      operationId: payment_update
-      description: API viewset for Payment objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this payment.
-        required: true
-      tags:
-      - payment
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
-          description: ''
-    patch:
-      operationId: payment_partial_update
-      description: API viewset for Payment objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this payment.
-        required: true
-      tags:
-      - payment
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedPaymentRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
-          description: ''
-    delete:
-      operationId: payment_destroy
-      description: API viewset for Payment objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this payment.
-        required: true
-      tags:
-      - payment
-      security:
-      - tokenAuth: []
-      responses:
-        '204':
-          description: No response body
+          description: The set's payment, created.
   /api/v1/rating:
     get:
       operationId: rating_list
@@ -1487,14 +1404,6 @@ components:
       required:
       - new_password
       - token
-    PatchedPaymentRequest:
-      type: object
-      description: Serializer for Payment objects.
-      properties:
-        submission_set:
-          type: integer
-        paid:
-          type: boolean
     PatchedRatingRequest:
       type: object
       description: Serializer for Rating objects.
@@ -1507,7 +1416,7 @@ components:
           minimum: 1
     Payment:
       type: object
-      description: Serializer for Payment objects.
+      description: Serialize a payment, whose submission set the request path names.
       properties:
         id:
           type: integer
@@ -1522,23 +1431,23 @@ components:
           readOnly: true
         submission_set:
           type: integer
+          readOnly: true
         paid:
           type: boolean
       required:
       - created
       - id
       - modified
+      - paid
       - submission_set
     PaymentRequest:
       type: object
-      description: Serializer for Payment objects.
+      description: Serialize a payment, whose submission set the request path names.
       properties:
-        submission_set:
-          type: integer
         paid:
           type: boolean
       required:
-      - submission_set
+      - paid
     Rating:
       type: object
       description: Serializer for Rating objects.

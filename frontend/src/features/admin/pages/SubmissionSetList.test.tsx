@@ -37,7 +37,7 @@ function serveSets(all: SubmissionSet[], payments: Payment[] = []) {
         count: all.length,
       };
     },
-    'GET /payment': () => page(payments),
+    'GET /payments': () => page(payments),
   });
 }
 
