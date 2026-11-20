@@ -18,7 +18,7 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The copied tables have the same columns in the new schema, with seven
+The copied tables have the same columns in the new schema, with eight
 differences that decide how the data is copied:
 
 * The tables have new names, because the apps have new labels (see `Old and
@@ -60,6 +60,11 @@ differences that decide how the data is copied:
   table had an ``integer`` column and neither constraint, and a single
   duplicate or out-of-range score makes the copy fail, so the old data is
   checked for both first.
+* ``judging_judge`` holds at most one row per contest and account, through
+  the unique constraint ``judging_unique_contest_judge``. The old
+  ``rating_judge`` table had no such constraint, and a single account added
+  twice as a judge of one contest makes the copy fail, so the old data is
+  checked for that first too.
 
 Content types and permissions are created by ``migrate`` and get new ids, so
 their tables are not copied. The group and user permissions are remapped
@@ -162,8 +167,9 @@ The constraints that the project names itself take the new label too:
 becomes ``judging_unique_judge_submission``, and
 ``rating_rating_between_1_and_10`` becomes
 ``judging_rating_between_1_and_10``. ``unique_name_kind`` on the institutions
-keeps its name. The names that Django generates for keys, indexes and
-sequences start with the new table names, and their hash suffixes differ.
+keeps its name, and ``judging_unique_contest_judge`` on the judges is new.
+The names that Django generates for keys, indexes and sequences start with
+the new table names, and their hash suffixes differ.
 
 Until "Rename the tables and columns in the scratch copy", the old database
 and ``rola_old`` use the old names, and the commands before that step name
@@ -339,6 +345,46 @@ its own submissions.
    )
    ORDER BY lower(email), internal_id;
 
+Look for accounts that are a judge of the same contest more than once, which
+the new schema refuses. Run this check, and its fix, before the check for
+duplicate ratings, because the fix can leave a judge with two ratings of one
+submission. This must print no rows:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -U rola -d rola_old -c \
+       "SELECT j.contest_id, c.title, j.judge_id, array_agg(j.id ORDER BY j.id) AS judge_rows FROM rating_judge j JOIN core_contest c ON c.id = j.contest_id GROUP BY 1, 2, 3 HAVING count(*) > 1 ORDER BY 1, 3"
+
+If it prints any, stop. Each printed contest lists that account among its
+judges more than once, and each of those judge rows may hold ratings. In the
+old database, keep the judge row with the lowest id of each contest and
+account (the first id in ``judge_rows``), move the ratings of the others to
+it, and delete the others, in one transaction. Fill in the old server as for
+the dump, with ``--network`` and the password lines if the dump needed them.
+Then start again from the dump:
+
+.. code-block:: shell
+
+   read -rs PGPASSWORD && export PGPASSWORD
+   docker run --rm -i -e PGPASSWORD postgres:18.6-alpine3.24 \
+       psql -v ON_ERROR_STOP=1 -h <old host> -U <old user> -d <old database> <<'SQL'
+   BEGIN;
+   UPDATE rating_rating r SET judge_id = kept.id
+   FROM rating_judge extra
+   JOIN (SELECT contest_id, judge_id, min(id) AS id FROM rating_judge GROUP BY 1, 2) kept
+       ON kept.contest_id = extra.contest_id AND kept.judge_id = extra.judge_id
+   WHERE r.judge_id = extra.id AND extra.id <> kept.id;
+   DELETE FROM rating_judge extra USING rating_judge kept
+   WHERE kept.contest_id = extra.contest_id AND kept.judge_id = extra.judge_id
+       AND kept.id < extra.id;
+   COMMIT;
+   SQL
+   unset PGPASSWORD
+
+The account now has one judge row in each contest, holding all its ratings
+there. Where two of the merged rows had rated the same submission, the
+account now has two ratings of it, which the next check finds.
+
 Look for judges with more than one rating of the same submission, which the
 new schema refuses. This must print no rows:
 
@@ -347,11 +393,12 @@ new schema refuses. This must print no rows:
    docker compose exec -T db psql -U rola -d rola_old -c \
        "SELECT judge_id, submission_id, count(*) FROM rating_rating GROUP BY 1, 2 HAVING count(*) > 1"
 
-If it prints any, stop. The previous deployment stored a second rating when
-a judge's first rating of a submission was saved twice at once, and its
-results add up both. List the contests involved for their organizers: once
-one rating of each pair remains, the totals of the affected entries change,
-and with them possibly which entries are accepted.
+If it prints any, stop. The previous deployment stored a second rating when a
+judge's first rating of a submission was saved twice at once, and its results
+add up both. Merging duplicate judges leaves one too where two of the merged
+rows had rated the same submission. List the contests involved for their
+organizers: once one rating of each pair remains, the totals of the affected
+entries change, and with them possibly which entries are accepted.
 
 .. code-block:: sql
 
@@ -759,7 +806,7 @@ Rolling back means stopping the new stack, pointing the TLS terminator back
 at the old deployment and restarting its web server from the old deployment's
 directory. The old buckets or media directory have not changed since the
 freeze, and the old database only by the fixes that the checks called for: a
-changed email address, removed duplicate ratings, corrected scores. The old
-deployment therefore finds every photograph it had, and its results show the
-corrected totals. Everything written to the new stack in the meantime is
-lost.
+changed email address, merged duplicate judges, removed duplicate ratings,
+corrected scores. The old deployment therefore finds every photograph it
+had, and its results show the corrected totals. Everything written to the
+new stack in the meantime is lost.

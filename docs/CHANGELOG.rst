@@ -202,6 +202,11 @@ API changes
   at once used to store two ratings, which the results added up and which
   made every later change of that rating fail with 500; now the later save
   updates the rating.
+* An account is a judge of a contest at most once, and the database refuses
+  a second judge row for the same contest and account. An account added
+  twice used to get 500 from ``PUT /api/v1/judging/ratings/{submission}``
+  for every submission of that contest, and each of its judge rows could
+  hold a rating of the same submission, which the results added up.
 * A rating's score is an integer from 1 to 10, as the jury view offers, and
   other values answer 400. Any integer used to be stored, so a single score
   outside that range could outweigh all other judges in the totals that
