@@ -362,15 +362,16 @@ List the contests whose notice or confirmation text holds content that the
 frontend now removes before it shows them: scripts, such as those of the
 PayPal buttons, iframes, embedded objects, ``link``, ``meta`` and ``base``
 elements, a ``style`` block at the start, event-handler attributes such as
-``onclick``, and ``javascript:`` links. After the switch, open each listed
-contest and its confirmation page (``/contest/<id>/confirm``) on the new
-site, and if a text lost something that matters, rewrite it in the Django
+``onclick``, and ``javascript:`` links. The list also has the contests with a
+form, which now submits only to the site itself. After the switch, open each
+listed contest and its confirmation page (``/contest/<id>/confirm``) on the
+new site, and if a text lost something that matters, rewrite it in the Django
 admin:
 
 .. code-block:: shell
 
    docker compose exec -T db psql -U rola -d rola_old -c \
-       "SELECT id, title FROM core_contest WHERE concat(notice_html, ' ', confirmation_html) ~* '<(iframe|object|embed|script|style|link|meta|base|frame)|<[^>]*\son[a-z]+\s*=|javascript:' ORDER BY id"
+       "SELECT id, title FROM core_contest WHERE concat(notice_html, ' ', confirmation_html) ~* '<(iframe|object|embed|script|style|link|meta|base|frame|form)|<[^>]*\son[a-z]+\s*=|javascript:' ORDER BY id"
 
 List the published contests with entries that are in no paid submission
 set, with how many such entries each has and how many of them were rated or

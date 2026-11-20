@@ -229,9 +229,13 @@ Deployment changes
   can load their icons. The static bucket needs a bucket policy that allows
   public reads, as "Maintenance" in ``docs/deployment.rst`` describes; the
   media bucket stays private.
-* nginx sends ``X-Frame-Options``, ``X-Content-Type-Options`` and
-  ``Referrer-Policy``, hides its version, caches hashed assets for a year,
-  and answers 404 for a missing asset instead of serving the application.
+* nginx sends ``X-Frame-Options``, ``X-Content-Type-Options``,
+  ``Referrer-Policy`` and a ``Content-Security-Policy`` that allows scripts
+  from the site's own origin only, hides its version, caches hashed assets
+  for a year, and answers 404 for a missing asset instead of serving the
+  application. A proxy or CDN feature that adds scripts to the pages
+  conflicts with the policy, as "HTTPS and headers" in
+  ``docs/deployment.rst`` describes.
 * nginx accepts uploads of up to 10 MiB; the previous proxy stopped at 1 MiB.
 * The nginx and Gunicorn access logs leave out query strings and the
   ``Referer``, so activation and reset tokens are not logged.

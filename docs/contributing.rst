@@ -173,7 +173,9 @@ The API contract job regenerates both generated files (see `API contract`_)
 and fails if either differs from the committed one; ``make api-contract``
 does the same. The image job builds the development and production targets
 of both Dockerfiles, with a fake value for the frontend's build argument,
-and pushes nothing. The Compose job runs ``docker compose config`` on
+and pushes nothing. It starts the production frontend image and checks that
+its page carries the ``Content-Security-Policy`` and loads scripts from the
+site's own paths only. The Compose job runs ``docker compose config`` on
 ``compose.yaml``, on ``compose.production.yaml``, and on the production file
 merged with ``compose.tunnel.yaml``, where it also checks what the merge
 removes and overrides. The GitHub configuration job lints the workflows with

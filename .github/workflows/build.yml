@@ -165,6 +165,24 @@ jobs:
           target: production
           build-args: |
             VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
+          load: ${{ matrix.component == 'frontend' }}
+          tags: rola-${{ matrix.component }}:ci
+      - name: Check the frontend's script policy against its page
+        if: matrix.component == 'frontend'
+        run: |
+          docker run --detach --publish 127.0.0.1:8080:8080 rola-frontend:ci
+          # nginx may still be starting when the published port answers.
+          curl --silent --show-error --fail --retry 10 --retry-all-errors \
+            --dump-header headers.txt --output index.html http://127.0.0.1:8080/
+          grep --ignore-case --fixed-strings \
+            "content-security-policy: script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" \
+            headers.txt
+          # The policy refuses inline scripts and scripts from other hosts,
+          # so the page may only load scripts from its own paths.
+          grep --only-matching --ignore-case '<script[^>]*>' index.html > scripts.txt
+          if grep --invert-match --extended-regexp ' src="/[^/"][^"]*"' scripts.txt; then
+            exit 1
+          fi
 
   compose:
     runs-on: ubuntu-26.04
