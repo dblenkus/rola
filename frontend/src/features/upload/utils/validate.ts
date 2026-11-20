@@ -2,6 +2,7 @@ import {
   AuthorModel,
   ContestModel,
   ImageModel,
+  ImageSize,
   SubmissionModel,
   ThemeModel,
 } from '../models';
@@ -20,7 +21,13 @@ interface BaseObject {
   errors: BaseError;
 }
 
-const minSeriesImages = 2;
+// The limits a photograph must meet. The form's rules line shows the same
+// figures.
+export const fileType = 'image/jpeg';
+export const maxFileMegabytes = 5;
+export const minLongEdge = 2500;
+export const maxLongEdge = 3500;
+export const minSeriesImages = 2;
 
 const hasError = (obj: BaseObject | BaseObject[]): boolean => {
   if (Array.isArray(obj)) {
@@ -28,6 +35,28 @@ const hasError = (obj: BaseObject | BaseObject[]): boolean => {
   } else {
     return obj.errors.hasError;
   }
+};
+
+// What is wrong with a file before it is decoded, or null.
+export const fileProblem = (file: File): string | null => {
+  if (file.type !== fileType) {
+    return i18next.t('jpeg_required');
+  }
+  if (file.size > maxFileMegabytes * 1024 ** 2) {
+    return i18next.t('image_too_large');
+  }
+  return null;
+};
+
+// What is wrong with a decoded photograph's long edge, or null.
+export const sizeProblem = ({ width, height }: ImageSize): string | null => {
+  if (height < minLongEdge && width < minLongEdge) {
+    return i18next.t('long_edge_too_short');
+  }
+  if (height > maxLongEdge || width > maxLongEdge) {
+    return i18next.t('long_edge_too_long');
+  }
+  return null;
 };
 
 const validateImage = async (image: ImageModel): Promise<ImageModel> => {
@@ -38,14 +67,9 @@ const validateImage = async (image: ImageModel): Promise<ImageModel> => {
 
   const { file } = image;
   if (file) {
-    if (file === undefined) {
-      return constructResponse(i18next.t('select_image'));
-    }
-    if (file.type !== 'image/jpeg') {
-      return constructResponse(i18next.t('jpeg_required'));
-    }
-    if (file.size > 5 * 1024 ** 2) {
-      return constructResponse(i18next.t('image_too_large'));
+    const problem = fileProblem(file);
+    if (problem) {
+      return constructResponse(problem);
     }
 
     let img: HTMLImageElement;
@@ -55,11 +79,7 @@ const validateImage = async (image: ImageModel): Promise<ImageModel> => {
       return constructResponse(i18next.t('invalid_file'));
     }
 
-    if (img.height < 2500 && img.width < 2500)
-      return constructResponse(i18next.t('long_edge_too_short'));
-
-    if (img.height > 3500 || img.width > 3500)
-      return constructResponse(i18next.t('long_edge_too_long'));
+    return constructResponse(sizeProblem(img));
   }
 
   return constructResponse(null);

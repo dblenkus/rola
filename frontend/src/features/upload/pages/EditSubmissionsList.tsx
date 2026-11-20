@@ -4,24 +4,17 @@ import axios from 'axios';
 
 import { WithTranslation, withTranslation } from 'react-i18next';
 
-import {
-  Alert,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-
+import Button, { ButtonRow } from '../../../shared/ui/Button';
 import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-
-import { tableButtonSx } from '../../../shared/ui/styles';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
+import Table, {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '../../../shared/ui/Table';
 import { requestError } from '../../../shared/api/errors';
 import { Author, Contest, Submission } from '../../../shared/api/types';
 import { asyncMap } from '../../../shared/utils/async';
@@ -29,6 +22,7 @@ import fetchAll from '../../../shared/api/fetchAll';
 import groupBy from '../../../shared/utils/groupBy';
 import { getActiveContests } from '../../contests';
 import { deleteSubmission, getSubmissionsByContest } from '../api';
+import './EditSubmissionsList.css';
 
 type EditSubmissionListProps = WithTranslation;
 
@@ -62,6 +56,9 @@ class EditSubmissionsList extends React.Component<
     showDialog: false,
     pendingSubmissions: [],
   };
+
+  // The class has no useId; one list is on screen at a time.
+  editReasonId = 'upload-edit-unavailable';
 
   async fetchSubmissions() {
     this.setState({ error: null });
@@ -124,12 +121,17 @@ class EditSubmissionsList extends React.Component<
   };
 
   render() {
+    const { t } = this.props;
+    return <Page title={t('edit_submissions')}>{this.renderContent()}</Page>;
+  }
+
+  renderContent() {
     const { error, submissions: allSubmissions } = this.state;
-    if (error) return <Alert severity="error">{error}</Alert>;
+    if (error) return <Message severity="error">{error}</Message>;
     if (!allSubmissions) return <LoadingProgress />;
     const { t } = this.props;
     const deleteAlert = this.state.deleteError && (
-      <Alert severity="error">{this.state.deleteError}</Alert>
+      <Message severity="error">{this.state.deleteError}</Message>
     );
 
     // A closed contest drops out of the reload after a refused delete, and
@@ -138,9 +140,7 @@ class EditSubmissionsList extends React.Component<
       return (
         <>
           {deleteAlert}
-          <Typography align="center" variant="h3">
-            {t('no_active_submissions')}
-          </Typography>
+          <p className="body">{t('no_active_submissions')}</p>
         </>
       );
 
@@ -172,51 +172,71 @@ class EditSubmissionsList extends React.Component<
       }
     });
 
+    const columns = {
+      contest: t('contest'),
+      author: t('author'),
+      themes: t('n_themes'),
+      photos: t('n_photos'),
+    };
+
     return (
       <>
         {deleteAlert}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('contest')}</TableCell>
-                <TableCell>{t('author')}</TableCell>
-                <TableCell>{t('n_themes')}</TableCell>
-                <TableCell>{t('n_photos')}</TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {groupedSubmissions.map((group) => (
-                <TableRow key={`${group.contest.id}-${group.author.id}`}>
-                  <TableCell>{group.contest.title}</TableCell>
-                  <TableCell>
-                    {`${group.author.first_name} ${group.author.last_name}`}
-                  </TableCell>
-                  <TableCell>{group.submissions_n}</TableCell>
-                  <TableCell>{group.photos_n}</TableCell>
-                  <TableCell align="right">
-                    <Tooltip title={t('not_yet_available')} placement="top">
-                      <span>
-                        <Button variant="text" sx={tableButtonSx} disabled>
-                          {t('edit')}
-                        </Button>
-                      </span>
-                    </Tooltip>
+        <Table label={t('edit_submissions')}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{columns.contest}</TableCell>
+              <TableCell>{columns.author}</TableCell>
+              <TableCell align="end">{columns.themes}</TableCell>
+              <TableCell align="end">{columns.photos}</TableCell>
+              <TableCell>
+                <span className="visually-hidden">{t('upload_actions')}</span>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {groupedSubmissions.map((group) => (
+              <TableRow key={`${group.contest.id}-${group.author.id}`}>
+                <TableCell label={columns.contest}>
+                  {group.contest.title}
+                </TableCell>
+                <TableCell label={columns.author}>
+                  {`${group.author.first_name} ${group.author.last_name}`}
+                </TableCell>
+                <TableCell label={columns.themes} align="end">
+                  {group.submissions_n}
+                </TableCell>
+                <TableCell label={columns.photos} align="end">
+                  {group.photos_n}
+                </TableCell>
+                <TableCell align="end">
+                  <ButtonRow>
+                    {/* Editing is not available yet. A locked button would
+                        put its reason in every row; the line under the
+                        table states it once. */}
                     <Button
-                      variant="text"
-                      sx={tableButtonSx}
-                      color="secondary"
-                      onClick={this.openDialog(group.submissions)}
+                      variant="quiet"
+                      size="dense"
+                      inert
+                      aria-describedby={this.editReasonId}
+                    >
+                      {t('edit')}
+                    </Button>
+                    <Button
+                      size="dense"
+                      onPress={this.openDialog(group.submissions)}
                     >
                       {t('delete')}
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </ButtonRow>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <p id={this.editReasonId} className="upload-submissions__note small">
+          {t('upload_edit_unavailable')}
+        </p>
         <ConfirmDialog
           open={this.state.showDialog}
           title={t('delete_confirmation_title')}

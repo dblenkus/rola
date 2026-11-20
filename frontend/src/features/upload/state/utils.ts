@@ -47,6 +47,7 @@ export const getEmptyContest = (): ContestModel => ({
     description: '',
     noticeHtml: '',
     headerImage: null,
+    endDate: '',
     dobRequired: false,
     clubShow: false,
     clubRequired: false,

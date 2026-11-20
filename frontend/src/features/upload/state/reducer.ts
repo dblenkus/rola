@@ -38,6 +38,7 @@ const contestMeta = (contest: Contest): ContestMeta => ({
   description: contest.description ?? '',
   noticeHtml: contest.notice_html ?? '',
   headerImage: contest.header_image ?? null,
+  endDate: contest.end_date,
   dobRequired: contest.dob_required ?? false,
   clubShow: contest.club_show ?? false,
   clubRequired: contest.club_required ?? false,

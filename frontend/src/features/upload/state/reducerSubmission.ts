@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { SubmissionMeta, SubmissionModel } from '../models';
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import imageReducer, { imageInit, imageStore } from './reducerImage';
 import { getEmptySubmission } from './utils';
 

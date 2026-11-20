@@ -3,9 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { SubmissionModel } from '../../models';
-import type { InputChange } from '../../../../shared/ui/InputField';
-
-import InputField from '../../../../shared/ui/InputField';
+import TextField, { type InputChange } from '../../../../shared/ui/TextField';
 
 export interface DescriptionFieldProps {
   submission: SubmissionModel;
@@ -17,13 +15,12 @@ const DescriptionField: React.FC<DescriptionFieldProps> = (props) => {
   const { submission, onChange } = props;
 
   return (
-    <InputField
-      sx={{ my: 1 }}
+    <TextField
       name="description"
       value={submission.description}
       error={submission.errors.description}
       label={t('description')}
-      autoComplete=""
+      autoComplete="off"
       required={submission.meta.descriptionRequired}
       rows={3}
       onChange={onChange}

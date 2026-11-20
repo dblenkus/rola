@@ -1,18 +1,14 @@
 import React from 'react';
 
-import { WithTranslation, withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
-import { Card, CardContent, CardHeader, Grid } from '@mui/material';
+import DateField from '../../../../shared/ui/DateField';
+import TextField, { type InputChange } from '../../../../shared/ui/TextField';
 
-import InputField from '../../../../shared/ui/InputField';
-
-import { formCardSx } from '../../../../shared/ui/styles';
 import { AuthorModel, DateChange } from '../../models';
-import type { InputChange } from '../../../../shared/ui/InputField';
-import DatePicker from '../DatePicker';
 import AutocompleteField from '../AutocompleteInput';
 
-interface AuthorFieldProps extends WithTranslation {
+interface AuthorFieldProps {
   author: AuthorModel;
   showDob: boolean;
   showClub: boolean;
@@ -22,131 +18,95 @@ interface AuthorFieldProps extends WithTranslation {
   handleAUthorChange: (payload: InputChange | DateChange) => void;
 }
 
-class AuthorField extends React.Component<AuthorFieldProps> {
-  render(): React.ReactNode {
-    const {
-      author,
-      showDob,
-      showClub,
-      requiredClub,
-      showSchool,
-      requiredSchool,
-      handleAUthorChange,
-      t,
-    } = this.props;
+// The entrant's details, one field under another.
+const AuthorField: React.FC<AuthorFieldProps> = ({
+  author,
+  showDob,
+  showClub,
+  requiredClub,
+  showSchool,
+  requiredSchool,
+  handleAUthorChange,
+}) => {
+  const { t } = useTranslation();
 
-    return (
-      <Card sx={formCardSx} raised>
-        <CardHeader
-          title={t('author')}
-          slotProps={{
-            title: { component: 'h3', align: 'center', variant: 'h3' },
-          }}
+  return (
+    <section className="upload-author">
+      <div className="upload-section-head">
+        <h2 className="upload-section-head__title h2-mobile">{t('author')}</h2>
+      </div>
+      <div className="upload-author__fields">
+        <TextField
+          name="first_name"
+          value={author.first_name}
+          error={author.errors.first_name}
+          label={t('first_name')}
+          autoComplete="given-name"
+          autoFocus
+          required
+          onChange={handleAUthorChange}
         />
-        <CardContent>
-          <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <InputField
-                name="first_name"
-                value={author.first_name}
-                error={author.errors.first_name}
-                label={t('first_name')}
-                autoComplete="given-name"
-                autoFocus
-                required
-                onChange={handleAUthorChange}
-              />
-            </Grid>
-          </Grid>
-          <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <InputField
-                name="last_name"
-                value={author.last_name}
-                error={author.errors.last_name}
-                label={t('last_name')}
-                autoComplete="family-name"
-                required
-                onChange={handleAUthorChange}
-              />
-            </Grid>
-          </Grid>
-          {showDob && (
-            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <DatePicker
-                  name="dob"
-                  label={t('date_of_birth')}
-                  value={author.dob || null}
-                  error={author.errors.dob}
-                  required
-                  autoComplete="bday"
-                  onChange={handleAUthorChange}
-                />
-              </Grid>
-            </Grid>
-          )}
-          {showSchool && (
-            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <AutocompleteField
-                  name="school"
-                  label={t('school')}
-                  value={author.school || ''}
-                  error={author.errors.school}
-                  required={requiredSchool}
-                  onChange={handleAUthorChange}
-                />
-              </Grid>
-            </Grid>
-          )}
-          {showSchool && (
-            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <InputField
-                  name="mentor"
-                  value={author.mentor}
-                  error={author.errors.mentor}
-                  label={t('mentor')}
-                  autoComplete=""
-                  onChange={handleAUthorChange}
-                />
-              </Grid>
-            </Grid>
-          )}
-          {showClub && (
-            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <InputField
-                  name="club"
-                  value={author.club}
-                  error={author.errors.club}
-                  label={t('photo_club')}
-                  required={requiredClub}
-                  autoComplete=""
-                  onChange={handleAUthorChange}
-                />
-              </Grid>
-            </Grid>
-          )}
-          {showClub && (
-            <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <InputField
-                  name="distinction"
-                  value={author.distinction}
-                  error={author.errors.distinction}
-                  label={t('photo_distinction')}
-                  autoComplete=""
-                  onChange={handleAUthorChange}
-                />
-              </Grid>
-            </Grid>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-}
+        <TextField
+          name="last_name"
+          value={author.last_name}
+          error={author.errors.last_name}
+          label={t('last_name')}
+          autoComplete="family-name"
+          required
+          onChange={handleAUthorChange}
+        />
+        {showDob && (
+          <DateField
+            name="dob"
+            label={t('date_of_birth')}
+            value={author.dob ?? null}
+            error={author.errors.dob}
+            required
+            autoComplete="bday"
+            onChange={handleAUthorChange}
+          />
+        )}
+        {showSchool && (
+          <AutocompleteField
+            name="school"
+            label={t('school')}
+            value={author.school ?? ''}
+            error={author.errors.school}
+            required={requiredSchool}
+            onChange={handleAUthorChange}
+          />
+        )}
+        {showSchool && (
+          <TextField
+            name="mentor"
+            value={author.mentor ?? ''}
+            error={author.errors.mentor}
+            label={t('mentor')}
+            onChange={handleAUthorChange}
+          />
+        )}
+        {showClub && (
+          <TextField
+            name="club"
+            value={author.club ?? ''}
+            error={author.errors.club}
+            label={t('photo_club')}
+            required={requiredClub}
+            onChange={handleAUthorChange}
+          />
+        )}
+        {showClub && (
+          <TextField
+            name="distinction"
+            value={author.distinction}
+            error={author.errors.distinction}
+            label={t('photo_distinction')}
+            onChange={handleAUthorChange}
+          />
+        )}
+      </div>
+    </section>
+  );
+};
 
-export default withTranslation()(AuthorField);
+export default AuthorField;

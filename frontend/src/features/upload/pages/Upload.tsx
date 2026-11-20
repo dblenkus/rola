@@ -3,8 +3,6 @@ import { connect, ConnectedProps } from 'react-redux';
 
 import { useNavigate, useParams } from 'react-router';
 
-import { Alert } from '@mui/material';
-
 import type { AppDispatch, AppState } from '../../../app/store';
 import {
   authorUpdate,
@@ -14,15 +12,18 @@ import {
   uploadSubmit,
 } from '../state/actions';
 
+import { useTranslation } from 'react-i18next';
 import { userContext } from '../../auth';
 import { requestError } from '../../../shared/api/errors';
 
 import { DateChange } from '../models';
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import { Contest } from '../../../shared/api/types';
 
 import ContestField from '../components/Contest/ContestField';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
 import { getContest } from '../../contests';
 
 interface RouteMatchParams {
@@ -37,6 +38,17 @@ interface UploadViewProps extends PropsFromRedux {
 
 interface UploadViewState {
   error: string | null;
+}
+
+// The page before its form can be shown: the contest's title is not known
+// yet, so the page is named by what it is for.
+function Waiting({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <Page title={t('upload_photos')} titleHidden>
+      {children}
+    </Page>
+  );
 }
 
 class UploadView extends React.Component<UploadViewProps, UploadViewState> {
@@ -78,10 +90,19 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
 
   render(): React.ReactNode {
     if (this.state.error)
-      return <Alert severity="error">{this.state.error}</Alert>;
+      return (
+        <Waiting>
+          <Message severity="error">{this.state.error}</Message>
+        </Waiting>
+      );
     // Until the form is opened for this account, the store may hold another
     // account's form, which must not be shown or submitted.
-    if (this.props.owner !== this.props.account) return <LoadingProgress />;
+    if (this.props.owner !== this.props.account)
+      return (
+        <Waiting>
+          <LoadingProgress />
+        </Waiting>
+      );
     const {
       contestId,
       contest,
@@ -94,10 +115,15 @@ class UploadView extends React.Component<UploadViewProps, UploadViewState> {
     // Until this contest loads, the store holds an empty form or another
     // contest's, which must not be shown or submitted here.
     if (contestId !== Number(this.props.match.params.contestId))
-      return <LoadingProgress />;
+      return (
+        <Waiting>
+          <LoadingProgress />
+        </Waiting>
+      );
 
     return (
       <ContestField
+        contestId={Number(this.props.match.params.contestId)}
         contest={contest}
         handleAuthorChange={handleAuthorChange}
         handleSubmissionChange={handleSubmissionChange}

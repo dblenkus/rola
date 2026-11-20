@@ -19,11 +19,20 @@ export interface ImageMeta {
   isNew: boolean;
 }
 
+// The pixel size of a photograph, as the browser decoded it.
+export interface ImageSize {
+  width: number;
+  height: number;
+}
+
 export interface ImageModel {
   meta: ImageMeta;
   file: File | undefined;
   url: string;
   errors: ImageError;
+  // Measured when the photograph is read; absent until then, and for a file
+  // the browser cannot decode.
+  size?: ImageSize | undefined;
 }
 
 export interface SubmissionError {
@@ -96,6 +105,8 @@ export interface ContestMeta {
   description: string;
   noticeHtml: string;
   headerImage: string | null;
+  // When entries close, as the API sends it.
+  endDate: string;
   dobRequired: boolean;
   clubShow: boolean;
   clubRequired: boolean;
