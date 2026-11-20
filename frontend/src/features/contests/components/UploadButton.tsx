@@ -1,33 +1,29 @@
-import React from 'react';
-
-import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Grid } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import Button from '../../../shared/ui/Button';
+import './UploadButton.css';
 
 interface UploadButtonProps {
   contestId: number;
+  // The details page shows the action twice; only one may be primary.
+  variant: 'primary' | 'secondary';
 }
 
-const UploadLink = styled(Link)({ textDecoration: 'none' });
-
-const UploadButton: React.FC<UploadButtonProps> = ({ contestId }) => {
+// The link to a contest's upload page, drawn as a large button.
+export default function UploadButton({
+  contestId,
+  variant,
+}: UploadButtonProps) {
   const { t } = useTranslation();
   return (
-    <Grid container sx={{ justifyContent: 'center' }}>
-      <UploadLink to={`/contest/${contestId}/upload`}>
-        <Button
-          sx={{ m: 2, py: 2, px: 4 }}
-          color="primary"
-          size="large"
-          variant="contained"
-        >
-          {t('upload_photos')}
-        </Button>
-      </UploadLink>
-    </Grid>
+    <div className="contests-upload">
+      <Button
+        variant={variant}
+        size="large"
+        to={`/contest/${contestId}/upload`}
+      >
+        {t('upload_photos')}
+      </Button>
+    </div>
   );
-};
-
-export default UploadButton;
+}

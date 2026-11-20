@@ -1,0 +1,28 @@
+/*
+ * The deadline line under the title, after the entrant's contest header: the
+ * clock, 8 px, then "Entries close 15 Nov 2026 · 22 days left". It sits in the
+ * page's lead, which is text-muted; the date is text at 600.
+ */
+.contests-deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contests-deadline__clock {
+  display: block;
+  flex: none;
+}
+
+.contests-deadline strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* The organiser's photo whole: never cropped, rounded or overlaid. */
+.contests-header-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-none);
+}

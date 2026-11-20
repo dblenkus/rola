@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { Alert, Typography } from '@mui/material';
-
 import { reportUnexpected } from '../../../shared/api/errors';
 import type { Contest } from '../../../shared/api/types';
 
-import HeaderImage from '../../../shared/ui/Layout/HeaderImage';
+import Icon from '../../../shared/ui/Icon';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
 import SanitizedHtml from '../../../shared/ui/SanitizedHtml';
 import UploadButton from '../components/UploadButton';
+import useDeadline from '../hooks/useDeadline';
 import { getContest } from '../api';
+import './ContestDetails.css';
 
 export default function ContestDetails() {
   const { contestId } = useParams();
@@ -43,23 +45,47 @@ function ContestPage({ contestId }: { contestId: string }) {
     };
   }, [contestId]);
 
-  if (failed) {
-    return <Alert severity="error">{t('could_not_load_contest')}</Alert>;
-  }
-  if (!contest) return <LoadingProgress />;
-
+  if (contest) return <ContestView contest={contest} />;
+  // Until the contest's title is known, the page is named generically.
   return (
-    <>
-      {contest.header_image ? (
-        <HeaderImage src={contest.header_image} />
+    <Page title={t('contests_contest')} titleHidden>
+      {failed ? (
+        <Message severity="error">{t('could_not_load_contest')}</Message>
       ) : (
-        <Typography align="center" variant="h2">
-          {contest.title}
-        </Typography>
+        <LoadingProgress />
       )}
-      <UploadButton contestId={contest.id} />
+    </Page>
+  );
+}
+
+function ContestView({ contest }: { contest: Contest }) {
+  const deadline = useDeadline(contest.end_date);
+  return (
+    <Page
+      title={contest.title}
+      lead={
+        <span className="contests-deadline">
+          <Icon name="clock" className="contests-deadline__clock" />
+          <span>
+            {deadline.label} <strong>{deadline.date}</strong>
+            {deadline.remaining !== null && ` · ${deadline.remaining}`}
+          </span>
+        </span>
+      }
+    >
+      {contest.header_image && (
+        // The title beside it names the contest, so the image adds no text.
+        <img
+          className="contests-header-image"
+          src={contest.header_image}
+          alt=""
+          loading="eager"
+          decoding="async"
+        />
+      )}
+      <UploadButton contestId={contest.id} variant="primary" />
       <SanitizedHtml html={contest.notice_html ?? ''} />
-      <UploadButton contestId={contest.id} />
-    </>
+      <UploadButton contestId={contest.id} variant="secondary" />
+    </Page>
   );
 }
