@@ -1,14 +1,21 @@
 /**
  * Registers the root-scoped service worker built from src/sw.ts and tracks
  * whether a new version waits for this tab to reload. The worker never takes
- * over by itself; applyUpdate() asks it to.
+ * over by itself: this module lets it take over at once when the page was
+ * built together with it and no other window of the site is open, and
+ * applyUpdate() when a person accepts it.
  */
 import { reloadPage } from './reloadPage';
+import type { IsSameBuildMessage, SkipWaitingMessage } from './workerMessages';
 
 // An installed app resumed from the app switcher makes no navigation, so the
 // browser does not check sw.js by itself. One check a minute at most keeps
 // that to a small request.
 export const UPDATE_CHECK_INTERVAL_MS = 60 * 1000;
+
+// How long a waiting worker has to say whether it may take over. A worker
+// of an older version does not answer at all.
+export const SAME_BUILD_TIMEOUT_MS = 2000;
 
 // The new version's worker, once it waits while an older one controls this
 // tab; it stays set after the worker activates, until the reload.
@@ -17,6 +24,8 @@ let updateWorker: ServiceWorker | null = null;
 let dismissedWorker: ServiceWorker | null = null;
 // The person accepted the update in this tab, so the takeover reloads it.
 let updateAccepted = false;
+// The waiting worker being asked whether it may take over.
+let askedWorker: ServiceWorker | null = null;
 let reloading = false;
 const listeners = new Set<() => void>();
 
@@ -68,7 +77,112 @@ export function applyUpdate(): void {
     return;
   }
   updateAccepted = true;
-  worker.postMessage({ type: 'SKIP_WAITING' });
+  skipWaiting(worker);
+}
+
+function skipWaiting(worker: ServiceWorker): void {
+  const message: SkipWaitingMessage = { type: 'SKIP_WAITING' };
+  worker.postMessage(message);
+}
+
+/**
+ * The URL of this page's entry script: the one module script under /assets/
+ * that the build puts into index.html. Null if there is not exactly one.
+ */
+function entryScriptUrl(): string | null {
+  const scripts = Array.from(
+    document.querySelectorAll<HTMLScriptElement>('script[type="module"][src]'),
+  ).filter((script) => new URL(script.src).pathname.startsWith('/assets/'));
+  const [script] = scripts;
+  return scripts.length === 1 && script !== undefined ? script.src : null;
+}
+
+/**
+ * What to do with a waiting worker: let it take over unasked, leave it
+ * waiting and ask again at the next update check, or offer the update.
+ */
+type WaitingWorkerAction = 'takeOver' | 'askLater' | 'offer';
+
+/** The action for the worker's reply to IS_SAME_BUILD. */
+function actionForReply(data: unknown): WaitingWorkerAction {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('type' in data) ||
+    data.type !== 'SAME_BUILD' ||
+    !('sameBuild' in data) ||
+    data.sameBuild !== true
+  ) {
+    return 'offer';
+  }
+  // Only an answer that no other window is open lets it take over: another
+  // window may still run the previous version, whose files the takeover
+  // deletes.
+  return 'otherWindows' in data && data.otherWindows === false
+    ? 'takeOver'
+    : 'askLater';
+}
+
+/**
+ * Asks `worker` whether its precache holds this page's entry script, that is
+ * whether this page already runs its version, and whether another window of
+ * the site is open. Resolves 'offer' when the page has no entry script or
+ * the worker gives no valid answer in time.
+ */
+function askWaitingWorker(worker: ServiceWorker): Promise<WaitingWorkerAction> {
+  const url = entryScriptUrl();
+  if (url === null) return Promise.resolve('offer');
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const finish = (action: WaitingWorkerAction) => {
+      clearTimeout(timeout);
+      channel.port1.close();
+      resolve(action);
+    };
+    const timeout = setTimeout(() => {
+      finish('offer');
+    }, SAME_BUILD_TIMEOUT_MS);
+    channel.port1.onmessage = (event: MessageEvent<unknown>) => {
+      finish(actionForReply(event.data));
+    };
+    const message: IsSameBuildMessage = {
+      type: 'IS_SAME_BUILD',
+      entryScriptUrl: url,
+    };
+    worker.postMessage(message, [channel.port2]);
+  });
+}
+
+/**
+ * Handles a worker that waits while another one controls this tab. A page
+ * loaded from the network after a release already runs the new version and
+ * has every file the new precache holds, so when it is the site's only window
+ * the worker takes over without a prompt or a reload. While other windows are
+ * open, one of them may run the previous version, so nothing happens until
+ * the next update check asks again. A page of the previous version offers
+ * the update.
+ */
+function onWaitingWorker(worker: ServiceWorker): void {
+  if (worker === updateWorker || worker === askedWorker) return;
+  askedWorker = worker;
+  void askWaitingWorker(worker).then((action) => {
+    if (askedWorker === worker) askedWorker = null;
+    if (action === 'takeOver') {
+      skipWaiting(worker);
+    } else if (action === 'offer') {
+      setUpdateWorker(worker);
+    }
+  });
+}
+
+/** Handles the worker that already waits, if any, in a controlled tab. */
+function checkWaitingWorker(registration: ServiceWorkerRegistration): void {
+  if (
+    registration.waiting !== null &&
+    navigator.serviceWorker.controller !== null
+  ) {
+    onWaitingWorker(registration.waiting);
+  }
 }
 
 // A worker that waits while another one controls this tab is a new version.
@@ -77,15 +191,13 @@ export function applyUpdate(): void {
 // with a forced reload is not controlled either and came from the network.
 function watchForUpdates(registration: ServiceWorkerRegistration): void {
   const container = navigator.serviceWorker;
-  if (registration.waiting !== null && container.controller !== null) {
-    setUpdateWorker(registration.waiting);
-  }
+  checkWaitingWorker(registration);
   registration.addEventListener('updatefound', () => {
     const worker = registration.installing;
     if (worker === null) return;
     worker.addEventListener('statechange', () => {
       if (worker.state === 'installed' && container.controller !== null) {
-        setUpdateWorker(worker);
+        onWaitingWorker(worker);
       }
     });
   });
@@ -93,8 +205,9 @@ function watchForUpdates(registration: ServiceWorkerRegistration): void {
 
 /**
  * Checks for a new worker when the page is shown again or the window gets
- * focus, at most once a minute. Focus covers a desktop tab that stays
- * visible. Returns a function that removes the listeners.
+ * focus, at most once a minute, and asks a worker that already waits again
+ * whether it may take over. Focus covers a desktop tab that stays visible.
+ * Returns a function that removes the listeners.
  */
 export function checkForUpdatesWhenShown(
   registration: ServiceWorkerRegistration,
@@ -105,6 +218,8 @@ export function checkForUpdatesWhenShown(
     // Wall-clock time, so time spent suspended counts.
     if (Date.now() - lastCheck < UPDATE_CHECK_INTERVAL_MS) return;
     lastCheck = Date.now();
+    // A worker that waits for other windows to close is asked again.
+    checkWaitingWorker(registration);
     registration.update().catch((error: unknown) => {
       // Offline or the server is down: the current worker stays.
       console.warn('Service worker update check failed', error);

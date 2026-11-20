@@ -73,8 +73,9 @@ export default defineConfig({
       // globPatterns below already precaches the icons.
       includeManifestIcons: false,
       injectManifest: {
-        // The app's JS, CSS and HTML, the fonts, the icons and favicons. Not
-        // og-image.png (link previews only) nor img/ (other pages' images).
+        // The app's JS, CSS and HTML, the fonts, the icons and favicons; the
+        // plugin adds site.webmanifest. Not robots.txt, which only crawlers
+        // read.
         globPatterns: [
           '**/*.{js,css,html,woff2}',
           '*.{ico,svg}',
