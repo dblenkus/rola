@@ -2,8 +2,9 @@ Unreleased
 ==========
 
 The backend moves to Django 6.1 and Django REST framework 3.18, the frontend
-to React 19, MUI 9, React Router 8 and Redux Toolkit, and the deployment to
-current images. The existing data moves to the new stack through a one-off
+to React 19, React Router 8 and Redux Toolkit on Rola's own design system
+with React Aria Components instead of MUI, and the deployment to current
+images. The existing data moves to the new stack through a one-off
 transfer; see ``docs/transfer.rst``.
 
 API changes
@@ -160,6 +161,58 @@ API changes
   backend's integer bounds; the backend serves no schema at runtime. Its
   security scheme ``tokenAuth`` is the HTTP ``bearer`` scheme.
 
+Interface changes
+-----------------
+
+* Every page has the design system's look, with Inter and DM Mono served
+  from the site instead of Roboto. The product is named "Rola" in the
+  header and in each page's title, which also names the page.
+* On a phone, the main navigation is a tab bar fixed to the bottom of the
+  screen, and the upload page hides both bars and brings its own header and
+  submit bar.
+* The header offers both languages side by side. Request errors, upload
+  validation, notifications and several page texts that were in English
+  only are translated, and the page's ``lang`` follows the chosen language,
+  so screen readers pronounce Slovenian text as Slovenian.
+* Pages have main, banner and navigation landmarks, a skip link and one
+  ``h1``, and focus moves to the main content after navigation.
+* An API request without an answer fails after 30 seconds with its own
+  message instead of waiting forever. A photograph upload has no time limit.
+* An unknown address shows "Page not found" instead of an empty page, and a
+  page that fails to render shows an error with Reload instead of a blank
+  window.
+* Dates read "15. 11. 2026" in Slovenian and "15 Nov 2026" in English, and
+  the contest list and contest page show the days left to enter.
+* Email fields are of type email, so a phone shows its email keyboard and
+  the browser refuses an address without "@". The school lookup opens on
+  focus and says in words that it is loading. The date of birth is entered
+  as day, month and year instead of in a calendar.
+* The upload page shows each photograph's size in pixels, how many
+  photographs are chosen per theme and the rules a file must meet.
+* Results mark awards with an award mark and the award's name instead of
+  gold, silver and bronze row backgrounds, and accepted entries with a check
+  and the word. Only an accepted entry's title is a link; whole rows are no
+  longer clickable.
+* The admin's paid toggle is a checkbox named after the author, and says
+  "Paid" or "Not paid" on a phone, instead of a money icon in one of two
+  colours. A submission set shows its photographs as thumbnails that link
+  to the full files.
+* A notification pauses its five seconds while the pointer is over it or
+  focus is inside it.
+* The judge's theme list shows each theme's progress, and the gallery shows
+  each photograph's number and the judge's score as a figure instead of ten
+  stars.
+* The judge's scoring view takes the whole window. It has ten score keys,
+  typed as the digits 1 to 9 and 0 for 10, Clear and Backspace to remove a
+  score, Previous and Next, a filmstrip of the theme's photographs and a
+  "Scored n / total" counter. Scoring a photograph no longer moves to the
+  next one. The single-key shortcuts can be switched off, a choice the
+  browser keeps, and are ignored while Ctrl, Alt or Meta is held or focus is
+  in a text field.
+* The app can be installed to a home screen. Offline, it opens to its shell
+  with a notice instead of the browser's error page, and a new version is
+  announced with a Reload prompt instead of being loaded by itself.
+
 Deployment changes
 ------------------
 
@@ -254,6 +307,20 @@ Deployment changes
   scripts to the pages must copy the nonce onto them, as Cloudflare's
   JavaScript Detections do, and must not cache the pages, as "HTTPS and
   headers" in ``docs/deployment.rst`` describes.
+* The frontend build includes a service worker, ``/sw.js``, and a web app
+  manifest, ``/site.webmanifest``, so browsers can install the site, which
+  needs HTTPS. The worker stores only the app's own scripts, styles, fonts,
+  icons and ``index.html``, and answers navigations with ``index.html``
+  except for ``/api``, ``/django-admin``, ``/media``, ``/static2``,
+  ``/assets`` and file paths. API responses and photographs always come
+  from the network. A new version waits until the person presses Reload in
+  its prompt, as "Releases and the service worker" in
+  ``docs/deployment.rst`` describes.
+* nginx serves ``/sw.js`` and ``/site.webmanifest`` with ``Cache-Control:
+  no-cache``, the manifest as ``application/manifest+json``, and answers 404
+  for a missing file at the root, such as an icon, instead of serving the
+  application.
+* The frontend makes no request to Google Fonts.
 * nginx accepts uploads of up to 10 MiB; the previous proxy stopped at 1 MiB.
 * The nginx and Gunicorn access logs leave out query strings and the
   ``Referer``, so activation and reset tokens are not logged.
@@ -401,9 +468,19 @@ Fixes
 * The page footer stays below the rater. The rater was laid over the page,
   so the footer was drawn behind the photographs, the description and the
   rating stars whenever they reached below the first screen.
-* On a narrow screen, such as a 360 or 390 pixel wide phone, the header's
-  buttons continue on further rows. They used to widen every page past the
-  screen, so the account menu was cut off and the page scrolled sideways.
+* On a narrow screen, such as a 360 or 390 pixel wide phone, no page is
+  wider than the screen. The header's buttons used to widen every page past
+  it, so the account menu was cut off and the page scrolled sideways.
+* A published series shows all of its photographs. The results used to drop
+  every photograph after the sixth.
+* The list of an entrant's submissions says in a line under the table, in
+  both languages, that editing an entry is not available yet and how to
+  change one. It used to say "Not jet available." in an English tooltip that
+  only a mouse pointer could open.
+* The upload form's message for a large photograph reads "Long edge should
+  not exceed 3500px." instead of "Longe edge …".
+* The admin's paid toggle has a name. It was an unnamed checkbox, which a
+  screen reader announced without saying whose payment it changed.
 
 Development changes
 -------------------
@@ -420,6 +497,17 @@ Development changes
   lockfile replaces yarn. Its package is ``rola-frontend`` instead of
   ``rolca-ui``, and ``frontend/src`` is organized into ``app``, ``shared``
   and one directory per feature.
+* The frontend is built on Rola's design system in ``frontend/src/design``
+  and a component kit on React Aria Components in
+  ``frontend/src/shared/ui``; MUI, Emotion, the MUI date pickers, Roboto and
+  luxon are removed. ``npm run tokens`` generates ``tokens.css`` from
+  ``tokens.json``, and ``npm run build`` fails while it is out of date.
+* The frontend tests run as two Vitest projects: ``app`` under jsdom, and
+  ``scripts`` under Node.js for the build scripts and the Vite
+  configuration.
+* New development dependencies: ``vite-plugin-pwa``, ``workbox-core``,
+  ``workbox-precaching`` and ``workbox-routing``, which build the service
+  worker.
 * The Django settings ``DRF_USER_*`` are named ``ACCOUNTS_*``, and
   ``ROLCA_MAX_UPLOAD_SIZE`` and ``ROLCA_MAX_UPLOAD_RESOLUTION`` are
   ``ENTRIES_MAX_UPLOAD_SIZE`` and ``ENTRIES_MAX_UPLOAD_RESOLUTION``. The

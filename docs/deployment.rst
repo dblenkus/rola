@@ -43,8 +43,9 @@ Services
 
 ``frontend``
    nginx as uid 101, published on ``127.0.0.1:8080`` unless
-   ``compose.tunnel.yaml`` is used. It serves the
-   built frontend, ``/media/`` from the ``media`` volume and ``/static2/``
+   ``compose.tunnel.yaml`` is used. It serves the built frontend with its
+   service worker (see `Releases and the service worker`_), ``/media/``
+   from the ``media`` volume and ``/static2/``
    from the ``static`` volume, and passes ``/api`` and ``/django-admin`` to
    the backend. It looks up the backend's address again every 10 seconds, so
    it keeps working when the backend container is recreated. It waits up to 120 seconds for the backend's response and
@@ -251,7 +252,10 @@ server:
 * Cloudflare caches ``/media/`` and ``/assets/`` files for as long as nginx
   tells browsers to keep them, a year. A photograph that was deleted on the
   server can therefore stay available at its address until it is purged from
-  Cloudflare's cache. Cloudflare keeps ``/static2/`` files, which come
+  Cloudflare's cache. ``/sw.js``, ``/site.webmanifest`` and the other files
+  at the root come with ``Cache-Control: no-cache``, so Cloudflare checks
+  them with nginx on every request, and a release reaches browsers on their
+  next check, as without Cloudflare. Cloudflare keeps ``/static2/`` files, which come
   without a cache header, for two hours, and tells browsers to keep them
   for the zone's Browser Cache TTL, four hours by default, so the Django
   admin's stylesheets and scripts can lag an upgrade by that long.
@@ -356,7 +360,9 @@ an inline script without the nonce, or a script from another host, into the
 pages is refused by the browser and breaks: turn it off, or extend the policy
 in ``frontend/docker/default.conf`` and rebuild the frontend. API and Django
 admin responses do not carry the policy, because with ``ROLA_USE_S3`` the
-Django admin's scripts come from the static bucket's host.
+Django admin's scripts come from the static bucket's host. The policy sets
+no ``worker-src``, so the service worker falls under ``script-src``, which
+it meets because ``/sw.js`` comes from the site's own origin.
 
 The HTML document must not be served from a shared cache. A cache that
 stores the page with its header gives every visitor the same nonce, which
@@ -601,6 +607,64 @@ previous revision, then run ``docker compose build`` and ``docker compose up
 -d --wait`` to start it again. Checking out the previous revision does not
 undo the new migrations, so a migration that changed the schema in a way the
 previous release cannot use blocks this recovery.
+
+Releases and the service worker
+===============================
+
+The frontend is an installable web app: the build adds a manifest,
+``/site.webmanifest``, and a service worker, ``/sw.js``, that browsers
+register for the whole site. Browsers offer installation and register the
+worker only over HTTPS, which `TLS terminator`_ already requires, and on
+``localhost``.
+
+The worker keeps a copy of the build's own files: its scripts, styles,
+fonts, icons and ``index.html``. It answers the application's pages from
+that copy, so the site opens without the network and, offline, shows its
+shell with a notice. It stores nothing else. Requests to ``/api``,
+``/django-admin``, ``/media`` and ``/static2``, photographs in S3, and any
+path with a file extension that it does not hold go to the network and the
+browser's HTTP cache as without a worker.
+
+nginx sends these caching headers for the frontend's files:
+
+.. list-table:: Frontend caching
+   :header-rows: 1
+   :widths: 35 30 35
+
+   * - Path
+     - ``Cache-Control``
+     - Missing file
+   * - ``/assets/``
+     - ``public, max-age=31536000, immutable``
+     - 404
+   * - ``/sw.js``, ``/site.webmanifest``
+     - ``no-cache``
+     - 404
+   * - other files at the root, such as icons and ``index.html``
+     - ``no-cache``
+     - 404
+   * - every other path
+     - ``no-cache``
+     - ``index.html``, the application
+
+The manifest goes out as ``application/manifest+json``. A missing file at
+the root answers 404 instead of the application, because a browser that
+asked for ``/sw.js`` would otherwise try to run the application's HTML as a
+worker.
+
+After an upgrade, people keep the version they have open until they press
+Reload in the prompt or close every tab and window of the site. A browser
+checks for a new worker when it opens the site, and the
+application asks it to check again when the site is shown again or gets
+focus, at most once a minute, which also covers an installed app resumed
+from the app switcher. The new worker downloads the new release in the
+background and then waits: the application shows "A new version is
+available." with Reload and Later, and loads the new release only after
+Reload. It never reloads by itself, because an entrant may be uploading and
+a judge scoring. Until then, the old worker serves the old release's files
+from its copy, so the open pages keep working although the server no longer
+has them. Later puts the prompt off until the next release or the next
+page load.
 
 Cutover from the previous deployment
 ====================================

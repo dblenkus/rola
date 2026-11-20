@@ -4,7 +4,8 @@ Contributing
 
 This page covers the development stack, the checks that CI runs, and the
 maintenance tasks with steps that are easy to get wrong: regenerating
-migrations, regenerating the API contract and updating dependencies.
+migrations, regenerating the API contract, updating dependencies and
+updating the design system.
 
 Development stack
 =================
@@ -79,7 +80,8 @@ From ``frontend/``:
 
 The Vite development server listens on http://localhost:5173 and forwards the
 backend paths to ``http://localhost:8000``; set ``API_PROXY_TARGET`` for
-another address.
+another address. It registers no service worker; only a production build
+does.
 
 Checks
 ======
@@ -165,9 +167,21 @@ Frontend checks:
    make frontend-deps
    make frontend-audit
 
+``frontend-test`` runs Vitest's two projects: ``app``, the tests under
+``src`` in jsdom, and ``scripts``, the tests of the build scripts and of
+the Vite configuration in Node.js. ``npm test -- --project app`` runs one of
+them. ``frontend-build`` first checks that ``src/design/tokens.css`` matches
+``tokens.json`` (see `Design system`_).
+
 ``frontend-audit`` runs ``npm audit --omit=dev``. Without ``--omit=dev``,
-``npm audit`` also reports a moderate minimatch advisory in the development
-tooling, which has no fix yet.
+``npm audit`` also reports a moderate minimatch advisory, which has no fix
+yet, in the development tooling, the service worker's build tooling
+included.
+
+jsdom applies no stylesheet, and the DOM does not change with the viewport
+width, so no test sees the layout. Check a change to the layout by hand, in
+the browser's responsive mode, at 320, 390, 430, 768, 1024, 1280 and 1440
+pixels wide, and at 200 % zoom.
 
 The API contract job regenerates both generated files (see `API contract`_)
 and fails if either differs from the committed one; ``make api-contract``
@@ -280,7 +294,19 @@ and locked with hashes in ``backend/uv.lock``. Upgrade one package with ``uv
 lock --upgrade-package <name>``. npm packages are declared in
 ``frontend/package.json`` and locked in ``frontend/package-lock.json``;
 ``npm install <package>@<version>`` updates both. Generate the npm lockfile
-with the npm that ships with Node.js 26.13.0.
+with the npm that ships with Node.js 26.13.0. With another Node.js
+installed, run that npm from the Node.js image, from ``frontend/``, and
+then install from the new lockfile:
+
+.. code-block:: shell
+
+   docker run --rm -v "$PWD":/app -w /app node:26.13.0-alpine3.24 \
+       npm install --package-lock-only --ignore-scripts <package>@<range>
+   npm ci
+
+``--package-lock-only`` writes ``package.json`` and the lockfile without
+installing into ``node_modules``, and ``--ignore-scripts`` runs no package's
+install scripts in the container.
 
 Release-age policy
 ------------------
@@ -361,6 +387,38 @@ images and the actions. These pins move by hand:
   nothing once an image publishes its new releases only for a newer base,
   such as ``-alpine3.25``. Check the published tags after each Alpine
   release, about every six months, and move the suffix by hand.
+
+Design system
+=============
+
+``frontend/src/design`` holds Rola's design system. Two of its files come
+from the design system and are never edited here:
+
+* ``tokens.json``, the design tokens. ``npm run tokens``, from
+  ``frontend/``, writes ``tokens.css`` from it with
+  ``scripts/build-tokens.ts``, and ``npm run tokens:check``, which
+  ``npm run build`` runs first, fails while ``tokens.css`` is out of date.
+  Commit ``tokens.css`` with the change to ``tokens.json``.
+* ``components.css``, the component styles, kept as published except for
+  its Google Fonts import, which ``fonts.css`` replaces with the same faces
+  served from the site. ``scripts/design.test.ts`` fails if the file imports
+  anything, loads Google Fonts, or uses a custom property that neither it
+  nor ``tokens.css`` defines.
+
+``fonts.css``, ``app.css`` and the CSS beside the kit's components in
+``src/shared/ui`` are the repository's own. Adjust the design system's
+styles there, never in ``components.css``.
+
+To update the design system, from ``frontend/``:
+
+#. Replace ``src/design/tokens.json`` and ``src/design/components.css`` with
+   the published files, and delete the Google Fonts ``@import`` from
+   ``components.css``. Keep the repository's comment at the top of the
+   file, which says where it comes from.
+#. Run ``npm run tokens``.
+#. Run ``npm test``, then check the pages by hand as `Checks`_ describes.
+   ``design.test.ts`` names any custom property that the new styles use
+   and the tokens do not define.
 
 Documentation
 =============
