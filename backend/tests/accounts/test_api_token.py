@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from rola.accounts.models import Token, User, token_digest
+from tests.factories import bearer_client
 
 
 class TokenTestCase(APITestCase):
@@ -26,7 +27,7 @@ class TokenTestCase(APITestCase):
         self.assertEqual(
             self.user.auth_tokens.get().digest, token_digest(response.data["token"])
         )
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['token']}")
+        self.client = bearer_client(response.data["token"])
         accounts = self.client.get(reverse("user-list")).data["results"]
         self.assertEqual([account["id"] for account in accounts], [str(self.user.id)])
 

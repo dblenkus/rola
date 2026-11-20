@@ -11,6 +11,7 @@ from rest_framework.test import APIClient
 
 from rola.accounts.api.serializers import TokenSerializer
 from rola.accounts.models import TOKEN_PREFIX, Token, token_digest
+from tests.factories import bearer_client, client_sending
 
 
 def log_in():
@@ -22,13 +23,6 @@ def log_in():
     return response.data["token"]
 
 
-def client_sending(authorization):
-    """Send the given ``Authorization`` header with every API call."""
-    client = APIClient()
-    client.credentials(HTTP_AUTHORIZATION=authorization)
-    return client
-
-
 def create_contest(client):
     """Call an endpoint that answers 401 to a caller who is not logged in."""
     return client.post(reverse("contest-list"))
@@ -38,7 +32,7 @@ def test_expired_login_tokens_are_rejected(account):
     token = Token.objects.create_token(
         user=account, expires=now() - timedelta(seconds=1)
     )
-    client = client_sending(f"Bearer {token.key}")
+    client = bearer_client(token.key)
     assert client.get(reverse("user-list")).status_code == 401
     account.is_active = False
     account.save(update_fields=["is_active"])

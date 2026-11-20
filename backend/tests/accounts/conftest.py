@@ -3,10 +3,10 @@
 from unittest.mock import patch
 
 import pytest
-from rest_framework.test import APIClient
 
 from rola.accounts.api.throttling import LoginThrottle
-from rola.accounts.models import Token, User
+from rola.accounts.models import User
+from tests.factories import logged_in_client
 
 
 @pytest.fixture
@@ -20,11 +20,7 @@ def account(db):
 @pytest.fixture
 def client(account):
     """Authenticate API calls as the fixture account."""
-    client = APIClient()
-    client.credentials(
-        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=account).key}"
-    )
-    return client
+    return logged_in_client(account)
 
 
 @pytest.fixture

@@ -12,11 +12,12 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from rola.accounts.forms import RolaAdminPasswordChangeForm
-from rola.accounts.models import Token, User
+from rola.accounts.models import User
 from rola.accounts.utils.signing import generate_reset_token
 from tests.factories import (
     PASSWORD,
     create_user,
+    logged_in_client,
     wait_until_blocked_by_this_connection,
 )
 
@@ -59,15 +60,6 @@ def change_password(browser, old_password=PASSWORD, **extra):
     )
 
 
-def token_client(user):
-    """Authenticate API calls with a new login token of the given account."""
-    client = APIClient()
-    client.credentials(
-        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=user).key}"
-    )
-    return client
-
-
 def is_authenticated(client):
     """Tell whether the API accepts the client's login token."""
     status = client.get(reverse("user-list")).status_code
@@ -95,8 +87,8 @@ def api_login(**extra):
 
 
 def test_password_change_revokes_every_login_token_of_the_account(organizer, browser):
-    phone, laptop = token_client(organizer), token_client(organizer)
-    bystander = token_client(create_user("entrant"))
+    phone, laptop = logged_in_client(organizer), logged_in_client(organizer)
+    bystander = logged_in_client(create_user("entrant"))
     assert is_authenticated(phone)
     assert is_authenticated(laptop)
 
@@ -141,7 +133,7 @@ def test_password_change_logs_out_the_other_sessions_of_the_account(organizer, b
 
 
 def test_wrong_old_password_changes_and_revokes_nothing(organizer, browser):
-    api = token_client(organizer)
+    api = logged_in_client(organizer)
     reset_token = generate_reset_token(organizer)
 
     response = change_password(browser, old_password="wrong")

@@ -7,8 +7,9 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from PIL import Image
+from rest_framework.test import APIClient
 
-from rola.accounts.models import User
+from rola.accounts.models import Token, User
 from rola.entries.models import File, Submission, SubmissionSet
 from rola.payments.models import Payment
 
@@ -19,6 +20,23 @@ def create_user(name, *, superuser=False):
     """Create an active account with the address ``<name>@example.org``."""
     create = User.objects.create_superuser if superuser else User.objects.create_user
     return create(f"{name}@example.org", PASSWORD, is_active=True)
+
+
+def client_sending(authorization):
+    """Send the given ``Authorization`` header with every API call."""
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=authorization)
+    return client
+
+
+def bearer_client(key):
+    """Send the given login token string as a Bearer token with every API call."""
+    return client_sending(f"Bearer {key}")
+
+
+def logged_in_client(user):
+    """Authenticate API calls with a new login token of the given account."""
+    return bearer_client(Token.objects.create_token(user=user).key)
 
 
 def photo(user, name="photo.jpg"):
