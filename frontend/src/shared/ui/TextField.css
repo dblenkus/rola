@@ -1,0 +1,22 @@
+/* Helper text under a field, 6 px below it like the error. */
+.ui-field__description {
+  margin-top: 6px;
+  color: var(--text-muted);
+}
+
+/* A text area keeps the input's outline, padding and type; it grows in rows
+   instead of the input's fixed 44 px and resizes vertically only. The
+   vertical padding centres one 22 px line in 44 px. The input's class is
+   repeated so these rules win whatever order the style sheets load in. */
+.rl-field__input.ui-textarea {
+  height: auto;
+  min-height: var(--touch-target);
+  padding: 10px 12px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+/* The 2 px error border takes 1 px of padding, as on the input. */
+.rl-field--invalid .rl-field__input.ui-textarea {
+  padding: 9px 11px;
+}

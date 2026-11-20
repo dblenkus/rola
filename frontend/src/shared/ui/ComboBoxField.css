@@ -1,0 +1,48 @@
+/* The suggestion list: menus are not designed yet, so it sits on paper with a
+   1 px control-line outline and no shadow, as wide as the field. */
+.ui-combobox__popover {
+  box-sizing: border-box;
+  width: var(--trigger-width);
+  max-height: 320px;
+  overflow-y: auto;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--text);
+}
+
+.ui-combobox__list {
+  margin: 0;
+  padding: var(--space-1) 0;
+}
+
+.ui-combobox__option {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  box-sizing: border-box;
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+/* The option under the keyboard or the pointer gets the well fill; the
+   chosen one is set in 600, so it does not rely on the fill. */
+.ui-combobox__option[data-focused],
+.ui-combobox__option[data-hovered] {
+  background: var(--well);
+}
+
+.ui-combobox__option[data-selected] {
+  font-weight: 600;
+}
+
+.ui-combobox__option[data-focus-visible] {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: calc(-1 * var(--focus-width));
+}
+
+.ui-combobox__empty {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--text-muted);
+}

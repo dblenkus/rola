@@ -1,0 +1,37 @@
+/* Dialogs are not designed yet: a paper panel with a 1 px control-line
+   outline, no shadow and no scrim. The overlay is transparent but covers the
+   page, so the page behind cannot be used while the dialog is open. */
+.ui-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+/* Full width minus the phone's page margins, up to a readable measure. */
+.ui-dialog {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--space-4));
+  max-width: 30rem;
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-none);
+  background: var(--paper);
+  color: var(--text);
+}
+
+.ui-dialog__panel {
+  padding: var(--space-6);
+}
+
+.ui-dialog__title {
+  margin: 0 0 var(--space-3);
+}
+
+.ui-dialog__content {
+  margin-bottom: var(--space-6);
+}

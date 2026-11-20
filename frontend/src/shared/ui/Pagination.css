@@ -1,0 +1,51 @@
+/* One line on wide screens; on phones the rows-per-page choice and the
+   shown rows wrap above the previous and next buttons. */
+.ui-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-6);
+  padding: var(--space-2) 0;
+  color: var(--text);
+}
+
+.ui-pagination__rows {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-pagination__select {
+  height: var(--touch-target);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 var(--space-2);
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.ui-pagination__steps {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+/* Square 44 px buttons holding only a chevron. */
+.ui-pagination__steps .rl-btn {
+  width: var(--touch-target);
+  padding: 0;
+}
+
+.ui-pagination__steps .rl-btn > svg {
+  display: block;
+}
+
+/* An unavailable step keeps its outline and is announced as unavailable;
+   the muted chevron shows it too. */
+.ui-pagination__steps .rl-btn[aria-disabled='true'] {
+  color: var(--text-muted);
+  cursor: default;
+}
