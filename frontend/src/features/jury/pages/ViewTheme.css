@@ -1,0 +1,10 @@
+/* The progress line under the title, as wide as a progress column. */
+.jury-view__progress {
+  max-width: 24rem;
+  margin-bottom: var(--space-6);
+}
+
+.jury-view__empty {
+  margin: 0;
+  color: var(--text);
+}

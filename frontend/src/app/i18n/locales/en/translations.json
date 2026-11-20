@@ -144,5 +144,17 @@
   "admin_state_unpaid": "Not paid",
   "admin_actions": "Actions",
   "admin_untitled_photograph": "Untitled photograph",
-  "admin_series_photo": "{{title}}, photo {{number}} of {{count}}"
+  "admin_series_photo": "{{title}}, photo {{number}} of {{count}}",
+  "jury_select_theme_title": "Judging",
+  "jury_no_contests": "You have no contests to judge.",
+  "jury_open_theme": "Open {{theme}}",
+  "jury_theme_progress": "{{theme}}, scored {{scored}} of {{total}}",
+  "jury_scored": "Scored",
+  "jury_progress": "Scored {{scored}} of {{total}}",
+  "jury_no_submissions": "This theme has no photographs to judge.",
+  "jury_score": "Score {{score}}",
+  "jury_unscored": "Unscored",
+  "jury_series_photos_one": "First of {{count}} photo",
+  "jury_series_photos_other": "First of {{count}} photos",
+  "jury_overview_title": "Results overview"
 }

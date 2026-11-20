@@ -150,5 +150,19 @@
   "admin_state_unpaid": "Ni plačano",
   "admin_actions": "Dejanja",
   "admin_untitled_photograph": "Fotografija brez naslova",
-  "admin_series_photo": "{{title}}, fotografija {{number}} od {{count}}"
+  "admin_series_photo": "{{title}}, fotografija {{number}} od {{count}}",
+  "jury_select_theme_title": "Ocenjevanje",
+  "jury_no_contests": "Nimaš natečajev za ocenjevanje.",
+  "jury_open_theme": "Odpri {{theme}}",
+  "jury_theme_progress": "{{theme}}, ocenjeno {{scored}} od {{total}}",
+  "jury_scored": "Ocenjeno",
+  "jury_progress": "Ocenjeno {{scored}} od {{total}}",
+  "jury_no_submissions": "Ta tema nima fotografij za ocenjevanje.",
+  "jury_score": "Ocena {{score}}",
+  "jury_unscored": "Neocenjeno",
+  "jury_series_photos_one": "Prva od {{count}} fotografije",
+  "jury_series_photos_two": "Prva od {{count}} fotografij",
+  "jury_series_photos_few": "Prva od {{count}} fotografij",
+  "jury_series_photos_other": "Prva od {{count}} fotografij",
+  "jury_overview_title": "Pregled rezultatov"
 }

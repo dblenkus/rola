@@ -1,117 +1,89 @@
 import React from 'react';
-import { Box, Card, Grid } from '@mui/material';
-import type { SxProps, Theme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import {
   JurySubmission,
   Rating as RatingModel,
 } from '../../../shared/api/types';
-import Rating from './Rating';
+import Thumbnail from '../../../shared/ui/Thumbnail';
+import ThumbnailGrid from '../../../shared/ui/ThumbnailGrid';
+import photoId from './photoId';
+import './ThemeGallery.css';
 
 interface ThemeGalleryProps {
   submissions: JurySubmission[];
-  isSeries: boolean;
   ratings: RatingModel[];
-  handleClick: (submissionId: number) => void;
+  // Where each submission opens in the rater.
+  raterLink: (submissionId: number) => string;
+  // Called as a submission's link is followed, before the rater opens.
+  onOpen: (submissionId: number) => void;
 }
 
+// The theme's submissions as thumbnails, each a link to the rater. A cell
+// names the photo by its anonymous ID and title and shows the judge's own
+// score; a series shows its first photograph and how many it has.
 const ThemeGallery: React.FC<ThemeGalleryProps> = ({
   submissions,
-  isSeries,
   ratings,
-  handleClick,
+  raterLink,
+  onOpen,
 }: ThemeGalleryProps) => {
-  const sx = {
-    card: { cursor: 'pointer' },
-    wrapOut: {
-      width: '100%',
-      paddingBottom: isSeries ? '10%' : '100%',
-      position: 'relative',
-    },
-    wrapIn: {
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minWidth: 0,
-    },
-    image: {
-      maxHeight: '100%',
-      maxWidth: '100%',
-      padding: '5px',
-    },
-    centered: { textAlign: 'center' },
-  } satisfies Record<string, SxProps<Theme>>;
+  const { t } = useTranslation();
 
   return (
-    <Grid container spacing={2}>
+    <ThumbnailGrid layout="page">
       {submissions.map(({ id, files, title }) => {
         const rating = ratings.find((r) => r.submission === id);
-        return isSeries ? (
-          <Grid key={id} size={{ xs: 12 }}>
-            <Card raised sx={sx.card} onClick={() => handleClick(id)}>
-              <Box sx={sx.wrapOut}>
-                <Box sx={sx.wrapIn}>
-                  {files.map((file) => (
-                    <Box
-                      component="img"
-                      key={file.id}
-                      sx={sx.image}
-                      src={file.thumbnail || file.file}
-                      alt={title ?? ''}
-                    />
-                  ))}
-                </Box>
-              </Box>
-              <Box sx={sx.centered}>
-                <b>{title}</b>
-              </Box>
-              <Box sx={sx.centered}>
-                <Rating
-                  max={10}
-                  value={rating?.rating || 0}
-                  size="small"
-                  disabled
-                />
-              </Box>
-            </Card>
-          </Grid>
-        ) : (
-          <Grid key={id} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
-            <Card raised sx={sx.card} onClick={() => handleClick(id)}>
-              <Box sx={sx.wrapOut}>
-                <Box sx={sx.wrapIn}>
-                  {files.map((file) => (
-                    <Box
-                      component="img"
-                      key={file.id}
-                      sx={sx.image}
-                      src={file.thumbnail || file.file}
-                      alt={title ?? ''}
-                    />
-                  ))}
-                </Box>
-              </Box>
-              <Box sx={sx.centered}>
-                <b>{title}</b>
-              </Box>
-              <Box sx={sx.centered}>
-                <Rating
-                  max={10}
-                  value={rating?.rating || 0}
-                  size="small"
-                  disabled
-                />
-              </Box>
-            </Card>
-          </Grid>
+        const [first] = files;
+        const caption = (
+          <>
+            <span className="jury-gallery__id">
+              <span>{photoId(id)}</span>
+              {files.length > 1 && (
+                <span className="jury-gallery__count caption">
+                  <span aria-hidden="true">1 / {files.length}</span>
+                  <span className="visually-hidden">
+                    {t('jury_series_photos', { count: files.length })}
+                  </span>
+                </span>
+              )}
+            </span>
+            <span className="jury-gallery__score label">
+              <span aria-hidden="true">{rating ? rating.rating : '–'}</span>
+              <span className="visually-hidden">
+                {rating
+                  ? t('jury_score', { score: rating.rating })
+                  : t('jury_unscored')}
+              </span>
+            </span>
+          </>
+        );
+        return (
+          <Link
+            key={id}
+            className="jury-gallery__link"
+            to={raterLink(id)}
+            onClick={() => onOpen(id)}
+          >
+            {first ? (
+              <Thumbnail
+                fit="contain"
+                src={first.thumbnail || first.file}
+                alt={title ?? ''}
+                caption={caption}
+              />
+            ) : (
+              <Thumbnail
+                fit="contain"
+                label={title || photoId(id)}
+                caption={caption}
+              />
+            )}
+          </Link>
         );
       })}
-    </Grid>
+    </ThumbnailGrid>
   );
 };
 

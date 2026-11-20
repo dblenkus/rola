@@ -1,23 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
-import {
-  Alert,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-} from '@mui/material';
 
 import { requestError } from '../../../shared/api/errors';
 import { JuryContest } from '../../../shared/api/types';
+import Button from '../../../shared/ui/Button';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
 import { getJuryContests } from '../api';
+import ScoringProgress from '../components/ScoringProgress';
+import './SelectTheme.css';
 
 const SelectTheme: React.FC = () => {
-  const [contests, setContests] = useState<JuryContest[]>([]);
+  const [contests, setContests] = useState<JuryContest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
 
@@ -29,42 +24,44 @@ const SelectTheme: React.FC = () => {
     fetchContests().catch((error: unknown) => setError(requestError(error)));
   }, []);
 
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error) return <Message severity="error">{error}</Message>;
+  if (!contests) return <LoadingProgress />;
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableBody>
-          {contests.map((contest) => (
-            <React.Fragment key={contest.id}>
-              <TableRow>
-                <TableCell colSpan={4}>
-                  <b>{contest.title}</b>
-                </TableCell>
-              </TableRow>
-              {contest.themes.map((theme) => (
-                <TableRow key={theme.id}>
-                  <TableCell padding="checkbox" />
-                  <TableCell>{theme.title}</TableCell>
-                  <TableCell>
-                    {theme.ratings_number}/{theme.submissions_number}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button
-                      to={`/judge/contest/${contest.id}/theme/${theme.id}`}
-                      component={Link}
-                      color="primary"
-                    >
-                      {t('open')}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <Page title={t('jury_select_theme_title')}>
+      {contests.length === 0 && (
+        <p className="body jury-contests__empty">{t('jury_no_contests')}</p>
+      )}
+      {contests.map((contest) => (
+        <section key={contest.id} className="jury-contest">
+          <h2 className="jury-contest__title h3">{contest.title}</h2>
+          <ul className="jury-themes">
+            {contest.themes.map((theme) => (
+              <li key={theme.id} className="jury-theme">
+                <span className="jury-theme__title body">{theme.title}</span>
+                <ScoringProgress
+                  scored={theme.ratings_number}
+                  total={theme.submissions_number}
+                  label={t('jury_theme_progress', {
+                    theme: theme.title,
+                    scored: theme.ratings_number,
+                    total: theme.submissions_number,
+                  })}
+                />
+                <span className="jury-theme__action">
+                  <Button
+                    to={`/judge/contest/${contest.id}/theme/${theme.id}`}
+                    aria-label={t('jury_open_theme', { theme: theme.title })}
+                  >
+                    {t('open')}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </Page>
   );
 };
 

@@ -1,0 +1,33 @@
+/* The whole cell is the link; the photo itself never changes on hover. */
+.jury-gallery__link {
+  display: block;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The ID line under the well: the ID (and a series' count) on the left, the
+   judge's score on the right, both from the caption's own layout. */
+.jury-gallery__id {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Counts are Inter, not DM Mono. */
+.jury-gallery__count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A score is a plain Inter figure at 600, in text. */
+.jury-gallery__score {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.jury-gallery__link:hover .jury-gallery__score {
+  color: var(--text-muted);
+}
