@@ -9,7 +9,7 @@ from rola.accounts.services import change_password
 
 
 class RolaAdminPasswordChangeForm(AdminPasswordChangeForm):
-    """Change the logged-in staff account's password as the API does."""
+    """Change the logged-in staff account's password as a password reset does."""
 
     def save(self, commit: bool = True) -> User:
         """Replace the password and revoke outstanding login and reset tokens.

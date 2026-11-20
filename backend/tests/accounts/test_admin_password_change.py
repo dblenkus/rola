@@ -62,7 +62,7 @@ def change_password(browser, old_password=PASSWORD, **extra):
 
 def is_authenticated(client):
     """Tell whether the API accepts the client's login token."""
-    status = client.get(reverse("user-list")).status_code
+    status = client.get(reverse("author-list")).status_code
     assert status in {200, 401}
     return status == 200
 
@@ -70,7 +70,7 @@ def is_authenticated(client):
 def redeem(reset_token):
     """Follow a password-reset link, asking for another password."""
     return APIClient().post(
-        reverse("user-password-reset"),
+        reverse("password-reset-list"),
         {"token": reset_token, "new_password": "Another!73"},
     )
 
@@ -83,7 +83,7 @@ def admin_login(**extra):
 def api_login(**extra):
     """Post wrong API credentials."""
     credentials = {"email": "organizer@example.org", "password": "wrong"}
-    return APIClient().post(reverse("login"), credentials, **extra)
+    return APIClient().post(reverse("token-list"), credentials, **extra)
 
 
 def test_password_change_revokes_every_login_token_of_the_account(organizer, browser):
@@ -142,7 +142,7 @@ def test_wrong_old_password_changes_and_revokes_nothing(organizer, browser):
     organizer.refresh_from_db()
     assert organizer.check_password(PASSWORD)
     assert is_authenticated(api)
-    assert redeem(reset_token).status_code == 200
+    assert redeem(reset_token).status_code == 204
 
 
 def test_password_change_attempts_beyond_the_budget_are_refused(

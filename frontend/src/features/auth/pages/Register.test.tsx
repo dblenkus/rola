@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
-import { httpError, serveApi } from '../../../test/api';
+import { httpError, serveApi, withStatus } from '../../../test/api';
 import Register from './Register';
 
 function renderRegister() {
@@ -64,7 +64,7 @@ it('gives every field the attributes autofill and keyboards need', () => {
 
 it('puts each server error on its field', async () => {
   serveApi({
-    'POST /user': (config) => {
+    'POST /users': (config) => {
       throw httpError(config, 400, {
         email: ['A user with that email already exists.'],
       });
@@ -99,7 +99,7 @@ it('puts each server error on its field', async () => {
 });
 
 it('confirms the registration with the address it was sent to', async () => {
-  serveApi({ 'POST /user': () => ({}) });
+  serveApi({ 'POST /users': () => withStatus(202, '') });
   const user = userEvent.setup();
   renderRegister();
   const values: Record<string, string> = {

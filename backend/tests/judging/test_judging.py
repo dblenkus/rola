@@ -1,6 +1,7 @@
 """Rate paid submissions as a judge of the contest."""
 
 import pytest
+from django.db.models import ProtectedError
 from rest_framework.test import APIClient
 
 from rola.accounts.models import User
@@ -76,17 +77,12 @@ def test_anonymous_judge_endpoint_denies_without_server_error(world):
     assert response.status_code == 401
 
 
-def test_deleting_a_judge_answers_409(world):
+def test_the_account_of_a_judge_cannot_be_deleted(world):
     judge = Judge.objects.create(judge=world.other, contest=world.contest)
-    client = APIClient()
-    client.force_authenticate(world.admin)
 
-    response = client.delete(f"/api/v1/user/{world.other.id}")
+    with pytest.raises(ProtectedError):
+        world.other.delete()
 
-    assert response.status_code == 409
-    assert response.data["detail"] == (
-        "This account cannot be deleted while other records depend on it."
-    )
     assert User.objects.filter(pk=world.other.pk).exists()
     assert Judge.objects.filter(pk=judge.pk).exists()
 

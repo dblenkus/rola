@@ -33,7 +33,7 @@ def test_registration_checks_uniqueness_against_stored_case(
             },
             format="json",
         )
-    assert response.status_code == 201
+    assert response.status_code == 202
     assert response.content == b""
     assert User.objects.count() == 1
     assert not Location.objects.exists()
@@ -63,7 +63,7 @@ def test_registration_lowercases_email_without_removing_dots_or_tags(db, address
         },
         format="json",
     )
-    assert response.status_code == 201
+    assert response.status_code == 202
     assert User.objects.get().email == "person.name+contest@example.com"
 
 
@@ -84,15 +84,15 @@ def test_login_and_recovery_ignore_email_case(
 ):
     client = APIClient()
     response = client.post(
-        reverse("login"), {"email": email, "password": "Original!73"}
+        reverse("token-list"), {"email": email, "password": "Original!73"}
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     issued = Token.objects.get(digest=token_digest(response.data["token"]))
     assert issued.user_id == account.pk
 
     with django_capture_on_commit_callbacks(execute=True):
-        response = client.post(reverse("user-request-password-reset"), {"email": email})
-    assert response.status_code == 200
+        response = client.post(reverse("password-reset-request-list"), {"email": email})
+    assert response.status_code == 202
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [account.email]
 
@@ -107,13 +107,13 @@ def test_email_links_survive_address_normalization(account, active):
     )
     User.objects.filter(pk=account.pk).update(email="person@example.com")
 
-    endpoint = "user-password-reset" if active else "user-activate-account"
+    endpoint = "password-reset-list" if active else "activation-list"
     payload = {"token": token}
     if active:
         payload["new_password"] = "Replacement!73"
     response = APIClient().post(reverse(endpoint), payload)
 
-    assert response.status_code == 200
+    assert response.status_code == 204
     account.refresh_from_db()
     assert account.email == "person@example.com"
     assert account.is_active

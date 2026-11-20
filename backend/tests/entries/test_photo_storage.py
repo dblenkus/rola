@@ -170,23 +170,16 @@ def entered_photograph(world):
     ],
     ids=["ended", "published_before_end"],
 )
-@pytest.mark.parametrize(
-    ("method", "path"),
-    [
-        ("delete", "author/{author.pk}"),
-        ("patch", "author/{author.pk}"),
-        ("delete", "user/{owner.id}"),
-    ],
-)
-def test_closed_entries_survive_author_and_account_deletes(
-    world, schedule, method, path, django_capture_on_commit_callbacks
+@pytest.mark.parametrize("method", ["delete", "patch"])
+def test_closed_entries_survive_author_changes_and_deletes(
+    world, schedule, method, django_capture_on_commit_callbacks
 ):
     image = entered_photograph(world)
     now = timezone.now()
     Contest.objects.filter(pk=world.contest.pk).update(
         **{field: now + offset for field, offset in schedule.items()}
     )
-    url = "/api/v1/" + path.format(author=world.author, owner=world.owner)
+    url = f"/api/v1/author/{world.author.pk}"
     data = {"first_name": "Renamed"} if method == "patch" else None
     with django_capture_on_commit_callbacks(execute=True):
         response = getattr(world.client, method)(url, data, format="json")
@@ -217,8 +210,7 @@ def test_deleting_an_account_of_open_entries_deletes_its_photographs(
 ):
     names = stored_names(entered_photograph(world))
     with django_capture_on_commit_callbacks(execute=True):
-        response = world.client.delete(f"/api/v1/user/{world.owner.id}")
-    assert response.status_code == 204
+        world.owner.delete()
     assert not User.objects.filter(pk=world.owner.pk).exists()
     assert not File.objects.exists()
     assert_stored(names, False)

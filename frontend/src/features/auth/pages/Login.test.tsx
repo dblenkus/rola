@@ -58,7 +58,7 @@ it('links to the password reset and registration as full tap targets', () => {
 
 it('shows field errors on their fields and the rest as an alert', async () => {
   serveApi({
-    'POST /user/login': (config) => {
+    'POST /tokens': (config) => {
       throw httpError(config, 400, {
         password: ['This field may not be blank.'],
         non_field_errors: ['Unable to log in with provided credentials.'],

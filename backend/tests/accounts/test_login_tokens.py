@@ -17,9 +17,10 @@ from tests.factories import bearer_client, client_sending
 def log_in():
     """Return the token that a login of the fixture account answers with."""
     response = APIClient().post(
-        reverse("login"), {"email": "person@example.com", "password": "Original!73"}
+        reverse("token-list"),
+        {"email": "person@example.com", "password": "Original!73"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     return response.data["token"]
 
 
@@ -33,12 +34,12 @@ def test_expired_login_tokens_are_rejected(account):
         user=account, expires=now() - timedelta(seconds=1)
     )
     client = bearer_client(token.key)
-    assert client.get(reverse("user-list")).status_code == 401
+    assert client.get(reverse("author-list")).status_code == 401
     account.is_active = False
     account.save(update_fields=["is_active"])
     token.expires = now() + timedelta(days=1)
     token.save(update_fields=["expires"])
-    assert client.get(reverse("user-list")).status_code == 401
+    assert client.get(reverse("author-list")).status_code == 401
 
 
 def test_token_description_does_not_reveal_its_key(account):
@@ -99,7 +100,7 @@ def test_stored_digest_is_not_a_credential(account):
     token = Token.objects.create_token(user=account)
     client = client_sending(f"Bearer {TOKEN_PREFIX}{token.digest}")
 
-    assert client.get(reverse("user-list")).status_code == 401
+    assert client.get(reverse("author-list")).status_code == 401
 
 
 def test_token_without_the_prefix_is_refused_without_a_query(
@@ -109,7 +110,7 @@ def test_token_without_the_prefix_is_refused_without_a_query(
     client = client_sending(f"Bearer {token.key.removeprefix(TOKEN_PREFIX)}")
 
     with django_assert_num_queries(0):
-        response = client.get(reverse("user-list"))
+        response = client.get(reverse("author-list"))
 
     assert response.status_code == 401
     assert response.data == {"detail": "Invalid token"}
@@ -119,7 +120,7 @@ def test_token_keyword_is_treated_as_anonymous(account):
     token = Token.objects.create_token(user=account)
     client = client_sending(f"Token {token.key}")
 
-    listing = client.get(reverse("user-list"))
+    listing = client.get(reverse("contest-list"))
 
     assert listing.status_code == 200
     assert listing.data["results"] == []

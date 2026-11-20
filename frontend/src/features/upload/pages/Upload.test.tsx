@@ -328,10 +328,11 @@ describe('photograph upload', () => {
       'POST /file': (config) => {
         throw httpError(config, 401);
       },
-      'POST /user/login': () => ({
-        token: 'renewed',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'renewed',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -370,10 +371,11 @@ describe('photograph upload', () => {
       'POST /file': (config) => {
         throw httpError(config, 401);
       },
-      'POST /user/login': () => ({
-        token: 'renewed',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'renewed',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -405,10 +407,11 @@ describe('photograph upload', () => {
       }),
     );
     const adapter = uploadApi({
-      'POST /user/login': () => ({
-        token: 'renewed',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'renewed',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -449,10 +452,11 @@ describe('photograph upload', () => {
       'POST /file': (config) => {
         throw httpError(config, 401);
       },
-      'POST /user/login': () => ({
-        token: 'next-account',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'next-account',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -561,11 +565,12 @@ describe('photograph upload', () => {
 
   it('starts an empty form for the next account after a logout', async () => {
     uploadApi({
-      'POST /user/logout': () => withStatus(204, ''),
-      'POST /user/login': () => ({
-        token: 'next-account',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'DELETE /tokens/current': () => withStatus(204, ''),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'next-account',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');

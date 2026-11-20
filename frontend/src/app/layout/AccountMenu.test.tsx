@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiClient } from '../../shared/api/client';
-import { serveApi, signIn } from '../../test/api';
+import { serveApi, signIn, withStatus } from '../../test/api';
 import { open } from '../../test/app';
 import store from '../store';
 import { authorUpdate } from '../../features/upload/state/actions';
@@ -36,10 +36,11 @@ describe('signed out', () => {
 
   it('returns from login to the page it was opened on', async () => {
     serveApi({
-      'POST /user/login': () => ({
-        token: 'signed-in',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'signed-in',
+          expires: '2999-01-01T00:00:00Z',
+        }),
       'GET /contest': () => new Promise(() => {}),
     });
     const user = userEvent.setup();

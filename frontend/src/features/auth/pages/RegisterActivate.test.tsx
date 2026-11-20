@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
+import { serveApi, withStatus } from '../../../test/api';
 import RegisterActivate from './RegisterActivate';
 
 function renderActivate(path: string) {
@@ -17,7 +17,7 @@ function renderActivate(path: string) {
 }
 
 it('reports an activated account and offers the way to login', async () => {
-  serveApi({ 'POST /user/activate_account': () => ({}) });
+  serveApi({ 'POST /activations': () => withStatus(204, '') });
   const user = userEvent.setup();
   renderActivate('/register/activate?token=signed');
 

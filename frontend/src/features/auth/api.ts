@@ -13,31 +13,33 @@ export type RequestPasswordResetPayload =
 export type PasswordResetPayload = Schemas['PasswordResetRequest'];
 
 export function loginUser(payload: LoginPayload): AxiosPromise<AuthToken> {
-  return apiClient.post('/user/login', payload);
+  return apiClient.post('/tokens', payload);
 }
 
 // Names the session to expire, because logging out removes it from storage
 // before the request is sent.
 export function logoutUser(authorization: string): AxiosPromise<void> {
-  return apiClient.post('/user/logout', undefined, {
+  return apiClient.delete('/tokens/current', {
     headers: { Authorization: authorization },
   });
 }
 
-export function registerUser(payload: RegisterPayload): AxiosPromise {
-  return apiClient.post('/user', payload);
+export function registerUser(payload: RegisterPayload): AxiosPromise<void> {
+  return apiClient.post('/users', payload);
 }
 
-export function activateUser(payload: ActivateUserPayload): AxiosPromise {
-  return apiClient.post('/user/activate_account', payload);
+export function activateUser(payload: ActivateUserPayload): AxiosPromise<void> {
+  return apiClient.post('/activations', payload);
 }
 
 export function requestPasswordReset(
   payload: RequestPasswordResetPayload,
-): AxiosPromise {
-  return apiClient.post('/user/request_password_reset', payload);
+): AxiosPromise<void> {
+  return apiClient.post('/password-reset-requests', payload);
 }
 
-export function resetPassword(payload: PasswordResetPayload): AxiosPromise {
-  return apiClient.post('/user/password_reset', payload);
+export function resetPassword(
+  payload: PasswordResetPayload,
+): AxiosPromise<void> {
+  return apiClient.post('/password-resets', payload);
 }

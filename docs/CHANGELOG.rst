@@ -30,35 +30,45 @@ API changes
 * ``/api/v1/judge/submission`` leaves out each submission's author. Judges
   used to get the author's name, date of birth, school, mentor, club and
   distinction, which the jury view does not show.
-* Profile ``PUT`` works without a password. ``PUT`` and ``PATCH`` on
-  ``/api/v1/user/{id}`` answer 400 when the request contains a password (use
-  the change-password endpoint) or a different email address. A profile
-  without an address returns its address fields as ``null`` instead of
-  failing with 500.
-* A password-reset request gets the same empty 200 response for unknown,
+* The account endpoints move to resource paths, and only login answers with
+  a body. Login is ``POST /api/v1/tokens`` and answers 201
+  with the token. Registration is ``POST /api/v1/users`` and answers 202.
+  Activation is ``POST /api/v1/activations`` and the password reset
+  ``POST /api/v1/password-resets``; both answer 204. A password-reset
+  request is ``POST /api/v1/password-reset-requests`` and answers 202. They
+  used to be ``POST`` on ``/api/v1/user/login``, ``/api/v1/user``,
+  ``/api/v1/user/activate_account``, ``/api/v1/user/password_reset`` and
+  ``/api/v1/user/request_password_reset``, which answered 200, or 201 for
+  registration. The five ignore the ``Authorization`` header, so a stale
+  token no longer fails a registration with 401. The logout, the one account
+  operation that needs a token, is ``DELETE /api/v1/tokens/current``.
+* The account list and profile are removed: ``GET /api/v1/user`` with its
+  ``?current=`` filter, ``GET``, ``PUT``, ``PATCH`` and ``DELETE`` on
+  ``/api/v1/user/{id}``, and ``POST /api/v1/user/{id}/change_password``
+  answer 404. A password is changed through the reset email, and accounts
+  are deleted in the Django admin.
+* A password-reset request gets the same empty 202 response for unknown,
   inactive and active addresses; unknown addresses used to get 404. Malformed
   activation and reset tokens get 400.
 * Login allows 30 attempts a minute per client address, shared with the
-  Django admin login and with password changes, which check the current
+  Django admin login and password change, which checks the current
   password. Registration and activation each allow 60 requests an hour per
   client address, and password-reset requests and confirmations share 30
   an hour. Requests beyond a limit get 429.
-* Changing the password also invalidates the account's outstanding reset
-  links, as resetting it already did. Both still expire its login tokens.
 * Email addresses are stored in lowercase and matched without regard to case.
   Registering a domain-case variant of an existing address used to fail with
   500, and a local-part variant created a second account.
-* Registration (``POST /api/v1/user``) answers 201 with an empty body for
-  every address, instead of the new profile, or 400 "user with this email
-  already exists." for an address that has an account. Such an address gets
-  an email with a password-reset link instead of an activation link, and a
-  password reset now also activates an inactive account, which used to get
-  400 "Account is not activated, contact support.". Two registrations of one
-  address at once no longer fail with 500.
+* Registration answers 202 with an empty body for every address, instead of
+  the new profile, or 400 "user with this email already exists." for an
+  address that has an account. Such an address gets an email with a
+  password-reset link instead of an activation link, and a password reset
+  now also activates an inactive account, which used to get 400 "Account is
+  not activated, contact support.". Two registrations of one address at once
+  no longer fail with 500.
 * Activation and reset emails link to the frontend under
   ``ROLA_FRONTEND_URL``; the backend placeholder pages that answered 501 are
   gone.
-* An activation link answers 200 each time it is used until it expires. Once
+* An activation link answers 204 each time it is used until it expires. Once
   the account was active it used to answer 400 "Bad token.", so opening the
   link again, or retrying after a lost response, reported it as invalid.
 * The results of a published theme that has no results yet answer 404
@@ -85,15 +95,12 @@ API changes
   publication, also while the jury rated them.
 * ``PUT``, ``PATCH`` and ``DELETE`` on ``/api/v1/author/{id}`` answer 403
   once the author has submissions in a contest that no longer accepts
-  entries because it has ended or its results are published, and so does
-  ``DELETE`` on ``/api/v1/user/{id}`` once the account has.
+  entries because it has ended or its results are published.
   These requests used to succeed at any time, so an entrant could delete
   entries that the jury was rating or the results showed, with their
   ratings and rewards, or change the name shown in the results.
 * Deleting an account also deletes its postal address, which used to stay
-  in the database after the account was gone. ``DELETE`` on
-  ``/api/v1/user/{id}`` answers 409 for an account that a contest has as a
-  judge, instead of failing with 500.
+  in the database after the account was gone.
 * A submission's author and photographs must belong to the requester, a
   photograph can belong to only one submission, and an update cannot change
   the author or the contest. Such requests answer 400.
@@ -146,8 +153,8 @@ API changes
 * The database stores the SHA-256 digest of a login token instead of the
   token, so a token cannot be read from the ``accounts_token`` table or from
   a copy of the database.
-* ``POST /api/v1/user/logout`` expires the login token that the request
-  carries and answers 204 with an empty body. The account's other tokens
+* ``DELETE /api/v1/tokens/current`` expires the login token that the
+  request carries and answers 204 with an empty body. The account's other tokens
   stay valid, and a later request with the expired token answers 401. The
   API had no logout, so a token stayed valid until it expired, two days
   after the login.
@@ -155,8 +162,6 @@ API changes
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
   answers 406.
-* ``?current=`` on the account list is described as a presence flag: any
-  non-empty value limits the list to the caller's own account.
 * Fields are renamed. Contests in ``/api/v1/contest`` and
   ``/api/v1/judge/contest``: ``dob_required`` to ``date_of_birth_required``,
   ``club_show`` to ``club_visible`` and ``school_show`` to
@@ -489,15 +494,12 @@ Fixes
   submission has no title.
 * The contest download sends a logged-out organizer to the Django admin
   login and back, instead of to a page that does not exist.
-* A profile update that overlaps a password change or reset keeps the new
-  password. It used to restore the old password and revive the reset links
-  that the change had invalidated.
 * A login with the old password that overlaps a password change or reset is
   refused. It used to receive a token that outlived the change, and an
   account whose stored hash the login upgraded got its old password back.
 * A password change in the Django admin expires the account's login tokens
-  and invalidates its outstanding reset links, as a change through the API
-  does; both used to stay valid. Its attempts count against the login limit,
+  and invalidates its outstanding reset links, as a password reset does; both
+  used to stay valid. Its attempts count against the login limit,
   which they used to bypass.
 * The activation email greets with "Hello!" instead of the first name given
   at registration. Anyone can register any address, so that name could put a

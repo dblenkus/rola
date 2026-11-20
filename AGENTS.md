@@ -17,9 +17,9 @@ configuration:
 - `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, ordering
   filter and pagination, and the `readinesscheck` command.
 - `accounts/`: users, login tokens, registration, activation, password
-  resets and account emails; the password change that the API and the admin
-  share (`services.py`); the admin site (`sites.py`) and its password-change
-  form (`forms.py`).
+  resets and account emails; the password change that the password reset
+  and the admin share (`services.py`); the admin site (`sites.py`) and its
+  password-change form (`forms.py`).
 - `contests/`: what an organizer sets up: Contest, Theme, Institution.
 - `entries/`: what an entrant submits: Author, SubmissionSet, Submission and
   File (a photograph), with `photos.py` (validation, metadata stripping,
@@ -34,9 +34,7 @@ Each app imports only from the apps before it in this order:
 `common` → `accounts` → `contests` → `entries` → `payments` → `judging`.
 `config` composes them. Where an earlier app's feature needs a later app, the
 later app adds it: `entries/admin.py` adds the contest download to the
-contest admin, and `entries/api/accounts.py` subclasses the account viewset
-with the closed-contest rule, which `config/urls.py` passes to
-`accounts/api/routes.py`'s `register`.
+contest admin.
 
 Inside an app:
 
@@ -49,10 +47,9 @@ Inside an app:
 - `api/`: `serializers.py`, `views.py`, `filters.py`, `permissions.py`, and
   `routes.py`, whose `register(router)` adds the app's endpoints.
   `config/urls.py` calls each app's `register`. `accounts/api/` also holds
-  `authentication.py` (the token authentication), `throttling.py` (the rate
-  limits, which the admin login and password change in `sites.py` share
-  too), and in `routes.py` the `urlpatterns` for the login and logout paths,
-  which `config/urls.py` includes before the router.
+  `authentication.py` (the token authentication) and `throttling.py` (the
+  rate limits, which the admin login and password change in `sites.py`
+  share too).
 - `admin.py`, `management/commands/`, `migrations/0001_schema.py`.
 
 Tests live in `backend/tests/<app>/` (`accounts`, `contests`, `entries`,
