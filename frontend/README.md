@@ -29,10 +29,13 @@ Without it, nothing is reported. Production builds require it.
   `tokens.json`. `fonts.css` declares Inter and DM Mono, served from the
   site by `@fontsource-variable/inter` and `@fontsource/dm-mono` in their
   latin and latin-ext subsets, with no request to Google Fonts. `app.css`
-  holds the app-wide rules and names the two breakpoints.
+  holds the app-wide rules and names the two breakpoints. `layers.css`
+  declares the cascade layers: `base` for `app.css`'s element defaults, then
+  `design-system` for `tokens.css` and `components.css`. Every other rule is
+  unlayered and beats both, whatever its specificity and file order.
 - `src/shared/ui/`: the component kit, each component with its CSS beside it.
-- `src/app/`: the shell, the routes, the store, the translations and the
-  service worker's registration (`pwa/`).
+- `src/app/`: the shell, the routes, the store, the translations, and in
+  `pwa/` the service worker's registration and the handlers it imports.
 - `src/features/<feature>/`: each feature's API calls, pages and state.
 - `src/sw.ts`: the service worker, built with `vite-plugin-pwa`.
 - `scripts/`: `build-tokens.ts`, which writes `tokens.css`, and the tests

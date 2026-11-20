@@ -210,8 +210,10 @@ Interface changes
   browser keeps, and are ignored while Ctrl, Alt or Meta is held or focus is
   in a text field.
 * The app can be installed to a home screen. Offline, it opens to its shell
-  with a notice instead of the browser's error page, and a new version is
-  announced with a Reload prompt instead of being loaded by itself.
+  with a notice instead of the browser's error page. Online, a reload or a
+  new visit shows a new version at once, and a page that was open before the
+  release announces the new version with a Reload prompt instead of being
+  reloaded by itself.
 
 Deployment changes
 ------------------
@@ -310,12 +312,13 @@ Deployment changes
 * The frontend build includes a service worker, ``/sw.js``, and a web app
   manifest, ``/site.webmanifest``, so browsers can install the site, which
   needs HTTPS. The worker stores only the app's own scripts, styles, fonts,
-  icons and ``index.html``, and answers navigations with ``index.html``
-  except for ``/api``, ``/django-admin``, ``/media``, ``/static2``,
-  ``/assets`` and file paths. API responses and photographs always come
-  from the network. A new version waits until the person presses Reload in
-  its prompt, as "Releases and the service worker" in
-  ``docs/deployment.rst`` describes.
+  icons, the manifest and ``index.html``. It gets the app's pages from
+  nginx, and answers with the stored ``index.html`` only when nginx cannot
+  be reached, except for ``/api``, ``/django-admin``, ``/media``, ``/static2``, ``/assets`` and
+  file paths, which it leaves to the server. API responses and photographs
+  always come from the network. A page that was open before a release keeps
+  its version until the person presses Reload in the prompt, as "Releases
+  and the service worker" in ``docs/deployment.rst`` describes.
 * nginx serves ``/sw.js`` and ``/site.webmanifest`` with ``Cache-Control:
   no-cache``, the manifest as ``application/manifest+json``, and answers 404
   for a missing file at the root, such as an icon, instead of serving the
@@ -505,7 +508,7 @@ Development changes
 * The frontend tests run as two Vitest projects: ``app`` under jsdom, and
   ``scripts`` under Node.js for the build scripts and the Vite
   configuration.
-* New development dependencies: ``vite-plugin-pwa``, ``workbox-core``,
+* New development dependencies: ``vite-plugin-pwa``,
   ``workbox-precaching`` and ``workbox-routing``, which build the service
   worker.
 * The Django settings ``DRF_USER_*`` are named ``ACCOUNTS_*``, and
