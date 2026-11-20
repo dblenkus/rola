@@ -4,6 +4,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('./reloadPage', () => ({ reloadPage: vi.fn() }));
 
 const MINUTE_MS = 60 * 1000;
+const ENTRY_SCRIPT = '/assets/index-abc123.js';
+
+/** A MessageChannel whose port2 delivers to port1 at once. */
+class FakeMessageChannel {
+  port1 = {
+    onmessage: null as ((event: { data: unknown }) => void) | null,
+    close: vi.fn(),
+  };
+  port2 = {
+    postMessage: (data: unknown) => {
+      this.port1.onmessage?.({ data });
+    },
+  };
+}
+
+type FakePort = FakeMessageChannel['port2'];
+
+function isFakePort(value: unknown): value is FakePort {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'postMessage' in value &&
+    typeof value.postMessage === 'function'
+  );
+}
 
 class FakeWorker extends EventTarget {
   state: ServiceWorkerState;
@@ -12,6 +37,25 @@ class FakeWorker extends EventTarget {
   constructor(state: ServiceWorkerState) {
     super();
     this.state = state;
+  }
+
+  /** Answers IS_SAME_BUILD with `reply` on the port sent with it. */
+  answers(reply: unknown): this {
+    this.postMessage.mockImplementation(
+      (message: unknown, transfer: unknown) => {
+        const port: unknown = Array.isArray(transfer) ? transfer[0] : null;
+        if (
+          typeof message === 'object' &&
+          message !== null &&
+          'type' in message &&
+          message.type === 'IS_SAME_BUILD' &&
+          isFakePort(port)
+        ) {
+          port.postMessage(reply);
+        }
+      },
+    );
+    return this;
   }
 
   becomes(state: ServiceWorkerState) {
@@ -122,15 +166,26 @@ function hide() {
   document.dispatchEvent(new Event('visibilitychange'));
 }
 
+/** Gives the page the entry script that the build puts into index.html. */
+function addEntryScript() {
+  const script = document.createElement('script');
+  script.type = 'module';
+  script.src = ENTRY_SCRIPT;
+  document.head.append(script);
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-11-20T10:00:00Z'));
+  vi.stubGlobal('MessageChannel', FakeMessageChannel);
 });
 
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   Reflect.deleteProperty(navigator, 'serviceWorker');
+  document.head.replaceChildren();
 });
 
 describe('registerServiceWorker', () => {
@@ -205,6 +260,7 @@ describe('an update', () => {
     const worker = registration.startInstalling();
     expect(isUpdateReady()).toBe(false);
     worker.becomes('installed');
+    await vi.runAllTimersAsync();
 
     expect(isUpdateReady()).toBe(true);
     expect(listener).toHaveBeenCalledOnce();
@@ -223,12 +279,224 @@ describe('an update', () => {
     const registration = new FakeRegistration();
     const { isUpdateReady, dismissUpdate } = await registered(registration);
     registration.startInstalling().becomes('installed');
+    await vi.runAllTimersAsync();
 
     dismissUpdate();
     expect(isUpdateReady()).toBe(false);
     registration.startInstalling().becomes('installed');
+    await vi.runAllTimersAsync();
 
     expect(isUpdateReady()).toBe(true);
+  });
+});
+
+describe('a waiting worker built with this page', () => {
+  it('takes over without a prompt and without a reload', async () => {
+    addEntryScript();
+    const registration = new FakeRegistration();
+    const { container, isUpdateReady, reloadPage, subscribeToUpdate } =
+      await registered(registration);
+    const listener = vi.fn();
+    subscribeToUpdate(listener);
+    const worker = registration.startInstalling();
+    worker.answers({
+      type: 'SAME_BUILD',
+      sameBuild: true,
+      otherWindows: false,
+    });
+
+    worker.becomes('installed');
+    await vi.runAllTimersAsync();
+
+    expect(worker.postMessage).toHaveBeenCalledWith(
+      {
+        type: 'IS_SAME_BUILD',
+        entryScriptUrl: new URL(ENTRY_SCRIPT, document.baseURI).href,
+      },
+      [expect.anything()],
+    );
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    container.takeOver();
+    expect(isUpdateReady()).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+    expect(reloadPage).not.toHaveBeenCalled();
+  });
+
+  it('takes over when it already waits at registration', async () => {
+    addEntryScript();
+    const worker = new FakeWorker('installed').answers({
+      type: 'SAME_BUILD',
+      sameBuild: true,
+      otherWindows: false,
+    });
+
+    const { isUpdateReady } = await registered(new FakeRegistration(worker));
+
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    expect(isUpdateReady()).toBe(false);
+  });
+});
+
+describe('a waiting worker built with this page while other windows may be open', () => {
+  /** A worker that installs and answers that other windows are open. */
+  async function waitingWhileOthersOpen(reply: unknown) {
+    addEntryScript();
+    const registration = new FakeRegistration();
+    const module = await registered(registration);
+    const listener = vi.fn();
+    module.subscribeToUpdate(listener);
+    const worker = registration.startInstalling().answers(reply);
+    worker.becomes('installed');
+    await vi.runAllTimersAsync();
+    registration.installing = null;
+    registration.waiting = worker;
+    return { ...module, listener, registration, worker };
+  }
+
+  it.each([
+    [
+      'it answers that they are',
+      { type: 'SAME_BUILD', sameBuild: true, otherWindows: true },
+    ],
+    ['it does not say', { type: 'SAME_BUILD', sameBuild: true }],
+    [
+      'the answer is not a boolean',
+      { type: 'SAME_BUILD', sameBuild: true, otherWindows: 'false' },
+    ],
+  ])('neither takes over nor is offered when %s', async (_name, reply) => {
+    const { isUpdateReady, listener, worker } =
+      await waitingWhileOthersOpen(reply);
+
+    expect(worker.postMessage).toHaveBeenCalledOnce();
+    expect(worker.postMessage).not.toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    expect(isUpdateReady()).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('is asked again at the next update check and takes over once alone', async () => {
+    const { isUpdateReady, registration, worker } =
+      await waitingWhileOthersOpen({
+        type: 'SAME_BUILD',
+        sameBuild: true,
+        otherWindows: true,
+      });
+    worker.answers({
+      type: 'SAME_BUILD',
+      sameBuild: true,
+      otherWindows: false,
+    });
+
+    vi.advanceTimersByTime(MINUTE_MS + 1);
+    show();
+    await vi.runAllTimersAsync();
+
+    expect(registration.update).toHaveBeenCalledOnce();
+    expect(worker.postMessage).toHaveBeenCalledTimes(3);
+    expect(worker.postMessage).toHaveBeenLastCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    expect(isUpdateReady()).toBe(false);
+  });
+
+  it('keeps waiting at the next update check while others are still open', async () => {
+    const { isUpdateReady, worker } = await waitingWhileOthersOpen({
+      type: 'SAME_BUILD',
+      sameBuild: true,
+      otherWindows: true,
+    });
+
+    vi.advanceTimersByTime(MINUTE_MS + 1);
+    window.dispatchEvent(new Event('focus'));
+    await vi.runAllTimersAsync();
+
+    expect(worker.postMessage).toHaveBeenCalledTimes(2);
+    expect(worker.postMessage).not.toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
+    expect(isUpdateReady()).toBe(false);
+  });
+});
+
+describe('a waiting worker not known to be built with this page', () => {
+  /** A worker that installs and answers `reply`, or nothing if undefined. */
+  async function waitingWorkerAnswering(reply: unknown) {
+    addEntryScript();
+    const registration = new FakeRegistration();
+    const module = await registered(registration);
+    const worker = registration.startInstalling();
+    if (reply !== undefined) worker.answers(reply);
+    worker.becomes('installed');
+    return { ...module, worker };
+  }
+
+  it('is offered when it answers that the page is an older build', async () => {
+    const { isUpdateReady, worker } = await waitingWorkerAnswering({
+      type: 'SAME_BUILD',
+      sameBuild: false,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(isUpdateReady()).toBe(true);
+    expect(worker.postMessage).not.toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
+  });
+
+  it('is offered to an older build while other windows are open', async () => {
+    const { isUpdateReady, worker } = await waitingWorkerAnswering({
+      type: 'SAME_BUILD',
+      sameBuild: false,
+      otherWindows: true,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(isUpdateReady()).toBe(true);
+    expect(worker.postMessage).toHaveBeenCalledOnce();
+  });
+
+  it('is offered when it does not answer in time', async () => {
+    const { isUpdateReady, worker, SAME_BUILD_TIMEOUT_MS } =
+      await waitingWorkerAnswering(undefined);
+
+    await vi.advanceTimersByTimeAsync(SAME_BUILD_TIMEOUT_MS - 1);
+    expect(isUpdateReady()).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(isUpdateReady()).toBe(true);
+    expect(worker.postMessage).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['a reply of another type', { type: 'OTHER', sameBuild: true }],
+    ['a reply without the answer', { type: 'SAME_BUILD' }],
+    ['a non-boolean answer', { type: 'SAME_BUILD', sameBuild: 'true' }],
+    ['a string', 'SAME_BUILD'],
+    ['null', null],
+  ])('is offered on %s', async (_name, reply) => {
+    const { isUpdateReady, worker } = await waitingWorkerAnswering(reply);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(isUpdateReady()).toBe(true);
+    expect(worker.postMessage).toHaveBeenCalledOnce();
+  });
+
+  it('is offered when the page has no entry script', async () => {
+    const registration = new FakeRegistration();
+    const { isUpdateReady } = await registered(registration);
+    const worker = registration.startInstalling();
+    worker.answers({ type: 'SAME_BUILD', sameBuild: true });
+
+    worker.becomes('installed');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(isUpdateReady()).toBe(true);
+    expect(worker.postMessage).not.toHaveBeenCalled();
   });
 });
 
