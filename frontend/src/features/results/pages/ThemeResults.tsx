@@ -1,32 +1,36 @@
-import React, { CSSProperties, useEffect, useState } from 'react';
-import { Navigate, useParams } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import {
-  Alert,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Typography,
-} from '@mui/material';
-
-import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import { requestError } from '../../../shared/api/errors';
 import {
   Contest,
   ResultsAuthor,
   ResultsThemeSubmission,
 } from '../../../shared/api/types';
+import AwardMark from '../../../shared/ui/AwardMark';
+import Icon from '../../../shared/ui/Icon';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
+import Table, {
+  TableBody,
+  TableCell,
+  TableRow,
+} from '../../../shared/ui/Table';
 import groupBy from '../../../shared/utils/groupBy';
 import { getContest } from '../../contests';
 import { getThemeResults } from '../api';
+import './ThemeResults.css';
 
 interface RouteMatchParams {
   contestId: string;
   themeId: string;
+}
+
+interface ThemeView {
+  title: string;
+  submissionsByAuthor: ResultsThemeSubmission[][];
 }
 
 // Results list Slovenian names, whatever the browser's locale.
@@ -35,11 +39,8 @@ const nameCollator = new Intl.Collator('sl');
 const ThemeResults: React.FC = () => {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
-  const [submissionsByAuthor, setSubmissionsByAuthor] = useState<
-    ResultsThemeSubmission[][] | null
-  >(null);
+  const [theme, setTheme] = useState<ThemeView | null>(null);
   const [contest, setContest] = useState<Contest | null>(null);
-  const [redirect, setRedirect] = useState<null | number>(null);
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
@@ -51,13 +52,17 @@ const ThemeResults: React.FC = () => {
   useEffect(() => {
     const fetch = async (): Promise<void> => {
       const { data } = await getThemeResults(themeId);
-      setSubmissionsByAuthor(
-        groupBy(data.submissions, (submission) => submission.author.id).sort(
+      setTheme({
+        title: data.title,
+        submissionsByAuthor: groupBy(
+          data.submissions,
+          (submission) => submission.author.id,
+        ).sort(
           ([a], [b]) =>
             nameCollator.compare(a.author.last_name, b.author.last_name) ||
             nameCollator.compare(a.author.first_name, b.author.first_name),
         ),
-      );
+      });
     };
     fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
@@ -83,74 +88,48 @@ const ThemeResults: React.FC = () => {
     return author.reward || '';
   };
 
-  const getAuthorStyle = (author: ResultsAuthor): CSSProperties => {
-    const style: CSSProperties = {};
-
-    if (getAuthorReward(author)) {
-      style.backgroundColor = 'rgb(254, 225, 1, 0.5)';
-    }
-
-    return style;
-  };
-
-  const getReward = (submission: ResultsThemeSubmission): string => {
-    if (submission.reward_label) return submission.reward_label;
-    if (submission.accepted) return t('accepted');
-    return '';
-  };
-
-  const getRewardStyle = (
+  // An award takes the place of "Accepted"; a plain entry shows nothing.
+  const renderReward = (
     submission: ResultsThemeSubmission,
-  ): CSSProperties => {
-    const style: CSSProperties = {};
-
-    if (submission.reward_kind === 'Gold') {
-      style.backgroundColor = 'rgb(254, 225, 1, 0.5)';
-    }
-    if (submission.reward_kind === 'Silver') {
-      style.backgroundColor = 'rgb(167, 167, 173, 0.5)';
-    }
-    if (submission.reward_kind === 'Bronze') {
-      style.backgroundColor = 'rgb(167, 112, 68, 0.5)';
-    }
-
-    return style;
+  ): React.ReactNode => {
+    if (submission.reward_label)
+      return <AwardMark name={submission.reward_label} />;
+    if (submission.accepted)
+      return (
+        <span className="results-accepted label">
+          <Icon name="check" className="results-accepted__icon" />
+          {t('accepted')}
+        </span>
+      );
+    return null;
   };
 
-  const getRewardTextStyle = (
-    submission: ResultsThemeSubmission,
-  ): CSSProperties => {
-    const style: CSSProperties = {};
-
-    if (submission.reward_kind === 'Honorable Mention') {
-      style.fontWeight = 'bolder';
-    }
-
-    return style;
-  };
-
-  const isAccepted = (submission: ResultsThemeSubmission): boolean =>
-    submission.accepted;
-
-  if (redirect)
+  // Only accepted entries open on their own page.
+  const renderTitle = (submission: ResultsThemeSubmission): React.ReactNode => {
+    const title = submission.title || t('results_untitled');
+    if (!submission.accepted)
+      return <span className="results-entry">{title}</span>;
     return (
-      <Navigate
-        to={`/results/contest/${contestId}/theme/${themeId}/submission/${redirect}`}
-      />
+      <Link
+        className="results-entry results-entry__link"
+        to={`/results/contest/${contestId}/theme/${themeId}/submission/${submission.id}`}
+      >
+        {title}
+      </Link>
     );
+  };
 
-  if (error) return <Alert severity="error">{error}</Alert>;
-  if (!submissionsByAuthor || !contest) return <LoadingProgress />;
-  if (!submissionsByAuthor.length)
-    return <Typography>{t('no_published_results')}</Typography>;
+  if (error) return <Message severity="error">{error}</Message>;
+  if (!theme || !contest) return <LoadingProgress />;
 
   return (
-    <>
-      <TableContainer component={Paper}>
+    <Page title={theme.title} lead={contest.title}>
+      {theme.submissionsByAuthor.length ? (
         <Table>
           <TableBody>
-            {submissionsByAuthor.map((submissions) => {
+            {theme.submissionsByAuthor.map((submissions) => {
               const author = getAuthor(submissions);
+              const reward = getAuthorReward(author);
               let authorDetails = `${author.country}`;
               if (contest.school_show)
                 authorDetails = `${author.school || '/'}`;
@@ -162,47 +141,21 @@ const ThemeResults: React.FC = () => {
               return (
                 <React.Fragment key={author.id}>
                   <TableRow>
-                    <TableCell colSpan={2} style={getAuthorStyle(author)}>
-                      <Typography>
-                        <b>
-                          {author.last_name}, {author.first_name}
-                        </b>{' '}
+                    <TableCell header>
+                      {author.last_name}, {author.first_name}{' '}
+                      <span className="results-author__details">
                         ({authorDetails})
-                      </Typography>
+                      </span>
                     </TableCell>
-                    <TableCell
-                      colSpan={2}
-                      align="right"
-                      style={getAuthorStyle(author)}
-                    >
-                      <Typography>
-                        <b>{getAuthorReward(author)}</b>
-                      </Typography>
+                    <TableCell align="end">
+                      {reward && <AwardMark name={reward} />}
                     </TableCell>
                   </TableRow>
                   {submissions.map((submission) => (
-                    <TableRow
-                      key={submission.id}
-                      hover={isAccepted(submission)}
-                      onClick={() =>
-                        isAccepted(submission) && setRedirect(submission.id)
-                      }
-                    >
-                      <TableCell
-                        padding="checkbox"
-                        style={getRewardStyle(submission)}
-                      />
-                      <TableCell style={getRewardStyle(submission)}>
-                        <Typography>{submission.title}</Typography>
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        padding="normal"
-                        style={getRewardStyle(submission)}
-                      >
-                        <Typography style={getRewardTextStyle(submission)}>
-                          {getReward(submission)}
-                        </Typography>
+                    <TableRow key={submission.id}>
+                      <TableCell>{renderTitle(submission)}</TableCell>
+                      <TableCell align="end">
+                        {renderReward(submission)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -211,8 +164,10 @@ const ThemeResults: React.FC = () => {
             })}
           </TableBody>
         </Table>
-      </TableContainer>
-    </>
+      ) : (
+        <p className="body results-empty">{t('no_published_results')}</p>
+      )}
+    </Page>
   );
 };
 
