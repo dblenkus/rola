@@ -19,12 +19,12 @@ API changes
   requester's own submissions, also after publication and for
   administrators, and another account's submission answers 404.
 * Theme and submission results publish only entries in a paid submission
-  set, as judging lists only those, and ``submissions_number`` in theme
+  set, as judging lists only those, and ``submission_count`` in theme
   results counts only those. Theme results list their entries as
   ``ThemeSubmissionResults``, without ``rating``, the total score;
   ``/api/v1/results/submission`` keeps it. A result author's ``school`` is
-  ``null`` unless the contest sets ``school_show``, and ``club`` unless it
-  sets ``club_show``. The results used to include unpaid entries, theme
+  ``null`` unless the contest sets ``school_visible``, and ``club`` unless
+  it sets ``club_visible``. The results used to include unpaid entries, theme
   results the score of every entry, accepted or not, and every author's
   school and club.
 * ``/api/v1/judge/submission`` leaves out each submission's author. Judges
@@ -79,7 +79,7 @@ API changes
   results are published. Outside that window these requests answer 403 with
   the detail "This contest is not accepting entries."; superusers can still
   delete a submission set until publication. Only the owner can change or
-  delete a submission. An author can enter at most a theme's ``n_photos``
+  delete a submission. An author can enter at most a theme's ``max_photos``
   photographs in it, and more answer 400. Submissions used to be accepted at
   any time and in any number, and could be changed or deleted until
   publication, also while the jury rated them.
@@ -157,6 +157,17 @@ API changes
   answers 406.
 * ``?current=`` on the account list is described as a presence flag: any
   non-empty value limits the list to the caller's own account.
+* Fields are renamed. Contests in ``/api/v1/contest`` and
+  ``/api/v1/judge/contest``: ``dob_required`` to ``date_of_birth_required``,
+  ``club_show`` to ``club_visible`` and ``school_show`` to
+  ``school_visible``. Their themes and theme results: ``n_photos`` to
+  ``max_photos`` and ``submissions_number`` to ``submission_count``, and
+  ``ratings_number`` to ``rating_count`` in judges' themes. Authors in
+  ``/api/v1/author`` and in submissions and submission sets: ``dob`` to
+  ``date_of_birth``. ``/api/v1/payment``: ``submissionset`` to
+  ``submission_set``, and its filters ``?submissionset=`` and
+  ``?submissionset__in=`` to ``?submission_set=`` and
+  ``?submission_set__in=``.
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
   backend's integer bounds; the backend serves no schema at runtime. Its
   security scheme ``tokenAuth`` is the HTTP ``bearer`` scheme.

@@ -546,11 +546,11 @@ paths:
         schema:
           type: boolean
       - in: query
-        name: submissionset
+        name: submission_set
         schema:
           type: integer
       - in: query
-        name: submissionset__in
+        name: submission_set__in
         schema:
           type: array
           items:
@@ -1583,7 +1583,7 @@ components:
           nullable: true
           description: Return author's email for superusers, ``None`` field otherwise.
           readOnly: true
-        dob:
+        date_of_birth:
           type: string
           format: date
           nullable: true
@@ -1622,7 +1622,7 @@ components:
           type: string
           minLength: 1
           maxLength: 30
-        dob:
+        date_of_birth:
           type: string
           format: date
           nullable: true
@@ -1741,13 +1741,13 @@ components:
           type: string
         confirmation_html:
           type: string
-        dob_required:
+        date_of_birth_required:
           type: boolean
-        club_show:
+        club_visible:
           type: boolean
         club_required:
           type: boolean
-        school_show:
+        school_visible:
           type: boolean
         school_required:
           type: boolean
@@ -1786,13 +1786,13 @@ components:
         confirmation_html:
           type: string
           minLength: 1
-        dob_required:
+        date_of_birth_required:
           type: boolean
-        club_show:
+        club_visible:
           type: boolean
         club_required:
           type: boolean
-        school_show:
+        school_visible:
           type: boolean
         school_required:
           type: boolean
@@ -1912,13 +1912,13 @@ components:
           type: string
         confirmation_html:
           type: string
-        dob_required:
+        date_of_birth_required:
           type: boolean
-        club_show:
+        club_visible:
           type: boolean
         club_required:
           type: boolean
-        school_show:
+        school_visible:
           type: boolean
         school_required:
           type: boolean
@@ -1989,26 +1989,26 @@ components:
           maxLength: 100
         is_series:
           type: boolean
-        n_photos:
+        max_photos:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           title: Number of photos
-        submissions_number:
+        submission_count:
           type: integer
           description: Count paid submissions available for judging.
           readOnly: true
-        ratings_number:
+        rating_count:
           type: integer
           description: Count ratings submitted by the requesting judge.
           readOnly: true
       required:
       - created
       - id
+      - max_photos
       - modified
-      - n_photos
-      - ratings_number
-      - submissions_number
+      - rating_count
+      - submission_count
       - title
     KindEnum:
       enum:
@@ -2310,7 +2310,7 @@ components:
           type: string
           minLength: 1
           maxLength: 30
-        dob:
+        date_of_birth:
           type: string
           format: date
           nullable: true
@@ -2357,13 +2357,13 @@ components:
         confirmation_html:
           type: string
           minLength: 1
-        dob_required:
+        date_of_birth_required:
           type: boolean
-        club_show:
+        club_visible:
           type: boolean
         club_required:
           type: boolean
-        school_show:
+        school_visible:
           type: boolean
         school_required:
           type: boolean
@@ -2371,7 +2371,7 @@ components:
       type: object
       description: Serializer for Payment objects.
       properties:
-        submissionset:
+        submission_set:
           type: integer
         paid:
           type: boolean
@@ -2459,7 +2459,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-        submissionset:
+        submission_set:
           type: integer
         paid:
           type: boolean
@@ -2467,17 +2467,17 @@ components:
       - created
       - id
       - modified
-      - submissionset
+      - submission_set
     PaymentRequest:
       type: object
       description: Serializer for Payment objects.
       properties:
-        submissionset:
+        submission_set:
           type: integer
         paid:
           type: boolean
       required:
-      - submissionset
+      - submission_set
     Rating:
       type: object
       description: Serializer for Rating objects.
@@ -2736,21 +2736,21 @@ components:
           maxLength: 100
         is_series:
           type: boolean
-        n_photos:
+        max_photos:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           title: Number of photos
-        submissions_number:
+        submission_count:
           type: integer
           description: Count submissions in this theme.
           readOnly: true
       required:
       - created
       - id
+      - max_photos
       - modified
-      - n_photos
-      - submissions_number
+      - submission_count
       - title
     ThemeRequest:
       type: object
@@ -2762,13 +2762,13 @@ components:
           maxLength: 100
         is_series:
           type: boolean
-        n_photos:
+        max_photos:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           title: Number of photos
       required:
-      - n_photos
+      - max_photos
       - title
     ThemeResults:
       type: object
@@ -2790,12 +2790,12 @@ components:
           maxLength: 100
         is_series:
           type: boolean
-        n_photos:
+        max_photos:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           title: Number of photos
-        submissions_number:
+        submission_count:
           type: integer
           description: Count submissions in this theme.
           readOnly: true
@@ -2807,10 +2807,10 @@ components:
       required:
       - created
       - id
+      - max_photos
       - modified
-      - n_photos
+      - submission_count
       - submissions
-      - submissions_number
       - title
     ThemeSubmissionResults:
       type: object

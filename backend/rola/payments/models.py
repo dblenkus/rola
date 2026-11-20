@@ -10,7 +10,7 @@ from rola.entries.models import SubmissionSet
 class Payment(BaseModel):
     """Model for storing payments."""
 
-    submissionset = models.OneToOneField(SubmissionSet, on_delete=models.CASCADE)
+    submission_set = models.OneToOneField(SubmissionSet, on_delete=models.CASCADE)
 
     paid = models.BooleanField(default=False)
 

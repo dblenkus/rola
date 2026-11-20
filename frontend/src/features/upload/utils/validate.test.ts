@@ -30,7 +30,7 @@ function filledForm(clubRequired: boolean, club: string): ContestModel {
   const store = createAppStore();
   store.dispatch(
     uploadInit(
-      { ...contest, club_show: true, club_required: clubRequired },
+      { ...contest, club_visible: true, club_required: clubRequired },
       'ana@example.com',
     ),
   );

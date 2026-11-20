@@ -31,7 +31,7 @@ def _entry(world, judge, index):
         user=world.owner, first_name=f"Author {index}", last_name="Photographer"
     )
     theme = Theme.objects.create(
-        contest=world.contest, title=f"Theme {index}", n_photos=4
+        contest=world.contest, title=f"Theme {index}", max_photos=4
     )
     submission = submitted(world, author=author, theme=theme, title=f"Photo {index}")
     files = [photo(world.owner), photo(world.owner)]
@@ -40,7 +40,7 @@ def _entry(world, judge, index):
         user=world.owner, author=author, contest=world.contest
     )
     group.submissions.add(submission)
-    Payment.objects.create(submissionset=group, paid=True)
+    Payment.objects.create(submission_set=group, paid=True)
     Rating.objects.create(
         user=world.owner, judge=judge, submission=submission, rating=5
     )
@@ -107,12 +107,12 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 world.theme.pk,
                 *[entry.theme.pk for entry in entries],
             ]
-            assert [theme["submissions_number"] for theme in themes] == [
+            assert [theme["submission_count"] for theme in themes] == [
                 0,
                 *[1 for _ in entries],
             ]
             if endpoint == "judge/contest":
-                assert [theme["ratings_number"] for theme in themes] == [
+                assert [theme["rating_count"] for theme in themes] == [
                     0,
                     *[1 for _ in entries],
                 ]
@@ -156,7 +156,7 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
             user=world.owner, author=world.author, contest=world.contest
         )
         group.submissions.add(submission)
-        Payment.objects.create(submissionset=group, paid=True)
+        Payment.objects.create(submission_set=group, paid=True)
     for submission in (first, unpaid):
         Rating.objects.create(
             user=world.owner, judge=judge, submission=submission, rating=5
@@ -165,19 +165,19 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
         Rating.objects.create(
             user=world.other, judge=other_judge, submission=submission, rating=3
         )
-    empty = Theme.objects.create(contest=world.contest, title="Empty", n_photos=4)
+    empty = Theme.objects.create(contest=world.contest, title="Empty", max_photos=4)
 
     response = world.client.get("/api/v1/judge/contest")
     assert response.status_code == 200, response.data
     themes = response.data["results"][0]["themes"]
     assert [theme["id"] for theme in themes] == [world.theme.pk, empty.pk]
-    assert [theme["submissions_number"] for theme in themes] == [3, 0]
-    assert [theme["ratings_number"] for theme in themes] == [2, 0]
+    assert [theme["submission_count"] for theme in themes] == [3, 0]
+    assert [theme["rating_count"] for theme in themes] == [2, 0]
 
     response = world.client.get("/api/v1/contest")
     assert response.status_code == 200, response.data
     themes = response.data["results"][0]["themes"]
-    assert [theme["submissions_number"] for theme in themes] == [3, 0]
+    assert [theme["submission_count"] for theme in themes] == [3, 0]
 
 
 def _rewarded_result(world, judge, index):

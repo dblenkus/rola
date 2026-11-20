@@ -35,7 +35,7 @@ def test_submitted_contest_filter_lists_each_contest_once(world):
         start_date=world.contest.start_date,
         end_date=world.contest.end_date,
     )
-    other_theme = Theme.objects.create(contest=other, title="City", n_photos=4)
+    other_theme = Theme.objects.create(contest=other, title="City", max_photos=4)
     submitted(world, user=world.other, author=world.other_author, theme=other_theme)
     response = world.client.get("/api/v1/contest", {"submitted": "true"})
     assert response.data["count"] == 1

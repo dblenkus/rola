@@ -73,12 +73,14 @@ def test_results_identify_the_rewarded_theme_by_id(world):
     assert author["reward_theme"] == world.theme.pk
 
 
-@pytest.mark.parametrize("school_show", [False, True])
-@pytest.mark.parametrize("club_show", [False, True])
-def test_results_show_only_the_public_author_details(world, school_show, club_show):
+@pytest.mark.parametrize("school_visible", [False, True])
+@pytest.mark.parametrize("club_visible", [False, True])
+def test_results_show_only_the_public_author_details(
+    world, school_visible, club_visible
+):
     Author.objects.filter(pk=world.author.pk).update(
         email="alice@example.org",
-        dob="2012-03-04",
+        date_of_birth="2012-03-04",
         school="Primary school",
         mentor="Teacher Name",
         club="Photo club",
@@ -91,8 +93,8 @@ def test_results_show_only_the_public_author_details(world, school_show, club_sh
     Rating.objects.create(user=world.other, judge=judge, submission=accepted, rating=5)
     ThemeResults.objects.create(theme=world.theme, accepted_threshold=3)
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
-    world.contest.school_show = school_show
-    world.contest.club_show = club_show
+    world.contest.school_visible = school_visible
+    world.contest.club_visible = club_visible
     world.contest.save()
     public = APIClient()
     theme = public.get(f"/api/v1/results/theme/{world.theme.pk}").json()
@@ -105,8 +107,8 @@ def test_results_show_only_the_public_author_details(world, school_show, club_sh
             "id": world.author.pk,
             "first_name": "Alice",
             "last_name": "Photographer",
-            "school": "Primary school" if school_show else None,
-            "club": "Photo club" if club_show else None,
+            "school": "Primary school" if school_visible else None,
+            "club": "Photo club" if club_visible else None,
             "country": None,
             "reward": None,
             "reward_theme": None,
@@ -142,7 +144,7 @@ def test_theme_results_list_only_paid_entries_without_scores(world):
         (accepted.pk, True),
         (declined.pk, False),
     ]
-    assert theme["submissions_number"] == 2
+    assert theme["submission_count"] == 2
     for row in theme["submissions"]:
         assert "rating" not in row
 

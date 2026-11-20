@@ -19,7 +19,7 @@ class InstitutionSerializer(BaseSerializer):
 class ThemeSerializer(BaseSerializer):
     """Serializer for Theme objects."""
 
-    submissions_number = serializers.SerializerMethodField("get_submissions_number")
+    submission_count = serializers.SerializerMethodField("get_submission_count")
 
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""
@@ -28,11 +28,11 @@ class ThemeSerializer(BaseSerializer):
         fields = BaseSerializer.Meta.fields + [
             "title",
             "is_series",
-            "n_photos",
-            "submissions_number",
+            "max_photos",
+            "submission_count",
         ]
 
-    def get_submissions_number(self, theme) -> int:
+    def get_submission_count(self, theme) -> int:
         """Count submissions in this theme."""
         # Contest lists and details annotate the count. Contest write
         # responses count per theme, and theme results count the
@@ -60,9 +60,9 @@ class ContestSerializer(BaseSerializer):
             "header_image",
             "notice_html",
             "confirmation_html",
-            "dob_required",
-            "club_show",
+            "date_of_birth_required",
+            "club_visible",
             "club_required",
-            "school_show",
+            "school_visible",
             "school_required",
         ]

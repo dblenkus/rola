@@ -137,7 +137,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
         <TableBody>
           {submissionSets.map((submissionSet) => {
             const payment = shownPayments.find(
-              (p) => p.submissionset === submissionSet.id,
+              (p) => p.submission_set === submissionSet.id,
             );
             return (
               <SubmissionSetTableRow

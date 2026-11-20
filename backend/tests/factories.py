@@ -78,7 +78,7 @@ def pay(submission):
         contest=submission.theme.contest,
     )
     group.submissions.add(submission)
-    return Payment.objects.create(submissionset=group, paid=True)
+    return Payment.objects.create(submission_set=group, paid=True)
 
 
 def first_link(message):

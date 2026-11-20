@@ -18,7 +18,7 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The copied tables have the same columns in the new schema, with six
+The copied tables have the same columns in the new schema, with seven
 differences that decide how the data is copied:
 
 * The tables have new names, because the apps have new labels (see `Old and
@@ -26,6 +26,10 @@ differences that decide how the data is copied:
   copy of the old database, and copies the data from there into the new
   database. It never renames anything in the old database, which a rollback
   needs as it is.
+* Six columns have new names: ``n_photos`` in the themes, ``dob_required``,
+  ``club_show`` and ``school_show`` in the contests, ``dob`` in the authors
+  and ``submissionset_id`` in the payments (see `Old and new names`_). The
+  procedure renames them in ``rola_old`` together with the tables.
 * Seven tables (``entries_author``, ``contests_contest``,
   ``entries_submission``, ``entries_submissionset``, ``contests_theme``,
   ``judging_authorreward`` and ``judging_submissionreward``) order their
@@ -81,9 +85,10 @@ Old and new names
 =================
 
 Every table's name takes the new app label as prefix, and every table except
-``accounts_token``, which is not copied, keeps its columns; the many-to-many
-tables follow their model's table. A table that is not listed here, such as
-``auth_group`` or ``django_session``, keeps its name:
+``accounts_token``, which is not copied, keeps its columns, apart from the six
+renamed columns listed after the tables; the many-to-many tables follow their
+model's table. A table that is not listed here, such as ``auth_group`` or
+``django_session``, keeps its name:
 
 .. list-table::
    :header-rows: 1
@@ -108,6 +113,29 @@ tables follow their model's table. A table that is not listed here, such as
        ``rating_submissionreward``, ``rating_themeresults``
      - ``judging_authorreward``, ``judging_judge``, ``judging_rating``,
        ``judging_submissionreward``, ``judging_themeresults``
+
+Six columns have new names. The other columns of their tables keep theirs:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Old column
+     - New column
+   * - ``core_theme.n_photos``
+     - ``contests_theme.max_photos``
+   * - ``core_contest.dob_required``
+     - ``contests_contest.date_of_birth_required``
+   * - ``core_contest.club_show``
+     - ``contests_contest.club_visible``
+   * - ``core_contest.school_show``
+     - ``contests_contest.school_visible``
+   * - ``core_author.dob``
+     - ``entries_author.date_of_birth``
+   * - ``payment_payment.submissionset_id``
+     - ``payments_payment.submission_set_id``
+
+The many-to-many table ``entries_submissionset_submissions`` keeps its
+``submissionset_id`` column.
 
 The app labels in ``django_content_type``, which the permissions' natural
 keys hold, change the same way:
@@ -137,9 +165,10 @@ becomes ``judging_unique_judge_submission``, and
 keeps its name. The names that Django generates for keys, indexes and
 sequences start with the new table names, and their hash suffixes differ.
 
-Until "Rename the tables in the scratch copy", the old database and
-``rola_old`` use the old names, and the commands before that step name the
-old tables. From that step on, the commands use the new names.
+Until "Rename the tables and columns in the scratch copy", the old database
+and ``rola_old`` use the old names, and the commands before that step name
+the old tables and columns. From that step on, the commands use the new
+names.
 
 Prepare the new stack
 =====================
@@ -277,9 +306,9 @@ Check the old data
 
 Restore the dump into a scratch database next to the new one, replacing one
 left from an earlier attempt. The checks and the permission remapping read
-from it, and the copy comes from it once its tables are renamed. Until then
-it has the old table names, as the old database does, and the checks below
-use them:
+from it, and the copy comes from it once its tables and columns are renamed.
+Until then it has the old names, as the old database does, and the checks
+below use them:
 
 .. code-block:: shell
 
@@ -404,14 +433,16 @@ Tell their organizers before the switch:
    ORDER BY c.id;
    SQL
 
-Rename the tables in the scratch copy
-=====================================
+Rename the tables and columns in the scratch copy
+=================================================
 
-Rename the old tables in ``rola_old`` to the new names, and change the old
-app labels of its content types to the new ones (see `Old and new names`_),
-in one transaction. Run this against ``rola_old`` only, never against the
-old database. A content type of a ``core`` model that is not listed keeps
-its old label, so the permission remapping lists its permissions:
+Rename the old tables and the six renamed columns in ``rola_old`` to the new
+names, and change the old app labels of its content types to the new ones
+(see `Old and new names`_), in one transaction. The column renames name the
+tables by their new names, because they run after the table renames. Run
+this against ``rola_old`` only, never against the old database. A content
+type of a ``core`` model that is not listed keeps its old label, so the
+permission remapping lists its permissions:
 
 .. code-block:: shell
 
@@ -437,6 +468,12 @@ its old label, so the permission remapping lists its permissions:
    ALTER TABLE rating_rating RENAME TO judging_rating;
    ALTER TABLE rating_submissionreward RENAME TO judging_submissionreward;
    ALTER TABLE rating_themeresults RENAME TO judging_themeresults;
+   ALTER TABLE contests_theme RENAME COLUMN n_photos TO max_photos;
+   ALTER TABLE contests_contest RENAME COLUMN dob_required TO date_of_birth_required;
+   ALTER TABLE contests_contest RENAME COLUMN club_show TO club_visible;
+   ALTER TABLE contests_contest RENAME COLUMN school_show TO school_visible;
+   ALTER TABLE entries_author RENAME COLUMN dob TO date_of_birth;
+   ALTER TABLE payments_payment RENAME COLUMN submissionset_id TO submission_set_id;
    UPDATE django_content_type SET app_label = CASE
        WHEN app_label = 'drf_user' THEN 'accounts'
        WHEN app_label = 'payment' THEN 'payments'
@@ -449,9 +486,9 @@ its old label, so the permission remapping lists its permissions:
    COMMIT;
    SQL
 
-If a table is missing, the transaction stops and renames nothing: find out
-why before going on. This must print no rows, or a table of the old schema
-was left with its old name:
+If a table or column is missing, the transaction stops and renames nothing:
+find out why before going on. This must print no rows, or a table of the old
+schema was left with its old name:
 
 .. code-block:: shell
 

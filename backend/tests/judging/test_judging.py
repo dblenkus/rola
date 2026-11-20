@@ -27,12 +27,14 @@ def test_judging_uses_postgres_ordering_and_scopes_paid_submissions(world):
         user=world.other, author=world.other_author, contest=world.contest
     )
     group.submissions.add(item)
-    Payment.objects.create(submissionset=group, paid=True)
+    Payment.objects.create(submission_set=group, paid=True)
     unpaid = submitted(world)
     response = world.client.get("/api/v1/judge/submission")
     assert response.status_code == 200, response.data
     assert [row["id"] for row in response.data["results"]] == [item.pk]
-    other_theme = Theme.objects.create(contest=world.contest, title="Empty", n_photos=4)
+    other_theme = Theme.objects.create(
+        contest=world.contest, title="Empty", max_photos=4
+    )
     response = world.client.get("/api/v1/judge/submission", {"theme": other_theme.pk})
     assert response.data["results"] == []
     for value in [3, 5]:
@@ -53,7 +55,7 @@ def test_judges_see_submissions_without_their_authors(world):
         user=world.other, author=world.other_author, contest=world.contest
     )
     group.submissions.add(item)
-    Payment.objects.create(submissionset=group, paid=True)
+    Payment.objects.create(submission_set=group, paid=True)
     response = world.client.get("/api/v1/judge/submission")
     assert response.status_code == 200, response.data
     [row] = response.json()["results"]
@@ -102,7 +104,7 @@ def test_rating_updates_cannot_move_rating_to_another_contest(world):
         start_date=world.contest.start_date,
         end_date=world.contest.end_date,
     )
-    theme = Theme.objects.create(contest=contest, title="Other", n_photos=4)
+    theme = Theme.objects.create(contest=contest, title="Other", max_photos=4)
     other = submitted(world, theme=theme)
     pay(other)
     response = world.client.patch(

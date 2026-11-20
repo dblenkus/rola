@@ -159,7 +159,7 @@ describe('theme section', () => {
       themes: contest.themes.map((theme) => ({
         ...theme,
         is_series: true,
-        n_photos: 3,
+        max_photos: 3,
       })),
     });
     expect(
@@ -311,7 +311,7 @@ describe('entry row', () => {
       themes: contest.themes.map((theme) => ({
         ...theme,
         is_series: true,
-        n_photos: 3,
+        max_photos: 3,
       })),
     };
 

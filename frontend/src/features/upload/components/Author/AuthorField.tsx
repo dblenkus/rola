@@ -10,7 +10,7 @@ import AutocompleteField from '../AutocompleteInput';
 
 interface AuthorFieldProps {
   author: AuthorModel;
-  showDob: boolean;
+  showDateOfBirth: boolean;
   showClub: boolean;
   requiredClub: boolean;
   showSchool: boolean;
@@ -21,7 +21,7 @@ interface AuthorFieldProps {
 // The entrant's details, one field under another.
 const AuthorField: React.FC<AuthorFieldProps> = ({
   author,
-  showDob,
+  showDateOfBirth,
   showClub,
   requiredClub,
   showSchool,
@@ -55,12 +55,12 @@ const AuthorField: React.FC<AuthorFieldProps> = ({
           required
           onChange={handleAUthorChange}
         />
-        {showDob && (
+        {showDateOfBirth && (
           <DateField
-            name="dob"
+            name="date_of_birth"
             label={t('date_of_birth')}
-            value={author.dob}
-            error={author.errors.dob}
+            value={author.date_of_birth}
+            error={author.errors.date_of_birth}
             required
             autoComplete="bday"
             onChange={handleAUthorChange}

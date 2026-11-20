@@ -103,13 +103,13 @@ class Contest(BaseModel):
         "accounts.Email", null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    dob_required = models.BooleanField(default=False)
+    date_of_birth_required = models.BooleanField(default=False)
 
-    club_show = models.BooleanField(default=False)
+    club_visible = models.BooleanField(default=False)
 
     club_required = models.BooleanField(default=False)
 
-    school_show = models.BooleanField(default=False)
+    school_visible = models.BooleanField(default=False)
 
     school_required = models.BooleanField(default=False)
 
@@ -173,7 +173,7 @@ class Theme(BaseModel):
     is_series = models.BooleanField(default=False)
 
     #: number of photos that can be submited to theme
-    n_photos = models.IntegerField(_("Number of photos"))
+    max_photos = models.IntegerField(_("Number of photos"))
 
     def save(self, *args, **kwargs):
         """Save Theme instance."""

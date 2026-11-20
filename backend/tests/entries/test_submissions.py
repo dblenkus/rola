@@ -128,7 +128,7 @@ def test_invalid_submission_leaves_no_partial_records(world, case):
             start_date=world.contest.start_date,
             end_date=world.contest.end_date,
         )
-        theme = Theme.objects.create(title="Second", contest=contest, n_photos=4)
+        theme = Theme.objects.create(title="Second", contest=contest, max_photos=4)
         data = [data, payload(world, theme=theme.pk)]
     elif case == "mixed_authors":
         another = Author.objects.create(user=world.owner, first_name="Another")

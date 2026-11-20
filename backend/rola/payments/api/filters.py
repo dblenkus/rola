@@ -13,6 +13,6 @@ class PaymentFilter(filters.FilterSet):
 
         model = Payment
         fields = {
-            "submissionset": ["exact", "in"],
+            "submission_set": ["exact", "in"],
             "paid": ["exact"],
         }

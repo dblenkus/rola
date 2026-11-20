@@ -16,7 +16,7 @@ const themeSlice = createSlice({
       const {
         id,
         is_series: isSeries = false,
-        n_photos: imageNumber,
+        max_photos: imageNumber,
         title,
       } = action.payload;
       const submissionNumber = isSeries ? 1 : imageNumber;

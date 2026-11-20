@@ -40,12 +40,12 @@ const SelectTheme: React.FC = () => {
               <li key={theme.id} className="jury-theme">
                 <span className="jury-theme__title body">{theme.title}</span>
                 <ScoringProgress
-                  scored={theme.ratings_number}
-                  total={theme.submissions_number}
+                  scored={theme.rating_count}
+                  total={theme.submission_count}
                   label={t('jury_theme_progress', {
                     theme: theme.title,
-                    scored: theme.ratings_number,
-                    total: theme.submissions_number,
+                    scored: theme.rating_count,
+                    total: theme.submission_count,
                   })}
                 />
                 <span className="jury-theme__action">

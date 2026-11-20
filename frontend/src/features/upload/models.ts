@@ -75,7 +75,7 @@ export interface AuthorError {
   hasError: boolean;
   first_name: string | null;
   last_name: string | null;
-  dob: string | null;
+  date_of_birth: string | null;
   school: string | null;
   mentor: string | null;
   club: string | null;
@@ -86,7 +86,7 @@ export interface AuthorModel {
   first_name: string;
   last_name: string;
   // Null while no complete date is entered.
-  dob: Date | null;
+  date_of_birth: Date | null;
   school?: string;
   mentor?: string;
   club?: string;
@@ -105,10 +105,10 @@ export interface ContestMeta {
   headerImage: string | null;
   // When entries close, as the API sends it.
   endDate: string;
-  dobRequired: boolean;
-  clubShow: boolean;
+  dateOfBirthRequired: boolean;
+  clubVisible: boolean;
   clubRequired: boolean;
-  schoolShow: boolean;
+  schoolVisible: boolean;
   schoolRequired: boolean;
 }
 
