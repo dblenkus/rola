@@ -170,7 +170,7 @@ jobs:
       - name: Check the frontend's script policy against its page
         if: matrix.component == 'frontend'
         run: |
-          docker run --detach --publish 127.0.0.1:8080:8080 rola-frontend:ci
+          container=$(docker run --detach --publish 127.0.0.1:8080:8080 rola-frontend:ci)
           # nginx may still be starting when the published port answers.
           curl --silent --show-error --fail --retry 10 --retry-all-errors \
             --dump-header headers.txt --output index.html http://127.0.0.1:8080/
@@ -190,6 +190,21 @@ jobs:
           if cmp --silent headers-policy.txt headers-2-policy.txt; then
             exit 1
           fi
+          # No cache may store the document or revalidate it with a 304, which
+          # would show a stored body under another response's nonce: it has one
+          # Cache-Control, no-store, and conditional requests with its
+          # Last-Modified or with the ETag that nginx derives from the file
+          # (sent before the document stopped carrying one) get the page.
+          tr -d '\r' < headers.txt | grep --ignore-case '^cache-control: ' > cache-control.txt
+          grep --line-regexp --ignore-case 'cache-control: no-store' cache-control.txt
+          test "$(wc --lines < cache-control.txt)" -eq 1
+          last_modified=$(tr -d '\r' < headers.txt | grep --ignore-case '^last-modified: ' | cut --delimiter=' ' --fields=2-)
+          etag=$(docker exec "$container" sh -c \
+            'printf "\"%x-%x\"" $(stat -c "%Y %s" /usr/share/nginx/html/index.html)')
+          for condition in "If-Modified-Since: $last_modified" "If-None-Match: $etag"; do
+            test "$(curl --silent --show-error --header "$condition" \
+              --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/)" -eq 200
+          done
           # The policy refuses inline scripts and scripts from other hosts,
           # so the page may only load scripts from its own paths.
           grep --only-matching --ignore-case '<script[^>]*>' index.html > scripts.txt
