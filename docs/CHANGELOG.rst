@@ -246,11 +246,12 @@ Deployment changes
   media bucket stays private.
 * nginx sends ``X-Frame-Options``, ``X-Content-Type-Options``,
   ``Referrer-Policy`` and a ``Content-Security-Policy`` that allows scripts
-  from the site's own origin only, hides its version, caches hashed assets
-  for a year, and answers 404 for a missing asset instead of serving the
-  application. A proxy or CDN feature that adds scripts to the pages
-  conflicts with the policy, as "HTTPS and headers" in
-  ``docs/deployment.rst`` describes.
+  from the site's own origin and inline scripts with a nonce that is new for
+  every response, hides its version, caches hashed assets for a year, and
+  answers 404 for a missing asset instead of serving the application. A
+  proxy or CDN that adds scripts to the pages must copy the nonce onto them,
+  as Cloudflare's JavaScript Detections do, and must not cache the pages, as
+  "HTTPS and headers" in ``docs/deployment.rst`` describes.
 * nginx accepts uploads of up to 10 MiB; the previous proxy stopped at 1 MiB.
 * The nginx and Gunicorn access logs leave out query strings and the
   ``Referer``, so activation and reset tokens are not logged.
