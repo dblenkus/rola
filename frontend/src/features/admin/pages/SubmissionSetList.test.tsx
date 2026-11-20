@@ -28,7 +28,7 @@ function payment(submissionSetId: number, paid: boolean): Payment {
 
 function serveSets(all: SubmissionSet[], payments: Payment[] = []) {
   return serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /submissionset': (config) => {
       const pageNumber: number = config.params.page;
       const pageSize: number = config.params.page_size;
@@ -173,7 +173,7 @@ it('shows when each set was submitted as a date and a 24-hour time', async () =>
 it('shows a failed load on a page named Submissions', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
-    'GET /contest/1': (config) => {
+    'GET /contests/1': (config) => {
       throw httpError(config, 404);
     },
   });

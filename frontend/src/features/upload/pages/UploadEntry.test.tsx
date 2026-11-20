@@ -44,7 +44,7 @@ function photograph(name: string): File {
 }
 
 function openForm(served: Contest = contest): void {
-  serveApi({ 'GET /contest/1': () => served });
+  serveApi({ 'GET /contests/1': () => served });
   open('/contest/1/upload');
 }
 
@@ -416,7 +416,7 @@ describe('submit bar', () => {
   it('says the upload runs while it runs', async () => {
     const user = userEvent.setup();
     serveApi({
-      'GET /contest/1': () => ({ ...contest, end_date: inDays(30) }),
+      'GET /contests/1': () => ({ ...contest, end_date: inDays(30) }),
       // The upload never finishes in this test.
       'POST /file': () => new Promise(() => undefined),
     });

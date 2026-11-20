@@ -18,22 +18,22 @@ describe('API client without an unexpected-failure handler', () => {
     ['no response', networkError],
   ])('fails loudly on %s', async (_name, error) => {
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         throw error(config);
       },
     });
-    await expect(apiClient.get('/contest')).rejects.toThrow(
+    await expect(apiClient.get('/contests')).rejects.toThrow(
       'No handler for unexpected API failures is registered',
     );
   });
 
   it('passes a client error to the caller', async () => {
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         throw httpError(config, 403);
       },
     });
-    await expect(apiClient.get('/contest')).rejects.toMatchObject({
+    await expect(apiClient.get('/contests')).rejects.toMatchObject({
       response: { status: 403 },
     });
   });
@@ -55,7 +55,7 @@ describe('API client timeout', () => {
   it('fails loudly when a stalled request times out', async () => {
     stallRequests();
     let failure: unknown = null;
-    const request = apiClient.get('/contest').catch((error: unknown) => {
+    const request = apiClient.get('/contests').catch((error: unknown) => {
       failure = error;
     });
     await vi.advanceTimersByTimeAsync(requestTimeout - 1);

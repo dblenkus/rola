@@ -21,7 +21,7 @@ describe('admin submission list', () => {
   it('reloads the list after a confirmed delete only', async () => {
     signIn();
     const adapter = serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': () => page([submissionSet]),
       'GET /payment': () => page([]),
       'DELETE /submissionset/5': () => null,
@@ -63,7 +63,7 @@ describe('admin submission list', () => {
       id: index + 1,
     }));
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       // Like the API, answers a page past the end with 404.
       'GET /submissionset': (config) => {
         const pageNumber: number = config.params.page;
@@ -107,7 +107,7 @@ describe('admin submission list', () => {
     signIn();
     let paid = true;
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': () => page([submissionSet]),
       'GET /payment': (): PaginatedResponse<Payment> =>
         page([
@@ -136,7 +136,7 @@ describe('admin submission list', () => {
   it('requests no payments for an empty list', async () => {
     signIn();
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': () => page([]),
     });
     open('/admin/contest/1/submissions');
@@ -148,7 +148,7 @@ describe('admin submission list', () => {
     signIn();
     let attempts = 0;
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': () => page([submissionSet]),
       'GET /payment': () => page([]),
       'POST /payment': (config) => {
@@ -179,7 +179,7 @@ describe('admin submission list', () => {
   it('keeps the table after a failed delete', async () => {
     signIn();
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': () => page([submissionSet]),
       'GET /payment': () => page([]),
       'DELETE /submissionset/5': (config) => {
@@ -213,7 +213,7 @@ describe('admin submission list', () => {
     }));
     let failFirstPage: (() => void) | undefined;
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': (config) => {
         const pageNumber: number = config.params.page;
         const pageSize: number = config.params.page_size;
@@ -261,7 +261,7 @@ describe('admin submission list', () => {
     }));
     let finishUpdate: (() => void) | undefined;
     const adapter = serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': (config) => {
         const pageNumber: number = config.params.page;
         const pageSize: number = config.params.page_size;

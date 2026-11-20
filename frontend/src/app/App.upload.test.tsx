@@ -21,7 +21,7 @@ describe('submissions edit list', () => {
     signIn();
     let submissions = [submission(11, 'First'), submission(12, 'Second')];
     serveApi({
-      'GET /contest': () => page([contest]),
+      'GET /contests': () => page([contest]),
       'GET /submission': () => page(submissions),
       'DELETE /submission/11': () => {
         submissions = submissions.filter(({ id }) => id !== 11);
@@ -55,7 +55,7 @@ describe('submissions edit list', () => {
     signIn();
     let activeContests = [contest];
     serveApi({
-      'GET /contest': () => page(activeContests),
+      'GET /contests': () => page(activeContests),
       'GET /submission': () => page([submission(11, 'First')]),
       'DELETE /submission/11': (config) => {
         // The contest closed after the list loaded, so the reload no longer
@@ -96,7 +96,7 @@ describe('submissions edit list', () => {
     };
     const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
     serveApi({
-      'GET /contest': () => page([twoThemes]),
+      'GET /contests': () => page([twoThemes]),
       'GET /submission': () =>
         page([
           { ...submission(11, 'Forest'), author: mia },
@@ -126,7 +126,7 @@ describe('submissions edit list', () => {
     signIn();
     const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
     const adapter = serveApi({
-      'GET /contest': () => page([contest]),
+      'GET /contests': () => page([contest]),
       'GET /submission': (config) =>
         config.headers.get('Authorization') === 'Bearer next-account'
           ? page([{ ...submission(12, 'River'), author: mia }])

@@ -21,7 +21,7 @@ function rating(submission: number, value: number): Rating {
 
 function renderTheme(submissions: JurySubmission[], ratings: Rating[]) {
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () => page(submissions),
     'GET /rating': () => page(ratings),
   });

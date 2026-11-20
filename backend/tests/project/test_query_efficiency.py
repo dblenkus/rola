@@ -67,7 +67,7 @@ def _assert_submission(data, entry, email, *, with_author=True):
     "endpoint",
     [
         "author",
-        "contest",
+        "contests",
         "submission",
         "submissionset",
         "judge/contest",
@@ -100,7 +100,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 world.other.email,
                 *[world.owner.email for _ in entries],
             ]
-        elif endpoint in ("contest", "judge/contest"):
+        elif endpoint in ("contests", "judge/contest"):
             assert [item["id"] for item in data] == [world.contest.pk]
             themes = data[0]["themes"]
             assert [theme["id"] for theme in themes] == [
@@ -174,7 +174,7 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
     assert [theme["submission_count"] for theme in themes] == [3, 0]
     assert [theme["rating_count"] for theme in themes] == [2, 0]
 
-    response = world.client.get("/api/v1/contest")
+    response = world.client.get("/api/v1/contests")
     assert response.status_code == 200, response.data
     themes = response.data["results"][0]["themes"]
     assert [theme["submission_count"] for theme in themes] == [3, 0]

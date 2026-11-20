@@ -42,6 +42,19 @@ API changes
   registration. The five ignore the ``Authorization`` header, so a stale
   token no longer fails a registration with 401. The logout, the one account
   operation that needs a token, is ``DELETE /api/v1/tokens/current``.
+* The contest and institution lists move to plural paths:
+  ``GET /api/v1/contests``, ``GET /api/v1/contests/{id}`` and
+  ``GET /api/v1/institutions``, with unchanged responses. The singular
+  ``/api/v1/contest`` and ``/api/v1/institution`` paths answer 404.
+* Contests are read-only in the API: ``POST /api/v1/contests`` and ``PUT``,
+  ``PATCH`` and ``DELETE`` on ``/api/v1/contests/{id}`` answer 405 to every
+  account, and 401 without one. Superusers used to create, change and delete
+  contests there; organizers set up contests and their themes in the Django
+  admin. The
+  contest list keeps ``?is_active=`` and no longer declares ``?submitted=``,
+  and the institution list no longer declares ``?kind=``, ``?name=`` or its
+  ``name`` lookups; such parameters are ignored, as is ``?is_active=`` on
+  ``/api/v1/judge/contest``.
 * The account list and profile are removed: ``GET /api/v1/user`` with its
   ``?current=`` filter, ``GET``, ``PUT``, ``PATCH`` and ``DELETE`` on
   ``/api/v1/user/{id}``, and ``POST /api/v1/user/{id}/change_password``
@@ -73,8 +86,6 @@ API changes
   link again, or retrying after a lost response, reported it as invalid.
 * The results of a published theme that has no results yet answer 404
   instead of 500.
-* ``?submitted=`` on the contest list returns each contest once instead of
-  once per submission.
 * Paginated lists break ordering ties by primary key, so paging through a
   list sorted with ``?ordering=`` no longer repeats or skips rows.
 * Validation errors for a batch submission, a list in the request body, are
@@ -162,7 +173,7 @@ API changes
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
   answers 406.
-* Fields are renamed. Contests in ``/api/v1/contest`` and
+* Fields are renamed. Contests in ``/api/v1/contests`` and
   ``/api/v1/judge/contest``: ``dob_required`` to ``date_of_birth_required``,
   ``club_show`` to ``club_visible`` and ``school_show`` to
   ``school_visible``. Their themes and theme results: ``n_photos`` to

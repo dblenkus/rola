@@ -9,7 +9,7 @@ beforeEach(() => {
   localStorage.clear();
   signIn();
   serveApi({
-    'GET /contest': () => page([contest]),
+    'GET /contests': () => page([contest]),
     'GET /submission': () => page([submission(11, 'Forest')]),
   });
 });

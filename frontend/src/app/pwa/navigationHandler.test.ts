@@ -25,7 +25,7 @@ describe('handlesNavigation', () => {
   );
 
   it.each([
-    '/api/v1/contest',
+    '/api/v1/contests',
     '/django-admin/',
     '/media/photos/a.jpg',
     '/static2/x.css',

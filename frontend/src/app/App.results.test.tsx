@@ -52,7 +52,7 @@ describe('theme results', () => {
     }
     const hills = result(21, 'Hills', 3, ['Ana', 'Zupan']);
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /results/theme/2': () => ({
         ...nature,
         submissions: [
@@ -110,7 +110,7 @@ describe('theme results', () => {
       throw new Error('The contest fixture has no theme');
     }
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /results/theme/2': () => ({
         ...nature,
         submissions: [
@@ -142,7 +142,7 @@ describe('theme results', () => {
       throw new Error('The contest fixture has no theme');
     }
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /results/theme/2': () => ({
         ...nature,
         submissions: [

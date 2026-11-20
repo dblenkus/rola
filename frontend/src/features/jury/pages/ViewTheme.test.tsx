@@ -43,7 +43,7 @@ function renderGallery(store: ReturnType<typeof createAppStore>, path: string) {
 it('shows nothing from the previous theme while another theme loads', async () => {
   const store = createAppStore();
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
     'GET /rating': () => page([]),
   });
@@ -54,7 +54,7 @@ it('shows nothing from the previous theme while another theme loads', async () =
   cleanup();
 
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': () => new Promise(() => {}),
     'GET /rating': () => page([]),
   });
@@ -74,7 +74,7 @@ it('opens the rater on the clicked photograph only once it has loaded', async ()
     jurySubmission(12, 'Second'),
   ];
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': () => {
       loads += 1;
       // The gallery's load answers at once, the rater's when the test says.
@@ -126,7 +126,7 @@ it('shows no ratings error from a theme the gallery has left', async () => {
   const store = createAppStore();
   let failFirstTheme: (() => void) | undefined;
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': (config) =>
       page([
         config.params.theme === 2
@@ -173,7 +173,7 @@ it('reports a theme that is not in the contest', async () => {
   const submissionLoads: unknown[] = [];
   // Theme 99 belongs to another contest, so the judge's list for it is empty.
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': ({ params }) => {
       submissionLoads.push(params.theme);
       return page([]);

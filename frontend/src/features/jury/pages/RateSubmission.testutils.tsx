@@ -149,7 +149,7 @@ export function serveJudging({
   ];
 
   const adapter = serveApi({
-    [`GET /contest/${contest.id}`]: () => contest,
+    [`GET /contests/${contest.id}`]: () => contest,
     'GET /judge/submission': () => page(submissions),
     'GET /rating': (config, url) => {
       if (url.searchParams.has('theme')) {

@@ -390,10 +390,11 @@ before it shows them. It removes scripts, event-handler attributes, iframes
 and embedded objects, and keeps formatting, links, images, forms and styles.
 Whoever can change a contest therefore cannot run script in entrants'
 browsers, but still decides which text, links and images those pages show:
-superusers, in the Django admin and through the API, and staff accounts with
-the ``contests.change_contest`` permission. Styles apply to the whole page,
-so they can restyle or cover the rest of it, and images and stylesheets may
-come from any host, which then sees the entrant's address.
+superusers and staff accounts with the ``contests.change_contest``
+permission, in the Django admin, the only place where contests are changed.
+Styles apply to the whole page, so they can restyle or cover the rest of it,
+and images and stylesheets may come from any host, which then sees the
+entrant's address.
 
 Payment buttons are not supported for now. A payment provider's script in a
 confirmation text does not run, and the policy in `HTTPS and headers`_ lets

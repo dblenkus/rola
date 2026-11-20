@@ -41,7 +41,7 @@ describe('signed out', () => {
           token: 'signed-in',
           expires: '2999-01-01T00:00:00Z',
         }),
-      'GET /contest': () => new Promise(() => {}),
+      'GET /contests': () => new Promise(() => {}),
     });
     const user = userEvent.setup();
     open('/results?page=2');

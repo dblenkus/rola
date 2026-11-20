@@ -80,7 +80,7 @@ it('sends error events without credentials or URL tokens', async () => {
     headers: new AxiosHeaders({ Authorization: 'Bearer credential-secret' }),
   });
 
-  await fetch(`${window.location.origin}/api/v1/contest`, {
+  await fetch(`${window.location.origin}/api/v1/contests`, {
     headers: { Authorization: 'Bearer credential-secret' },
   });
   Sentry.captureException(error);

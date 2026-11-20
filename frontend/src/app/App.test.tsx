@@ -47,7 +47,7 @@ describe('failed page requests', () => {
   it('shows a failed submission list after the contest loads', async () => {
     signIn();
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /submissionset': (config) => {
         throw httpError(config, 403);
       },
@@ -70,7 +70,7 @@ describe('failed page requests', () => {
 describe('page layout', () => {
   it('keeps the rater in the page flow at full width', async () => {
     serveApi({
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /judge/submission': () =>
         page([jurySubmission(11, 'First photograph')]),
       'GET /rating': () => page([]),
@@ -97,7 +97,7 @@ describe('page layout', () => {
   });
 
   it('keeps other pages between the header and the footer', async () => {
-    serveApi({ 'GET /contest': () => page([contest]) });
+    serveApi({ 'GET /contests': () => page([contest]) });
     open('/contests');
     const heading = await screen.findByRole('heading', { name: contest.title });
     expect(screen.getByRole('main')).toContainElement(heading);
@@ -108,7 +108,7 @@ describe('page layout', () => {
   // That no page scrolls sideways on a 360 or 390 pixel wide phone is
   // checked in a browser.
   it('puts the main navigation in the header and marks the current page', async () => {
-    serveApi({ 'GET /contest': () => page([contest]) });
+    serveApi({ 'GET /contests': () => page([contest]) });
     open('/contests');
     await screen.findByRole('heading', { name: contest.title });
     const header = screen.getByRole('banner');

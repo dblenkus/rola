@@ -47,7 +47,7 @@ def test_lists_ignore_ordering_outside_results(world):
     pay(submitted(world))
     pay(submitted(world))
     world.client.force_authenticate(world.admin)
-    for path, model in [("/api/v1/contest", Contest), ("/api/v1/payment", Payment)]:
+    for path, model in [("/api/v1/contests", Contest), ("/api/v1/payment", Payment)]:
         response = world.client.get(path, {"ordering": "-id"})
         assert response.status_code == 200, response.data
         rows = [row["id"] for row in response.data["results"]]

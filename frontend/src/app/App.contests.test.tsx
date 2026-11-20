@@ -18,12 +18,12 @@ beforeEach(() => {
 describe('contest pages', () => {
   it('lists every page of active contests', async () => {
     serveApi({
-      'GET /contest': (_config, url) =>
+      'GET /contests': (_config, url) =>
         url.searchParams.get('page') === '2'
           ? page([{ ...contest, id: 3, title: 'Winter photographs' }])
           : {
               ...page([contest]),
-              next: '/api/v1/contest?is_active=true&page=2',
+              next: '/api/v1/contests?is_active=true&page=2',
             },
     });
     open('/contests');
@@ -36,14 +36,14 @@ describe('contest pages', () => {
   });
 
   it('shows that no contest is active', async () => {
-    serveApi({ 'GET /contest': () => page([]) });
+    serveApi({ 'GET /contests': () => page([]) });
     open('/contests');
     expect(await screen.findByText('No active contests.')).toBeInTheDocument();
   });
 
   it('shows a failed contest list', async () => {
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         throw httpError(config, 503);
       },
     });
@@ -55,14 +55,14 @@ describe('contest pages', () => {
   });
 
   it('shows the contest notice', async () => {
-    serveApi({ 'GET /contest/1': () => contest });
+    serveApi({ 'GET /contests/1': () => contest });
     open('/contest/1/details');
     expect(await screen.findByText('Contest instructions')).toBeInTheDocument();
   });
 
   it('shows a failed contest', async () => {
     serveApi({
-      'GET /contest/1': (config) => {
+      'GET /contests/1': (config) => {
         throw httpError(config, 404);
       },
     });
@@ -76,8 +76,8 @@ describe('contest pages', () => {
   it('shows loading, not the previous contest, while another contest loads', async () => {
     let releaseSecond = () => {};
     serveApi({
-      'GET /contest/1': () => contest,
-      'GET /contest/2': () =>
+      'GET /contests/1': () => contest,
+      'GET /contests/2': () =>
         new Promise((resolve) => {
           releaseSecond = () =>
             resolve({ ...contest, id: 2, notice_html: '<p>Second notice</p>' });
@@ -95,10 +95,10 @@ describe('contest pages', () => {
 
   it('loads another contest after a failed one', async () => {
     serveApi({
-      'GET /contest/1': (config) => {
+      'GET /contests/1': (config) => {
         throw httpError(config, 404);
       },
-      'GET /contest/2': () => ({
+      'GET /contests/2': () => ({
         ...contest,
         id: 2,
         notice_html: '<p>Second notice</p>',
@@ -117,7 +117,7 @@ describe('contest pages', () => {
   it('counts submissions from every page in the edit list', async () => {
     signIn();
     serveApi({
-      'GET /contest': () => page([contest]),
+      'GET /contests': () => page([contest]),
       'GET /submission': (_config, url) =>
         url.searchParams.get('page') === '2'
           ? page([submission(12, 'Second')])

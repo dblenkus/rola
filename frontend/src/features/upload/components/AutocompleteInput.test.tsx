@@ -38,7 +38,7 @@ describe('institution field', () => {
   });
 
   it('reports the chosen institution by name', async () => {
-    serveApi({ 'GET /institution': () => page([school]) });
+    serveApi({ 'GET /institutions': () => page([school]) });
     const user = userEvent.setup();
     const onChange = renderField('');
     await user.click(screen.getByRole('combobox', { name: 'School' }));
