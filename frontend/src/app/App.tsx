@@ -1,46 +1,47 @@
-import React from 'react';
 import { BrowserRouter, useMatch } from 'react-router';
 import { Provider } from 'react-redux';
-
-import { Box, CssBaseline, Container } from '@mui/material';
-
-import Header from './layout/Header';
-import Footer from '../shared/ui/Layout/Footer';
 
 import AuthProvider from '../features/auth/components/AuthProvider';
 import Notifications from '../features/notifications/components/Notifications';
 
-import AppRoutes, { raterPath } from './routes';
+import AriaProviders from './AriaProviders';
+import BareLayout from './layout/BareLayout';
+import StandardLayout from './layout/StandardLayout';
+import RouteErrorBoundary from './RouteErrorBoundary';
+import RouteFocus from './RouteFocus';
+import AppRoutes, { raterPath, uploadPath } from './routes';
 import store from './store';
 
-// The rater gives a series of photographs the window's full width. It stays
-// in the page's flow, so the footer follows it.
-const Main: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// The rater gives its photographs the window's full width and brings its
+// own bar. The upload form brings its own header and submit bar on phones.
+function Shell() {
   const rater = useMatch(raterPath);
-  return (
-    <Container maxWidth={rater ? false : 'lg'} sx={{ mt: 2, mb: 4 }}>
-      {children}
-    </Container>
+  const upload = useMatch(uploadPath);
+  const content = (
+    <RouteErrorBoundary>
+      <AppRoutes />
+    </RouteErrorBoundary>
   );
-};
+  return rater ? (
+    <BareLayout>{content}</BareLayout>
+  ) : (
+    <StandardLayout task={upload !== null}>{content}</StandardLayout>
+  );
+}
 
 const App = () => {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Provider store={store}>
-        <AuthProvider>
-          <BrowserRouter>
-            <CssBaseline />
+    <Provider store={store}>
+      <AuthProvider>
+        <BrowserRouter>
+          <AriaProviders>
             <Notifications />
-            <Header />
-            <Main>
-              <AppRoutes />
-            </Main>
-            <Footer />
-          </BrowserRouter>
-        </AuthProvider>
-      </Provider>
-    </Box>
+            <RouteFocus />
+            <Shell />
+          </AriaProviders>
+        </BrowserRouter>
+      </AuthProvider>
+    </Provider>
   );
 };
 

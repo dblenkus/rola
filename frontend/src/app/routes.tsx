@@ -1,135 +1,149 @@
+import { lazy, Suspense, type ComponentType } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 
-import ContestsListView from '../features/contests/pages/ContestsList';
-import ContestDetailsView from '../features/contests/pages/ContestDetails';
-import LoginView from '../features/auth/pages/Login';
-import RegisterView from '../features/auth/pages/Register';
-import RegisterActivateView from '../features/auth/pages/RegisterActivate';
-import ResultsListView from '../features/results/pages/ResultsList';
-import UploadView from '../features/upload/pages/Upload';
-import UploadConfirmView from '../features/upload/pages/UploadConfirm';
-import EditSubmissionsList from '../features/upload/pages/EditSubmissionsList';
-import PasswordResetRequestView from '../features/auth/pages/PasswordResetRequest';
-import PasswordResetView from '../features/auth/pages/PasswordReset';
-import SelectThemeView from '../features/jury/pages/SelectTheme';
-import ViewThemeView from '../features/jury/pages/ViewTheme';
-import RateSubmissionView from '../features/jury/pages/RateSubmission';
-import AdminSubmissionSetList from '../features/admin/pages/SubmissionSetList';
-import AdminSubmissionSetView from '../features/admin/pages/SubmissionSetView';
-import ThemeOverview from '../features/jury/pages/ThemeOverview';
-import ThemeResultsView from '../features/results/pages/ThemeResults';
-import SelectResultsThemeView from '../features/results/pages/SelectTheme';
-import SubmissionResultsView from '../features/results/pages/SubmissionResults';
-
 import PrivateRoute from '../features/auth/components/PrivateRoute';
+import LoadingProgress from '../shared/ui/LoadingProgress';
+
+import NotFound from './NotFound';
 
 export const raterPath = '/judge/contest/:contestId/theme/:themeId/rate';
+export const uploadPath = '/contest/:contestId/upload';
 
+interface PageRoute {
+  path: string;
+  // Imports the page's module; each page is its own chunk.
+  load: () => Promise<{ default: ComponentType }>;
+  // Signed-in accounts only; anyone else goes to the login page and back.
+  signedIn?: true;
+}
+
+// Every lazily loaded page. The routes and preloadPages both read this list,
+// so no page can be routed without being preloaded.
+export const pageRoutes: readonly PageRoute[] = [
+  {
+    path: '/contests',
+    load: () => import('../features/contests/pages/ContestsList'),
+  },
+  {
+    path: '/contest/:contestId/details',
+    load: () => import('../features/contests/pages/ContestDetails'),
+  },
+  {
+    path: uploadPath,
+    load: () => import('../features/upload/pages/Upload'),
+    signedIn: true,
+  },
+  {
+    path: '/contest/:contestId/confirm',
+    load: () => import('../features/upload/pages/UploadConfirm'),
+    signedIn: true,
+  },
+  {
+    path: '/user/submissions',
+    load: () => import('../features/upload/pages/EditSubmissionsList'),
+    signedIn: true,
+  },
+  { path: '/login', load: () => import('../features/auth/pages/Login') },
+  {
+    path: '/password-reset',
+    load: () => import('../features/auth/pages/PasswordReset'),
+  },
+  {
+    path: '/password-reset/request',
+    load: () => import('../features/auth/pages/PasswordResetRequest'),
+  },
+  { path: '/register', load: () => import('../features/auth/pages/Register') },
+  {
+    path: '/register/activate',
+    load: () => import('../features/auth/pages/RegisterActivate'),
+  },
+  {
+    path: '/results',
+    load: () => import('../features/results/pages/ResultsList'),
+  },
+  {
+    path: '/results/contest/:contestId/theme/:themeId/submission/:submissionId',
+    load: () => import('../features/results/pages/SubmissionResults'),
+  },
+  {
+    path: '/results/contest/:contestId/theme/:themeId',
+    load: () => import('../features/results/pages/ThemeResults'),
+  },
+  {
+    path: '/results/contest/:contestId',
+    load: () => import('../features/results/pages/SelectTheme'),
+  },
+  {
+    path: '/judge',
+    load: () => import('../features/jury/pages/SelectTheme'),
+    signedIn: true,
+  },
+  {
+    path: '/judge/contest/:contestId/theme/:themeId',
+    load: () => import('../features/jury/pages/ViewTheme'),
+    signedIn: true,
+  },
+  {
+    path: raterPath,
+    load: () => import('../features/jury/pages/RateSubmission'),
+    signedIn: true,
+  },
+  {
+    path: '/judge/contest/:contestId/theme/:themeId/overview',
+    load: () => import('../features/jury/pages/ThemeOverview'),
+    signedIn: true,
+  },
+  {
+    path: '/admin/contest/:contestId/submissions',
+    load: () => import('../features/admin/pages/SubmissionSetList'),
+    signedIn: true,
+  },
+  {
+    path: '/admin/contest/:contestId/submission/:submissionSetId',
+    load: () => import('../features/admin/pages/SubmissionSetView'),
+    signedIn: true,
+  },
+];
+
+const routes = pageRoutes.map(({ path, load, signedIn }) => ({
+  path,
+  Page: lazy(load),
+  signedIn: signedIn === true,
+}));
+
+// Imports every page's module, so that later navigation needs no download.
+export function preloadPages(): Promise<{ default: ComponentType }[]> {
+  return Promise.all(pageRoutes.map(({ load }) => load()));
+}
+
+// Each page has its own Suspense boundary, keyed by its route. Navigation
+// runs in a transition, which keeps an already visible boundary's old content
+// on screen, still mounted, until the next page's code arrives; a page left
+// that way could still act, as the upload form does when its upload
+// finishes. A new boundary shows its fallback at once instead, so the page
+// that was left unmounts with the navigation.
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/contests" replace />} />
-      <Route path="/contests" element={<ContestsListView />} />
-      <Route
-        path="/contest/:contestId/details"
-        element={<ContestDetailsView />}
-      />
-      <Route
-        path="/contest/:contestId/upload"
-        element={
-          <PrivateRoute>
-            <UploadView />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/contest/:contestId/confirm"
-        element={
-          <PrivateRoute>
-            <UploadConfirmView />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/user/submissions"
-        element={
-          <PrivateRoute>
-            <EditSubmissionsList />
-          </PrivateRoute>
-        }
-      />
-      <Route path="/login" element={<LoginView />} />
-      <Route path="/password-reset" element={<PasswordResetView />} />
-      <Route
-        path="/password-reset/request"
-        element={<PasswordResetRequestView />}
-      />
-      <Route path="/register" element={<RegisterView />} />
-      <Route path="/register/activate" element={<RegisterActivateView />} />
-      <Route path="/results" element={<ResultsListView />} />
-
-      <Route
-        path="/results/contest/:contestId/theme/:themeId/submission/:submissionId"
-        element={<SubmissionResultsView />}
-      />
-      <Route
-        path="/results/contest/:contestId/theme/:themeId"
-        element={<ThemeResultsView />}
-      />
-      <Route
-        path="/results/contest/:contestId"
-        element={<SelectResultsThemeView />}
-      />
-
-      <Route
-        path="/judge"
-        element={
-          <PrivateRoute>
-            <SelectThemeView />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/judge/contest/:contestId/theme/:themeId"
-        element={
-          <PrivateRoute>
-            <ViewThemeView />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path={raterPath}
-        element={
-          <PrivateRoute>
-            <RateSubmissionView />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/judge/contest/:contestId/theme/:themeId/overview"
-        element={
-          <PrivateRoute>
-            <ThemeOverview />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/admin/contest/:contestId/submissions"
-        element={
-          <PrivateRoute>
-            <AdminSubmissionSetList />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/admin/contest/:contestId/submission/:submissionSetId"
-        element={
-          <PrivateRoute>
-            <AdminSubmissionSetView />
-          </PrivateRoute>
-        }
-      />
+      {routes.map(({ path, Page, signedIn }) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <Suspense key={path} fallback={<LoadingProgress />}>
+              {signedIn ? (
+                <PrivateRoute>
+                  <Page />
+                </PrivateRoute>
+              ) : (
+                <Page />
+              )}
+            </Suspense>
+          }
+        />
+      ))}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

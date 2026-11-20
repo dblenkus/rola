@@ -1,9 +1,5 @@
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
 import '../design/fonts.css';
 import '../design/tokens.css';
 import '../design/components.css';
@@ -17,4 +13,21 @@ const root = document.getElementById('root');
 if (!root) {
   throw new Error('Application root is missing');
 }
-createRoot(root).render(<App />);
+// Errors that no boundary catches, those that one does, and those React
+// recovers from all go to Sentry, which reports each error once.
+const report = Sentry.reactErrorHandler();
+// React's error info may leave componentStack out, where Sentry's type wants
+// it present or null. The console keeps the error too, as React logs it
+// without these options.
+const reportError = (
+  error: unknown,
+  { componentStack }: { componentStack?: string | undefined },
+) => {
+  report(error, { componentStack: componentStack ?? null });
+  console.error(error);
+};
+createRoot(root, {
+  onUncaughtError: reportError,
+  onCaughtError: reportError,
+  onRecoverableError: reportError,
+}).render(<App />);
