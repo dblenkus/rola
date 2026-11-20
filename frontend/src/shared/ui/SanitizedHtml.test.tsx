@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
-import NoticeHtml from './NoticeHtml';
+import SanitizedHtml from './SanitizedHtml';
 
-it('keeps notice formatting and removes executable markup', () => {
+it('keeps formatting and removes executable markup', () => {
   const { container } = render(
-    <NoticeHtml
-      notice={
+    <SanitizedHtml
+      html={
         '<strong>Instructions</strong><script>alert(1)</script><img src="x" onerror="alert(2)">'
       }
     />,
@@ -15,10 +15,10 @@ it('keeps notice formatting and removes executable markup', () => {
   expect(container.querySelector('img')).not.toHaveAttribute('onerror');
 });
 
-it('opens notice links in a new tab without giving them the opener', () => {
+it('opens links in a new tab without giving them the opener', () => {
   render(
-    <NoticeHtml
-      notice={
+    <SanitizedHtml
+      html={
         '<a href="https://example.com/rules.pdf" target="_blank" rel="opener">Rules</a> <a href="https://example.com/">Home</a>'
       }
     />,

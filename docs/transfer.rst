@@ -148,9 +148,9 @@ needed: the old deployment's own Compose commands, which stop it and restart
 it, run from there.
 
 Set up the server and ``.env`` as :doc:`deployment` describes, including the
-``COMPOSE_FILE`` line and the cutover values of ``VITE_PAYPAL_CLIENT_ID`` and
-``VITE_SENTRY_DSN``, and leave the TLS terminator pointing at the old
-deployment. Run every command from the repository root, in one shell.
+``COMPOSE_FILE`` line and the cutover value of ``VITE_SENTRY_DSN``, and
+leave the TLS terminator pointing at the old deployment. Run every command
+from the repository root, in one shell.
 
 With ``ROLA_USE_S3`` on, the new stack gets new, empty buckets. Set
 ``ROLA_AWS_MEDIA_STORAGE_BUCKET_NAME`` and
@@ -358,17 +358,19 @@ If it prints any, stop. The jury view has only ever sent scores from 1 to
 contest for the correct score, set it or delete the rating in the old
 database as for the duplicates, and start again from the dump.
 
-List the contests whose notice holds content that the frontend now removes
-before it shows a notice: scripts, iframes, embedded objects, ``link``,
-``meta`` and ``base`` elements, a ``style`` block at the start, event-handler
-attributes such as ``onclick``, and ``javascript:`` links. After the switch,
-open each listed contest on the new site, and if its notice lost something
-that matters, rewrite the notice in the Django admin:
+List the contests whose notice or confirmation text holds content that the
+frontend now removes before it shows them: scripts, such as those of the
+PayPal buttons, iframes, embedded objects, ``link``, ``meta`` and ``base``
+elements, a ``style`` block at the start, event-handler attributes such as
+``onclick``, and ``javascript:`` links. After the switch, open each listed
+contest and its confirmation page (``/contest/<id>/confirm``) on the new
+site, and if a text lost something that matters, rewrite it in the Django
+admin:
 
 .. code-block:: shell
 
    docker compose exec -T db psql -U rola -d rola_old -c \
-       "SELECT id, title FROM core_contest WHERE notice_html ~* '<(iframe|object|embed|script|style|link|meta|base|frame)|<[^>]*\son[a-z]+\s*=|javascript:' ORDER BY id"
+       "SELECT id, title FROM core_contest WHERE concat(notice_html, ' ', confirmation_html) ~* '<(iframe|object|embed|script|style|link|meta|base|frame)|<[^>]*\son[a-z]+\s*=|javascript:' ORDER BY id"
 
 List the published contests with entries that are in no paid submission
 set, with how many such entries each has and how many of them were rated or

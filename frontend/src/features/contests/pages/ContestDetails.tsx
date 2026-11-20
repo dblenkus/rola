@@ -8,7 +8,7 @@ import type { Contest } from '../../../shared/api/types';
 
 import HeaderImage from '../../../shared/ui/Layout/HeaderImage';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
-import NoticeHtml from '../components/NoticeHtml';
+import SanitizedHtml from '../../../shared/ui/SanitizedHtml';
 import UploadButton from '../components/UploadButton';
 import { getContest } from '../api';
 
@@ -56,7 +56,7 @@ function ContestPage({ contestId }: { contestId: string }) {
         </Typography>
       )}
       <UploadButton contestId={contest.id} />
-      <NoticeHtml notice={contest.notice_html ?? ''} />
+      <SanitizedHtml html={contest.notice_html ?? ''} />
       <UploadButton contestId={contest.id} />
     </>
   );
