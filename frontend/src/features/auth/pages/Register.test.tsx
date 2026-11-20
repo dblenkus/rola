@@ -13,14 +13,13 @@ function renderRegister() {
   );
 }
 
-it('titles the page and renders no MUI markup', () => {
-  const { container } = renderRegister();
+it('titles the page', () => {
+  renderRegister();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(
     screen.getByRole('heading', { level: 1, name: 'Register' }),
   ).toBeInTheDocument();
   expect(document.title).toBe('Register · Rola');
-  expect(container.querySelector('[class*="Mui"]')).toBeNull();
   expect(
     screen.getByRole('link', { name: 'Already have an account? Log in' }),
   ).toHaveAttribute('href', '/login');

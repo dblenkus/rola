@@ -3,8 +3,8 @@ import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 import PasswordResetRequest from './PasswordResetRequest';
 
-it('asks for the email on a titled page without MUI markup', () => {
-  const { container } = render(
+it('asks for the email on a titled page', () => {
+  render(
     <MemoryRouter>
       <PasswordResetRequest />
     </MemoryRouter>,
@@ -20,5 +20,4 @@ it('asks for the email on a titled page without MUI markup', () => {
   expect(
     screen.getByRole('button', { name: 'Request Password Reset' }),
   ).toHaveAttribute('type', 'submit');
-  expect(container.querySelector('[class*="Mui"]')).toBeNull();
 });

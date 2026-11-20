@@ -2,7 +2,13 @@ import React from 'react';
 
 import { ImageModel, SubmissionModel } from '../../models';
 import type { InputChange } from '../../../../shared/ui/TextField';
-import { fileProblem, sizeProblem } from '../../utils/validate';
+import {
+  descriptionMissing,
+  fileProblem,
+  sizeProblem,
+  titleMissing,
+  tooFewSeriesImages,
+} from '../../utils/validate';
 
 import ImageField, { slotNumber } from '../Image/ImageField';
 
@@ -42,6 +48,12 @@ const SubmissionField: React.FC<SubmissionFieldProps> = ({
 }) => {
   const { isSeries } = submission.meta;
   const titled = !!submission.title && submission.errors.title === null;
+  // A series' photograph is complete only when the series would pass
+  // validation: enough photographs, and its title and description.
+  const seriesComplete =
+    !tooFewSeriesImages(submission) &&
+    !titleMissing(submission) &&
+    !descriptionMissing(submission);
 
   const rows = submission.images.map((image, index) => {
     const slot = firstSlot + index;
@@ -51,7 +63,9 @@ const SubmissionField: React.FC<SubmissionFieldProps> = ({
         <ImageField
           image={image}
           slot={slot}
-          complete={imageAcceptable(image) && (isSeries || titled)}
+          complete={
+            imageAcceptable(image) && (isSeries ? seriesComplete : titled)
+          }
           handleImageChange={(payload) => handleImageChange(id, payload)}
         >
           {isSeries || (

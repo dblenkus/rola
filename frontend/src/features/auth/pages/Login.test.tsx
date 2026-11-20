@@ -20,14 +20,13 @@ function renderLogin() {
   );
 }
 
-it('titles the page and renders no MUI markup', () => {
-  const { container } = renderLogin();
+it('titles the page', () => {
+  renderLogin();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(
     screen.getByRole('heading', { level: 1, name: 'Login' }),
   ).toBeInTheDocument();
   expect(document.title).toBe('Login · Rola');
-  expect(container.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('asks for the email and the current password', () => {

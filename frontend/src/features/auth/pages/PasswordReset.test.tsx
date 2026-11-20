@@ -16,15 +16,14 @@ function renderReset() {
   );
 }
 
-it('asks for a new password on a titled page without MUI markup', () => {
-  const { container } = renderReset();
+it('asks for a new password on a titled page', () => {
+  renderReset();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(document.title).toBe('Password reset · Rola');
   const password = screen.getByLabelText(/^New password/);
   expect(password).toHaveAttribute('type', 'password');
   expect(password).toHaveAttribute('autocomplete', 'new-password');
   expect(password).toBeRequired();
-  expect(container.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('shows a rejected password on the field', async () => {

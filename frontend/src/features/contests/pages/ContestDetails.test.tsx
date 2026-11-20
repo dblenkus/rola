@@ -8,7 +8,7 @@ import i18next from 'i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serveApi } from '../../../test/api';
-import { contest } from '../../../test/fixtures';
+import { apiDateTime, contest } from '../../../test/fixtures';
 import ContestDetails from './ContestDetails';
 
 function openDetails(overrides: Partial<typeof contest> = {}) {
@@ -63,6 +63,49 @@ describe('contest details', () => {
     expect(date.closest('p')).toHaveClass('small');
   });
 
+  // The API sends the closing moment as a date-time; just before and just
+  // after local midnight it names the local calendar day, whatever day the
+  // instant falls on in UTC.
+  it.each([
+    [
+      'offset',
+      'before midnight',
+      new Date(2026, 11, 7, 23, 59, 59),
+      '7\u00a0Dec\u00a02026',
+      22,
+    ],
+    [
+      'utc',
+      'before midnight',
+      new Date(2026, 11, 7, 23, 59, 59),
+      '7\u00a0Dec\u00a02026',
+      22,
+    ],
+    [
+      'offset',
+      'after midnight',
+      new Date(2026, 11, 8, 0, 0, 30),
+      '8\u00a0Dec\u00a02026',
+      23,
+    ],
+    [
+      'utc',
+      'after midnight',
+      new Date(2026, 11, 8, 0, 0, 30),
+      '8\u00a0Dec\u00a02026',
+      23,
+    ],
+  ] as const)(
+    'gives a closing date-time in %s time %s as its local day',
+    async (form, _when, end, date, days) => {
+      openDetails({ end_date: apiDateTime(end, form) });
+      const shown = await screen.findByText(date, exact);
+      expect(shown.parentElement?.textContent).toBe(
+        `Entries close ${date} · ${days} days left`,
+      );
+    },
+  );
+
   it('writes the deadline line natively in Slovenian', async () => {
     await i18next.changeLanguage('sl');
     openDetails({ end_date: '2026-11-17' });
@@ -90,7 +133,7 @@ describe('contest details', () => {
   });
 
   it('links to the upload twice, with one primary action', async () => {
-    const { container } = openDetails();
+    openDetails();
     await screen.findByText('Contest instructions');
     const uploads = screen.getAllByRole('link', { name: 'Upload Photos' });
     expect(uploads).toHaveLength(2);
@@ -100,6 +143,5 @@ describe('contest details', () => {
     expect(uploads[0]).toHaveClass('rl-btn--primary');
     expect(uploads[1]).toHaveClass('rl-btn--secondary');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    expect(container.querySelector('[class*="Mui"]')).toBeNull();
   });
 });

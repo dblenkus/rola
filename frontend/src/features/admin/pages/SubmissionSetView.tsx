@@ -52,8 +52,21 @@ const SubmissionSetView: React.FC = () => {
     };
   }, [contestId, submissionSetId]);
 
-  if (error) return <Message severity="error">{error}</Message>;
-  if (!loaded) return <LoadingProgress />;
+  if (error) {
+    // The author is not known, so the page is named generically.
+    return (
+      <Page title={t('admin_submission')} titleHidden>
+        <Message severity="error">{error}</Message>
+      </Page>
+    );
+  }
+  if (!loaded) {
+    return (
+      <Page title={t('admin_submission')} titleHidden>
+        <LoadingProgress />
+      </Page>
+    );
+  }
 
   const { contest, submissionSet } = loaded;
   const { author } = submissionSet;

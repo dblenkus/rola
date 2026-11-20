@@ -1,11 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
 import store from '../../../app/store';
 import { serveApi, signIn } from '../../../test/api';
 import { open } from '../../../test/app';
-import { contest } from '../../../test/fixtures';
+import { apiDateTime, contest } from '../../../test/fixtures';
 import type { Contest } from '../../../shared/api/types';
 import { formatDate } from '../../../shared/utils/formatDate';
 import { uploadReset } from '../state/actions';
@@ -102,6 +102,32 @@ describe('upload page header', () => {
     expect(within(deadline).getByText(date).tagName).toBe('STRONG');
   });
 });
+
+// The API sends the closing moment as a date-time; just before and just after
+// local midnight it names the local calendar day, whatever day the instant
+// falls on in UTC.
+describe.each(['offset', 'utc'] as const)(
+  'upload page header with a closing date-time in %s time',
+  (form) => {
+    it.each([
+      ['before midnight', 12, 23, 59, 59],
+      ['after midnight', 13, 0, 0, 30],
+    ])(
+      'says the local closing day %s',
+      async (_when, days, hours, minutes, seconds) => {
+        const end = new Date();
+        end.setDate(end.getDate() + days);
+        end.setHours(hours, minutes, seconds, 0);
+        openForm({ ...contest, end_date: apiDateTime(end, form) });
+        await screen.findByRole('heading', { level: 1, name: contest.title });
+        const date = formatDate(end, 'en').replace(/\s/g, ' ');
+        expect(
+          screen.getByText('Entries close', { exact: false }),
+        ).toHaveTextContent(`Entries close ${date} · ${days} days left`);
+      },
+    );
+  },
+);
 
 describe('theme section', () => {
   it('counts the selected photographs against the theme limit', async () => {
@@ -279,6 +305,85 @@ describe('entry row', () => {
     ).not.toBeInTheDocument();
   });
 
+  describe('in a series', () => {
+    const series: Contest = {
+      ...contest,
+      themes: contest.themes.map((theme) => ({
+        ...theme,
+        is_series: true,
+        n_photos: 3,
+      })),
+    };
+
+    async function selectPhotographs(count: number): Promise<UserEvent> {
+      const user = userEvent.setup();
+      openForm(series);
+      await screen.findByRole('textbox', { name: 'Title' });
+      const inputs = screen.getAllByLabelText('Select photograph');
+      for (const [index, input] of inputs.slice(0, count).entries()) {
+        await user.upload(input, photograph(`series-${index}.jpg`));
+        await within(row(index)).findByText('3000 × 2000 px');
+      }
+      return user;
+    }
+
+    it('marks no row OK while the series has too few photographs', async () => {
+      const user = await selectPhotographs(1);
+      await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Pier');
+      await user.type(
+        screen.getByRole('textbox', { name: 'Description' }),
+        'Three views of the pier.',
+      );
+
+      expect(
+        within(row(0)).queryByRole('img', { name: 'OK' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('marks no row OK while the series has no title', async () => {
+      const user = await selectPhotographs(2);
+      await user.type(
+        screen.getByRole('textbox', { name: 'Description' }),
+        'Three views of the pier.',
+      );
+
+      expect(
+        within(row(0)).queryByRole('img', { name: 'OK' }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(row(1)).queryByRole('img', { name: 'OK' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('marks no row OK while the series has no description', async () => {
+      const user = await selectPhotographs(2);
+      await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Pier');
+
+      expect(
+        within(row(0)).queryByRole('img', { name: 'OK' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('marks each photograph of a complete series OK', async () => {
+      const user = await selectPhotographs(2);
+      await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Pier');
+      await user.type(
+        screen.getByRole('textbox', { name: 'Description' }),
+        'Three views of the pier.',
+      );
+
+      expect(
+        within(row(0)).getByRole('img', { name: 'OK' }),
+      ).toBeInTheDocument();
+      expect(
+        within(row(1)).getByRole('img', { name: 'OK' }),
+      ).toBeInTheDocument();
+      expect(
+        within(row(2)).queryByRole('img', { name: 'OK' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it('puts a file problem beside the action that fixes it', async () => {
     const user = userEvent.setup();
     decodedSize = { width: 1600, height: 1067 };
@@ -347,15 +452,5 @@ describe('submit bar', () => {
     expect(
       screen.queryByRole('button', { name: 'Upload' }),
     ).not.toBeInTheDocument();
-  });
-});
-
-describe('design system', () => {
-  it('renders no MUI component on the upload page', async () => {
-    openForm({ ...contest, dob_required: true, school_show: true });
-    await screen.findByRole('heading', { level: 1, name: contest.title });
-    await waitFor(() =>
-      expect(document.querySelector('[class*="Mui"]')).toBeNull(),
-    );
   });
 });

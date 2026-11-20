@@ -50,6 +50,7 @@
   align-items: center;
   gap: var(--space-3);
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .upload-theme__count > .body-dense {

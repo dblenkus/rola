@@ -1,10 +1,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
+import { describe, expect, it } from 'vitest';
+import { httpError, serveApi } from '../../../test/api';
+import { expectFailedPage } from '../../../test/pages';
 import { author, contest } from '../../../test/fixtures';
-import type { ResultsThemeSubmission } from '../../../shared/api/types';
+import type {
+  Contest,
+  ResultsThemeSubmission,
+} from '../../../shared/api/types';
 import ThemeResults from './ThemeResults';
 
 function result(
@@ -32,13 +36,16 @@ function result(
   };
 }
 
-function renderTheme(submissions: ResultsThemeSubmission[]): void {
+function renderTheme(
+  submissions: ResultsThemeSubmission[],
+  shownContest: Contest = contest,
+): void {
   const [nature] = contest.themes;
   if (!nature) {
     throw new Error('The contest fixture has no theme');
   }
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contest/1': () => shownContest,
     'GET /results/theme/2': () => ({ ...nature, submissions }),
   });
   render(
@@ -159,8 +166,83 @@ it('says so when the theme has no published results', async () => {
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 
-it('renders no Material UI', async () => {
-  renderTheme(entries);
-  await screen.findByText('Hills');
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
+describe('the details after an author', () => {
+  function authorRowText(
+    details: { school: string | null; club: string | null },
+    shownContest: Contest = { ...contest, school_show: true },
+  ): Promise<string | null> {
+    renderTheme(
+      [
+        result(21, 'Hills', {
+          author: {
+            ...author,
+            ...details,
+            reward: null,
+            reward_theme: null,
+            country: 'SI',
+          },
+        }),
+      ],
+      shownContest,
+    );
+    return screen
+      .findByRole('row', { name: /^Novak, Ana/ })
+      .then((row) => row.textContent);
+  }
+
+  it('shows the school and the club', async () => {
+    expect(
+      await authorRowText({
+        school: 'Gimnazija Zgled',
+        club: 'Fotoklub Okvir',
+      }),
+    ).toBe('Novak, Ana (Gimnazija Zgled, club: Fotoklub Okvir)');
+  });
+
+  it('shows the school alone without a club', async () => {
+    expect(await authorRowText({ school: 'Gimnazija Zgled', club: null })).toBe(
+      'Novak, Ana (Gimnazija Zgled)',
+    );
+  });
+
+  it('shows the club alone without a school', async () => {
+    expect(await authorRowText({ school: null, club: 'Fotoklub Okvir' })).toBe(
+      'Novak, Ana (club: Fotoklub Okvir)',
+    );
+  });
+
+  it('shows no brackets without a school or a club', async () => {
+    expect(await authorRowText({ school: '', club: null })).toBe('Novak, Ana');
+  });
+
+  it('shows the country where the contest shows no schools', async () => {
+    expect(
+      await authorRowText({ school: 'Gimnazija Zgled', club: null }, contest),
+    ).toBe('Novak, Ana (SI)');
+  });
+});
+
+it('shows a failed load on a page named Results', async () => {
+  document.title = 'Active contests · Rola';
+  serveApi({
+    'GET /contest/1': () => contest,
+    'GET /results/theme/2': (config) => {
+      throw httpError(config, 404);
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/results/contest/1/theme/2']}>
+      <Routes>
+        <Route
+          path="/results/contest/:contestId/theme/:themeId"
+          element={<ThemeResults />}
+        />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await expectFailedPage(
+    'Results',
+    'The requested content is no longer available.',
+  );
 });

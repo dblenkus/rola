@@ -8,6 +8,7 @@
   "address": "Address",
   "already_have_account": "Already have an account? Log in",
   "author": "Author",
+  "author_details_club": "club: {{club}}",
   "author_details_with_club": "{{details}}, club: {{club}}",
   "change": "Change",
   "city": "City",
@@ -197,5 +198,7 @@
   "judge_filmstrip": "Photo sequence, frames {{first}} to {{last}} of {{total}}",
   "judge_frame": "Frame {{number}}",
   "judge_frame_scored": "Frame {{number}}, score {{score}}",
-  "judge_frame_unscored": "Frame {{number}}, unscored"
+  "judge_frame_unscored": "Frame {{number}}, unscored",
+  "admin_submissions": "Submissions",
+  "admin_submission": "Submission"
 }

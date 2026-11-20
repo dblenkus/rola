@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../app/i18n/config';
@@ -84,6 +84,18 @@ async function fillSubmissions(user: UserEvent): Promise<void> {
   for (const [index, title] of titles.entries()) {
     await user.type(title, `Photograph ${index}`);
   }
+}
+
+// Types a date into the date of birth's segments, which follow the English
+// interface's day, month and year order.
+async function typeDateOfBirth(user: UserEvent, digits: string): Promise<void> {
+  const group = await screen.findByRole('group', { name: 'Date of birth' });
+  const [day] = within(group).getAllByRole('spinbutton');
+  if (!day) {
+    throw new Error('The date of birth has no segments');
+  }
+  await user.click(day);
+  await user.keyboard(digits);
 }
 
 // A response settles through promise callbacks only, so one macrotask later
@@ -848,5 +860,56 @@ describe('photograph upload', () => {
     expect(screen.getByDisplayValue('Photograph 1')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Change' })).toHaveLength(2);
     expect(screen.getAllByLabelText('Select photograph')).toHaveLength(3);
+  });
+  it('sends the typed date of birth with the author', async () => {
+    const authors: unknown[] = [];
+    uploadApi({
+      'GET /contest/1': () => ({ ...contest, dob_required: true }),
+      'POST /author': (config) => {
+        authors.push(JSON.parse(String(config.data)));
+        return author;
+      },
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await typeDateOfBirth(user, '07032010');
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(authors).toEqual([expect.objectContaining({ dob: '2010-03-07' })]);
+  });
+
+  it('asks again for a required date of birth whose year was cut short', async () => {
+    const adapter = uploadApi({
+      'GET /contest/1': () => ({ ...contest, dob_required: true }),
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await typeDateOfBirth(user, '07032010');
+    const group = screen.getByRole('group', { name: 'Date of birth' });
+    const year = within(group).getAllByRole('spinbutton').at(-1);
+    if (!year) {
+      throw new Error('The date of birth has no year');
+    }
+    await user.click(year);
+    await user.keyboard('201');
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+
+    expect(
+      await screen.findByRole('group', {
+        name: 'Date of birth',
+        // React Aria adds its own description of the segments' state.
+        description: /Please enter the date of birth\./,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      adapter.mock.calls.map(([config]) => `${config.method} ${config.url}`),
+    ).toEqual(['get /contest/1']);
   });
 });

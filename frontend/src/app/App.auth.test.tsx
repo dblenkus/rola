@@ -296,3 +296,18 @@ describe('account requests', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('sign-in pages', () => {
+  it.each(['/login', '/register', '/password-reset/request'])(
+    'shows the logo only in the app bar on %s',
+    async (path) => {
+      open(path);
+      expect(
+        await screen.findByRole('heading', { level: 1 }),
+      ).toBeInTheDocument();
+      const images = document.querySelectorAll('img');
+      expect(images).toHaveLength(1);
+      expect(screen.getByRole('banner')).toContainElement(images[0] ?? null);
+    },
+  );
+});

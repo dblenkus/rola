@@ -62,7 +62,7 @@ export const getEmptyContest = (): ContestModel => ({
 export const getEmptyAuthor = (): AuthorModel => ({
   first_name: '',
   last_name: '',
-  dob: undefined,
+  dob: null,
   school: '',
   mentor: '',
   club: '',

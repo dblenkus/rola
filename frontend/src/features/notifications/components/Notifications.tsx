@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-} from 'react';
+import { useEffect, useState, type FocusEvent } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../app/store';
 import Message from '../../../shared/ui/Message';
 import { deleteMessage } from '../state/actions';
@@ -25,6 +20,8 @@ export default function Notifications() {
 // The notification at the bottom of the screen. It never takes focus. Its
 // timer waits while the pointer is over it or focus is inside it, and starts
 // over when both leave, so it can be read and closed in time (WCAG 2.2.1).
+// Escape closes it wherever focus is, unless something else, such as a
+// dialog or a menu, already handled that Escape.
 function Toast({ notification }: { notification: Notification }) {
   const dispatch = useAppDispatch();
   const [hovered, setHovered] = useState(false);
@@ -44,6 +41,16 @@ function Toast({ notification }: { notification: Notification }) {
     dispatch(deleteMessage(id));
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        dispatch(deleteMessage(id));
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [dispatch, id]);
+
   const handleBlur = (event: FocusEvent<HTMLDivElement>): void => {
     if (
       !(event.relatedTarget instanceof Node) ||
@@ -53,10 +60,6 @@ function Toast({ notification }: { notification: Notification }) {
     }
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.key === 'Escape') close();
-  };
-
   return (
     <div
       className="notifications"
@@ -64,7 +67,6 @@ function Toast({ notification }: { notification: Notification }) {
       onPointerLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}
       onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
     >
       <Message severity={notification.severity} onClose={close}>
         {notification.message}

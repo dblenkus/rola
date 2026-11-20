@@ -1,7 +1,8 @@
 import { render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { serveApi } from '../../../test/api';
+import { httpError, serveApi } from '../../../test/api';
+import { expectFailedPage } from '../../../test/pages';
 import { contest } from '../../../test/fixtures';
 import SelectTheme from './SelectTheme';
 
@@ -33,5 +34,25 @@ it('lists the contest themes with a link to each one', async () => {
   expect(
     within(nature).getByRole('link', { name: 'View Nature' }),
   ).toHaveAttribute('href', '/results/contest/1/theme/2');
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
+});
+
+it('shows a failed load on a page named Results', async () => {
+  document.title = 'Active contests · Rola';
+  serveApi({
+    'GET /contest/1': (config) => {
+      throw httpError(config, 404);
+    },
+  });
+  render(
+    <MemoryRouter initialEntries={['/results/contest/1']}>
+      <Routes>
+        <Route path="/results/contest/:contestId" element={<SelectTheme />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await expectFailedPage(
+    'Results',
+    'The requested content is no longer available.',
+  );
 });

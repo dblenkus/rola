@@ -10,10 +10,10 @@ import Icon from './Icon';
 import './DateField.css';
 
 // The change a date field reports: the field's name and the chosen day, at
-// local midnight.
-interface DateChange {
+// local midnight, or null for no date.
+export interface DateChange {
   name: string;
-  value: Date;
+  value: Date | null;
 }
 
 interface DateFieldProps {
@@ -28,8 +28,9 @@ interface DateFieldProps {
   required?: boolean;
   autoComplete: string;
   autoFocus?: boolean;
-  // Called only with a complete date with a four-digit year, never while a
-  // part is missing.
+  // Called with a complete date with a four-digit year, never while a part
+  // is missing; and with null when a given date is cleared or made
+  // incomplete, so the form never keeps a date the field no longer shows.
   onChange: (change: DateChange) => void;
 }
 
@@ -72,10 +73,22 @@ export default function DateField({
     setShown(given);
   }
 
+  const report = (day: CalendarDate | null): void => {
+    // The form's answer to this change must not reset the segments, which
+    // may hold an incomplete date.
+    setLastGiven(day);
+    onChange({
+      name,
+      value: day === null ? null : new Date(day.year, day.month - 1, day.day),
+    });
+  };
+
   const handleChange = (date: CalendarDate | null): void => {
     setShown(date);
     if (date !== null && date.year >= 1000) {
-      onChange({ name, value: new Date(date.year, date.month - 1, date.day) });
+      report(date);
+    } else if (given !== null) {
+      report(null);
     }
   };
 

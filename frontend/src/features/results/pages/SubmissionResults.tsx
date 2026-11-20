@@ -9,6 +9,7 @@ import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import Message from '../../../shared/ui/Message';
 import Page from '../../../shared/ui/Page';
 import { getResultsSubmission } from '../api';
+import authorDetails from '../authorDetails';
 import './SubmissionResults.css';
 
 interface RouteMatchParams {
@@ -32,56 +33,76 @@ const SubmissionResults: React.FC = () => {
     fetch().catch((error: unknown) => setError(requestError(error)));
   }, [submissionId]);
 
-  if (error) return <Message severity="error">{error}</Message>;
-  if (!submission) return <LoadingProgress />;
+  if (error || !submission) {
+    // Until the submission is known, the page is named generically.
+    return (
+      <Page title={t('results')} titleHidden>
+        {error ? (
+          <Message severity="error">{error}</Message>
+        ) : (
+          <LoadingProgress />
+        )}
+      </Page>
+    );
+  }
 
   const { author } = submission;
   const title = submission.title || t('results_untitled');
+  const details = authorDetails(t, { place: author.country });
   const files = submission.files ?? [];
   const series = files.length > 1;
 
-  // The page's h1 is the title in the wall label under the photo.
+  // The page's h1 is the title in the wall label beside or under the photo.
   return (
     <Page title={title} ownHeading width="full">
       <div
         className={
-          series ? 'results-photos results-photos--series' : 'results-photos'
+          series
+            ? 'results-submission'
+            : 'results-submission results-submission--single'
         }
       >
-        {files.map((file, index) => (
-          <img
-            key={file.id}
-            className="results-photo"
-            src={file.file}
-            alt={
-              series
-                ? t('results_series_photo', {
-                    title,
-                    number: index + 1,
-                    count: files.length,
-                  })
-                : title
-            }
-            loading={index === 0 ? 'eager' : 'lazy'}
-            decoding="async"
-          />
-        ))}
-      </div>
-      <div className="results-label">
-        <h1 className="results-label__title photo-title">{title}</h1>
-        <p className="results-label__author body">
-          {author.first_name} {author.last_name} ({author.country})
-        </p>
-        {submission.reward_label && (
-          <p className="results-label__award">
-            <AwardMark name={submission.reward_label} />
+        <div
+          className={
+            series ? 'results-photos results-photos--series' : 'results-photos'
+          }
+        >
+          {files.map((file, index) => (
+            <img
+              key={file.id}
+              className="results-photo"
+              src={file.file}
+              alt={
+                series
+                  ? t('results_series_photo', {
+                      title,
+                      number: index + 1,
+                      count: files.length,
+                    })
+                  : title
+              }
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
+          ))}
+        </div>
+        <div className="results-label">
+          <h1 className="results-label__title photo-title">{title}</h1>
+          <p className="results-label__author body">
+            {author.first_name} {author.last_name}
+            {details && ` (${details})`}
           </p>
-        )}
-        {submission.description && (
-          <p className="results-label__description body">
-            {submission.description}
-          </p>
-        )}
+          {submission.reward_label && (
+            <p className="results-label__award">
+              <AwardMark name={submission.reward_label} />
+            </p>
+          )}
+          {submission.description && (
+            <p className="results-label__description body">
+              {submission.description}
+            </p>
+          )}
+        </div>
       </div>
     </Page>
   );

@@ -36,14 +36,17 @@
   color: var(--text);
 }
 
-/* phone: the cells are stacked lines with 4 px of padding, so the link
-   grows the line to the tap target instead. */
+/* phone: the cells are stacked lines with 4 px of padding and none at the
+   sides. The entry keeps its space-4 indent, and its title link keeps the
+   44 px tap target from the wide rule's padding, which overlaps the row's
+   padding above and the award line's below, so the award sits space-2 under
+   the title. A short title such as "Most" still gets a 44 px wide target. */
 @media (width < 40rem) {
+  .ui-table__body .ui-table__cell.results-entry {
+    padding-inline-start: var(--space-4);
+  }
+
   .results-entry__link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch-target);
-    padding-block: 0;
-    margin-block: 0;
+    min-width: var(--touch-target);
   }
 }

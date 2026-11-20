@@ -85,11 +85,28 @@ const validateImage = async (image: ImageModel): Promise<ImageModel> => {
   return constructResponse(null);
 };
 
+// The rules on a submission as a whole, which validation and the entry rows'
+// check marks share.
+
+// A series with photographs, but fewer than it needs.
+export const tooFewSeriesImages = ({
+  meta,
+  images,
+}: SubmissionModel): boolean =>
+  meta.isSeries && anyImage(images) && countImages(images) < minSeriesImages;
+
+export const titleMissing = ({ meta, title }: SubmissionModel): boolean =>
+  meta.titleRequired && !title;
+
+export const descriptionMissing = ({
+  meta,
+  description,
+}: SubmissionModel): boolean => meta.descriptionRequired && !description;
+
 const validateSubmission = async (
   submission: SubmissionModel,
 ): Promise<SubmissionModel> => {
   const { title, description } = submission;
-  const { titleRequired, descriptionRequired, isSeries } = submission.meta;
   const images = await asyncMap(submission.images, validateImage);
 
   if ((title || description) && !anyImage(images) && images[0]) {
@@ -97,28 +114,19 @@ const validateSubmission = async (
     images[0].errors.hasError = true;
   }
 
-  if (
-    isSeries &&
-    anyImage(images) &&
-    countImages(images) < minSeriesImages &&
-    images[0]
-  ) {
+  if (tooFewSeriesImages(submission) && images[0]) {
     images[0].errors.file = i18next.t('series_min_images', {
       count: minSeriesImages,
     });
     images[0].errors.hasError = true;
   }
 
+  const noTitle = titleMissing(submission);
+  const noDescription = descriptionMissing(submission);
   const errors = {
-    description:
-      descriptionRequired && !description
-        ? i18next.t('enter_description')
-        : null,
-    title: titleRequired && !title ? i18next.t('enter_title') : null,
-    hasError:
-      hasError(images) ||
-      (descriptionRequired && !description) ||
-      (titleRequired && !title),
+    description: noDescription ? i18next.t('enter_description') : null,
+    title: noTitle ? i18next.t('enter_title') : null,
+    hasError: hasError(images) || noDescription || noTitle,
   };
 
   return { meta: submission.meta, title, description, images, errors };

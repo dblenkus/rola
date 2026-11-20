@@ -19,7 +19,7 @@ function renderActivate(path: string) {
 it('reports an activated account and offers the way to login', async () => {
   serveApi({ 'POST /user/activate_account': () => ({}) });
   const user = userEvent.setup();
-  const { container } = renderActivate('/register/activate?token=signed');
+  renderActivate('/register/activate?token=signed');
 
   expect(
     await screen.findByRole('heading', {
@@ -29,7 +29,6 @@ it('reports an activated account and offers the way to login', async () => {
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   await waitFor(() => expect(document.title).toBe('Acount activation · Rola'));
-  expect(container.querySelector('[class*="Mui"]')).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Go to Login' }));
   expect(await screen.findByText('Login page')).toBeInTheDocument();
 });

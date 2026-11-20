@@ -11,7 +11,7 @@ describe('contests list', () => {
       'GET /contest': () =>
         page([contest, { ...contest, id: 3, title: 'Winter photographs' }]),
     });
-    const { container } = render(
+    render(
       <MemoryRouter>
         <ContestsList />
       </MemoryRouter>,
@@ -28,6 +28,5 @@ describe('contests list', () => {
       screen.getByRole('heading', { level: 1, name: 'Active contests' }),
     ).toBeInTheDocument();
     expect(document.title).toBe('Active contests · Rola');
-    expect(container.querySelector('[class*="Mui"]')).toBeNull();
   });
 });

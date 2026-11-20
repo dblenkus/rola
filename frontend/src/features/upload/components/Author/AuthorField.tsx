@@ -59,7 +59,7 @@ const AuthorField: React.FC<AuthorFieldProps> = ({
           <DateField
             name="dob"
             label={t('date_of_birth')}
-            value={author.dob ?? null}
+            value={author.dob}
             error={author.errors.dob}
             required
             autoComplete="bday"

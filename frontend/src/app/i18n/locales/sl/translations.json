@@ -8,6 +8,7 @@
   "address": "Naslov",
   "already_have_account": "Že imaš račun? Prijavi se",
   "author": "Avtor",
+  "author_details_club": "fotoklub: {{club}}",
   "author_details_with_club": "{{details}}, fotoklub: {{club}}",
   "change": "Spremeni",
   "city": "Mesto",
@@ -211,5 +212,7 @@
   "judge_filmstrip": "Zaporedje fotografij, sličice {{first}} do {{last}} od {{total}}",
   "judge_frame": "Sličica {{number}}",
   "judge_frame_scored": "Sličica {{number}}, ocena {{score}}",
-  "judge_frame_unscored": "Sličica {{number}}, neocenjena"
+  "judge_frame_unscored": "Sličica {{number}}, neocenjena",
+  "admin_submissions": "Prijave",
+  "admin_submission": "Prijava"
 }
