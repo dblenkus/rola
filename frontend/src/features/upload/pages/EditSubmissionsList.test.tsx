@@ -10,7 +10,7 @@ beforeEach(() => {
   signIn();
   serveApi({
     'GET /contests': () => page([contest]),
-    'GET /submission': () => page([submission(11, 'Forest')]),
+    'GET /submissions': () => page([submission(11, 'Forest')]),
   });
 });
 

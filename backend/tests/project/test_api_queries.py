@@ -56,13 +56,10 @@ def test_lists_ignore_ordering_outside_results(world):
 
 
 ID_FILTERS = [
-    ("/api/v1/submission", "contest"),
-    ("/api/v1/submission", "theme"),
-    ("/api/v1/judge/submission", "contest"),
+    ("/api/v1/submissions", "contest"),
     ("/api/v1/judge/submission", "theme"),
-    ("/api/v1/results/submission", "contest"),
     ("/api/v1/results/submission", "theme"),
-    ("/api/v1/submissionset", "contest"),
+    ("/api/v1/submission-sets", "contest"),
     ("/api/v1/rating", "theme"),
     ("/api/v1/rating", "submission"),
     ("/api/v1/payment", "submission_set"),
@@ -86,6 +83,23 @@ def caller(world):
 @pytest.mark.parametrize(("path", "name"), ID_FILTERS)
 def test_id_filters_are_integers(schema, path, name):
     assert parameter(schema, path, name)["schema"] == {"type": "integer"}
+
+
+# The frontend filters its submissions by contest and the judging and result
+# submissions by theme only.
+@pytest.mark.parametrize(
+    ("path", "name"),
+    [
+        ("/api/v1/submissions", "theme"),
+        ("/api/v1/judge/submission", "contest"),
+        ("/api/v1/results/submission", "contest"),
+    ],
+)
+def test_removed_id_filters_are_not_declared(schema, path, name):
+    declared = {
+        item["name"] for item in schema["paths"][path]["get"].get("parameters", [])
+    }
+    assert name not in declared
 
 
 @pytest.mark.parametrize(("path", "name"), ID_LIST_FILTERS)

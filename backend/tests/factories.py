@@ -6,11 +6,14 @@ import time
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
+from django.urls import reverse
+from django.utils import timezone
 from PIL import Image
 from rest_framework.test import APIClient
 
 from rola.accounts.models import Token, User
-from rola.entries.models import File, Submission, SubmissionSet
+from rola.contests.models import Contest
+from rola.entries.models import Author, File, Submission, SubmissionSet
 from rola.payments.models import Payment
 
 PASSWORD = "test-only-passphrase-A9!"
@@ -39,6 +42,27 @@ def logged_in_client(user):
     return bearer_client(Token.objects.create_token(user=user).key)
 
 
+def mark_account(user, first_name="Own"):
+    """Give the account one submission set by an author of the given first name.
+
+    Only the account's own credentials list the set, so
+    :func:`marked_authors` tells which account a credential belongs to.
+    """
+    now = timezone.now()
+    contest = Contest.objects.create(
+        user=user, title="Marker", start_date=now, end_date=now, publish_date=now
+    )
+    author = Author.objects.create(user=user, first_name=first_name)
+    return SubmissionSet.objects.create(user=user, author=author, contest=contest)
+
+
+def marked_authors(client):
+    """List the first names of the set authors that the API shows the caller."""
+    response = client.get(reverse("submission-set-list"))
+    assert response.status_code == 200
+    return [result["author"]["first_name"] for result in response.data["results"]]
+
+
 def photo(user, name="photo.jpg"):
     """Create a stored JPEG belonging to the given account."""
     data = io.BytesIO()
@@ -49,16 +73,23 @@ def photo(user, name="photo.jpg"):
     )
 
 
-def payload(world, **changes):
-    """Build a submission request using a photograph owned by the submitter."""
+def entry(world, **changes):
+    """Build one submission of an upload, with a photograph owned by the submitter."""
     result = {
         "title": "Photo",
         "theme": world.theme.pk,
-        "author": {"id": world.author.pk},
-        "files": [{"id": photo(world.owner).pk}],
+        "files": [photo(world.owner).pk],
     }
     result.update(changes)
     return result
+
+
+def payload(world, *entries, author=None):
+    """Build an upload request of the given submissions, or of one by default."""
+    return {
+        "author": (author or world.author).pk,
+        "submissions": list(entries) if entries else [entry(world)],
+    }
 
 
 def submitted(world, **changes):

@@ -12,7 +12,7 @@ from rola.entries.api.views import (
 
 def register(router: BaseRouter) -> None:
     """Register the author, file, submission and submission set endpoints."""
-    router.register("author", AuthorViewSet, basename="author")
-    router.register("file", FileViewSet, basename="file")
-    router.register("submission", SubmissionViewSet, basename="submission")
-    router.register("submissionset", SubmissionSetViewSet, basename="submissionset")
+    router.register("authors", AuthorViewSet, basename="author")
+    router.register("files", FileViewSet, basename="file")
+    router.register("submissions", SubmissionViewSet, basename="submission")
+    router.register("submission-sets", SubmissionSetViewSet, basename="submission-set")

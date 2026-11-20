@@ -18,9 +18,8 @@ from rest_framework import mixins, permissions, viewsets
 
 from rola.common.filters import OrderingFilter
 from rola.contests.models import Contest, Theme
-from rola.entries.api.filters import SubmissionFilter
 from rola.entries.models import Submission
-from rola.judging.api.filters import RatingFilter
+from rola.judging.api.filters import RatingFilter, SubmissionThemeFilter
 from rola.judging.api.permissions import CanModifyRating, IsActiveJudge
 from rola.judging.api.serializers import (
     JudgeContestSerializer,
@@ -56,7 +55,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     queryset = Submission.objects.all()
     serializer_class = JudgeSubmissionSerializer
-    filterset_class = SubmissionFilter
+    filterset_class = SubmissionThemeFilter
     permission_classes = (IsActiveJudge,)
 
     def get_queryset(self):
@@ -159,7 +158,7 @@ class SubmissionResultsViewSet(
     )
     serializer_class = SubmissionResultsSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_class = SubmissionFilter
+    filterset_class = SubmissionThemeFilter
     ordering_fields = ["rating_sum"]
 
     def get_queryset(self):

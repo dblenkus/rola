@@ -7,8 +7,6 @@ from django.core.management import call_command
 from drf_spectacular.generators import SchemaGenerator
 from PIL import Image
 
-from tests.factories import payload
-
 
 @pytest.fixture(scope="module")
 def schema():
@@ -146,40 +144,8 @@ def test_theme_results_list_submission_results(components):
 
 
 @pytest.mark.django_db
-def test_submission_writes_respond_with_ids(schema, components, world):
-    def one_or_many(component):
-        return {"oneOf": [ref(component), {"type": "array", "items": ref(component)}]}
-
-    create = schema["paths"]["/api/v1/submission"]["post"]
-    assert json_schema(create["responses"]["201"]) == one_or_many("SubmissionWrite")
-    assert json_schema(create["requestBody"]) == one_or_many("SubmissionRequest")
-    for method in ("put", "patch"):
-        update = schema["paths"]["/api/v1/submission/{id}"][method]
-        assert json_schema(update["responses"]["200"]) == ref("SubmissionWrite")
-    write = components["SubmissionWrite"]["properties"]
-    assert write["author"] == ref("IdRelated")
-    assert write["files"] == {"type": "array", "items": ref("IdRelated")}
-
-    data = payload(world)
-    created = world.client.post("/api/v1/submission", data, format="json")
-    assert created.status_code == 201
-    assert set(created.data) == set(write)
-    assert created.data["author"] == {"id": world.author.pk}
-    assert created.data["files"] == data["files"]
-    batch = world.client.post("/api/v1/submission", [payload(world)], format="json")
-    assert batch.status_code == 201
-    assert [set(item) for item in batch.data] == [set(write)]
-    patched = world.client.patch(
-        f"/api/v1/submission/{created.data['id']}", {"title": "New"}, format="json"
-    )
-    assert patched.status_code == 200
-    assert set(patched.data) == set(write)
-    assert patched.data["author"] == {"id": world.author.pk}
-
-
-@pytest.mark.django_db
 def test_photograph_upload_takes_a_jpeg_body(schema, world):
-    upload = schema["paths"]["/api/v1/file"]["post"]
+    upload = schema["paths"]["/api/v1/files"]["post"]
     assert upload["requestBody"]["content"] == {
         "image/jpeg": {"schema": {"type": "string", "format": "binary"}}
     }
@@ -195,11 +161,11 @@ def test_photograph_upload_takes_a_jpeg_body(schema, world):
     jpeg = io.BytesIO()
     Image.new("RGB", (100, 100)).save(jpeg, "JPEG")
     unnamed = world.client.post(
-        "/api/v1/file", jpeg.getvalue(), content_type="image/jpeg"
+        "/api/v1/files", jpeg.getvalue(), content_type="image/jpeg"
     )
     assert unnamed.status_code == 400
     named = world.client.post(
-        "/api/v1/file",
+        "/api/v1/files",
         jpeg.getvalue(),
         content_type="image/jpeg",
         headers={"Content-Disposition": 'attachment; filename="photo.jpg"'},

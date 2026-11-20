@@ -3,8 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from rola.accounts.models import Token, User, token_digest
-from rola.entries.models import Author
-from tests.factories import bearer_client
+from tests.factories import bearer_client, mark_account
 
 
 class TokenTestCase(APITestCase):
@@ -28,10 +27,10 @@ class TokenTestCase(APITestCase):
         self.assertEqual(
             self.user.auth_tokens.get().digest, token_digest(response.data["token"])
         )
-        author = Author.objects.create(user=self.user, first_name="Own")
+        own = mark_account(self.user)
         self.client = bearer_client(response.data["token"])
-        authors = self.client.get(reverse("author-list")).data["results"]
-        self.assertEqual([listed["id"] for listed in authors], [author.id])
+        sets = self.client.get(reverse("submission-set-list")).data["results"]
+        self.assertEqual([listed["id"] for listed in sets], [own.id])
 
     def test_second_login(self):
         first = Token.objects.create_token(user=self.user)

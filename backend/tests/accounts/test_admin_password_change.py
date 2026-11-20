@@ -62,7 +62,7 @@ def change_password(browser, old_password=PASSWORD, **extra):
 
 def is_authenticated(client):
     """Tell whether the API accepts the client's login token."""
-    status = client.get(reverse("author-list")).status_code
+    status = client.get(reverse("submission-list")).status_code
     assert status in {200, 401}
     return status == 200
 

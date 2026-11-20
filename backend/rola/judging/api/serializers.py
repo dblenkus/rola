@@ -157,6 +157,8 @@ class AuthorResultsSerializer(serializers.ModelSerializer):
 class SubmissionResultsSerializer(CoreSubmissionSerializer):
     """Serialize published submission results and awards."""
 
+    author = AuthorResultsSerializer()
+    files = serializers.SerializerMethodField("get_files")
     accepted = serializers.SerializerMethodField("get_accepted")
     reward_kind = serializers.SerializerMethodField("get_reward_kind")
     reward_label = serializers.CharField(
@@ -175,15 +177,6 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
             "reward_kind",
             "reward_label",
         ]
-
-    def get_fields(self):
-        """Include result-specific author and file representations."""
-        fields = super().get_fields()
-        # The parent's get_fields replaces these, so class attributes have no effect.
-        fields["files"] = serializers.SerializerMethodField("get_files")
-        fields["author"] = AuthorResultsSerializer()
-
-        return fields
 
     def _is_accepted(self, submission):
         if submission.rating_sum is None:

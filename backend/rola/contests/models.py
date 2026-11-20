@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.contrib import admin
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -27,16 +27,6 @@ class ContestQuerySet(models.QuerySet):
         """Return contests that have not started yet or have ended."""
         now = timezone.now()
         return self.exclude(start_date__lte=now, end_date__gte=now)
-
-    def closed(self) -> ContestQuerySet:
-        """Return contests whose entries are final.
-
-        A contest closes after its end date, or when its results are
-        published if that comes first. A contest that has not started yet is
-        not closed.
-        """
-        now = timezone.now()
-        return self.filter(Q(end_date__lt=now) | Q(publish_date__lte=now))
 
     def in_judging(self):
         """Return contests whose judging lists are open.

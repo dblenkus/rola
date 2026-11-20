@@ -48,7 +48,7 @@ describe('failed page requests', () => {
     signIn();
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /submissionset': (config) => {
+      'GET /submission-sets': (config) => {
         throw httpError(config, 403);
       },
     });

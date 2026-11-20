@@ -14,6 +14,7 @@ from rola.accounts.models import Email
 from rola.contests.models import Theme
 from rola.entries.models import Author, File, Submission, SubmissionSet
 from tests.factories import (
+    entry,
     payload,
     photo,
     submitted,
@@ -62,11 +63,11 @@ def entered(world):
 
 
 @pytest.mark.parametrize("schedule", list(CLOSED_SCHEDULES))
-@pytest.mark.parametrize("batch", [False, True])
-def test_entries_are_accepted_only_while_the_contest_is_open(world, schedule, batch):
+@pytest.mark.parametrize("count", [1, 2])
+def test_entries_are_accepted_only_while_the_contest_is_open(world, schedule, count):
     reschedule(world.contest, *CLOSED_SCHEDULES[schedule])
-    data = [payload(world), payload(world)] if batch else payload(world)
-    response = world.client.post("/api/v1/submission", data, format="json")
+    data = payload(world, *(entry(world) for _ in range(count)))
+    response = world.client.post("/api/v1/submission-sets", data, format="json")
     assert response.status_code == 403
     assert response.json() == ENTRIES_CLOSED
     assert not Submission.objects.exists()
@@ -74,24 +75,13 @@ def test_entries_are_accepted_only_while_the_contest_is_open(world, schedule, ba
     assert not File.objects.filter(submission__isnull=False).exists()
 
 
-@pytest.mark.parametrize(
-    ("method", "endpoint"),
-    [
-        ("put", "submission"),
-        ("patch", "submission"),
-        ("delete", "submission"),
-        ("delete", "submissionset"),
-    ],
-)
-def test_entries_cannot_change_after_the_contest_closes(world, method, endpoint):
+@pytest.mark.parametrize("endpoint", ["submissions", "submission-sets"])
+def test_entries_cannot_be_deleted_after_the_contest_closes(world, endpoint):
     item, group = entered(world)
     image = item.files.get()
     reschedule(world.contest, *CLOSED_SCHEDULES["after_end"])
-    target = item if endpoint == "submission" else group
-    data = payload(world, title="Late") if method != "delete" else None
-    response = getattr(world.client, method)(
-        f"/api/v1/{endpoint}/{target.pk}", data, format="json"
-    )
+    target = item if endpoint == "submissions" else group
+    response = world.client.delete(f"/api/v1/{endpoint}/{target.pk}")
     assert response.status_code == 403
     assert response.json() == ENTRIES_CLOSED
     item.refresh_from_db()
@@ -104,12 +94,12 @@ def test_superusers_delete_submission_sets_until_publication(world):
     (judged, judged_set), (published, published_set) = entered(world), entered(world)
     reschedule(world.contest, *CLOSED_SCHEDULES["after_end"])
     world.client.force_authenticate(world.admin)
-    response = world.client.delete(f"/api/v1/submissionset/{judged_set.pk}")
+    response = world.client.delete(f"/api/v1/submission-sets/{judged_set.pk}")
     assert response.status_code == 204
     assert not Submission.objects.filter(pk=judged.pk).exists()
 
     reschedule(world.contest, *CLOSED_SCHEDULES["after_publication"])
-    response = world.client.delete(f"/api/v1/submissionset/{published_set.pk}")
+    response = world.client.delete(f"/api/v1/submission-sets/{published_set.pk}")
     assert response.status_code == 403
     assert response.json() == ENTRIES_CLOSED
     assert list(published_set.submissions.all()) == [published]
@@ -123,13 +113,14 @@ def test_a_theme_accepts_at_most_its_max_photos_per_author(world):
         contest=world.contest, title="Series", is_series=True, max_photos=3
     )
 
-    def post(data):
-        return world.client.post("/api/v1/submission", data, format="json")
+    def post(*items, author=None):
+        data = payload(world, *items, author=author)
+        return world.client.post("/api/v1/submission-sets", data, format="json")
 
     def photos(count):
-        return [{"id": photo(world.owner).pk} for _ in range(count)]
+        return [photo(world.owner).pk for _ in range(count)]
 
-    response = post([payload(world) for _ in range(3)])
+    response = post(*(entry(world) for _ in range(3)))
     assert response.status_code == 400
     assert response.json() == {
         "files": [
@@ -138,26 +129,16 @@ def test_a_theme_accepts_at_most_its_max_photos_per_author(world):
     }
     assert not Submission.objects.exists()
 
-    first, _ = post([payload(world), payload(world)]).data
-    assert post(payload(world)).status_code == 400
+    assert post(entry(world), entry(world)).status_code == 201
+    assert post(entry(world)).status_code == 400
     another = Author.objects.create(user=world.owner, first_name="Another")
-    assert post(payload(world, author={"id": another.pk})).status_code == 201
-    assert post(payload(world, theme=city.pk)).status_code == 201
+    assert post(entry(world), author=another).status_code == 201
+    assert post(entry(world, theme=city.pk)).status_code == 201
     assert Submission.objects.filter(author=world.author).count() == 3
 
-    url = f"/api/v1/submission/{first['id']}"
-    replaced = world.client.patch(url, {"files": photos(1)}, format="json")
-    assert replaced.status_code == 200, replaced.data
-    added = world.client.patch(url, {"files": photos(2)}, format="json")
-    assert added.status_code == 400
-    moved = world.client.patch(url, {"theme": city.pk}, format="json")
-    assert moved.status_code == 400
-    assert Submission.objects.get(pk=first["id"]).theme == world.theme
-    assert File.objects.filter(submission=first["id"]).count() == 1
-
-    assert post(payload(world, theme=series.pk, files=photos(4))).status_code == 400
-    assert post(payload(world, theme=series.pk, files=photos(3))).status_code == 201
-    assert post(payload(world, theme=series.pk, files=photos(1))).status_code == 400
+    assert post(entry(world, theme=series.pk, files=photos(4))).status_code == 400
+    assert post(entry(world, theme=series.pk, files=photos(3))).status_code == 201
+    assert post(entry(world, theme=series.pk, files=photos(1))).status_code == 400
     assert File.objects.filter(submission__theme=series).count() == 3
 
 
@@ -175,25 +156,25 @@ def test_a_repeated_upload_returns_the_existing_set(
     def upload(data, key, client=world.client):
         with django_capture_on_commit_callbacks(execute=True):
             return client.post(
-                "/api/v1/submission", data, format="json", HTTP_IDEMPOTENCY_KEY=key
+                "/api/v1/submission-sets", data, format="json", HTTP_IDEMPOTENCY_KEY=key
             )
 
-    batch = [payload(world), payload(world)]
+    batch = payload(world, entry(world), entry(world))
     first = upload(batch, key)
     assert first.status_code == 201, first.data
     # A retry after a lost response uploads its photographs again.
-    retry = upload([payload(world), payload(world)], key)
+    retry = upload(payload(world, entry(world), entry(world)), key)
     assert retry.status_code == 200, retry.data
     assert retry.json() == first.json()
 
-    assert upload([payload(world)], str(uuid.uuid4())).status_code == 201
+    assert upload(payload(world), str(uuid.uuid4())).status_code == 201
     foreign = payload(
-        world,
-        author={"id": world.other_author.pk},
-        files=[{"id": photo(world.other).pk}],
+        world, entry(world, files=[photo(world.other).pk]), author=world.other_author
     )
-    assert upload([foreign], key, other_client).status_code == 201
-    refused = upload([payload(world)], "not-a-uuid")
+    other_set = upload(foreign, key, other_client)
+    assert other_set.status_code == 201, other_set.data
+    assert other_set.json()["id"] != first.json()["id"]
+    refused = upload(payload(world), "not-a-uuid")
     assert refused.status_code == 400
     assert refused.json() == {"detail": "The Idempotency-Key header must be a UUID."}
 
@@ -203,9 +184,6 @@ def test_a_repeated_upload_returns_the_existing_set(
     late = upload(batch, key)
     assert late.status_code == 200, late.data
     assert late.json() == first.json()
-    single = upload(batch[0], key)
-    assert single.status_code == 200, single.data
-    assert single.json() == first.json()[0]
 
     assert SubmissionSet.objects.filter(user=world.owner).count() == 2
     assert SubmissionSet.objects.filter(user=world.other).count() == 1
@@ -217,9 +195,8 @@ def test_a_repeated_upload_returns_the_existing_set(
     ]
 
 
-@pytest.mark.parametrize("batch", [False, True])
 def test_a_repeated_upload_is_entered_again_after_its_submissions_are_deleted(
-    world, batch, mailoutbox, django_capture_on_commit_callbacks
+    world, mailoutbox, django_capture_on_commit_callbacks
 ):
     world.contest.confirmation_email = Email.objects.create(
         subject="Thank you", body="Submitted"
@@ -228,30 +205,27 @@ def test_a_repeated_upload_is_entered_again_after_its_submissions_are_deleted(
     key = str(uuid.uuid4())
 
     def upload():
-        data = payload(world)
         with django_capture_on_commit_callbacks(execute=True):
-            response = world.client.post(
-                "/api/v1/submission",
-                [data] if batch else data,
+            return world.client.post(
+                "/api/v1/submission-sets",
+                payload(world),
                 format="json",
                 HTTP_IDEMPOTENCY_KEY=key,
             )
-        assert isinstance(response.json(), list) == batch
-        return response
 
     def entered(response):
-        items = response.json() if batch else [response.json()]
-        return [item["id"] for item in items]
+        return [item["id"] for item in response.json()["submissions"]]
 
     first = upload()
     assert first.status_code == 201, first.data
     (deleted,) = entered(first)
-    response = world.client.delete(f"/api/v1/submission/{deleted}")
+    response = world.client.delete(f"/api/v1/submissions/{deleted}")
     assert response.status_code == 204
     # The upload form keeps its key until it is completed, so a retry after
     # a lost response can follow the deletion of the entry.
     retry = upload()
     assert retry.status_code == 201, retry.data
+    assert retry.json()["id"] != first.json()["id"]
     assert list(
         SubmissionSet.objects.get(upload_key=key).submissions.values_list(
             "pk", flat=True
@@ -279,14 +253,14 @@ def test_concurrent_uploads_with_one_key_create_one_set(world, mailoutbox):
     )
     world.contest.save()
     key = str(uuid.uuid4())
-    first_data, retry_data = [payload(world)], [payload(world)]
+    first_data, retry_data = payload(world), payload(world)
     retry_client = APIClient()
     retry_client.force_authenticate(world.owner)
     backend_pids = queue.SimpleQueue()
 
     def upload(client, data):
         return client.post(
-            "/api/v1/submission", data, format="json", HTTP_IDEMPOTENCY_KEY=key
+            "/api/v1/submission-sets", data, format="json", HTTP_IDEMPOTENCY_KEY=key
         )
 
     def retry_on_another_connection():
@@ -320,7 +294,7 @@ def test_concurrent_uploads_with_one_key_create_one_set(world, mailoutbox):
 @pytest.mark.django_db(transaction=True)
 def test_an_upload_deleted_during_a_submission_answers_a_files_error(world):
     image = photo(world.owner)
-    data = payload(world, files=[{"id": image.pk}])
+    data = payload(world, entry(world, files=[image.pk]))
     client = APIClient()
     client.force_authenticate(world.owner)
     backend_pids = queue.SimpleQueue()
@@ -330,7 +304,7 @@ def test_an_upload_deleted_during_a_submission_answers_a_files_error(world):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_backend_pid()")
                 backend_pids.put(cursor.fetchone()[0])
-            return client.post("/api/v1/submission", data, format="json")
+            return client.post("/api/v1/submission-sets", data, format="json")
         finally:
             connection.close()
 

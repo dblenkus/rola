@@ -5,7 +5,7 @@ import { uploadImage } from './api';
 async function uploadDisposition(name: string): Promise<string> {
   let disposition: unknown;
   serveApi({
-    'POST /file': (config) => {
+    'POST /files': (config) => {
       disposition = config.headers.get('Content-Disposition');
       return {};
     },

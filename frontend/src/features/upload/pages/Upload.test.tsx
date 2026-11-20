@@ -14,7 +14,7 @@ import {
   withStatus,
 } from '../../../test/api';
 import { open } from '../../../test/app';
-import { author, contest } from '../../../test/fixtures';
+import { author, contest, submissionSet } from '../../../test/fixtures';
 import type { Contest, Theme } from '../../../shared/api/types';
 
 const winter: Contest = { ...contest, id: 3, title: 'Winter photographs' };
@@ -59,9 +59,9 @@ function uploadApi(overrides: Parameters<typeof serveApi>[0] = {}) {
     'GET /contests': () => page([contest, winter]),
     'GET /contests/1': () => contest,
     'GET /contests/3': () => winter,
-    'POST /file': () => storedPhotograph,
-    'POST /author': () => author,
-    'POST /submission': () => withStatus(201, []),
+    'POST /files': () => storedPhotograph,
+    'POST /authors': () => author,
+    'POST /submission-sets': () => withStatus(201, submissionSet),
     ...overrides,
   });
 }
@@ -157,10 +157,10 @@ describe('photograph upload', () => {
       adapter.mock.calls.map(([config]) => `${config.method} ${config.url}`),
     ).toEqual([
       'get /contests/1',
-      'post /file',
-      'post /file',
-      'post /author',
-      'post /submission',
+      'post /files',
+      'post /files',
+      'post /authors',
+      'post /submission-sets',
       'get /contests/1',
     ]);
 
@@ -171,16 +171,109 @@ describe('photograph upload', () => {
     expect(window.location.pathname).toBe('/contest/3/upload');
   });
 
+  it('enters the photographs as one submission set of the author', async () => {
+    const nature = contest.themes[0];
+    if (!nature) {
+      throw new Error('The contest fixture has no theme');
+    }
+    const cities: Theme = {
+      ...nature,
+      id: 6,
+      title: 'Cities',
+      is_series: true,
+      max_photos: 2,
+    };
+    let photographId = 40;
+    let body: unknown;
+    uploadApi({
+      'GET /contests/1': () => ({ ...contest, themes: [nature, cities] }),
+      'POST /files': () => {
+        photographId += 1;
+        return withStatus(201, { ...storedPhotograph, id: photographId });
+      },
+      'POST /authors': () => withStatus(201, author),
+      'POST /submission-sets': (config) => {
+        body = JSON.parse(String(config.data));
+        return withStatus(201, submissionSet);
+      },
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    // Nature takes one photograph per submission and Cities is a series of
+    // two; the second Nature submission stays empty.
+    const [dawn, , street, square] =
+      await screen.findAllByLabelText('Select photograph');
+    const [dawnTitle, , citiesTitle] = screen.getAllByRole('textbox', {
+      name: /title/i,
+    });
+    // Only a series has a description.
+    const [citiesDescription] = screen.getAllByRole('textbox', {
+      name: /description/i,
+    });
+    if (
+      !dawn ||
+      !street ||
+      !square ||
+      !dawnTitle ||
+      !citiesTitle ||
+      !citiesDescription
+    ) {
+      throw new Error('The form lacks a field of the two themes');
+    }
+    await user.upload(dawn, photograph('dawn.jpg'));
+    await user.upload(street, photograph('street.jpg'));
+    await user.upload(square, photograph('square.jpg'));
+    await user.type(dawnTitle, 'Dawn');
+    await user.type(citiesTitle, 'Old town');
+    await user.type(citiesDescription, 'A walk');
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(body).toEqual({
+      author: author.id,
+      submissions: [
+        { theme: nature.id, title: 'Dawn', description: '', files: [41] },
+        {
+          theme: cities.id,
+          title: 'Old town',
+          description: 'A walk',
+          files: [42, 43],
+        },
+      ],
+    });
+  });
+
+  it('completes an upload the server had already received', async () => {
+    uploadApi({
+      'POST /submission-sets': () => withStatus(200, submissionSet),
+    });
+    const user = userEvent.setup();
+    open('/contest/1/upload');
+    await fillAuthor(user);
+    await fillSubmissions(user);
+    await user.click(screen.getByRole('button', { name: 'Upload' }));
+    expect(
+      await screen.findByText('Thank you for uploading photos!'),
+    ).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/contest/1/confirm');
+    expect(screen.getByText(alreadyReceived)).toBeInTheDocument();
+    expect(
+      screen.queryByText('Upload failed. Please try again.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('says so when a retry finds the earlier upload already received', async () => {
     let attempts = 0;
     uploadApi({
-      'POST /submission': (config) => {
+      'POST /submission-sets': (config) => {
         attempts += 1;
         // The server stored the first request, but its response was lost.
         if (attempts === 1) {
           throw networkError(config);
         }
-        return withStatus(200, []);
+        return withStatus(200, submissionSet);
       },
     });
     const user = userEvent.setup();
@@ -205,7 +298,7 @@ describe('photograph upload', () => {
 
   it('stops at the first failed photograph and allows another try', async () => {
     const adapter = uploadApi({
-      'POST /file': (config) => {
+      'POST /files': (config) => {
         throw httpError(config, 400, { detail: 'Invalid image.' });
       },
     });
@@ -227,12 +320,12 @@ describe('photograph upload', () => {
   it('sends the same key when retrying after a lost response', async () => {
     const submissionKeys: unknown[] = [];
     uploadApi({
-      'POST /submission': (config) => {
+      'POST /submission-sets': (config) => {
         submissionKeys.push(config.headers.get('Idempotency-Key'));
         if (submissionKeys.length === 1) {
           throw networkError(config);
         }
-        return [];
+        return withStatus(201, submissionSet);
       },
     });
     const user = userEvent.setup();
@@ -266,7 +359,7 @@ describe('photograph upload', () => {
 
   it('explains an upload refused because the contest closed', async () => {
     uploadApi({
-      'POST /submission': (config) => {
+      'POST /submission-sets': (config) => {
         throw httpError(config, 403, {
           detail: 'This contest is not accepting entries.',
         });
@@ -325,7 +418,7 @@ describe('photograph upload', () => {
 
   it('keeps the entered form when the session expires during an upload', async () => {
     uploadApi({
-      'POST /file': (config) => {
+      'POST /files': (config) => {
         throw httpError(config, 401);
       },
       'POST /tokens': () =>
@@ -368,7 +461,7 @@ describe('photograph upload', () => {
       }),
     );
     uploadApi({
-      'POST /file': (config) => {
+      'POST /files': (config) => {
         throw httpError(config, 401);
       },
       'POST /tokens': () =>
@@ -449,7 +542,7 @@ describe('photograph upload', () => {
 
   it('starts an empty form when another account logs in after a rejected session', async () => {
     uploadApi({
-      'POST /file': (config) => {
+      'POST /files': (config) => {
         throw httpError(config, 401);
       },
       'POST /tokens': () =>
@@ -505,7 +598,7 @@ describe('photograph upload', () => {
   it('sends no request as an account that signed in during an upload', async () => {
     const photographResponses: (() => void)[] = [];
     const adapter = uploadApi({
-      'POST /file': () =>
+      'POST /files': () =>
         photographResponses.length
           ? storedPhotograph
           : new Promise((resolve) =>
@@ -533,7 +626,7 @@ describe('photograph upload', () => {
         .map(([config]) => config)
         .filter((config) => config.method === 'post')
         .map((config) => [config.url, config.headers.get('Authorization')]),
-    ).toEqual([['/file', 'Bearer signed-in']]);
+    ).toEqual([['/files', 'Bearer signed-in']]);
     expect(window.location.pathname).toBe('/contest/1/upload');
     expect(screen.getByRole('textbox', { name: /first name/i })).toHaveValue(
       '',
@@ -647,9 +740,11 @@ describe('photograph upload', () => {
   it('stays on another page when an upload finishes there', async () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
-      'POST /submission': () =>
+      'POST /submission-sets': () =>
         new Promise((resolve) =>
-          submissionResponses.push(() => resolve(withStatus(201, []))),
+          submissionResponses.push(() =>
+            resolve(withStatus(201, submissionSet)),
+          ),
         ),
     });
     const user = userEvent.setup();
@@ -674,9 +769,11 @@ describe('photograph upload', () => {
   it("keeps another contest's form when an earlier upload finishes", async () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
-      'POST /submission': () =>
+      'POST /submission-sets': () =>
         new Promise((resolve) =>
-          submissionResponses.push(() => resolve(withStatus(201, []))),
+          submissionResponses.push(() =>
+            resolve(withStatus(201, submissionSet)),
+          ),
         ),
     });
     const user = userEvent.setup();
@@ -707,9 +804,11 @@ describe('photograph upload', () => {
     const submissionResponses: (() => void)[] = [];
     const winterResponses: (() => void)[] = [];
     uploadApi({
-      'POST /submission': () =>
+      'POST /submission-sets': () =>
         new Promise((resolve) =>
-          submissionResponses.push(() => resolve(withStatus(201, []))),
+          submissionResponses.push(() =>
+            resolve(withStatus(201, submissionSet)),
+          ),
         ),
       'GET /contests/3': () =>
         new Promise((resolve) => winterResponses.push(() => resolve(winter))),
@@ -742,9 +841,11 @@ describe('photograph upload', () => {
   it('confirms the upload in a form reopened during it', async () => {
     const submissionResponses: (() => void)[] = [];
     uploadApi({
-      'POST /submission': () =>
+      'POST /submission-sets': () =>
         new Promise((resolve) =>
-          submissionResponses.push(() => resolve(withStatus(201, []))),
+          submissionResponses.push(() =>
+            resolve(withStatus(201, submissionSet)),
+          ),
         ),
     });
     const user = userEvent.setup();
@@ -870,7 +971,7 @@ describe('photograph upload', () => {
     const authors: unknown[] = [];
     uploadApi({
       'GET /contests/1': () => ({ ...contest, date_of_birth_required: true }),
-      'POST /author': (config) => {
+      'POST /authors': (config) => {
         authors.push(JSON.parse(String(config.data)));
         return author;
       },

@@ -74,7 +74,7 @@ def photograph_with_metadata():
 def upload(world, data):
     """Upload a photograph as the frontend does."""
     return world.client.post(
-        "/api/v1/file",
+        "/api/v1/files",
         data,
         content_type="image/jpeg",
         headers={"Content-Disposition": 'attachment; filename="photo.jpg"'},

@@ -30,7 +30,7 @@ def test_password_reset_revokes_login_tokens(client, account):
     )
     assert response.status_code == 204
     assert all(token.is_expired for token in account.auth_tokens.all())
-    assert client.get(reverse("author-list")).status_code == 401
+    assert client.get(reverse("submission-list")).status_code == 401
 
 
 def replace_password(user, flow):

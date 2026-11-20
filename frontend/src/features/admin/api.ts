@@ -11,7 +11,7 @@ import { apiClient } from '../../shared/api/client';
 export function getSubmissionSet(
   submissionSetId: string,
 ): AxiosPromise<SubmissionSet> {
-  return apiClient.get(`/submissionset/${submissionSetId}`);
+  return apiClient.get(`/submission-sets/${submissionSetId}`);
 }
 
 export function getSubmissionSetsByContest(
@@ -19,7 +19,7 @@ export function getSubmissionSetsByContest(
   page: number,
   pageSize: number,
 ): AxiosPromise<PaginatedResponse<SubmissionSet>> {
-  return apiClient.get('/submissionset', {
+  return apiClient.get('/submission-sets', {
     params: { contest: contestId, page, page_size: pageSize },
   });
 }
@@ -27,7 +27,7 @@ export function getSubmissionSetsByContest(
 export function deleteSubmissionSet(
   submissionsSetId: number,
 ): AxiosPromise<void> {
-  return apiClient.delete(`/submissionset/${submissionsSetId}`);
+  return apiClient.delete(`/submission-sets/${submissionsSetId}`);
 }
 
 export function updatePayment(

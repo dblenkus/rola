@@ -418,7 +418,7 @@ describe('submit bar', () => {
     serveApi({
       'GET /contests/1': () => ({ ...contest, end_date: inDays(30) }),
       // The upload never finishes in this test.
-      'POST /file': () => new Promise(() => undefined),
+      'POST /files': () => new Promise(() => undefined),
     });
     open('/contest/1/upload');
     await user.type(

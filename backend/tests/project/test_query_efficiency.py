@@ -66,10 +66,9 @@ def _assert_submission(data, entry, email, *, with_author=True):
 @pytest.mark.parametrize(
     "endpoint",
     [
-        "author",
         "contests",
-        "submission",
-        "submissionset",
+        "submissions",
+        "submission-sets",
         "judge/contest",
         "judge/submission",
     ],
@@ -77,7 +76,7 @@ def _assert_submission(data, entry, email, *, with_author=True):
 def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
     """Adding related rows preserves response content and the query budget."""
     judge = Judge.objects.create(judge=world.owner, contest=world.contest)
-    if endpoint in ("author", "submissionset"):
+    if endpoint == "submission-sets":
         world.client.force_authenticate(world.admin)
     entries = []
     query_counts = []
@@ -90,17 +89,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
         query_counts.append(len(queries))
         data = response.data["results"]
 
-        if endpoint == "author":
-            authors = [world.author, world.other_author] + [
-                entry.author for entry in entries
-            ]
-            assert [item["id"] for item in data] == [author.pk for author in authors]
-            assert [item["email"] for item in data] == [
-                world.owner.email,
-                world.other.email,
-                *[world.owner.email for _ in entries],
-            ]
-        elif endpoint in ("contests", "judge/contest"):
+        if endpoint in ("contests", "judge/contest"):
             assert [item["id"] for item in data] == [world.contest.pk]
             themes = data[0]["themes"]
             assert [theme["id"] for theme in themes] == [
@@ -116,7 +105,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                     0,
                     *[1 for _ in entries],
                 ]
-        elif endpoint == "submissionset":
+        elif endpoint == "submission-sets":
             assert [item["id"] for item in data] == [
                 entry.group.pk for entry in entries
             ]

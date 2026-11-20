@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
 import store from './store';
 import { deleteMessage } from '../features/notifications/state/actions';
-import { httpError, page, serveApi, signIn } from '../test/api';
+import { httpError, page, serveApi, signIn, withStatus } from '../test/api';
 import { open } from '../test/app';
 import { author, contest, submission } from '../test/fixtures';
 
@@ -22,12 +22,12 @@ describe('submissions edit list', () => {
     let submissions = [submission(11, 'First'), submission(12, 'Second')];
     serveApi({
       'GET /contests': () => page([contest]),
-      'GET /submission': () => page(submissions),
-      'DELETE /submission/11': () => {
+      'GET /submissions': () => page(submissions),
+      'DELETE /submissions/11': () => {
         submissions = submissions.filter(({ id }) => id !== 11);
-        return null;
+        return withStatus(204, null);
       },
-      'DELETE /submission/12': (config) => {
+      'DELETE /submissions/12': (config) => {
         throw httpError(config, 503);
       },
     });
@@ -56,8 +56,8 @@ describe('submissions edit list', () => {
     let activeContests = [contest];
     serveApi({
       'GET /contests': () => page(activeContests),
-      'GET /submission': () => page([submission(11, 'First')]),
-      'DELETE /submission/11': (config) => {
+      'GET /submissions': () => page([submission(11, 'First')]),
+      'DELETE /submissions/11': (config) => {
         // The contest closed after the list loaded, so the reload no longer
         // lists it.
         activeContests = [];
@@ -97,7 +97,7 @@ describe('submissions edit list', () => {
     const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
     serveApi({
       'GET /contests': () => page([twoThemes]),
-      'GET /submission': () =>
+      'GET /submissions': () =>
         page([
           { ...submission(11, 'Forest'), author: mia },
           submission(12, 'River'),
@@ -127,7 +127,7 @@ describe('submissions edit list', () => {
     const mia = { ...author, id: 9, first_name: 'Mia', last_name: 'Zupan' };
     const adapter = serveApi({
       'GET /contests': () => page([contest]),
-      'GET /submission': (config) =>
+      'GET /submissions': (config) =>
         config.headers.get('Authorization') === 'Bearer next-account'
           ? page([{ ...submission(12, 'River'), author: mia }])
           : page([submission(11, 'Forest')]),
@@ -147,7 +147,7 @@ describe('submissions edit list', () => {
     expect(
       adapter.mock.calls
         .map(([config]) => config)
-        .filter((config) => config.url === '/submission')
+        .filter((config) => config.url === '/submissions')
         .map((config) => config.headers.get('Authorization')),
     ).toEqual(['Bearer signed-in', 'Bearer next-account']);
   });
