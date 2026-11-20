@@ -71,9 +71,9 @@ describe('page layout', () => {
   it('keeps the rater in the page flow at full width', async () => {
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /judge/submission': () =>
+      'GET /judging/submissions': () =>
         page([jurySubmission(11, 'First photograph')]),
-      'GET /rating': () => page([]),
+      'GET /judging/ratings': () => page([]),
     });
     signIn();
     open('/judge/contest/1/theme/2/rate?submission=11');

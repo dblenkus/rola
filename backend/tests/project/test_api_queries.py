@@ -35,7 +35,7 @@ def test_only_result_submissions_declare_ordering(schema):
         for item in operation.get("parameters", [])
         if item["name"] == "ordering"
     }
-    assert ordered == {"/api/v1/results/submission"}
+    assert ordered == {"/api/v1/results/submissions"}
 
 
 def test_lists_ignore_ordering_outside_results(world):
@@ -57,11 +57,11 @@ def test_lists_ignore_ordering_outside_results(world):
 
 ID_FILTERS = [
     ("/api/v1/submissions", "contest"),
-    ("/api/v1/judge/submission", "theme"),
-    ("/api/v1/results/submission", "theme"),
+    ("/api/v1/judging/submissions", "theme"),
+    ("/api/v1/results/submissions", "theme"),
     ("/api/v1/submission-sets", "contest"),
-    ("/api/v1/rating", "theme"),
-    ("/api/v1/rating", "submission"),
+    ("/api/v1/judging/ratings", "theme"),
+    ("/api/v1/judging/ratings", "submission"),
 ]
 ID_LIST_FILTERS = [("/api/v1/payments", "submission_set__in")]
 
@@ -90,8 +90,8 @@ def test_id_filters_are_integers(schema, path, name):
     ("path", "name"),
     [
         ("/api/v1/submissions", "theme"),
-        ("/api/v1/judge/submission", "contest"),
-        ("/api/v1/results/submission", "contest"),
+        ("/api/v1/judging/submissions", "contest"),
+        ("/api/v1/results/submissions", "contest"),
     ],
 )
 def test_removed_id_filters_are_not_declared(schema, path, name):
@@ -118,18 +118,19 @@ def test_unknown_id_filter_answers_an_empty_list(caller, path, name, value):
 
 
 def test_rating_filter_does_not_reveal_other_accounts_submissions(world, caller):
-    client = caller("/api/v1/rating")
+    client = caller("/api/v1/judging/ratings")
     rated = submitted(world, user=world.other, author=world.other_author)
     pay(rated)
     unrated = submitted(world, user=world.other, author=world.other_author)
-    response = client.post(
-        "/api/v1/rating", {"submission": rated.pk, "rating": 5}, format="json"
+    response = client.put(
+        f"/api/v1/judging/ratings/{rated.pk}", {"rating": 5}, format="json"
     )
     assert response.status_code == 201, response.data
-    assert client.get("/api/v1/rating").data["count"] == 1
+    assert client.get("/api/v1/judging/ratings").data["count"] == 1
 
     answers = [
-        client.get("/api/v1/rating", {"submission": pk}) for pk in [unrated.pk, 999999]
+        client.get("/api/v1/judging/ratings", {"submission": pk})
+        for pk in [unrated.pk, 999999]
     ]
     for response in answers:
         assert response.status_code == 200, response.content

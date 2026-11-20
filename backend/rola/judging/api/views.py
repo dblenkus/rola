@@ -13,14 +13,17 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import SHA1, Cast, Coalesce, Concat
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, permissions, viewsets
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from rola.common.filters import OrderingFilter
 from rola.contests.models import Contest, Theme
 from rola.entries.models import Submission
+from rola.judging import services
 from rola.judging.api.filters import RatingFilter, SubmissionThemeFilter
-from rola.judging.api.permissions import CanModifyRating, IsActiveJudge
+from rola.judging.api.permissions import IsActiveJudge
 from rola.judging.api.serializers import (
     JudgeContestSerializer,
     JudgeSubmissionSerializer,
@@ -37,20 +40,87 @@ from rola.payments.models import PAID_SUBMISSION
 IS_PAID = Exists(Submission.objects.filter(PAID_SUBMISSION, pk=OuterRef("pk")))
 
 
-class RatingViewSet(viewsets.ModelViewSet):
-    """API viewset for Rating objects."""
+class RatingViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """List the caller's ratings and set the caller's rating of a submission."""
 
     queryset = Rating.objects.none()
     serializer_class = RatingSerializer
-    permission_classes = (permissions.IsAuthenticated, CanModifyRating)
+    permission_classes = (permissions.IsAuthenticated,)
     filterset_class = RatingFilter
+    # A judge rates a submission at most once, so the submission's id names
+    # the caller's rating of it.
+    lookup_field = "submission"
+    # At most 18 digits, so the id fits a signed 64-bit integer in the query.
+    lookup_value_regex = "[0-9]{1,18}"
 
     def get_queryset(self):
-        """Restrict ratings to the requesting user."""
-        return Rating.objects.filter(user=self.request.user).order_by("pk")
+        """Restrict ratings to those of the caller's judges, as the PUT sets them."""
+        return Rating.objects.filter(judge__judge=self.request.user).order_by("pk")
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "submission",
+                int,
+                OpenApiParameter.PATH,
+                description="The id of the submission that the rating is for.",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                RatingSerializer, description="The caller's rating, replaced."
+            ),
+            201: OpenApiResponse(
+                RatingSerializer, description="The caller's rating, created."
+            ),
+        },
+    )
+    def update(self, request, *args, **kwargs):
+        """Set the caller's rating of a submission, creating it if needed.
+
+        Answers 201 when the rating is created and 200 when it existed, 404
+        when the caller cannot rate the submission as a judge, and 403 once
+        the contest's results are published.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rating, created = services.set_rating(
+            request.user,
+            int(self.kwargs[self.lookup_field]),
+            serializer.validated_data["rating"],
+        )
+        return Response(
+            self.get_serializer(rating).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "submission",
+                int,
+                OpenApiParameter.PATH,
+                description="The id of the submission that the rating is for.",
+            )
+        ],
+        responses={
+            204: OpenApiResponse(
+                description="The caller has no rating of the submission."
+            ),
+        },
+    )
+    def destroy(self, request, *args, **kwargs):
+        """Clear the caller's rating of a submission, if there is one.
+
+        Answers 204 whether or not the rating existed, and otherwise as the
+        PUT: 404 when the caller cannot rate the submission as a judge, and
+        403 once the contest's results are published.
+        """
+        services.clear_rating(request.user, int(self.kwargs[self.lookup_field]))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class JudgingSubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List paid submissions assigned to an active judge."""
 
     queryset = Submission.objects.all()
@@ -76,7 +146,7 @@ class SubmissionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         )
 
 
-class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class JudgingContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List contests assigned to the requesting judge."""
 
     queryset = Contest.objects.all()
@@ -98,7 +168,7 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             submission_count=Coalesce(Subquery(paid_counts), 0),
             rating_count=Count(
                 "submission__rating",
-                filter=Q(submission__rating__user=self.request.user),
+                filter=Q(submission__rating__judge__judge=self.request.user),
             ),
         ).order_by("pk")
         return (
@@ -113,7 +183,7 @@ class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
     submission_qs = (
         Submission.objects.filter(IS_PAID)
-        .annotate(rating_sum=Sum("rating__rating"))
+        .annotate(score=Sum("rating__rating"))
         .select_related(
             "author",
             "author__user",
@@ -143,8 +213,8 @@ class SubmissionResultsViewSet(
 
     queryset = (
         Submission.objects.filter(IS_PAID)
-        .annotate(rating_sum=Sum("rating__rating"))
-        .filter(rating_sum__gte=F("theme__results__accepted_threshold"))
+        .annotate(score=Sum("rating__rating"))
+        .filter(score__gte=F("theme__results__accepted_threshold"))
         .select_related(
             "theme__contest",
             "theme__results",
@@ -157,9 +227,9 @@ class SubmissionResultsViewSet(
         .order_by("pk")
     )
     serializer_class = SubmissionResultsSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filter_backends = [*api_settings.DEFAULT_FILTER_BACKENDS, OrderingFilter]
     filterset_class = SubmissionThemeFilter
-    ordering_fields = ["rating_sum"]
+    ordering_fields = ["score"]
 
     def get_queryset(self):
         """Return accepted, paid submissions of published contests."""

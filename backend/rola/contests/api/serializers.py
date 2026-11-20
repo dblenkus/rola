@@ -34,12 +34,10 @@ class ThemeSerializer(BaseSerializer):
 
     def get_submission_count(self, theme) -> int:
         """Count submissions in this theme."""
-        # Contest lists and details annotate the count. Theme results have
-        # prefetched their paid submissions instead, so counting them issues
-        # no query.
-        if hasattr(theme, "submission_count"):
-            return theme.submission_count
-        return theme.submission_set.count()
+        # The contest querysets annotate the count. Reading it directly fails
+        # loudly if a queryset loses the annotation, instead of counting each
+        # theme again.
+        return theme.submission_count
 
 
 class ContestSerializer(BaseSerializer):

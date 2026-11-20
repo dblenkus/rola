@@ -118,11 +118,11 @@ it('ignores Clear and Backspace while a save is pending', async () => {
   await user.keyboard('{Backspace}');
   await user.click(screen.getByRole('button', { name: 'Clear' }));
   await settle();
-  expect(api.writes()).toEqual(['POST /rating']);
+  expect(api.writes()).toEqual(['PUT /judging/ratings/11']);
 
   api.release();
   await waitFor(() => expect(pressedScore()).toBe(8));
-  expect(api.writes()).toEqual(['POST /rating']);
+  expect(api.writes()).toEqual(['PUT /judging/ratings/11']);
 });
 
 // A clear is a write like a score: the server keeps whichever it handles
@@ -143,11 +143,11 @@ it('ignores score keys and digits while a clear is pending', async () => {
   await user.keyboard('8');
   await user.click(scoreKey(8));
   await settle();
-  expect(api.writes()).toEqual(['DELETE /rating/501']);
+  expect(api.writes()).toEqual(['DELETE /judging/ratings/11']);
 
   api.release();
   await waitFor(() => expect(pressedScore()).toBe(0));
-  expect(api.writes()).toEqual(['DELETE /rating/501']);
+  expect(api.writes()).toEqual(['DELETE /judging/ratings/11']);
 });
 
 it('keeps the previous score after a failed save', async () => {
@@ -179,7 +179,7 @@ it('clears a score with the Clear button', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Clear' }));
   await waitFor(() => expect(pressedScore()).toBe(0));
-  expect(api.deletes).toEqual([501]);
+  expect(api.deletes).toEqual([11]);
   expect(screen.getByRole('button', { name: 'Clear' })).toHaveAttribute(
     'aria-disabled',
     'true',
@@ -199,7 +199,7 @@ it('clears a score with Backspace', async () => {
 
   await user.keyboard('{Backspace}');
   await waitFor(() => expect(pressedScore()).toBe(0));
-  expect(api.deletes).toEqual([501]);
+  expect(api.deletes).toEqual([11]);
 });
 
 it('announces a cleared score', async () => {
@@ -216,7 +216,7 @@ it('announces a cleared score', async () => {
   await waitFor(() => expect(announcement()).toBe('Score cleared'));
 });
 
-it('clears a score just given by the id of the saved rating', async () => {
+it('clears a score just given', async () => {
   const api = serveJudging({ submissions: twoSubmissions });
   const user = userEvent.setup();
   renderRater(store);
@@ -226,8 +226,7 @@ it('clears a score just given by the id of the saved rating', async () => {
   await waitFor(() => expect(pressedScore()).toBe(8));
   await user.keyboard('{Backspace}');
   await waitFor(() => expect(pressedScore()).toBe(0));
-  // The fake API gives a new rating the id 901.
-  expect(api.deletes).toEqual([901]);
+  expect(api.deletes).toEqual([11]);
 });
 
 it('keeps the score after a failed clear', async () => {
@@ -243,7 +242,7 @@ it('keeps the score after a failed clear', async () => {
   api.writeStatus = 400;
   await user.keyboard('{Backspace}');
   expect(await screen.findByRole('alert')).toHaveTextContent(requestFailed);
-  expect(api.deletes).toEqual([501]);
+  expect(api.deletes).toEqual([11]);
   expect(pressedScore()).toBe(4);
 });
 

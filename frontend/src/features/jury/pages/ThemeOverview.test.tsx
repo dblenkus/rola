@@ -18,11 +18,11 @@ it('shows a series of more than six photographs in full', async () => {
     },
     files: ids.flatMap((id) => submission(id, '').files),
     accepted: false,
-    rating: 40,
+    score: 40,
     reward_kind: null,
     reward_label: null,
   };
-  serveApi({ 'GET /results/submission': () => page([series]) });
+  serveApi({ 'GET /results/submissions': () => page([series]) });
 
   render(
     <MemoryRouter initialEntries={['/judge/contest/1/theme/2/overview']}>
@@ -43,7 +43,7 @@ it('shows a series of more than six photographs in full', async () => {
 });
 
 it('says so while the theme has no published results', async () => {
-  serveApi({ 'GET /results/submission': () => page([]) });
+  serveApi({ 'GET /results/submissions': () => page([]) });
 
   render(
     <MemoryRouter initialEntries={['/judge/contest/1/theme/2/overview']}>

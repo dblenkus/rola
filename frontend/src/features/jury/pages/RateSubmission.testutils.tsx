@@ -18,9 +18,8 @@ import RateSubmission from './RateSubmission';
 
 export const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-// Ids the fake API gives to new ratings, in order.
+// The id the fake API gives to the first new rating; later ones count up.
 const firstNewRatingId = 901;
-const lastNewRatingId = 999;
 
 interface JudgingOptions {
   contest?: Contest;
@@ -30,16 +29,17 @@ interface JudgingOptions {
 }
 
 export interface JudgingApi {
-  // Each score sent with POST /rating, in order.
+  // Each score sent with PUT /judging/ratings/{submission}, in order.
   saves: { submission: number; rating: number }[];
-  // Each rating id sent with DELETE /rating/{id}, in order.
+  // Each submission cleared with DELETE /judging/ratings/{submission}, in
+  // order.
   deletes: number[];
   // While true, writes wait until `release` answers them.
   holdWrites: boolean;
   // Answers the oldest held write.
   release: () => void;
   heldWrites: () => number;
-  // While true, each submission's own GET /rating is handled at once but
+  // While true, each submission's own GET /judging/ratings is handled at once but
   // answered only when `releaseRead` releases it, as a response that is slow
   // to arrive.
   holdReads: boolean;
@@ -47,7 +47,7 @@ export interface JudgingApi {
   releaseRead: (submissionId: number) => void;
   // The submissions of the held reads, oldest first.
   heldReads: () => number[];
-  // While true, the theme-wide GET /rating is handled at once but answered
+  // While true, the theme-wide GET /judging/ratings is handled at once but answered
   // only when `releaseThemeRead` releases it.
   holdThemeReads: boolean;
   // Answers the oldest held theme-wide read.
@@ -55,30 +55,28 @@ export interface JudgingApi {
   heldThemeReads: () => number;
   // The status writes fail with, or null for success.
   writeStatus: number | null;
-  // The status the theme-wide GET /rating fails with, or null for success.
+  // The status the theme-wide GET /judging/ratings fails with, or null for success.
   themeRatingsStatus: number | null;
-  // Submissions whose own GET /rating fails.
+  // Submissions whose own GET /judging/ratings fails.
   failingSubmissionRatings: Set<number>;
   // Every request other than a GET, as "METHOD /path".
   writes: () => string[];
 }
 
-function isScore(
-  data: unknown,
-): data is { submission: number; rating: number } {
+function isScore(data: unknown): data is { rating: number } {
   return (
     typeof data === 'object' &&
     data !== null &&
-    'submission' in data &&
-    typeof data.submission === 'number' &&
     'rating' in data &&
     typeof data.rating === 'number'
   );
 }
 
-// Serves the contest, the theme's submissions and the judge's ratings. A
-// score replaces the submission's rating under the same id, as the server's
-// update_or_create does, or stores a new one under the next new id.
+// Serves the contest, the theme's submissions and the judge's ratings, each
+// rating written at its submission's path. A score creates the submission's
+// rating under the next new id and answers 201, or replaces it under the same
+// id and answers 200. A clear answers 204, also when there is nothing to
+// clear.
 export function serveJudging({
   contest = defaultContest,
   submissions,
@@ -130,28 +128,37 @@ export function serveJudging({
     );
   };
 
-  const deleteRating = (id: number) => (config: InternalAxiosRequestConfig) => {
-    api.deletes.push(id);
-    return answer(() => {
-      if (api.writeStatus !== null) throw httpError(config, api.writeStatus);
-      const found = [...stored.values()].find((saved) => saved.id === id);
-      if (!found) throw httpError(config, 404);
-      stored.delete(found.submission);
-      return withStatus(204, '');
-    });
-  };
-  const ratingIds = [
-    ...ratings.map((stored) => stored.id),
-    ...Array.from(
-      { length: lastNewRatingId - firstNewRatingId + 1 },
-      (_, index) => firstNewRatingId + index,
-    ),
-  ];
+  const putRating =
+    (submissionId: number) => (config: InternalAxiosRequestConfig) => {
+      const data: unknown = JSON.parse(String(config.data));
+      if (!isScore(data)) throw new Error(`Unexpected score: ${config.data}`);
+      api.saves.push({ submission: submissionId, rating: data.rating });
+      return answer(() => {
+        if (api.writeStatus !== null) throw httpError(config, api.writeStatus);
+        const previous = stored.get(submissionId);
+        const saved = rating(
+          previous?.id ?? nextId++,
+          submissionId,
+          data.rating,
+        );
+        stored.set(submissionId, saved);
+        return previous ? saved : withStatus(201, saved);
+      });
+    };
+  const deleteRating =
+    (submissionId: number) => (config: InternalAxiosRequestConfig) => {
+      api.deletes.push(submissionId);
+      return answer(() => {
+        if (api.writeStatus !== null) throw httpError(config, api.writeStatus);
+        stored.delete(submissionId);
+        return withStatus(204, '');
+      });
+    };
 
   const adapter = serveApi({
     [`GET /contests/${contest.id}`]: () => contest,
-    'GET /judge/submission': () => page(submissions),
-    'GET /rating': (config, url) => {
+    'GET /judging/submissions': () => page(submissions),
+    'GET /judging/ratings': (config, url) => {
       if (url.searchParams.has('theme')) {
         return read(
           api.holdThemeReads,
@@ -175,24 +182,11 @@ export function serveJudging({
         (answer) => heldReads.push({ submissionId, answer }),
       );
     },
-    'POST /rating': (config) => {
-      const data: unknown = JSON.parse(String(config.data));
-      if (!isScore(data)) throw new Error(`Unexpected score: ${config.data}`);
-      api.saves.push(data);
-      return answer(() => {
-        if (api.writeStatus !== null) throw httpError(config, api.writeStatus);
-        const previous = stored.get(data.submission);
-        const saved = rating(
-          previous?.id ?? nextId++,
-          data.submission,
-          data.rating,
-        );
-        stored.set(data.submission, saved);
-        return saved;
-      });
-    },
     ...Object.fromEntries(
-      ratingIds.map((id) => [`DELETE /rating/${id}`, deleteRating(id)]),
+      submissions.flatMap(({ id }) => [
+        [`PUT /judging/ratings/${id}`, putRating(id)],
+        [`DELETE /judging/ratings/${id}`, deleteRating(id)],
+      ]),
     ),
   });
 

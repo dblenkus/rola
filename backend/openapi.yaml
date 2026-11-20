@@ -155,9 +155,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedInstitutionList'
           description: ''
-  /api/v1/judge/contest:
+  /api/v1/judging/contests:
     get:
-      operationId: judge_contest_list
+      operationId: judging_contests_list
       description: List contests assigned to the requesting judge.
       parameters:
       - name: page
@@ -173,7 +173,7 @@ paths:
         schema:
           type: integer
       tags:
-      - judge
+      - judging
       security:
       - tokenAuth: []
       responses:
@@ -183,9 +183,106 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedJudgeContestList'
           description: ''
-  /api/v1/judge/submission:
+  /api/v1/judging/ratings:
     get:
-      operationId: judge_submission_list
+      operationId: judging_ratings_list
+      description: List the caller's ratings and set the caller's rating of a submission.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: submission
+        schema:
+          type: integer
+      - in: query
+        name: theme
+        schema:
+          type: integer
+      tags:
+      - judging
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRatingList'
+          description: ''
+  /api/v1/judging/ratings/{submission}:
+    put:
+      operationId: judging_ratings_update
+      description: |-
+        Set the caller's rating of a submission, creating it if needed.
+
+        Answers 201 when the rating is created and 200 when it existed, 404
+        when the caller cannot rate the submission as a judge, and 403 once
+        the contest's results are published.
+      parameters:
+      - in: path
+        name: submission
+        schema:
+          type: integer
+        description: The id of the submission that the rating is for.
+        required: true
+      tags:
+      - judging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+          description: The caller's rating, replaced.
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+          description: The caller's rating, created.
+    delete:
+      operationId: judging_ratings_destroy
+      description: |-
+        Clear the caller's rating of a submission, if there is one.
+
+        Answers 204 whether or not the rating existed, and otherwise as the
+        PUT: 404 when the caller cannot rate the submission as a judge, and
+        403 once the contest's results are published.
+      parameters:
+      - in: path
+        name: submission
+        schema:
+          type: integer
+        description: The id of the submission that the rating is for.
+        required: true
+      tags:
+      - judging
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: The caller has no rating of the submission.
+  /api/v1/judging/submissions:
+    get:
+      operationId: judging_submissions_list
       description: List paid submissions assigned to an active judge.
       parameters:
       - name: page
@@ -205,7 +302,7 @@ paths:
         schema:
           type: integer
       tags:
-      - judge
+      - judging
       security:
       - tokenAuth: []
       responses:
@@ -324,157 +421,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Payment'
           description: The set's payment, created.
-  /api/v1/rating:
+  /api/v1/results/submissions:
     get:
-      operationId: rating_list
-      description: API viewset for Rating objects.
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - in: query
-        name: submission
-        schema:
-          type: integer
-      - in: query
-        name: theme
-        schema:
-          type: integer
-      tags:
-      - rating
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedRatingList'
-          description: ''
-    post:
-      operationId: rating_create
-      description: API viewset for Rating objects.
-      tags:
-      - rating
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rating'
-          description: ''
-  /api/v1/rating/{id}:
-    get:
-      operationId: rating_retrieve
-      description: API viewset for Rating objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this rating.
-        required: true
-      tags:
-      - rating
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rating'
-          description: ''
-    put:
-      operationId: rating_update
-      description: API viewset for Rating objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this rating.
-        required: true
-      tags:
-      - rating
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rating'
-          description: ''
-    patch:
-      operationId: rating_partial_update
-      description: API viewset for Rating objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this rating.
-        required: true
-      tags:
-      - rating
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedRatingRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rating'
-          description: ''
-    delete:
-      operationId: rating_destroy
-      description: API viewset for Rating objects.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this rating.
-        required: true
-      tags:
-      - rating
-      security:
-      - tokenAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/results/submission:
-    get:
-      operationId: results_submission_list
+      operationId: results_submissions_list
       description: List and retrieve accepted, paid submissions after publication.
       parameters:
       - name: ordering
@@ -511,9 +460,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSubmissionResultsList'
           description: ''
-  /api/v1/results/submission/{id}:
+  /api/v1/results/submissions/{id}:
     get:
-      operationId: results_submission_retrieve
+      operationId: results_submissions_retrieve
       description: List and retrieve accepted, paid submissions after publication.
       parameters:
       - in: path
@@ -534,9 +483,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubmissionResults'
           description: ''
-  /api/v1/results/theme/{id}:
+  /api/v1/results/themes/{id}:
     get:
-      operationId: results_theme_retrieve
+      operationId: results_themes_retrieve
       description: Retrieve published results for a theme.
       parameters:
       - in: path
@@ -1404,16 +1353,6 @@ components:
       required:
       - new_password
       - token
-    PatchedRatingRequest:
-      type: object
-      description: Serializer for Rating objects.
-      properties:
-        submission:
-          type: integer
-        rating:
-          type: integer
-          maximum: 10
-          minimum: 1
     Payment:
       type: object
       description: Serialize a payment, whose submission set the request path names.
@@ -1450,7 +1389,7 @@ components:
       - paid
     Rating:
       type: object
-      description: Serializer for Rating objects.
+      description: Serialize a judge's rating, whose submission the request path names.
       properties:
         id:
           type: integer
@@ -1465,6 +1404,7 @@ components:
           readOnly: true
         submission:
           type: integer
+          readOnly: true
         rating:
           type: integer
           maximum: 10
@@ -1477,17 +1417,14 @@ components:
       - submission
     RatingRequest:
       type: object
-      description: Serializer for Rating objects.
+      description: Serialize a judge's rating, whose submission the request path names.
       properties:
-        submission:
-          type: integer
         rating:
           type: integer
           maximum: 10
           minimum: 1
       required:
       - rating
-      - submission
     RequestPasswordResetRequest:
       type: object
       description: Request recovery without exposing whether an account exists.
@@ -1595,10 +1532,11 @@ components:
           type: boolean
           description: Report whether the submission reached the acceptance threshold.
           readOnly: true
-        rating:
+        score:
           type: integer
           readOnly: true
           nullable: true
+          description: The total of the submission's ratings, or null without any.
         reward_kind:
           type: string
           nullable: true
@@ -1615,9 +1553,9 @@ components:
       - files
       - id
       - modified
-      - rating
       - reward_kind
       - reward_label
+      - score
       - theme
     SubmissionSet:
       type: object
@@ -1728,7 +1666,7 @@ components:
           title: Number of photos
         submission_count:
           type: integer
-          description: Count submissions in this theme.
+          description: Count the paid submissions in this theme.
           readOnly: true
         submissions:
           type: array

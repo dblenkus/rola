@@ -39,7 +39,7 @@ function renderPage() {
 }
 
 it('heads the page with one title and names the document after it', async () => {
-  serveApi({ 'GET /judge/contest': () => page([juryContest]) });
+  serveApi({ 'GET /judging/contests': () => page([juryContest]) });
   renderPage();
 
   expect(
@@ -53,7 +53,7 @@ it('heads the page with one title and names the document after it', async () => 
 });
 
 it('shows each theme with its scoring progress and a link to its gallery', async () => {
-  serveApi({ 'GET /judge/contest': () => page([juryContest]) });
+  serveApi({ 'GET /judging/contests': () => page([juryContest]) });
   renderPage();
 
   const [nature, city] = await screen.findAllByRole('listitem');
@@ -81,7 +81,7 @@ it('shows each theme with its scoring progress and a link to its gallery', async
 });
 
 it('says so when the judge has no contests', async () => {
-  serveApi({ 'GET /judge/contest': () => page([]) });
+  serveApi({ 'GET /judging/contests': () => page([]) });
   renderPage();
 
   expect(

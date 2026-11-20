@@ -126,7 +126,7 @@ it('turns the shortcuts off and keeps the buttons working', async () => {
   await waitFor(() => expect(pressedScore()).toBe(8));
   await user.keyboard('{Backspace}');
   await settle();
-  expect(api.writes()).toEqual(['POST /rating']);
+  expect(api.writes()).toEqual(['PUT /judging/ratings/12']);
   expect(pressedScore()).toBe(8);
 
   await user.click(screen.getByRole('button', { name: 'Clear' }));

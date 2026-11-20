@@ -52,11 +52,11 @@ def test_result_pages_ordered_by_tied_scores_return_each_submission_once(scores)
     page = 1
     while page:
         response = client.get(
-            "/api/v1/results/submission",
-            {"ordering": "-rating_sum", "page_size": 7, "page": page},
+            "/api/v1/results/submissions",
+            {"ordering": "-score", "page_size": 7, "page": page},
         )
         assert response.status_code == 200, response.data
-        rows.extend((row["rating"], row["id"]) for row in response.data["results"])
+        rows.extend((row["score"], row["id"]) for row in response.data["results"])
         page = page + 1 if response.data["next"] else None
 
     assert rows == sorted(
@@ -66,7 +66,7 @@ def test_result_pages_ordered_by_tied_scores_return_each_submission_once(scores)
 
 
 def test_theme_results_list_submissions_by_primary_key(world, scores):
-    response = APIClient().get(f"/api/v1/results/theme/{world.theme.pk}")
+    response = APIClient().get(f"/api/v1/results/themes/{world.theme.pk}")
 
     assert response.status_code == 200, response.data
     assert [row["id"] for row in response.data["submissions"]] == sorted(scores)

@@ -69,8 +69,8 @@ def _assert_submission(data, entry, email, *, with_author=True):
         "contests",
         "submissions",
         "submission-sets",
-        "judge/contest",
-        "judge/submission",
+        "judging/contests",
+        "judging/submissions",
     ],
 )
 def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
@@ -89,7 +89,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
         query_counts.append(len(queries))
         data = response.data["results"]
 
-        if endpoint in ("contests", "judge/contest"):
+        if endpoint in ("contests", "judging/contests"):
             assert [item["id"] for item in data] == [world.contest.pk]
             themes = data[0]["themes"]
             assert [theme["id"] for theme in themes] == [
@@ -100,7 +100,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 0,
                 *[1 for _ in entries],
             ]
-            if endpoint == "judge/contest":
+            if endpoint == "judging/contests":
                 assert [theme["rating_count"] for theme in themes] == [
                     0,
                     *[1 for _ in entries],
@@ -117,7 +117,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 _assert_submission(item["submissions"][0], entry, world.owner.email)
         else:
             expected = entries
-            if endpoint == "judge/submission":
+            if endpoint == "judging/submissions":
                 expected = sorted(
                     entries,
                     key=lambda entry: hashlib.sha1(
@@ -129,7 +129,7 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
             ]
             for item, entry in zip(data, expected, strict=True):
                 _assert_submission(
-                    item, entry, None, with_author=endpoint != "judge/submission"
+                    item, entry, None, with_author=endpoint != "judging/submissions"
                 )
 
     assert query_counts[1] == query_counts[0]
@@ -156,7 +156,7 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
         )
     empty = Theme.objects.create(contest=world.contest, title="Empty", max_photos=4)
 
-    response = world.client.get("/api/v1/judge/contest")
+    response = world.client.get("/api/v1/judging/contests")
     assert response.status_code == 200, response.data
     themes = response.data["results"][0]["themes"]
     assert [theme["id"] for theme in themes] == [world.theme.pk, empty.pk]
@@ -191,8 +191,8 @@ def test_published_result_queries_do_not_grow_with_submissions(world):
     world.contest.save()
     client = APIClient()
     rows_key = {
-        "/api/v1/results/submission": "results",
-        f"/api/v1/results/theme/{world.theme.pk}": "submissions",
+        "/api/v1/results/submissions": "results",
+        f"/api/v1/results/themes/{world.theme.pk}": "submissions",
     }
     query_counts = {url: [] for url in rows_key}
     created = 0

@@ -93,6 +93,7 @@ module = [
     "rola.entries.photos",
     "rola.entries.archive",
     "rola.payments.services",
+    "rola.judging.services",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true

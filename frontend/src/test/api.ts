@@ -46,6 +46,50 @@ export function serveApi(handlers: Record<string, Handler>) {
   return adapter;
 }
 
+export interface RatingSave {
+  submission: number;
+  body: unknown;
+}
+
+// Answers the judge's rating saves of the given submissions at their own
+// paths, as the server does: 201 with the rating when the save creates it,
+// 200 when it replaces one. `handle` sees each save with that answer and
+// returns the handler result, so it can hold, replace or fail it.
+export function ratingSaves(
+  submissionIds: number[],
+  handle: (
+    save: RatingSave,
+    answer: unknown,
+    config: InternalAxiosRequestConfig,
+  ) => unknown = (_save, answer) => answer,
+): Record<string, Handler> {
+  const rated = new Set<number>();
+  return Object.fromEntries(
+    submissionIds.map((submission) => [
+      `PUT /judging/ratings/${submission}`,
+      (config: InternalAxiosRequestConfig) => {
+        const body: unknown = JSON.parse(String(config.data));
+        const value =
+          typeof body === 'object' && body !== null && 'rating' in body
+            ? body.rating
+            : undefined;
+        const rating = {
+          id: submission,
+          created: '2026-01-01T00:00:00Z',
+          modified: '2026-01-01T00:00:00Z',
+          submission,
+          rating: value,
+        };
+        const answer = rated.has(submission) ? rating : withStatus(201, rating);
+        // A save that `handle` fails leaves the submission unrated.
+        const result = handle({ submission, body }, answer, config);
+        rated.add(submission);
+        return result;
+      },
+    ]),
+  );
+}
+
 export function httpError(
   config: InternalAxiosRequestConfig,
   status: number,

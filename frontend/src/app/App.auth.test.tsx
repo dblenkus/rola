@@ -185,12 +185,12 @@ describe('sessions', () => {
           expires: '2999-01-01T00:00:00Z',
         }),
       'GET /contests/1': () => contest,
-      'GET /judge/submission': () =>
+      'GET /judging/submissions': () =>
         page([
           jurySubmission(11, 'First photograph'),
           jurySubmission(12, 'Second'),
         ]),
-      'GET /rating': () => page([]),
+      'GET /judging/ratings': () => page([]),
     });
     const user = userEvent.setup();
     open('/judge/contest/1/theme/2/rate?submission=12');

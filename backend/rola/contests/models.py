@@ -36,7 +36,7 @@ class ContestQuerySet(models.QuerySet):
         """
         return self.filter(publish_date__gte=timezone.now())
 
-    def results_unpublished(self):
+    def results_unpublished(self) -> ContestQuerySet:
         """Return contests whose results are not published yet."""
         return self.filter(publish_date__gt=timezone.now())
 

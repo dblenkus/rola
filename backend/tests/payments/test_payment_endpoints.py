@@ -243,11 +243,11 @@ def test_a_payment_set_through_the_api_admits_the_set_to_judging(world, admin):
     Judge.objects.create(judge=world.other, contest=world.contest)
     judge = APIClient()
     judge.force_authenticate(world.other)
-    assert judge.get("/api/v1/judge/submission").json()["results"] == []
+    assert judge.get("/api/v1/judging/submissions").json()["results"] == []
 
     assert put(admin, group.pk, {"paid": True}).status_code == 201
 
-    listed = judge.get("/api/v1/judge/submission").json()["results"]
+    listed = judge.get("/api/v1/judging/submissions").json()["results"]
     assert [row["id"] for row in listed] == [item.pk]
 
 

@@ -1,86 +1,39 @@
 """Serialize ratings, judging lists and published results."""
 
 from drf_spectacular.utils import extend_schema_field
-from rest_framework import exceptions, serializers
+from rest_framework import serializers
 
 from rola.common.serializers import BaseSerializer
 from rola.contests.api.serializers import ContestSerializer as CoreContestSerializer
 from rola.contests.api.serializers import ThemeSerializer as CoreThemeSerializer
-from rola.contests.models import Contest
 from rola.entries.api.serializers import FileSerializer
 from rola.entries.api.serializers import (
     SubmissionSerializer as CoreSubmissionSerializer,
 )
 from rola.entries.models import Author, Submission
-from rola.judging.models import Judge, Rating, SubmissionReward
-from rola.payments.models import PAID_SUBMISSION
+from rola.judging.models import Rating, SubmissionReward
 
 
 class RatingSerializer(BaseSerializer):
-    """Serializer for Rating objects."""
+    """Serialize a judge's rating, whose submission the request path names."""
 
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""
 
         model = Rating
         fields = BaseSerializer.Meta.fields + ["submission", "rating"]
-
-    def create(self, validated_data):
-        """Create or replace the requesting judge's score."""
-        submission = validated_data.pop("submission")
-        try:
-            user = self.context["request"].user
-            judge = Judge.objects.get(judge=user, contest=submission.theme.contest)
-        except Judge.DoesNotExist:
-            raise exceptions.NotAuthenticated(
-                "You don't have permission to rate this contest."
-            ) from None
-
-        rating, _ = Rating.objects.update_or_create(
-            submission=submission, judge=judge, defaults=validated_data
-        )
-
-        return rating
-
-    def validate(self, attrs):
-        """Keep a rating tied to its original, paid submission and active judge."""
-        submission = attrs.get(
-            "submission", self.instance.submission if self.instance else None
-        )
-        if self.instance and submission.pk != self.instance.submission_id:
-            raise serializers.ValidationError(
-                {"submission": "The submission cannot be changed."}
-            )
-        if (
-            submission
-            and not Judge.objects.filter(
-                judge=self.context["request"].user,
-                contest=submission.theme.contest,
-                contest__in=Contest.objects.results_unpublished(),
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                "Only active judges can rate this contest."
-            )
-        # The judging list shows paid submissions only. Checked after the judge,
-        # so other accounts cannot probe whether a submission is paid.
-        if (
-            submission
-            and not Submission.objects.filter(
-                PAID_SUBMISSION, pk=submission.pk
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                {"submission": "Only paid submissions can be rated."}
-            )
-        return attrs
+        read_only_fields = BaseSerializer.Meta.read_only_fields + ["submission"]
 
 
 class JudgeThemeSerializer(CoreThemeSerializer):
     """Serializer for Theme objects."""
 
     rating_count = serializers.SerializerMethodField("get_rating_count")
-    submission_count = serializers.SerializerMethodField("get_submission_count")
+    # Declared again only to describe it: the parent's method reads the
+    # count, which the judging queryset annotates from paid submissions.
+    submission_count = serializers.SerializerMethodField(
+        help_text="Count paid submissions available for judging."
+    )
 
     class Meta(CoreThemeSerializer.Meta):
         """Serializer configuration."""
@@ -89,16 +42,13 @@ class JudgeThemeSerializer(CoreThemeSerializer):
             "rating_count",
         ]
 
-    # The judging contest queryset annotates both counts. Reading them
-    # directly fails loudly if a queryset loses the annotations, instead of
-    # counting each theme again.
+    # The judging contest queryset annotates the rating count, and the paid
+    # submission count that the parent reads. Reading them directly fails
+    # loudly if a queryset loses the annotations, instead of counting each
+    # theme again.
     def get_rating_count(self, theme) -> int:
         """Count ratings submitted by the requesting judge."""
         return theme.rating_count
-
-    def get_submission_count(self, theme) -> int:
-        """Count paid submissions available for judging."""
-        return theme.submission_count
 
 
 class JudgeContestSerializer(CoreContestSerializer):
@@ -164,8 +114,10 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
     reward_label = serializers.CharField(
         source="reward.label", read_only=True, allow_null=True
     )
-    rating = serializers.IntegerField(
-        source="rating_sum", read_only=True, allow_null=True
+    score = serializers.IntegerField(
+        read_only=True,
+        allow_null=True,
+        help_text="The total of the submission's ratings, or null without any.",
     )
 
     class Meta(CoreSubmissionSerializer.Meta):
@@ -173,19 +125,19 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
 
         fields = CoreSubmissionSerializer.Meta.fields + [
             "accepted",
-            "rating",
+            "score",
             "reward_kind",
             "reward_label",
         ]
 
     def _is_accepted(self, submission):
-        if submission.rating_sum is None:
+        if submission.score is None:
             return False
 
         if "accept_threshold" in self.context:
-            return submission.rating_sum >= self.context["accept_threshold"]
+            return submission.score >= self.context["accept_threshold"]
 
-        return submission.rating_sum >= submission.theme.results.accepted_threshold
+        return submission.score >= submission.theme.results.accepted_threshold
 
     def get_accepted(self, submission) -> bool:
         """Report whether the submission reached the acceptance threshold."""
@@ -236,7 +188,7 @@ class ThemeSubmissionResultsSerializer(SubmissionResultsSerializer):
         fields = [
             field
             for field in SubmissionResultsSerializer.Meta.fields
-            if field != "rating"
+            if field != "score"
         ]
 
 
@@ -251,6 +203,12 @@ class ThemeResultsSerializer(CoreThemeSerializer):
         fields = CoreThemeSerializer.Meta.fields + [
             "submissions",
         ]
+
+    def get_submission_count(self, theme) -> int:
+        """Count the paid submissions in this theme."""
+        # The theme results queryset prefetches the paid submissions, so
+        # counting them issues no query.
+        return len(theme.submission_set.all())
 
     @extend_schema_field(ThemeSubmissionResultsSerializer(many=True))
     def get_submissions(self, theme):
