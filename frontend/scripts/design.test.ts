@@ -5,6 +5,11 @@ import { describe, expect, it } from 'vitest';
 const DESIGN = new URL('../src/design/', import.meta.url);
 const components = readFileSync(new URL('components.css', DESIGN), 'utf8');
 const tokens = readFileSync(new URL('tokens.css', DESIGN), 'utf8');
+const layers = readFileSync(new URL('layers.css', DESIGN), 'utf8');
+const main = readFileSync(
+  new URL('../src/app/main.tsx', import.meta.url),
+  'utf8',
+);
 
 // Set by the component that uses the class, as components.css's Strip section
 // says: a percentage and, for segmented and ticked strips, a segment count.
@@ -27,6 +32,10 @@ describe('the vendored components.css', () => {
     expect(components).not.toMatch(/@import/);
   });
 
+  it('declares no cascade layers of its own', () => {
+    expect(components).not.toMatch(/@layer/);
+  });
+
   it('loads nothing from Google Fonts', () => {
     expect(components).not.toMatch(/fonts\.googleapis/);
   });
@@ -37,5 +46,29 @@ describe('the vendored components.css', () => {
       (name) => !available.has(name),
     );
     expect(missing.sort()).toEqual(CONSUMER_SET);
+  });
+});
+
+describe('the cascade layers', () => {
+  it('put tokens.css and components.css in design-system, above base', () => {
+    const statements = Array.from(
+      layers.matchAll(/@(?:layer|import)[^;]*;/g),
+      (m) => m[0].replace(/\s+/g, ' '),
+    );
+    expect(statements).toEqual([
+      '@layer base, design-system;',
+      "@import url('./tokens.css') layer(design-system);",
+      "@import url('./components.css') layer(design-system);",
+    ]);
+  });
+
+  it('come first in main.tsx, which imports no layered file directly', () => {
+    const imports = Array.from(
+      main.matchAll(/^import '([^']+\.css)';$/gm),
+      (m) => m[1],
+    );
+    expect(imports[0]).toBe('../design/layers.css');
+    expect(imports).not.toContain('../design/tokens.css');
+    expect(imports).not.toContain('../design/components.css');
   });
 });

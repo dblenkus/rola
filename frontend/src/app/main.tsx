@@ -1,8 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
+// The layers first (src/design/layers.css), which bring tokens.css and
+// components.css.
+import '../design/layers.css';
 import '../design/fonts.css';
-import '../design/tokens.css';
-import '../design/components.css';
 import '../design/app.css';
 import './i18n/config';
 import App from './App';

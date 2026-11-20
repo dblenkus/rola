@@ -2,6 +2,14 @@
  * App-wide rules that belong to no component. Component styles come from
  * components.css (vendored) and from a CSS file beside each component.
  *
+ * Cascade layers (layers.css): the element defaults below are in the base
+ * layer, tokens.css and components.css in the design-system layer above it.
+ * Every other rule here, the CSS beside the kit's components, the shell's
+ * and the features' are unlayered, and unlayered rules beat both layers
+ * whatever their specificity or order, so an app rule that targets an rl-
+ * class or an element wins over the vendored rules in the production build's
+ * order too.
+ *
  * Breakpoints (the tokens have none; custom media need a build step, so
  * write the queries out):
  *   phone: @media (width < 40rem)
@@ -35,38 +43,94 @@
   }
 }
 
-html {
+/*
+ * Element defaults and resets, in the lowest layer: below the design
+ * system's rules (main.tsx and layers.css), as plain element rules should be.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  /* The app fills the screen as a column, so a footer can sit at the bottom.
+     dvh follows the phone's collapsing browser bars. */
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  /* Links are ink and go text-muted on hover; the browser's underline stays,
+     which marks them in running text. A link styled by a class (a button, an
+     app bar link) keeps that class's colours, hovered too. */
+  a {
+    color: var(--text);
+  }
+
+  a:hover {
+    color: var(--text-muted);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /*
+   * Every change is instant. Durations go to near zero instead of `none` so
+   * that animationend and transitionend still fire for code that waits on them.
+   * !important in the lowest layer outranks every other style sheet's
+   * declaration, layered or not, !important or not.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+ * Figures. The design system's root rule sets tabular figures on body, and
+ * components.css repeats them on several classes (rl-btn, rl-field__input,
+ * rl-tabs__tab, rl-appbar). Inter's tabular feature also gives the hyphen
+ * and other punctuation a figure's width, so "E-poštni naslov" reads
+ * "E - poštni naslov". Running text therefore keeps Inter's normal figures
+ * and spacing; the kit's and the shell's CSS narrow the classes the same
+ * way. Tabular figures stay only where figures line up or change in place:
+ * the rules below, the .tabular-nums utility, and the tables (Table.css).
+ * DM Mono is monospaced already. These rules are unlayered, so they beat the
+ * design-system layer's rules whatever the order the build links the files in.
+ */
+body {
+  font-variant-numeric: normal;
+}
+
+.tabular-nums,
+.rl-scorepad,
+.rl-score-badge,
+.rl-photo-label__position,
+.rl-appbar__stat,
+.rl-tabs__count,
+.rl-strip-labels,
+.rl-contest-row__step,
+.rl-contest-row__date,
+.rl-contest-row__date-value,
+.rl-contest-head__deadline,
+.rl-judge-row__progress {
   font-variant-numeric: tabular-nums;
-  -webkit-text-size-adjust: 100%;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-/* The app fills the screen as a column, so a footer can sit at the bottom.
-   dvh follows the phone's collapsing browser bars. */
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-}
-
-/* Links are ink and go text-muted on hover; the browser's underline stays,
-   which marks them in running text. */
-a {
-  color: var(--text);
-}
-
-a:hover {
-  color: var(--text-muted);
-}
-
-img {
-  max-width: 100%;
-  height: auto;
 }
 
 /* Hidden on screen, read by assistive technology. */
@@ -80,23 +144,6 @@ img {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
-}
-
-/*
- * Every change is instant. Durations go to near zero instead of `none` so
- * that animationend and transitionend still fire for code that waits on them.
- */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
-    scroll-behavior: auto !important;
-  }
 }
 
 /*
