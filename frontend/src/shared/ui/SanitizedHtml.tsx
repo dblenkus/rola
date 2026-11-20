@@ -11,10 +11,11 @@ purify.addHook('afterSanitizeAttributes', (node) => {
 });
 
 // Shows HTML that the server supplies, such as a contest's notice, without
-// anything in it that could run script.
+// anything in it that could run script, in the prose styles of app.css.
 export default function SanitizedHtml({ html }: { html: string }) {
   return (
     <div
+      className="ui-prose"
       dangerouslySetInnerHTML={{
         __html: purify.sanitize(html, { ADD_ATTR: ['target'] }),
       }}

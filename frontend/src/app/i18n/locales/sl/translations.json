@@ -115,5 +115,7 @@
   "upload_succeeded": "Tvoje fotografije za natečaj {{contest}} so naložene.",
   "upload_thanks": "Hvala za naložene fotografije!",
   "view": "Ogled",
-  "yes": "Da"
+  "yes": "Da",
+  "ui_loading": "Nalaganje",
+  "ui_skip_to_content": "Preskoči na vsebino"
 }

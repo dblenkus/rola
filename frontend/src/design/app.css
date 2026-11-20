@@ -8,6 +8,33 @@
  *   wide:  @media (width >= 64rem)
  */
 
+:root {
+  /* The device's safe areas (notch, home indicator, rounded corners), for
+     the bars and the page margins. They are 0 outside an installed app or
+     without viewport-fit=cover. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Page margins: 48 px wide, 24 px between, 16 px on phones. */
+  --ui-page-margin: var(--space-6);
+}
+
+/* wide */
+@media (width >= 64rem) {
+  :root {
+    --ui-page-margin: var(--space-12);
+  }
+}
+
+/* phone */
+@media (width < 40rem) {
+  :root {
+    --ui-page-margin: var(--space-4);
+  }
+}
+
 html {
   font-variant-numeric: tabular-nums;
   -webkit-text-size-adjust: 100%;
@@ -17,6 +44,29 @@ html {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+/* The app fills the screen as a column, so a footer can sit at the bottom.
+   dvh follows the phone's collapsing browser bars. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* Links are ink and go text-muted on hover; the browser's underline stays,
+   which marks them in running text. */
+a {
+  color: var(--text);
+}
+
+a:hover {
+  color: var(--text-muted);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Hidden on screen, read by assistive technology. */
@@ -46,5 +96,138 @@ html {
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Organiser-written HTML (SanitizedHtml), such as a contest's notice. Its
+ * headings sit under the page's own h1, so they start at the h2 style.
+ */
+.ui-prose {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.ui-prose > :first-child {
+  margin-top: 0;
+}
+
+.ui-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.ui-prose :where(p, ul, ol, dl, blockquote, figure, pre, table) {
+  margin: 0 0 var(--space-4);
+}
+
+.ui-prose :where(h1, h2, h3, h4, h5, h6) {
+  margin: var(--space-6) 0 var(--space-2);
+  font-weight: 600;
+}
+
+/* h2 (24 / 32) */
+.ui-prose h1 {
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.015em;
+}
+
+/* h2-mobile (20 / 28) */
+.ui-prose h2 {
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+}
+
+/* h3 (18 / 24) */
+.ui-prose h3 {
+  font-size: 18px;
+  line-height: 24px;
+}
+
+/* h4 (15 / 20) */
+.ui-prose :where(h4, h5, h6) {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.ui-prose a {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.ui-prose a:hover {
+  color: var(--text-muted);
+}
+
+.ui-prose strong,
+.ui-prose b {
+  font-weight: 600;
+}
+
+.ui-prose :where(ul, ol) {
+  padding-left: var(--space-6);
+}
+
+.ui-prose li + li {
+  margin-top: var(--space-1);
+}
+
+.ui-prose blockquote {
+  padding-left: var(--space-4);
+  border-left: var(--stroke-hairline) solid var(--line);
+  color: var(--text-muted);
+}
+
+.ui-prose hr {
+  margin: var(--space-6) 0;
+  border: 0;
+  border-top: var(--stroke-hairline) solid var(--line);
+}
+
+.ui-prose :where(code, pre) {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.ui-prose pre {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Tables as body-dense rows under hairlines, as in the app's own tables. */
+.ui-prose table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.ui-prose :where(th, td) {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.ui-prose th {
+  font-weight: 500;
+}
+
+.ui-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-none);
+}
+
+/* phone: a wide table scrolls inside its own box instead of the page. */
+@media (width < 40rem) {
+  .ui-prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
   }
 }

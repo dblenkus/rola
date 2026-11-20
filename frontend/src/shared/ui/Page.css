@@ -1,0 +1,115 @@
+/*
+ * The page column: centred, at most --ui-page-max wide inside the page
+ * margins (app.css sets --ui-page-margin per breakpoint), clear of the
+ * notch and the rounded corners in landscape.
+ */
+.ui-page {
+  --ui-page-max: 1120px;
+  width: 100%;
+  max-width: calc(var(--ui-page-max) + 2 * var(--ui-page-margin));
+  margin-inline: auto;
+  padding-block: var(--space-8) var(--space-16);
+  padding-left: max(var(--ui-page-margin), var(--safe-left));
+  padding-right: max(var(--ui-page-margin), var(--safe-right));
+}
+
+.ui-page--narrow {
+  --ui-page-max: 400px;
+}
+
+.ui-page--full {
+  max-width: none;
+}
+
+/* Title and actions share a bottom line; the lead runs under both. */
+.ui-page__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title actions'
+    'lead lead';
+  align-items: end;
+  column-gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.ui-page__head--empty {
+  margin-bottom: 0;
+}
+
+/* The type of h1 (32 / 40) between the breakpoints; display and h2-mobile
+   below. The values repeat the type-style classes, which a media query
+   cannot switch. */
+.ui-page__title {
+  grid-area: title;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+}
+
+/* Focus moves here on navigation; the ring shows only for the keyboard. */
+.ui-page__title:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.ui-page__lead {
+  grid-area: lead;
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+}
+
+.ui-page__actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* wide */
+@media (width >= 64rem) {
+  .ui-page {
+    padding-block: var(--space-12) var(--space-16);
+  }
+
+  .ui-page__title {
+    font-size: 48px;
+    line-height: 52px;
+    letter-spacing: -0.025em;
+  }
+}
+
+/* phone */
+@media (width < 40rem) {
+  .ui-page {
+    padding-block: var(--space-6) var(--space-12);
+  }
+
+  .ui-page__head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'title'
+      'lead'
+      'actions';
+    margin-bottom: var(--space-6);
+  }
+
+  .ui-page__head--empty {
+    margin-bottom: 0;
+  }
+
+  .ui-page__title {
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+  }
+
+  .ui-page__actions {
+    margin-top: var(--space-4);
+  }
+}

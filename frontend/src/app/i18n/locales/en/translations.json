@@ -111,5 +111,7 @@
   "upload_succeeded": "Your photographs for {{contest}} were uploaded.",
   "upload_thanks": "Thank you for uploading photos!",
   "view": "View",
-  "yes": "Yes"
+  "yes": "Yes",
+  "ui_loading": "Loading",
+  "ui_skip_to_content": "Skip to content"
 }

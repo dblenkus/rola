@@ -1,0 +1,84 @@
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text);
+}
+
+.ui-table__cell {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  vertical-align: baseline;
+  overflow-wrap: anywhere;
+}
+
+.ui-table__head .ui-table__cell {
+  padding-block: var(--space-2);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* A row's head (a name or title) keeps body-dense at 500. */
+.ui-table__body th.ui-table__cell {
+  font-weight: 500;
+}
+
+.ui-table__cell--start {
+  text-align: start;
+}
+
+.ui-table__cell--center {
+  text-align: center;
+}
+
+.ui-table__cell--end {
+  text-align: end;
+}
+
+/*
+ * phone: every row is a block under a hairline and every cell a line in it,
+ * its column label before its content. The head row stays in the
+ * accessibility tree; the explicit roles keep cells tied to their columns.
+ */
+@media (width < 40rem) {
+  .ui-table,
+  .ui-table__body,
+  .ui-table__row,
+  .ui-table__cell {
+    display: block;
+  }
+
+  .ui-table__head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ui-table__body .ui-table__row {
+    padding-block: var(--space-3);
+    border-bottom: var(--stroke-hairline) solid var(--line);
+  }
+
+  .ui-table__body .ui-table__cell {
+    padding: var(--space-1) var(--space-4);
+    border-bottom: 0;
+    text-align: start;
+  }
+
+  /* The label in mono-label (11 / 16, DM Mono), text-muted. The empty
+     alternative text keeps screen readers from reading it a second time
+     after the column head. */
+  .ui-table__body .ui-table__cell[data-label]::before {
+    content: attr(data-label);
+    content: attr(data-label) / '';
+    display: block;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 400;
+  }
+}
