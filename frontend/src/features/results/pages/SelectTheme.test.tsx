@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
 import { serveApi } from '../../../test/api';
@@ -22,7 +22,7 @@ it('lists the contest themes with a link to each one', async () => {
     }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Autumn photographs · Rola');
+  await waitFor(() => expect(document.title).toBe('Autumn photographs · Rola'));
 
   const rows = screen.getAllByRole('row');
   expect(rows.map((row) => row.textContent)).toEqual(['NatureView']);

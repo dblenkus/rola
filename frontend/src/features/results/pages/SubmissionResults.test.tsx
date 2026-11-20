@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
 import { serveApi } from '../../../test/api';
@@ -60,7 +60,7 @@ it('shows the photo named by its title, with the wall label', async () => {
   expect(heading).not.toHaveClass('visually-hidden');
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(screen.getAllByText('Bridges')).toEqual([heading]);
-  expect(document.title).toBe('Bridges · Rola');
+  await waitFor(() => expect(document.title).toBe('Bridges · Rola'));
   expect(screen.getByText('Ana Novak (SI)')).toBeInTheDocument();
   expect(screen.getByText('Morning fog over the river.')).toBeInTheDocument();
   const marks = document.querySelectorAll('.rl-award');
@@ -99,5 +99,5 @@ it('names an untitled photo', async () => {
   expect(
     await screen.findByRole('img', { name: 'Untitled' }),
   ).toBeInTheDocument();
-  expect(document.title).toBe('Untitled · Rola');
+  await waitFor(() => expect(document.title).toBe('Untitled · Rola'));
 });

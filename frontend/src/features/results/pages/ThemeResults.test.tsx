@@ -89,7 +89,7 @@ it('titles the page with the theme and the contest', async () => {
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   expect(screen.getByText('Autumn photographs')).toBeInTheDocument();
-  expect(document.title).toBe('Nature · Rola');
+  await waitFor(() => expect(document.title).toBe('Nature · Rola'));
 });
 
 it('marks awarded entries with the award and accepted ones with a check', async () => {

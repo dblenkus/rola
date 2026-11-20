@@ -1,4 +1,9 @@
-import { getDefaultNormalizer, render, screen } from '@testing-library/react';
+import {
+  getDefaultNormalizer,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import i18next from 'i18next';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +49,7 @@ describe('contest details', () => {
     });
     expect(title).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-    expect(document.title).toBe(`${contest.title} · Rola`);
+    await waitFor(() => expect(document.title).toBe(`${contest.title} · Rola`));
   });
 
   it('gives the closing date and the days left under the title', async () => {

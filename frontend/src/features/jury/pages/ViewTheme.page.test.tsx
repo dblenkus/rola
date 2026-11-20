@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
@@ -53,7 +53,7 @@ it('heads the gallery with the theme and how many photographs are scored', async
     await screen.findByRole('heading', { level: 1, name: 'Nature' }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Nature · Rola');
+  await waitFor(() => expect(document.title).toBe('Nature · Rola'));
   expect(screen.getByText('1 / 3')).toBeVisible();
   const strip = screen.getByRole('progressbar', { name: 'Scored 1 of 3' });
   expect(strip).toHaveAttribute('aria-valuenow', '1');

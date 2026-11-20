@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
 import '../../../app/i18n/config';
@@ -39,7 +39,7 @@ it('heads the overview with one title and names the document after it', async ()
     await screen.findByRole('heading', { level: 1, name: 'Results overview' }),
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-  expect(document.title).toBe('Results overview · Rola');
+  await waitFor(() => expect(document.title).toBe('Results overview · Rola'));
   expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
