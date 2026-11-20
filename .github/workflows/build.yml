@@ -164,7 +164,6 @@ jobs:
           context: ${{ matrix.component }}
           target: production
           build-args: |
-            VITE_PAYPAL_CLIENT_ID=ci-fake-paypal-client-id
             VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
 
   compose:
@@ -181,7 +180,6 @@ jobs:
           ROLA_FRONTEND_URL=https://localhost
           ROLA_POSTGRESQL_PASSWORD=ci-only-fake-password
           ROLA_NUM_PROXIES=2
-          VITE_PAYPAL_CLIENT_ID=ci-fake-paypal-client-id
           VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
           EOF
           docker compose -f compose.production.yaml config --quiet

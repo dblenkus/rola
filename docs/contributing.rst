@@ -32,10 +32,9 @@ http://localhost:8080/django-admin/:
    docker compose exec backend python manage.py createsuperuser
 
 Account emails are printed to the backend log (``docker compose logs
-backend``). The PayPal buttons and Sentry reporting stay off unless ``.env``
-sets ``VITE_PAYPAL_CLIENT_ID`` or ``VITE_SENTRY_DSN``. Put only these two in a
-development ``.env``: the ``COMPOSE_FILE`` line of ``.env.example`` selects
-the production stack.
+backend``). Sentry reporting stays off unless ``.env`` sets
+``VITE_SENTRY_DSN``. Put only this variable in a development ``.env``: the
+``COMPOSE_FILE`` line of ``.env.example`` selects the production stack.
 
 The images hold the installed dependencies. After ``backend/uv.lock``
 changes, rebuild with ``docker compose up --build --wait``. After
@@ -173,7 +172,7 @@ tooling, which has no fix yet.
 The API contract job regenerates both generated files (see `API contract`_)
 and fails if either differs from the committed one; ``make api-contract``
 does the same. The image job builds the development and production targets
-of both Dockerfiles, with fake values for the frontend's build arguments,
+of both Dockerfiles, with a fake value for the frontend's build argument,
 and pushes nothing. The Compose job runs ``docker compose config`` on
 ``compose.yaml``, on ``compose.production.yaml``, and on the production file
 merged with ``compose.tunnel.yaml``, where it also checks what the merge

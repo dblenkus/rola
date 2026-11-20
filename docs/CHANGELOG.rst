@@ -193,11 +193,10 @@ Deployment changes
   ``ROLA_SMTP_HOST`` and ``ROLA_SMTP_PORT``, which default to the SES
   endpoint in eu-west-1 on port 465 that the previous deployment had built
   in. The backend image sets ``ROLA_MEDIA_ROOT`` and ``ROLA_STATIC_ROOT``.
-* New required variables: ``ROLA_FRONTEND_URL``, ``ROLA_NUM_PROXIES``,
-  ``VITE_PAYPAL_CLIENT_ID`` and ``VITE_SENTRY_DSN``, and
-  ``ROLA_AWS_REGION_NAME`` when ``ROLA_USE_S3`` is on. The production stack
-  also requires ``ROLA_SECRET_KEY``, ``ALLOWED_HOSTS`` and
-  ``ROLA_POSTGRESQL_PASSWORD``.
+* New required variables: ``ROLA_FRONTEND_URL``, ``ROLA_NUM_PROXIES`` and
+  ``VITE_SENTRY_DSN``, and ``ROLA_AWS_REGION_NAME`` when ``ROLA_USE_S3`` is
+  on. The production stack also requires ``ROLA_SECRET_KEY``,
+  ``ALLOWED_HOSTS`` and ``ROLA_POSTGRESQL_PASSWORD``.
 * With ``ROLA_USE_S3``, ``ROLA_AWS_ACCESS_KEY_ID``,
   ``ROLA_AWS_SECRET_ACCESS_KEY`` and ``ROLA_AWS_S3_ENDPOINT_URL`` are
   optional.
@@ -337,10 +336,13 @@ Fixes
 * The jury gallery and rater show a theme only once they have loaded it:
   nothing from the theme opened before, no rating during the load, and
   neither the result nor the error of a load the judge has left.
-* Contest notices are sanitized: scripts, iframes, embedded objects,
-  event-handler attributes and ``javascript:`` links are removed. Links that
-  open in another window keep their ``target`` and get
-  ``rel="noopener noreferrer"``.
+* Contest notices and the confirmation text shown after an upload are
+  sanitized: scripts, iframes, embedded objects, event-handler attributes
+  and ``javascript:`` links are removed. Links that open in another window
+  keep their ``target`` and get ``rel="noopener noreferrer"``. The
+  confirmation text's scripts used to run in the site's origin, where they
+  could read the entrant's login token. The PayPal buttons were set up by
+  such scripts and are gone for now; the rest of the text still shows.
 * Photograph file names with quotes or non-ASCII letters upload correctly.
 * Screen readers hear the upload form's photograph preview as "Selected
   photograph" or "No photograph selected" instead of "Missing", and the

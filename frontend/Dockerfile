@@ -11,9 +11,7 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 FROM dependencies AS build
 COPY --chown=node:node . .
-ARG VITE_PAYPAL_CLIENT_ID VITE_SENTRY_DSN
-RUN test -n "$VITE_PAYPAL_CLIENT_ID" \
-    || { echo "Set the VITE_PAYPAL_CLIENT_ID build argument." >&2; exit 1; }
+ARG VITE_SENTRY_DSN
 RUN test -n "$VITE_SENTRY_DSN" \
     || { echo "Set the VITE_SENTRY_DSN build argument." >&2; exit 1; }
 RUN npm run build

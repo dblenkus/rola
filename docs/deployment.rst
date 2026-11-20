@@ -102,9 +102,6 @@ as a secret key or a password, in single quotes.
      - always
      - The number of proxies in front of Gunicorn, 2 in the standard setup.
        See `Client addresses`_.
-   * - ``VITE_PAYPAL_CLIENT_ID``
-     - always
-     - The PayPal client id, built into the frontend.
    * - ``VITE_SENTRY_DSN``
      - always
      - The Sentry DSN for frontend error reports, built into the frontend.
@@ -136,8 +133,8 @@ Without ``ROLA_USE_SES``, the backend discards all email, so nobody can
 activate an account or reset a password, and ``check --deploy`` reports
 ``mail.E001``.
 
-The ``VITE_`` values are compiled into the frontend image when it is built.
-After changing one, rebuild the frontend with ``docker compose build
+``VITE_SENTRY_DSN`` is compiled into the frontend image when it is built.
+After changing it, rebuild the frontend with ``docker compose build
 frontend`` and start it again with ``docker compose up -d --wait``.
 
 TLS terminator
@@ -321,15 +318,19 @@ and a ``Referrer-Policy`` to the files it serves, sends no version in
 Contest content
 ===============
 
-The confirmation page that entrants see after an upload shows the contest's
-``confirmation_html`` as written and runs its scripts in the site's origin;
-that is how the PayPal buttons are set up. Those scripts can read the login
-token that the frontend keeps in the browser's local storage. Whoever can
-change a contest can therefore run code in the browser of every entrant who
-reaches that page, with the entrant's login: superusers, in the Django admin
-and through the API, and staff accounts with the ``core.change_contest``
-permission. Give that permission only to fully trusted staff. Contest notices
-(``notice_html``) are sanitized before they are shown.
+The frontend sanitizes a contest's notice (``notice_html``) and the
+confirmation text that entrants see after an upload (``confirmation_html``)
+before it shows them. It removes scripts, event-handler attributes, iframes
+and embedded objects, and keeps formatting, links, images, forms and styles.
+Whoever can change a contest therefore cannot run script in entrants'
+browsers, but still decides which text, links and images those pages show:
+superusers, in the Django admin and through the API, and staff accounts with
+the ``contests.change_contest`` permission. Styles apply to the whole page,
+so they can restyle or cover the rest of it, and images and stylesheets may
+come from any host, which then sees the entrant's address.
+
+Payment buttons are not supported for now. A payment provider's script in a
+confirmation text does not run.
 
 Uploads
 =======
@@ -545,14 +546,16 @@ previous release cannot use blocks this recovery.
 Cutover from the previous deployment
 ====================================
 
-* Set ``VITE_PAYPAL_CLIENT_ID`` and ``VITE_SENTRY_DSN`` to the values the
-  previous frontend used. Its source had them hard-coded: the PayPal client
-  id in the PayPal SDK script in ``frontend/public/index.html``, and the
-  Sentry DSN in ``frontend/src/App.tsx``. Without the PayPal client id, the
-  confirmation page shows no PayPal buttons.
+* Set ``VITE_SENTRY_DSN`` to the value the previous frontend used. Its
+  source had the Sentry DSN hard-coded in ``frontend/src/App.tsx``.
 * Transfer the data as :doc:`transfer` describes. It ends with pointing the
   TLS terminator at ``127.0.0.1:8080``, and everyone logs in again
   afterwards.
+* The confirmation texts transferred from the previous deployment hold
+  PayPal button markup, which no longer runs (see `Contest content`_), so
+  the confirmation page shows their bank-transfer or other text without the
+  buttons. :doc:`transfer` lists these contests; review their confirmation
+  texts in the Django admin.
 
 Maintenance
 ===========

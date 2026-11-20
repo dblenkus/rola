@@ -17,15 +17,9 @@ http://localhost:8000; set `API_PROXY_TARGET` for another address. The
 repository's Compose development stack runs it together with the backend on
 http://localhost:8080.
 
-Two variables are read at build time, from the environment or a `.env` file
-in this directory:
-
-- `VITE_PAYPAL_CLIENT_ID`: the PayPal client id. Without it, the
-  confirmation page shows an error instead of the PayPal buttons.
-- `VITE_SENTRY_DSN`: the Sentry DSN for error reports. Without it, nothing
-  is reported.
-
-Production builds require both.
+One variable is read at build time, from the environment or a `.env` file
+in this directory: `VITE_SENTRY_DSN`, the Sentry DSN for error reports.
+Without it, nothing is reported. Production builds require it.
 
 ## Scripts
 

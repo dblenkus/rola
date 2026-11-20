@@ -2,10 +2,10 @@ import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import SanitizedHtml from '../../../shared/ui/SanitizedHtml';
 import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
 
-import ConfirmationHtml from '../components/ConfirmationHtml';
 import { getContest } from '../../contests';
 
 interface RouteMatchParams {
@@ -40,7 +40,7 @@ const UploadConfirmView: React.FC = () => {
         </Typography>
       </Grid>
       <Grid size={{ xs: 12 }}>
-        <ConfirmationHtml html={contest.confirmation_html ?? ''} />
+        <SanitizedHtml html={contest.confirmation_html ?? ''} />
       </Grid>
     </Grid>
   );

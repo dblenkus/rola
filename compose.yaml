@@ -58,7 +58,6 @@ services:
       target: development
     environment:
       API_PROXY_TARGET: http://backend:8000
-      VITE_PAYPAL_CLIENT_ID: ${VITE_PAYPAL_CLIENT_ID:-}
       VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     ports:
       - 127.0.0.1:8080:5173
