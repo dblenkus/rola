@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, Grid, Typography } from '@mui/material';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
@@ -13,6 +14,7 @@ interface RouteMatchParams {
 }
 
 const ThemeOverview: React.FC = () => {
+  const { t } = useTranslation();
   const { themeId } = useParams<keyof RouteMatchParams>();
   if (!themeId) {
     throw new Error('Missing themeId route parameter');
@@ -35,7 +37,7 @@ const ThemeOverview: React.FC = () => {
   // The overview uses the public results, which list nothing until the
   // contest's results are published.
   if (!submissions.length)
-    return <Typography>No published results.</Typography>;
+    return <Typography>{t('no_published_results')}</Typography>;
 
   return (
     <Grid container>
@@ -69,8 +71,11 @@ const ThemeOverview: React.FC = () => {
                   <br />
                 </>
               )}
-              Points: {submission.rating}, Author: {submission.author.id},
-              Submission id: {submission.id}
+              {t('overview_details', {
+                points: submission.rating,
+                author: submission.author.id,
+                submission: submission.id,
+              })}
               <br />
               <br />
             </Typography>

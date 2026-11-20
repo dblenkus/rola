@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { apiClient } from '../shared/api/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { apiClient, requestTimeout } from '../shared/api/client';
+import { requestError } from '../shared/api/errors';
 import store from './store';
 import { deleteMessage } from '../features/notifications/state/actions';
 import type { Notification } from '../features/notifications/state/reducer';
-import { httpError, networkError, serveApi } from '../test/api';
+import { httpError, networkError, serveApi, stallRequests } from '../test/api';
 
 beforeEach(() => {
   const notification = store.getState().notifications;
@@ -62,5 +63,31 @@ describe('unexpected API failures', () => {
     const shown = await notificationsDuring(() => apiClient.get('/contest'));
     expect(shown).toEqual([]);
     expect(store.getState().notifications).toBeNull();
+  });
+});
+
+describe('a stalled request', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('times out with one notification and a message for the view', async () => {
+    stallRequests();
+    let failure: unknown = null;
+    const shown = notificationsDuring(() =>
+      apiClient.get('/contest').catch((error: unknown) => {
+        failure = error;
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(requestTimeout);
+    const timedOut = 'The server did not respond in time. Please try again.';
+    expect(await shown).toEqual([
+      expect.objectContaining({ message: timedOut, severity: 'error' }),
+    ]);
+    expect(requestError(failure)).toBe(timedOut);
   });
 });

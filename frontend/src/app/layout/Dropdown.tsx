@@ -67,7 +67,7 @@ const Dropdown: React.FC = () => {
   return (
     <>
       <IconButton
-        aria-label="account of current user"
+        aria-label={t('account_menu')}
         aria-controls="menu-appbar"
         aria-haspopup="true"
         onClick={openMenu}

@@ -10,8 +10,16 @@ declare module 'axios' {
 
 export const apiBaseURL = '/api/v1';
 
+// A stalled request fails after this long instead of waiting forever. A
+// request that may legitimately take longer, such as a photograph upload,
+// sets its own timeout.
+export const requestTimeout = 30_000;
+
 const config: AxiosRequestConfig = {
   baseURL: apiBaseURL,
+  timeout: requestTimeout,
+  // Timeouts fail with ETIMEDOUT, so they can be told apart from aborts.
+  transitional: { clarifyTimeoutError: true },
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -20,11 +28,11 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config);
 
-let unexpectedFailureHandler: (() => void) | null = null;
+let unexpectedFailureHandler: ((error: unknown) => void) | null = null;
 
-// Registers what a failure no view can explain (no response, server errors)
-// raises; the app registers it at start-up.
-export function onUnexpectedFailure(handler: () => void): void {
+// Registers what a failure no view can explain (no response, including a
+// timeout, and server errors) raises; the app registers it at start-up.
+export function onUnexpectedFailure(handler: (error: unknown) => void): void {
   unexpectedFailureHandler = handler;
 }
 
@@ -66,7 +74,7 @@ apiClient.interceptors.response.use(
       if (!unexpectedFailureHandler) {
         throw new Error('No handler for unexpected API failures is registered');
       }
-      unexpectedFailureHandler();
+      unexpectedFailureHandler(error);
     }
     return Promise.reject(error);
   },

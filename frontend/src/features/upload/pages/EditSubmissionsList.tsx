@@ -116,7 +116,7 @@ class EditSubmissionsList extends React.Component<
         axios.isAxiosError(error) && error.response?.status === 403;
       this.setState({
         deleteError: closed
-          ? 'This contest has closed, so its submissions can no longer be deleted.'
+          ? this.props.t('contest_closed_delete')
           : requestError(error),
       });
     }
@@ -139,7 +139,7 @@ class EditSubmissionsList extends React.Component<
         <>
           {deleteAlert}
           <Typography align="center" variant="h3">
-            You don't have any active submission to edit.
+            {t('no_active_submissions')}
           </Typography>
         </>
       );
@@ -196,7 +196,7 @@ class EditSubmissionsList extends React.Component<
                   <TableCell>{group.submissions_n}</TableCell>
                   <TableCell>{group.photos_n}</TableCell>
                   <TableCell align="right">
-                    <Tooltip title="Not jet available." placement="top">
+                    <Tooltip title={t('not_yet_available')} placement="top">
                       <span>
                         <Button variant="text" sx={tableButtonSx} disabled>
                           {t('edit')}

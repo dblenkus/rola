@@ -1,6 +1,7 @@
 import { Alert, Grid, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
 import SanitizedHtml from '../../../shared/ui/SanitizedHtml';
 import { requestError } from '../../../shared/api/errors';
@@ -14,6 +15,7 @@ interface RouteMatchParams {
 }
 
 const UploadConfirmView: React.FC = () => {
+  const { t } = useTranslation();
   const [contest, setContest] = useState<Contest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { contestId } = useParams<keyof RouteMatchParams>();
@@ -36,7 +38,7 @@ const UploadConfirmView: React.FC = () => {
     <Grid container>
       <Grid size={{ xs: 12 }}>
         <Typography variant="h3" align="center">
-          Thank you for uploading photos!
+          {t('upload_thanks')}
         </Typography>
       </Grid>
       <Grid size={{ xs: 12 }}>

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { serveApi } from '../../test/api';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
+import { serveApi, stallRequests } from '../../test/api';
 import { uploadImage } from './api';
 
 async function uploadDisposition(name: string): Promise<string> {
@@ -100,4 +100,20 @@ describe('photograph upload file names', () => {
     );
     expect(parameters.get('filename')).toMatch(/\.jpg$/);
   });
+});
+
+it('waits as long as a photograph upload takes', async () => {
+  vi.useFakeTimers();
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+  stallRequests();
+  let settled = false;
+  void uploadImage(new File(['jpeg'], 'photo.jpg', { type: 'image/jpeg' }))
+    .catch(() => undefined)
+    .finally(() => {
+      settled = true;
+    });
+  await vi.advanceTimersByTimeAsync(60 * 60_000);
+  expect(settled).toBe(false);
 });

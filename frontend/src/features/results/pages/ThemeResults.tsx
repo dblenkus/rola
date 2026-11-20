@@ -1,5 +1,6 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import {
   Alert,
@@ -32,6 +33,7 @@ interface RouteMatchParams {
 const nameCollator = new Intl.Collator('sl');
 
 const ThemeResults: React.FC = () => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [submissionsByAuthor, setSubmissionsByAuthor] = useState<
     ResultsThemeSubmission[][] | null
@@ -93,7 +95,7 @@ const ThemeResults: React.FC = () => {
 
   const getReward = (submission: ResultsThemeSubmission): string => {
     if (submission.reward_label) return submission.reward_label;
-    if (submission.accepted) return 'Accepted';
+    if (submission.accepted) return t('accepted');
     return '';
   };
 
@@ -140,7 +142,7 @@ const ThemeResults: React.FC = () => {
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!submissionsByAuthor || !contest) return <LoadingProgress />;
   if (!submissionsByAuthor.length)
-    return <Typography>No published results.</Typography>;
+    return <Typography>{t('no_published_results')}</Typography>;
 
   return (
     <>
@@ -152,7 +154,11 @@ const ThemeResults: React.FC = () => {
               let authorDetails = `${author.country}`;
               if (contest.school_show)
                 authorDetails = `${author.school || '/'}`;
-              if (author.club) authorDetails += `, klub: ${author.club || '/'}`;
+              if (author.club)
+                authorDetails = t('author_details_with_club', {
+                  details: authorDetails,
+                  club: author.club,
+                });
               return (
                 <React.Fragment key={author.id}>
                   <TableRow>
