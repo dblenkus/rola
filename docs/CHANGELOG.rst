@@ -392,7 +392,7 @@ Development changes
 * Lockfile updates accept only releases at least 7 days old, except
   Dependabot's npm security updates.
 * CI tests the backend on Python 3.14 and 3.15 against PostgreSQL 18.6,
-  checks the frontend, the API contract, both images, both Compose files,
+  checks the frontend, the API contract, both images, the Compose files,
   the workflows and the Dependabot configuration, and runs weekly with the
   dependency audits. Dependabot proposes updates for
   every manifest.

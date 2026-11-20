@@ -174,8 +174,10 @@ The API contract job regenerates both generated files (see `API contract`_)
 and fails if either differs from the committed one; ``make api-contract``
 does the same. The image job builds the development and production targets
 of both Dockerfiles, with fake values for the frontend's build arguments,
-and pushes nothing. The Compose job runs ``docker compose config`` on both
-Compose files. The GitHub configuration job lints the workflows with
+and pushes nothing. The Compose job runs ``docker compose config`` on
+``compose.yaml``, on ``compose.production.yaml``, and on the production file
+merged with ``compose.tunnel.yaml``, where it also checks what the merge
+removes and overrides. The GitHub configuration job lints the workflows with
 actionlint, in Docker, and validates ``.github/dependabot.yml`` against
 Dependabot's schema:
 
@@ -340,8 +342,8 @@ images and the actions. These pins move by hand:
 * The backend image's base is Python 3.14. Dependabot updates its patch
   release but ignores Python minor versions until PyYAML publishes wheels for
   Python 3.15; CI already tests 3.15.
-* Both Compose files pin the same PostgreSQL 18 image, and CI starts its
-  database from ``compose.yaml``. Dependabot ignores PostgreSQL majors, which
+* ``compose.yaml`` and ``compose.production.yaml`` pin the same PostgreSQL 18
+  image, and CI starts its database from ``compose.yaml``. Dependabot ignores PostgreSQL majors, which
   need a dump and restore.
 * pip-audit 2.10.1, actionlint 1.7.12 and check-jsonschema 0.39.0 in the
   ``Makefile``, the ``ubuntu-26.04`` runner label in the workflow and
