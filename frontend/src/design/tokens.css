@@ -1,0 +1,221 @@
+/* Generated from tokens.json by scripts/build-tokens.ts. Do not edit; run `npm run tokens`. */
+
+:root {
+  color-scheme: light;
+
+  /* color */
+  --ink: #111111;
+  --viewing: #3A3A3A;
+  --grey-600: #5E5E5E;
+  --grey-500: #888888;
+  --grey-200: #DDDDDD;
+  --grey-100: #F2F2F2;
+  --paper: #FFFFFF;
+  --error: #B3261E;
+  --text: var(--ink);
+  --text-muted: var(--grey-600);
+  --line: var(--grey-200);
+  --control-line: var(--grey-500);
+  --well: var(--grey-100);
+  --on-ink: var(--paper);
+  --on-viewing: var(--paper);
+  --on-viewing-muted: var(--grey-200);
+  --focus: var(--ink);
+  --focus-on-dark: var(--paper);
+
+  /* type families */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --touch-target: 44px;
+
+  /* radius */
+  --radius-none: 0;
+  --radius-control: 2px;
+  --radius-icon: 22%;
+
+  /* stroke */
+  --stroke-hairline: 1px;
+  --stroke-strip: 3px;
+  --stroke-error: 2px;
+  --focus-width: 2px;
+  --focus-offset: 3px;
+
+  /* film */
+  --perf-width: 5px;
+  --perf-height: 3px;
+  --perf-pitch: 16px;
+  --frame-width: 112px;
+  --frame-pitch: 128px;
+}
+
+/* Type styles: one class per style, setting no colour. */
+
+.display {
+  font-family: var(--font-sans);
+  font-size: 48px;
+  line-height: 52px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.h1 {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.h2 {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.h2-mobile {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.h3 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.h4 {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.body-dense {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.input-mobile {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+.small {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.photo-id {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.frame-number {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.mono-caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 400;
+}
+
+.score-numeral {
+  font-family: var(--font-sans);
+  font-size: 120px;
+  line-height: 104px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.photo-title {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.score-key {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.key-cap {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.key-hint {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 12px;
+  font-weight: 500;
+}
