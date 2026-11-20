@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, Typography } from '@mui/material';
 
@@ -23,6 +24,7 @@ export default function ContestDetails() {
 }
 
 function ContestPage({ contestId }: { contestId: string }) {
+  const { t } = useTranslation();
   const [contest, setContest] = useState<Contest | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -42,7 +44,7 @@ function ContestPage({ contestId }: { contestId: string }) {
   }, [contestId]);
 
   if (failed) {
-    return <Alert severity="error">Could not load this contest.</Alert>;
+    return <Alert severity="error">{t('could_not_load_contest')}</Alert>;
   }
   if (!contest) return <LoadingProgress />;
 

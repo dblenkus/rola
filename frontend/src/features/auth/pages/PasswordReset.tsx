@@ -69,7 +69,7 @@ class PasswordResetView extends React.Component<
       }
     } else {
       const errors: Errors = Object.assign({}, this.state.errors);
-      errors.non_field_errors = ['Invalid password reset token.'];
+      errors.non_field_errors = [this.props.t('invalid_reset_token')];
       this.setState({ errors });
     }
   };

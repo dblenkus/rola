@@ -54,6 +54,8 @@ export function uploadImage(
   authorization?: string,
 ): AxiosPromise<Image> {
   return apiClient.post('/file', image, {
+    // A large photograph on a slow connection may take minutes.
+    timeout: 0,
     headers: {
       'Content-Type': image.type,
       'Content-Disposition': contentDisposition(image.name),

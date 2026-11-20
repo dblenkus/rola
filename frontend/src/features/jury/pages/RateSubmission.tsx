@@ -128,7 +128,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   useEffect(() => {
     initialize(contestId, themeId, submissionId.current)
       .then((result) => {
-        if (result === 'missing') setError(contentUnavailable);
+        if (result === 'missing') setError(contentUnavailable());
         else setLoaded(result === 'stored');
       })
       .catch((error: unknown) => setError(requestError(error)));
@@ -154,7 +154,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     // one that a newer initialization replaced changes nothing.
     reload(contestId, themeId)
       .then((result) => {
-        if (result === 'missing') setError(contentUnavailable);
+        if (result === 'missing') setError(contentUnavailable());
         else {
           failedIds.current.clear();
           setReloadError(null);

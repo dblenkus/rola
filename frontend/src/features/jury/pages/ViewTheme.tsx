@@ -47,7 +47,7 @@ const ViewTheme: React.FC<PropsFromRedux> = ({
   useEffect(() => {
     initialize(contestId, themeId)
       .then((result) => {
-        if (result === 'missing') setError(contentUnavailable);
+        if (result === 'missing') setError(contentUnavailable());
         else setLoaded(result === 'stored');
       })
       .catch((error: unknown) => setError(requestError(error)));

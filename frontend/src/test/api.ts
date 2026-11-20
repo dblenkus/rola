@@ -67,6 +67,44 @@ export function networkError(config: InternalAxiosRequestConfig): AxiosError {
   return new AxiosError('Network Error', AxiosError.ERR_NETWORK, config);
 }
 
+// A browser request to a server that never answers. Like a browser's, it
+// times out only when it has a timeout, after that many milliseconds.
+class StalledRequest {
+  timeout = 0;
+  onloadend: (() => void) | null = null;
+  onabort: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  ontimeout: (() => void) | null = null;
+
+  open(): void {}
+
+  setRequestHeader(): void {}
+
+  abort(): void {}
+
+  send(): void {
+    if (this.timeout > 0) {
+      setTimeout(() => this.ontimeout?.(), this.timeout);
+    }
+  }
+}
+
+// Sends API requests through axios's browser adapter, as the app does, to a
+// server that never answers, until the test ends. Use with fake timers.
+export function stallRequests(): void {
+  const { adapter } = apiClient.defaults;
+  vi.stubGlobal('XMLHttpRequest', StalledRequest);
+  apiClient.defaults.adapter = 'xhr';
+  onTestFinished(() => {
+    if (adapter === undefined) {
+      delete apiClient.defaults.adapter;
+    } else {
+      apiClient.defaults.adapter = adapter;
+    }
+    vi.unstubAllGlobals();
+  });
+}
+
 export function page<T>(results: T[]): PaginatedResponse<T> {
   return { count: results.length, next: null, previous: null, results };
 }

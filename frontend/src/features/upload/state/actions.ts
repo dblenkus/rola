@@ -65,11 +65,7 @@ export const uploadSubmit =
     }
     if (Date.parse(session.expires) - Date.now() < uploadSessionMargin) {
       rejectToken(authorizationHeader(session.token));
-      dispatch(
-        addNotificationWarning(
-          'Your session is about to expire. Please log in again.',
-        ),
-      );
+      dispatch(addNotificationWarning(i18n.t('session_expiring')));
       return false;
     }
     // The user may open another form while this one uploads; the outcome
@@ -97,7 +93,7 @@ export const uploadSubmit =
         // The form's view may have been left or replaced during the upload.
         dispatch(
           addNotificationSuccess(
-            `Your photographs for ${contest.meta.title} were uploaded.`,
+            i18n.t('upload_succeeded', { contest: contest.meta.title }),
           ),
         );
       }
@@ -117,9 +113,7 @@ export const uploadSubmit =
       if (current()) {
         dispatch(
           addNotificationError(
-            closed
-              ? 'The contest is closed. Your photographs were not submitted.'
-              : 'Upload failed. Please try again.',
+            i18n.t(closed ? 'upload_contest_closed' : 'upload_failed'),
           ),
         );
       }
@@ -158,7 +152,7 @@ export const imageUpdate =
         // The browser cannot decode it, for example HEIC data saved as .jpg.
         // The slot takes the file with the error rather than keeping an
         // earlier choice the entrant meant to replace.
-        errors = { file: 'Invalid file.', hasError: true };
+        errors = { file: i18n.t('invalid_file'), hasError: true };
       }
     }
     // A later choice, or another form, replaced this one during the read.

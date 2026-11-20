@@ -66,11 +66,7 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
     } catch (error) {
       const errors =
         error instanceof StorageBlocked
-          ? {
-              non_field_errors: [
-                'Signing in needs site storage. Allow this site to store data, then try again.',
-              ],
-            }
+          ? { non_field_errors: [this.props.t('storage_blocked')] }
           : formErrors(error);
       this.setState({ errors: { ...this.state.errors, ...errors } });
     }

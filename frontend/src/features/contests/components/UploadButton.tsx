@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -12,6 +13,7 @@ interface UploadButtonProps {
 const UploadLink = styled(Link)({ textDecoration: 'none' });
 
 const UploadButton: React.FC<UploadButtonProps> = ({ contestId }) => {
+  const { t } = useTranslation();
   return (
     <Grid container sx={{ justifyContent: 'center' }}>
       <UploadLink to={`/contest/${contestId}/upload`}>
@@ -21,7 +23,7 @@ const UploadButton: React.FC<UploadButtonProps> = ({ contestId }) => {
           size="large"
           variant="contained"
         >
-          Upload Photos
+          {t('upload_photos')}
         </Button>
       </UploadLink>
     </Grid>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, Grid, Typography } from '@mui/material';
 
@@ -10,6 +11,7 @@ import fetchAll from '../../../shared/api/fetchAll';
 import { getActiveContests } from '../api';
 
 export default function ContestsListView() {
+  const { t } = useTranslation();
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -29,12 +31,11 @@ export default function ContestsListView() {
   }, []);
 
   if (failed) {
-    return (
-      <Alert severity="error">Could not load contests. Please try again.</Alert>
-    );
+    return <Alert severity="error">{t('could_not_load_contests')}</Alert>;
   }
   if (!contests) return <LoadingProgress />;
-  if (!contests.length) return <Typography>No active contests.</Typography>;
+  if (!contests.length)
+    return <Typography>{t('no_active_contests')}</Typography>;
 
   return (
     <Grid container spacing={2}>
