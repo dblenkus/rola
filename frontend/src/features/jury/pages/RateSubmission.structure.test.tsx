@@ -63,6 +63,20 @@ it('shows the position of the photograph after moving on', async () => {
   ).toBeVisible();
 });
 
+// A browser paints an image's old picture until its new source has loaded,
+// so the next photograph gets an image element of its own.
+it('shows the next photograph in a new image element', async () => {
+  serveJudging({ submissions: twoSubmissions });
+  const user = userEvent.setup();
+  renderRater(store);
+  const first = await screen.findByRole('img', { name: 'First' });
+
+  await user.click(screen.getByRole('button', { name: 'Next' }));
+  const second = await screen.findByRole('img', { name: 'Second' });
+  expect(second).not.toBe(first);
+  expect(first).not.toBeInTheDocument();
+});
+
 it('shows the description of a submission that has one', async () => {
   serveJudging({
     submissions: [

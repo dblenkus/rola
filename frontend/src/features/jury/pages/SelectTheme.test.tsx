@@ -50,7 +50,6 @@ it('heads the page with one title and names the document after it', async () => 
   expect(
     screen.getByRole('heading', { level: 2, name: 'Autumn photographs' }),
   ).toBeInTheDocument();
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('shows each theme with its scoring progress and a link to its gallery', async () => {

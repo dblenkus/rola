@@ -39,6 +39,20 @@ export interface JudgingApi {
   // Answers the oldest held write.
   release: () => void;
   heldWrites: () => number;
+  // While true, each submission's own GET /rating is handled at once but
+  // answered only when `releaseRead` releases it, as a response that is slow
+  // to arrive.
+  holdReads: boolean;
+  // Answers the oldest held read for the submission.
+  releaseRead: (submissionId: number) => void;
+  // The submissions of the held reads, oldest first.
+  heldReads: () => number[];
+  // While true, the theme-wide GET /rating is handled at once but answered
+  // only when `releaseThemeRead` releases it.
+  holdThemeReads: boolean;
+  // Answers the oldest held theme-wide read.
+  releaseThemeRead: () => void;
+  heldThemeReads: () => number;
   // The status writes fail with, or null for success.
   writeStatus: number | null;
   // The status the theme-wide GET /rating fails with, or null for success.
@@ -89,6 +103,33 @@ export function serveJudging({
     );
   };
 
+  const heldReads: { submissionId: number; answer: () => void }[] = [];
+  const heldThemeReads: (() => void)[] = [];
+
+  // Handles a read now, against the ratings stored now. While `hold` is
+  // true, `keep` receives its delivery, so that its answer or failure
+  // arrives only when the test releases it.
+  const read = <T,>(
+    hold: boolean,
+    respond: () => T,
+    keep: (answer: () => void) => void,
+  ): T | Promise<T> => {
+    if (!hold) return respond();
+    let outcome: { answered: T } | { failed: unknown };
+    try {
+      outcome = { answered: respond() };
+    } catch (error) {
+      outcome = { failed: error };
+    }
+    return new Promise<T>((resolve, reject) =>
+      keep(() =>
+        'answered' in outcome
+          ? resolve(outcome.answered)
+          : reject(outcome.failed),
+      ),
+    );
+  };
+
   const deleteRating = (id: number) => (config: InternalAxiosRequestConfig) => {
     api.deletes.push(id);
     return answer(() => {
@@ -112,15 +153,27 @@ export function serveJudging({
     'GET /judge/submission': () => page(submissions),
     'GET /rating': (config, url) => {
       if (url.searchParams.has('theme')) {
-        if (api.themeRatingsStatus !== null)
-          throw httpError(config, api.themeRatingsStatus);
-        return page([...stored.values()]);
+        return read(
+          api.holdThemeReads,
+          () => {
+            if (api.themeRatingsStatus !== null)
+              throw httpError(config, api.themeRatingsStatus);
+            return page([...stored.values()]);
+          },
+          (answer) => heldThemeReads.push(answer),
+        );
       }
       const submissionId = Number(url.searchParams.get('submission'));
-      if (api.failingSubmissionRatings.has(submissionId))
-        throw httpError(config, 503);
-      const found = stored.get(submissionId);
-      return page(found ? [found] : []);
+      return read(
+        api.holdReads,
+        () => {
+          if (api.failingSubmissionRatings.has(submissionId))
+            throw httpError(config, 503);
+          const found = stored.get(submissionId);
+          return page(found ? [found] : []);
+        },
+        (answer) => heldReads.push({ submissionId, answer }),
+      );
     },
     'POST /rating': (config) => {
       const data: unknown = JSON.parse(String(config.data));
@@ -153,6 +206,23 @@ export function serveJudging({
       next();
     },
     heldWrites: () => held.length,
+    holdReads: false,
+    releaseRead: (submissionId) => {
+      const index = heldReads.findIndex(
+        (held) => held.submissionId === submissionId,
+      );
+      const [next] = index === -1 ? [] : heldReads.splice(index, 1);
+      if (!next) throw new Error(`No read of ${submissionId} is held`);
+      next.answer();
+    },
+    heldReads: () => heldReads.map((held) => held.submissionId),
+    holdThemeReads: false,
+    releaseThemeRead: () => {
+      const next = heldThemeReads.shift();
+      if (!next) throw new Error('No theme-wide read is held');
+      next();
+    },
+    heldThemeReads: () => heldThemeReads.length,
     writeStatus: null,
     themeRatingsStatus: null,
     failingSubmissionRatings: new Set(),

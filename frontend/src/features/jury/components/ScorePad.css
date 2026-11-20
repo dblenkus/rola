@@ -1,7 +1,20 @@
+/* While a save or a clear for the photograph is pending, the keys look
+   unavailable as inert buttons on the viewing surface do: the outline stays,
+   the label goes to on-viewing-muted. The pressed key keeps its inverted
+   colours, on which on-viewing-muted would not be legible. */
+.rl-scorepad__key[aria-disabled='true'] {
+  cursor: default;
+}
+
+.rl-scorepad__key[aria-disabled='true']:not([aria-pressed='true']) {
+  color: var(--on-viewing-muted);
+}
+
 /* Below the wide layout the pad's parts take their places in the page's
    bottom dock: its wrappers give way to their contents, the keys fill the
-   width at 48 px, and the score sits small beside Clear. The DOM stays the
-   same, and the wrappers carry no role. */
+   width at 48 px, and Clear sits between Previous and Next. The score
+   readout is hidden there: it is aria-hidden, and the pressed key already
+   shows the score. The DOM stays the same, and the wrappers carry no role. */
 @media not all and (width >= 64rem) and (height >= 37.5rem) {
   .judge-scorepad,
   .judge-scorepad__head,
@@ -10,35 +23,47 @@
   }
 
   .judge-scorepad__label,
+  .judge-scorepad__score,
   .judge-scorepad .rl-scorepad__hint {
     display: none;
   }
 
   .judge-scorepad__actions .rl-btn {
     grid-area: clear;
-    height: 48px;
   }
 
-  .judge-scorepad__score {
-    grid-area: score;
-    align-self: center;
-  }
-
-  .judge-scorepad .rl-scorepad__numeral {
-    margin: 0;
-    font-size: 20px;
-    line-height: 24px;
-    letter-spacing: 0;
-  }
-
+  /* The keys share the width; min-width: 0 lets them go below the design
+     system's fixed 64 px key. */
   .judge-scorepad__keys {
     grid-area: keys;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     margin-top: 0;
   }
 
   .judge-scorepad__keys .rl-scorepad__key {
     width: auto;
+    min-width: 0;
+    height: 48px;
+  }
+}
+
+/* Wide on a laptop-height window: a smaller numeral and 48 px keys (see
+   RateSubmission.css). */
+@media (width >= 64rem) and (height >= 37.5rem) and (height < 56rem) {
+  .judge-scorepad__head {
+    min-height: 56px;
+  }
+
+  .judge-scorepad .rl-scorepad__numeral:not(.rl-scorepad__numeral--empty) {
+    font-size: 64px;
+    line-height: 56px;
+  }
+
+  .judge-scorepad__keys {
+    margin-top: var(--space-3);
+  }
+
+  .judge-scorepad__keys .rl-scorepad__key {
     height: 48px;
   }
 }

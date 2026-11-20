@@ -7,6 +7,9 @@ import './PhotoNavigation.css';
 interface PhotoNavigationProps {
   hasPrevious: boolean;
   hasNext: boolean;
+  // Whether the keyboard shortcuts are on; the buttons name their keys only
+  // then.
+  shortcuts: boolean;
   onPrevious: () => void;
   onNext: () => void;
 }
@@ -17,6 +20,7 @@ interface PhotoNavigationProps {
 export default function PhotoNavigation({
   hasPrevious,
   hasNext,
+  shortcuts,
   onPrevious,
   onNext,
 }: PhotoNavigationProps) {
@@ -27,7 +31,7 @@ export default function PhotoNavigation({
         <Button
           size="large"
           aria-label={t('judge_previous')}
-          aria-keyshortcuts="ArrowLeft"
+          {...(shortcuts && { 'aria-keyshortcuts': 'ArrowLeft' })}
           inert={!hasPrevious}
           onPress={onPrevious}
         >
@@ -40,7 +44,7 @@ export default function PhotoNavigation({
           variant="primary"
           size="large"
           aria-label={t('judge_next')}
-          aria-keyshortcuts="ArrowRight"
+          {...(shortcuts && { 'aria-keyshortcuts': 'ArrowRight' })}
           inert={!hasNext}
           onPress={onNext}
         >

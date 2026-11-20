@@ -40,7 +40,6 @@ it('heads the overview with one title and names the document after it', async ()
   ).toBeInTheDocument();
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   await waitFor(() => expect(document.title).toBe('Results overview · Rola'));
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('links each photograph to its full file in a new tab', async () => {

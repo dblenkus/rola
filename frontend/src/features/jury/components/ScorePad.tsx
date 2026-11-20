@@ -9,8 +9,12 @@ const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 interface ScorePadProps {
   // The judge's score for the photograph on screen, or null without one.
   score: number | null;
-  // While a save or a clear is pending, no key gives a score.
+  // While a save or a clear for the photograph is pending, no key gives a
+  // score.
   busy: boolean;
+  // Whether the keyboard shortcuts are on; the controls name their keys only
+  // then.
+  shortcuts: boolean;
   onScore: (score: number) => void;
   onClear: () => void;
 }
@@ -22,6 +26,7 @@ interface ScorePadProps {
 export default function ScorePad({
   score,
   busy,
+  shortcuts,
   onScore,
   onClear,
 }: ScorePadProps) {
@@ -38,7 +43,7 @@ export default function ScorePad({
             variant="quiet"
             size="small"
             aria-label={t('judge_clear')}
-            aria-keyshortcuts="Backspace"
+            {...(shortcuts && { 'aria-keyshortcuts': 'Backspace' })}
             inert={!clearable}
             onPress={onClear}
           >
@@ -72,7 +77,7 @@ export default function ScorePad({
             type="button"
             className="rl-scorepad__key score-key"
             aria-pressed={value === score}
-            aria-keyshortcuts={String(value % 10)}
+            {...(shortcuts && { 'aria-keyshortcuts': String(value % 10) })}
             {...(busy && { 'aria-disabled': true })}
             onClick={busy ? undefined : () => onScore(value)}
           >

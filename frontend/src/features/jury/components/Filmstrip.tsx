@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
@@ -61,6 +61,25 @@ export default function Filmstrip({
     positioned.current = true;
   }, [currentId]);
 
+  // A frame that leaves the strip while it has focus would drop focus to the
+  // page. React sees no blur when an element is removed, so `focused` still
+  // names that frame afterwards, and focus goes to the current frame. Focus
+  // moves in no other case, and without scrolling the page: the strip
+  // scrolls itself to the current frame.
+  const focused = useRef<number | undefined>(undefined);
+  const shown = submissions.slice(first, last + 1);
+  useLayoutEffect(() => {
+    const id = focused.current;
+    if (id === undefined || shown.some((submission) => submission.id === id))
+      return;
+    focused.current = undefined;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body) return;
+    strip.current
+      ?.querySelector<HTMLElement>('[aria-current="true"]')
+      ?.focus({ preventScroll: true });
+  });
+
   const open = (event: MouseEvent, submissionId: number) => {
     // A click that opens a new tab or window is the browser's.
     if (
@@ -94,7 +113,7 @@ export default function Filmstrip({
       })}
     >
       <ol className="rl-filmstrip__frames">
-        {submissions.slice(first, last + 1).map((submission, offset) => {
+        {shown.map((submission, offset) => {
           const index = first + offset;
           const current = index === currentIndex;
           const [file] = submission.files;
@@ -107,6 +126,12 @@ export default function Filmstrip({
                 aria-label={name(index + 1, submission.id)}
                 {...(current && { 'aria-current': 'true' })}
                 onClick={(event) => open(event, submission.id)}
+                onFocus={() => {
+                  focused.current = submission.id;
+                }}
+                onBlur={() => {
+                  focused.current = undefined;
+                }}
               >
                 {thumbnail ? (
                   // Signed like the main photograph; a link that expired

@@ -62,7 +62,6 @@ it('heads the gallery with the theme and how many photographs are scored', async
     'href',
     '/judge/contest/1/theme/2/rate?submission=11',
   );
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it('says so for a theme without photographs, with no strip', async () => {

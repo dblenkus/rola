@@ -60,15 +60,17 @@ interface StoredRating {
 type Announced =
   { kind: 'score'; value: number } | { kind: 'cleared' } | { kind: 'moved' };
 
-function withRating(
-  ratings: ReadonlyMap<number, StoredRating> | null,
-  submissionId: number,
-  saved: StoredRating | null,
-): ReadonlyMap<number, StoredRating> | null {
-  if (!ratings) return ratings;
+// The theme's ratings as loaded, with what the view learned since in their
+// place.
+function withLearned(
+  ratings: ReadonlyMap<number, StoredRating>,
+  learned: ReadonlyMap<number, StoredRating | null>,
+): ReadonlyMap<number, StoredRating> {
   const updated = new Map(ratings);
-  if (saved) updated.set(submissionId, saved);
-  else updated.delete(submissionId);
+  for (const [submissionId, saved] of learned) {
+    if (saved) updated.set(submissionId, saved);
+    else updated.delete(submissionId);
+  }
   return updated;
 }
 
@@ -95,7 +97,8 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     message: string;
   } | null>(null);
   // Kept with its submission, so another submission never shows it. `saved`
-  // is null while the submission has no rating.
+  // is null while the submission has no rating. A write that finishes after
+  // the judge moved on still updates it, so a return shows the result.
   const [rating, setRating] = useState<{
     submissionId: number;
     saved: StoredRating | null;
@@ -120,6 +123,12 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     number,
     StoredRating
   > | null>(null);
+  // Each submission's rating as this view's own reads and writes found it,
+  // null for none. The theme's ratings are requested before any of them, so
+  // these replace what that request answers, whenever it answers.
+  const [learned, setLearned] = useState<
+    ReadonlyMap<number, StoredRating | null>
+  >(new Map());
   const [announced, setAnnounced] = useState<{
     count: number;
     event: Announced;
@@ -152,76 +161,111 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     Number(new URLSearchParams(location.search).get('submission')) || undefined,
   );
 
-  // The submission on screen, for saves that finish after the judge moved on.
-  // Cleared when the rater closes: the jury store outlives it, and a save that
-  // finishes later must not change the next rater.
+  // The submission on screen, for writes that finish after the judge moved
+  // on.
   const shownId = useRef<number | undefined>(undefined);
   useEffect(() => {
     shownId.current = submission?.id;
-    return () => {
-      shownId.current = undefined;
-    };
   }, [submission]);
 
   const announce = (event: Announced) =>
     setAnnounced((current) => ({ count: (current?.count ?? 0) + 1, event }));
 
-  // One write at a time, a save or a clear: the server keeps whichever it
-  // handles last, so a rating sent while another write is pending could be
-  // overwritten by it. The ref guards the keys and any input before the
-  // disabled score keys render.
-  const saveInProgress = useRef(false);
-  const [saving, setSaving] = useState(false);
+  // One write at a time for each submission, a save or a clear: the server
+  // keeps whichever write for a rating it handles last, so a write sent while
+  // another for the same submission is pending could be overwritten by it.
+  // Writes for different submissions do not conflict. The ref guards the
+  // keys and any input before the disabled score keys render.
+  const writing = useRef(new Set<number>());
+  const [busyIds, setBusyIds] = useState<ReadonlySet<number>>(new Set());
+  // Counts the starts and ends of each submission's writes, so that a read
+  // can tell whether a write overlapped it.
+  const writeEvents = useRef(new Map<number, number>());
+  // Raised to read the shown submission's rating again.
+  const [readRound, setReadRound] = useState(0);
+
+  const countWriteEvent = (writtenId: number) =>
+    writeEvents.current.set(
+      writtenId,
+      (writeEvents.current.get(writtenId) ?? 0) + 1,
+    );
 
   const shownRating =
     submission && rating?.submissionId === submission.id ? rating.saved : null;
 
-  const updateRating = async (newRating: number): Promise<void> => {
-    if (!submission || saveInProgress.current) return;
-    const ratedId = submission.id;
-    saveInProgress.current = true;
-    setSaving(true);
+  // Sends a save or a clear for a submission, whose result `send` gives.
+  const write = async (
+    writtenId: number,
+    send: () => Promise<StoredRating | null>,
+    done: Announced,
+  ): Promise<void> => {
+    writing.current.add(writtenId);
+    countWriteEvent(writtenId);
+    setBusyIds((current) => new Set(current).add(writtenId));
     setSaveError(null);
-    let saved: StoredRating;
+    let saved: StoredRating | null;
     try {
-      const { data } = await updateRatingForSubmission(ratedId, newRating);
-      saved = { id: data.id, value: newRating };
+      saved = await send();
     } catch (error) {
-      setSaveError({ submissionId: ratedId, message: requestError(error) });
+      setSaveError({ submissionId: writtenId, message: requestError(error) });
+      // A read that this write overlapped is dropped, and the server may
+      // hold either rating, so the shown submission's rating is read again.
+      // The rating shown meanwhile stays.
+      if (shownId.current === writtenId) setReadRound((round) => round + 1);
       return;
     } finally {
-      saveInProgress.current = false;
-      setSaving(false);
+      writing.current.delete(writtenId);
+      countWriteEvent(writtenId);
+      setBusyIds((current) => {
+        const updated = new Set(current);
+        updated.delete(writtenId);
+        return updated;
+      });
     }
-    setThemeRatings((current) => withRating(current, ratedId, saved));
+    setLearned((current) => new Map(current).set(writtenId, saved));
+    // A rating written since a failed load replaces the missing one.
+    setLoadError((current) =>
+      current?.submissionId === writtenId ? null : current,
+    );
     // Scoring never moves on. A judge who moved on meanwhile stays where they
-    // are; the rating is fetched again when they return.
-    if (shownId.current !== ratedId) return;
-    setRating({ submissionId: ratedId, saved });
-    announce({ kind: 'score', value: newRating });
+    // are; on their return they see the result, or the read made then if
+    // another submission's rating has taken its place.
+    const shown = shownId.current === writtenId;
+    setRating((current) =>
+      shown || current?.submissionId === writtenId
+        ? { submissionId: writtenId, saved }
+        : current,
+    );
+    if (shown) announce(done);
+  };
+
+  const updateRating = (newRating: number) => {
+    if (!submission || writing.current.has(submission.id)) return;
+    const ratedId = submission.id;
+    void write(
+      ratedId,
+      async () => {
+        const { data } = await updateRatingForSubmission(ratedId, newRating);
+        return { id: data.id, value: newRating };
+      },
+      { kind: 'score', value: newRating },
+    );
   };
 
   // Clearing deletes the rating by its id, from the rating loaded for the
-  // submission or the one a save just returned. It follows the save's rules.
-  const clearRating = async (): Promise<void> => {
-    if (!submission || !shownRating || saveInProgress.current) return;
-    const clearedId = submission.id;
-    saveInProgress.current = true;
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await deleteRating(shownRating.id);
-    } catch (error) {
-      setSaveError({ submissionId: clearedId, message: requestError(error) });
+  // submission or the one a save just returned.
+  const clearRating = () => {
+    if (!submission || !shownRating || writing.current.has(submission.id))
       return;
-    } finally {
-      saveInProgress.current = false;
-      setSaving(false);
-    }
-    setThemeRatings((current) => withRating(current, clearedId, null));
-    if (shownId.current !== clearedId) return;
-    setRating({ submissionId: clearedId, saved: null });
-    announce({ kind: 'cleared' });
+    const ratingId = shownRating.id;
+    void write(
+      submission.id,
+      async () => {
+        await deleteRating(ratingId);
+        return null;
+      },
+      { kind: 'cleared' },
+    );
   };
 
   // Moves are announced; the photograph and its frame change with the store.
@@ -331,28 +375,35 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     if (currentId === undefined) return;
     // Judges move on before slow responses arrive; drop the ones they left.
     let active = true;
+    // The server may have handled a read before a write for the submission
+    // that is pending, or that started or finished since the read was sent.
+    // The read's answer is dropped then: the write's result is the rating,
+    // and a failed write reads it again.
+    const writesBefore = writeEvents.current.get(currentId) ?? 0;
+    const current = () =>
+      active &&
+      !writing.current.has(currentId) &&
+      (writeEvents.current.get(currentId) ?? 0) === writesBefore;
     getRatingsForSubmission(currentId)
       .then(({ data: ratings }) => {
-        if (active) {
-          const [found] = ratings.results;
-          const saved = found ? { id: found.id, value: found.rating } : null;
-          setRating({ submissionId: currentId, saved });
-          setThemeRatings((current) => withRating(current, currentId, saved));
-          setLoadError(null);
-        }
+        if (!current()) return;
+        const [found] = ratings.results;
+        const saved = found ? { id: found.id, value: found.rating } : null;
+        setRating({ submissionId: currentId, saved });
+        setLearned((learned) => new Map(learned).set(currentId, saved));
+        setLoadError(null);
       })
       .catch((error: unknown) => {
-        if (active) {
-          setLoadError({
-            submissionId: currentId,
-            message: requestError(error),
-          });
-        }
+        if (!current()) return;
+        setLoadError({
+          submissionId: currentId,
+          message: requestError(error),
+        });
       });
     return () => {
       active = false;
     };
-  }, [currentId]);
+  }, [currentId, readRound]);
 
   useKeyPress(
     (key: string, repeat: boolean): boolean => {
@@ -362,11 +413,11 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         // A held digit repeats, and each repeat would send the same score
         // again while the judge looks at the photograph. Held arrow keys
         // only step through the photographs, so they keep repeating.
-        if (!repeat) void updateRating(Number(key) || 10);
+        if (!repeat) updateRating(Number(key) || 10);
         return true;
       }
       if (key === 'Backspace') {
-        if (!repeat) void clearRating();
+        if (!repeat) clearRating();
         return true;
       }
       if (key === 'ArrowRight') {
@@ -406,11 +457,12 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
   const position = currentIndex + 1;
   const total = submissions.length;
   const score = shownRating?.value ?? null;
-  const scored = themeRatings
-    ? submissions.filter(({ id }) => themeRatings.has(id)).length
+  const knownRatings = themeRatings && withLearned(themeRatings, learned);
+  const scored = knownRatings
+    ? submissions.filter(({ id }) => knownRatings.has(id)).length
     : null;
-  const frameScores = themeRatings
-    ? new Map([...themeRatings].map(([id, stored]) => [id, stored.value]))
+  const frameScores = knownRatings
+    ? new Map([...knownRatings].map(([id, stored]) => [id, stored.value]))
     : null;
 
   const announcement = (): string => {
@@ -443,11 +495,7 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         {reloadError.message}
       </Message>,
     );
-  // A rating saved since the failed load replaces the missing one.
-  if (
-    loadError?.submissionId === submission.id &&
-    rating?.submissionId !== submission.id
-  )
+  if (loadError?.submissionId === submission.id)
     messages.push(
       <Message key="load" severity="error">
         {loadError.message}
@@ -484,13 +532,15 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
         <div className="judge-dock">
           <ScorePad
             score={score}
-            busy={saving}
-            onScore={(value) => void updateRating(value)}
-            onClear={() => void clearRating()}
+            busy={busyIds.has(submission.id)}
+            shortcuts={shortcutsOn}
+            onScore={updateRating}
+            onClear={clearRating}
           />
           <PhotoNavigation
             hasPrevious={isPrevious}
             hasNext={isNext}
+            shortcuts={shortcutsOn}
             onPrevious={showPrevious}
             onNext={showNext}
           />

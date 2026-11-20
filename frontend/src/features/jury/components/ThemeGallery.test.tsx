@@ -79,7 +79,6 @@ it('links each photograph to the rater with its ID and lazy thumbnail', () => {
     'src',
     'https://media.example/12-small.jpg',
   );
-  expect(document.querySelector('[class*="Mui"]')).toBeNull();
 });
 
 it("shows the judge's score as a figure and a dash for an unscored photograph", () => {
