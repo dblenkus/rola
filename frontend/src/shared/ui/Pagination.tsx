@@ -41,8 +41,11 @@ export default function Pagination({
   const { t } = useTranslation();
   const selectId = useId();
   const pages = Math.max(1, Math.ceil(count / rowsPerPage));
-  const from = count === 0 ? 0 : (page - 1) * rowsPerPage + 1;
-  const to = Math.min(page * rowsPerPage, count);
+  // A page past the end, as for a moment after the last page's only row is
+  // deleted, is shown as the last page, so the range is never impossible.
+  const shownPage = Math.min(page, pages);
+  const from = count === 0 ? 0 : (shownPage - 1) * rowsPerPage + 1;
+  const to = Math.min(shownPage * rowsPerPage, count);
 
   return (
     <nav className="ui-pagination" aria-label={t('ui_pagination')}>

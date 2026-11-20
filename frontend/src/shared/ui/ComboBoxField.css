@@ -1,9 +1,15 @@
+/* Text in a field keeps normal figures and punctuation (see app.css). */
+.rl-field__input {
+  font-variant-numeric: normal;
+}
+
 /* The suggestion list: menus are not designed yet, so it sits on paper with a
    1 px control-line outline and no shadow, as wide as the field. */
 .ui-combobox__popover {
   box-sizing: border-box;
   width: var(--trigger-width);
-  max-height: 320px;
+  /* The maximum height is ComboBoxField's MAX_LIST_HEIGHT, which React Aria
+     sets inline. */
   overflow-y: auto;
   border: var(--stroke-hairline) solid var(--control-line);
   border-radius: var(--radius-control);

@@ -8,13 +8,15 @@ import Pagination from './Pagination';
 // A pager as the admin's submission table uses it, with its translations.
 function Pager({
   count,
+  initialPage = 1,
   onRowsPerPageChange = vi.fn(),
 }: {
   count: number;
+  initialPage?: number;
   onRowsPerPageChange?: (rows: number) => void;
 }) {
   const { t } = useTranslation();
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   return (
     <Pagination
@@ -91,6 +93,16 @@ describe('pagination', () => {
   it('shows no rows of an empty table', () => {
     render(<Pager count={0} />);
     expect(screen.getByText('0-0 of 0')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Go to next page' }),
+    ).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('shows the rows of the last page for a page past the end', () => {
+    // As after the only row of the last page is deleted, until the list
+    // moves to the page before it.
+    render(<Pager count={20} initialPage={2} />);
+    expect(screen.getByText('1-20 of 20')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Go to next page' }),
     ).toHaveAttribute('aria-disabled', 'true');

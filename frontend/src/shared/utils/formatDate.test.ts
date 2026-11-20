@@ -1,6 +1,11 @@
 import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { daysLeft, formatDate, parseApiDate } from './formatDate';
+import {
+  daysLeft,
+  formatDate,
+  formatDateTime,
+  parseApiDate,
+} from './formatDate';
 
 describe('formatDate', () => {
   it('writes a Slovenian date without leading zeros', () => {
@@ -24,6 +29,29 @@ describe('formatDate', () => {
       expect(text).not.toMatch(/ /);
       expect(text.split('\u00a0')).toHaveLength(3);
     }
+  });
+});
+
+describe('formatDateTime', () => {
+  it('writes the date and the 24-hour time in Slovenian', () => {
+    expect(formatDateTime(new Date(2026, 10, 20, 18, 18, 21), 'sl')).toBe(
+      '20.\u00a011.\u00a02026,\u00a018:18',
+    );
+  });
+
+  it('writes the date and the 24-hour time in English', () => {
+    expect(formatDateTime(new Date(2026, 10, 20, 18, 18, 21), 'en')).toBe(
+      '20\u00a0Nov\u00a02026,\u00a018:18',
+    );
+  });
+
+  it('writes the hour without a leading zero and the minutes with one', () => {
+    expect(formatDateTime(new Date(2026, 0, 5, 7, 4), 'sl')).toBe(
+      '5.\u00a01.\u00a02026,\u00a07:04',
+    );
+    expect(formatDateTime(new Date(2026, 0, 5, 0, 0), 'en')).toBe(
+      '5\u00a0Jan\u00a02026,\u00a00:00',
+    );
   });
 });
 

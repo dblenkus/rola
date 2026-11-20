@@ -1,6 +1,7 @@
-import { useId, useState, type Key } from 'react';
+import { useContext, useId, useState, type Key } from 'react';
 import {
   ComboBox,
+  ComboBoxStateContext,
   Input,
   Label,
   ListBox,
@@ -26,8 +27,8 @@ interface ComboBoxFieldProps {
   autoFocus?: boolean;
   // Reports a chosen option, and '' when the text is cleared.
   onChange: (change: InputChange) => void;
-  // Loads the options the first time the list opens, and again on the next
-  // opening after a failure.
+  // Loads the options the first time the list opens. After a failure it
+  // loads them again on the next opening, typing, or click on the field.
   loadOptions: () => Promise<string[]>;
   // Shown under the field when the options could not be loaded.
   loadErrorMessage: string;
@@ -38,6 +39,27 @@ type Options =
   | { status: 'loading' }
   | { status: 'failed' }
   | { status: 'loaded'; names: string[] };
+
+// The list's tallest height; a longer list scrolls. React Aria writes the
+// popover's max-height inline, so the cap goes through its prop, not CSS.
+const MAX_LIST_HEIGHT = 320;
+
+// The field's input. After a failed load a click on the focused field opens
+// the list, which loads the options again; otherwise only leaving and
+// returning, or ArrowDown, would.
+function FieldInput({ failed }: { failed: boolean }) {
+  const state = useContext(ComboBoxStateContext);
+  return (
+    <Input
+      className="rl-field__input"
+      onClick={() => {
+        if (failed && state !== null && !state.isOpen) {
+          state.open(null, 'manual');
+        }
+      }}
+    />
+  );
+}
 
 // A text field that suggests options from a list loaded on first use, such as
 // the entrant's school. Only a chosen option or a cleared field is reported:
@@ -71,9 +93,7 @@ export default function ComboBoxField({
     setInputValue(value);
   }
 
-  const handleOpenChange = (isOpen: boolean): void => {
-    if (!isOpen || options.status === 'loading' || options.status === 'loaded')
-      return;
+  const load = (): void => {
     setOptions({ status: 'loading' });
     loadOptions().then(
       (names) => setOptions({ status: 'loaded', names: [...new Set(names)] }),
@@ -81,8 +101,15 @@ export default function ComboBoxField({
     );
   };
 
+  const handleOpenChange = (isOpen: boolean): void => {
+    if (isOpen && (options.status === 'idle' || options.status === 'failed'))
+      load();
+  };
+
   const handleInputChange = (text: string): void => {
     setInputValue(text);
+    // The list opens on typing only once it may be empty, as while loading.
+    if (options.status === 'failed') load();
     if (text === '' && value !== '') onChange({ name, value: '' });
   };
 
@@ -131,14 +158,18 @@ export default function ComboBoxField({
         {label}
         {required && <span aria-hidden="true"> *</span>}
       </Label>
-      <Input className="rl-field__input" />
+      <FieldInput failed={options.status === 'failed'} />
       {shownError !== null && (
         <span id={errorId} className="rl-field__error">
           <Icon name="alert" />
           {shownError}
         </span>
       )}
-      <Popover className="ui-combobox__popover" offset={4}>
+      <Popover
+        className="ui-combobox__popover"
+        offset={4}
+        maxHeight={MAX_LIST_HEIGHT}
+      >
         <ListBox
           className="ui-combobox__list"
           renderEmptyState={() => (

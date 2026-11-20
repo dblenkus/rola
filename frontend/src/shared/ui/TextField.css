@@ -1,3 +1,8 @@
+/* Text in a field keeps normal figures and punctuation (see app.css). */
+.rl-field__input {
+  font-variant-numeric: normal;
+}
+
 /* Helper text under a field, 6 px below it like the error. */
 .ui-field__description {
   margin-top: 6px;
