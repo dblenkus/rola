@@ -130,6 +130,12 @@
     height: var(--touch-target);
   }
 
+  /* The account button's 40 px grows to the tap target. */
+  .shell-account .rl-appbar__account {
+    min-width: var(--touch-target);
+    height: var(--touch-target);
+  }
+
   /* A task screen brings its own header and bottom bar. */
   .shell--task {
     --shell-tabbar-space: 0px;

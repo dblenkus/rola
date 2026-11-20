@@ -54,6 +54,8 @@ describe('contest details', () => {
     expect(date.parentElement?.textContent).toBe(
       'Entries close 7\u00a0Dec\u00a02026 · 22 days left',
     );
+    // The contest header's deadline line is in small type.
+    expect(date.closest('p')).toHaveClass('small');
   });
 
   it('writes the deadline line natively in Slovenian', async () => {

@@ -64,3 +64,44 @@ it('spans columns in a table without a head', () => {
     '3',
   );
 });
+
+it('adds the classes it is given to a row and its cells', () => {
+  render(
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell className="entries-head">Title</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        <TableRow className="entries-row">
+          <TableCell className="entries-title" align="end">
+            Mist
+          </TableCell>
+          <TableCell header className="entries-author">
+            Ana
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>,
+  );
+  expect(screen.getByRole('columnheader')).toHaveClass(
+    'ui-table__cell',
+    'mono-label',
+    'entries-head',
+  );
+  expect(screen.getByRole('cell', { name: 'Mist' })).toHaveClass(
+    'ui-table__cell',
+    'ui-table__cell--end',
+    'body-dense',
+    'entries-title',
+  );
+  expect(screen.getByRole('rowheader', { name: 'Ana' })).toHaveClass(
+    'ui-table__cell',
+    'entries-author',
+  );
+  expect(screen.getAllByRole('row')[1]).toHaveClass(
+    'ui-table__row',
+    'entries-row',
+  );
+});

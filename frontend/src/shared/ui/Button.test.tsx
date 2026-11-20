@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { FormEvent } from 'react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation, useNavigationType } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import Button, { ButtonBar, ButtonRow } from './Button';
 
@@ -110,6 +110,32 @@ describe('button', () => {
     expect(link).toHaveClass('rl-btn', 'rl-btn--quiet');
     expect(link.querySelector('svg')).toHaveClass('rl-btn__icon');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('replaces the history entry and passes router state when told to', async () => {
+    function Here() {
+      const location = useLocation();
+      const navigationType = useNavigationType();
+      return (
+        <p>
+          {location.pathname} {navigationType} {JSON.stringify(location.state)}
+        </p>
+      );
+    }
+    render(
+      <MemoryRouter initialEntries={['/sign-in']}>
+        <Button to="/login" replace state={{ from: '/results' }}>
+          Go to login
+        </Button>
+        <Here />
+      </MemoryRouter>,
+    );
+    await userEvent
+      .setup()
+      .click(screen.getByRole('link', { name: 'Go to login' }));
+    expect(
+      screen.getByText('/login REPLACE {"from":"/results"}'),
+    ).toBeInTheDocument();
   });
 });
 

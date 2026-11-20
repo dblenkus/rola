@@ -63,6 +63,7 @@ function ContestView({ contest }: { contest: Contest }) {
   return (
     <Page
       title={contest.title}
+      leadSize="small"
       lead={
         <span className="contests-deadline">
           <Icon name="clock" className="contests-deadline__clock" />

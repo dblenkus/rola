@@ -21,11 +21,14 @@
   max-width: none;
 }
 
-/* Title and actions share a bottom line; the lead runs under both. */
+/* Title and actions share a bottom line; the lead runs under both and the
+   `before` content above both. The grid has no row gap, so an unused area
+   takes no space. */
 .ui-page__head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
+    'before before'
     'title actions'
     'lead lead';
   align-items: end;
@@ -60,9 +63,8 @@
   letter-spacing: -0.015em;
 }
 
-/* Focus moves here on navigation; the ring shows only for the keyboard. */
-.ui-page__title:focus:not(:focus-visible) {
-  outline: none;
+.ui-page__before {
+  grid-area: before;
 }
 
 .ui-page__lead {
@@ -101,6 +103,7 @@
   .ui-page__head {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
+      'before'
       'title'
       'lead'
       'actions';

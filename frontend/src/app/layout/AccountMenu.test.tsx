@@ -16,6 +16,12 @@ const trigger = () =>
   screen.getByRole('button', { name: 'account of current user' });
 
 describe('signed out', () => {
+  it("is drawn as the app bar's account button", () => {
+    open('/contests');
+    expect(trigger()).toHaveClass('rl-appbar__account');
+    expect(trigger().querySelector('svg.rl-appbar__chevron')).not.toBeNull();
+  });
+
   it('offers registration and login', async () => {
     const user = userEvent.setup();
     open('/contests');
@@ -56,6 +62,16 @@ describe('signed in', () => {
     signIn('signed-in', 'ana@example.com');
     open('/contests');
     expect(trigger()).toHaveTextContent('Aana@example.com');
+  });
+
+  it("is drawn as the app bar's account button", () => {
+    signIn('signed-in', 'ana@example.com');
+    open('/contests');
+    const button = trigger();
+    expect(button).toHaveClass('rl-appbar__account');
+    expect(button).not.toHaveClass('rl-btn');
+    expect(button.querySelector('.rl-appbar__avatar')).toHaveTextContent('A');
+    expect(button.querySelector('svg.rl-appbar__chevron')).not.toBeNull();
   });
 
   it('offers the profile and logout', async () => {

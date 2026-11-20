@@ -77,4 +77,29 @@ describe('menu', () => {
     );
     expect(onSignOut).not.toHaveBeenCalled();
   });
+
+  it('draws the trigger with the classes it is given instead of a button', async () => {
+    render(
+      <Menu
+        aria-label="Account"
+        items={[{ id: 'sign-out', label: 'Sign out' }]}
+        triggerClassName="rl-appbar__account"
+        chevronClassName="rl-appbar__chevron"
+      >
+        <span className="rl-appbar__avatar">A</span>
+      </Menu>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Account' });
+    expect(trigger).toHaveAttribute('class', 'rl-appbar__account');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'true');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    const chevron = trigger.querySelector('svg');
+    expect(chevron).toHaveAttribute('class', 'rl-appbar__chevron');
+    expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    await userEvent.setup().click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      await screen.findByRole('menuitem', { name: 'Sign out' }),
+    ).toBeInTheDocument();
+  });
 });

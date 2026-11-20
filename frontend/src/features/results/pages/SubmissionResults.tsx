@@ -40,10 +40,9 @@ const SubmissionResults: React.FC = () => {
   const files = submission.files ?? [];
   const series = files.length > 1;
 
-  // The h1 leads the page for assistive technology; the wall label under the
-  // photo shows the same title, so it is hidden from them there.
+  // The page's h1 is the title in the wall label under the photo.
   return (
-    <Page title={title} titleHidden width="full">
+    <Page title={title} ownHeading width="full">
       <div
         className={
           series ? 'results-photos results-photos--series' : 'results-photos'
@@ -69,9 +68,7 @@ const SubmissionResults: React.FC = () => {
         ))}
       </div>
       <div className="results-label">
-        <p className="results-label__title photo-title" aria-hidden="true">
-          {title}
-        </p>
+        <h1 className="results-label__title photo-title">{title}</h1>
         <p className="results-label__author body">
           {author.first_name} {author.last_name} ({author.country})
         </p>
