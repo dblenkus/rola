@@ -144,5 +144,11 @@
   "shell_not_found_home": "Na domačo stran",
   "shell_error_title": "Nekaj je šlo narobe",
   "shell_error_text": "Te strani ni bilo mogoče prikazati. Naloži jo znova in poskusi še enkrat.",
-  "shell_error_reload": "Naloži znova"
+  "shell_error_reload": "Naloži znova",
+  "admin_paid_checkbox": "Plačano: {{name}}",
+  "admin_state_paid": "Plačano",
+  "admin_state_unpaid": "Ni plačano",
+  "admin_actions": "Dejanja",
+  "admin_untitled_photograph": "Fotografija brez naslova",
+  "admin_series_photo": "{{title}}, fotografija {{number}} od {{count}}"
 }

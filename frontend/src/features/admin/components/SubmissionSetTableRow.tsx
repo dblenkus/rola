@@ -1,14 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router';
-
 import { useTranslation } from 'react-i18next';
 
-import { Button, Checkbox, TableCell, TableRow } from '@mui/material';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import MoneyOffIcon from '@mui/icons-material/MoneyOff';
-
-import { tableButtonSx } from '../../../shared/ui/styles';
 import { Payment, SubmissionSet } from '../../../shared/api/types';
+import Button from '../../../shared/ui/Button';
+import Checkbox from '../../../shared/ui/Checkbox';
+import { TableCell, TableRow } from '../../../shared/ui/Table';
+import './SubmissionSetTableRow.css';
 
 interface SubmissionSetTableRowProps {
   contestId: number;
@@ -39,51 +36,52 @@ const SubmissionSetTableRow: React.FC<SubmissionSetTableRowProps> = ({
 }: SubmissionSetTableRowProps) => {
   const { t } = useTranslation();
 
-  const handlePaidChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ): void => {
-    onPaidChange(submissionSet.id, event.target.checked);
-  };
-
+  const author = getSubmissionSetAuthor(submissionSet);
+  const paid = !!payment && payment.paid === true;
   const themeNumber = new Set(
     submissionSet.submissions.map(({ theme }) => theme),
   ).size;
 
   return (
     <TableRow>
-      <TableCell component="th" scope="row">
-        {getSubmissionSetAuthor(submissionSet)}
+      <TableCell header label={t('name')}>
+        {author}
       </TableCell>
-      <TableCell>{new Date(submissionSet.created).toLocaleString()}</TableCell>
-      <TableCell>{themeNumber}</TableCell>
-      <TableCell>{submissionSet.submissions.length}</TableCell>
-      <TableCell>
+      <TableCell label={t('submited')}>
+        {new Date(submissionSet.created).toLocaleString()}
+      </TableCell>
+      <TableCell label={t('n_themes')}>{themeNumber}</TableCell>
+      <TableCell label={t('n_submissions')}>
+        {submissionSet.submissions.length}
+      </TableCell>
+      {/* On phones the label says the state in words above the box. */}
+      <TableCell label={paid ? t('admin_state_paid') : t('admin_state_unpaid')}>
         <Checkbox
-          checked={!!payment && payment.paid}
-          icon={<MoneyOffIcon color="secondary" />}
-          checkedIcon={<AttachMoneyIcon color="primary" />}
-          onChange={handlePaidChange}
+          label={t('admin_paid_checkbox', { name: author })}
+          hideLabel
+          isSelected={paid}
+          onChange={(isSelected) => onPaidChange(submissionSet.id, isSelected)}
         />
       </TableCell>
-      <TableCell align="right">
-        <Button
-          component={Link}
-          to={getViewLink(contestId, submissionSet)}
-          sx={tableButtonSx}
-          color="primary"
-        >
-          {t('view')}
-        </Button>
-        <Button
-          variant="text"
-          sx={tableButtonSx}
-          color="secondary"
-          onClick={(): void => {
-            onDelete(submissionSet);
-          }}
-        >
-          {t('delete')}
-        </Button>
+      <TableCell align="end">
+        <span className="admin-row-actions">
+          <Button
+            variant="quiet"
+            size="dense"
+            to={getViewLink(contestId, submissionSet)}
+          >
+            {t('view')}
+          </Button>
+          <Button
+            variant="quiet"
+            size="dense"
+            onPress={(): void => {
+              onDelete(submissionSet);
+            }}
+          >
+            {t('delete')}
+          </Button>
+        </span>
       </TableCell>
     </TableRow>
   );

@@ -1,144 +1,147 @@
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
-import React from 'react';
-
-import { withTranslation, WithTranslation } from 'react-i18next';
-
-import { Alert, Card, Grid } from '@mui/material';
-
-import { Contest, SubmissionSet } from '../../../shared/api/types';
 
 import { requestError } from '../../../shared/api/errors';
-import { getSubmissionSet } from '../api';
+import { Contest, Submission, SubmissionSet } from '../../../shared/api/types';
+import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
 import { getContest } from '../../contests';
+import { getSubmissionSet } from '../api';
+import './SubmissionSetView.css';
 
 interface RouteMatchParams {
   contestId: string;
   submissionSetId: string;
 }
 
-interface SubmissionListProps extends WithTranslation {
-  match: { params: RouteMatchParams };
+interface Loaded {
+  contest: Contest;
+  submissionSet: SubmissionSet;
 }
 
-interface SubmissionListState {
-  error: string | null;
-  contest: Contest | null;
-  submissionSet: SubmissionSet | null;
-}
-
-class SubmissionList extends React.Component<
-  SubmissionListProps,
-  SubmissionListState
-> {
-  constructor(props: SubmissionListProps) {
-    super(props);
-
-    this.state = {
-      error: null,
-      contest: null,
-      submissionSet: null,
-    };
-  }
-
-  async componentDidMount(): Promise<void> {
-    await this.fetchData();
-  }
-
-  getSubmissionSetAuthor = (submissionSet: SubmissionSet): string => {
-    if (!submissionSet.submissions[0]) return '';
-
-    const {
-      first_name: firstName,
-      last_name: lastName,
-      email,
-    } = submissionSet.submissions[0].author;
-    return `${firstName} ${lastName}, ${email}`;
-  };
-
-  async fetchData(): Promise<void> {
-    const {
-      match: {
-        params: { contestId, submissionSetId },
-      },
-    } = this.props;
-
-    try {
-      const { data: contest } = await getContest(contestId);
-      const { data: submissionSet } = await getSubmissionSet(submissionSetId);
-      this.setState({ contest, submissionSet });
-    } catch (error) {
-      this.setState({ error: requestError(error) });
-    }
-  }
-
-  render(): React.ReactNode {
-    if (this.state.error)
-      return <Alert severity="error">{this.state.error}</Alert>;
-    const { contest, submissionSet } = this.state;
-    const { t } = this.props;
-
-    return (
-      <>
-        <Grid size={{ xs: 12 }}>
-          <b>{t('contest')}:</b> {contest?.title}
-          <br />
-          <b>{t('author')}:</b>{' '}
-          {submissionSet ? this.getSubmissionSetAuthor(submissionSet) : ''}
-          <br />
-          <br />
-        </Grid>
-        <Grid container spacing={2}>
-          {submissionSet?.submissions.map((submission) => {
-            const theme = contest?.themes.find(
-              (t) => t.id === submission.theme,
-            );
-            return (
-              <Grid key={submission.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card raised>
-                  {(submission.files ?? []).map((file) => (
-                    <img
-                      key={file.id}
-                      alt={submission.title ?? ''}
-                      src={file.file}
-                      style={{
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        maxHeight: '100%',
-                        padding: '5px',
-                        width: '100%',
-                      }}
-                    />
-                  ))}
-                  <br />
-                  <b>{t('title')}:</b> {submission.title}
-                  <br />
-                  <b>{t('theme')}:</b> {theme?.title}
-                  {submission.description && (
-                    <>
-                      <br />
-                      <b>{t('description')}:</b> {submission.description}
-                    </>
-                  )}
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-      </>
-    );
-  }
-}
-
-const RoutedView = withTranslation()(SubmissionList);
-export default function RouteView() {
-  const params = useParams();
-  const contestId = params.contestId;
+const SubmissionSetView: React.FC = () => {
+  const { t } = useTranslation();
+  const { contestId, submissionSetId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
   }
-  const submissionSetId = params.submissionSetId;
   if (!submissionSetId) {
     throw new Error('Missing submissionSetId route parameter');
   }
-  return <RoutedView match={{ params: { contestId, submissionSetId } }} />;
-}
+  const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetch = async (): Promise<Loaded> => {
+      const { data: contest } = await getContest(contestId);
+      const { data: submissionSet } = await getSubmissionSet(submissionSetId);
+      return { contest, submissionSet };
+    };
+    fetch()
+      .then((data) => {
+        if (active) setLoaded(data);
+      })
+      .catch((error: unknown) => {
+        if (active) setError(requestError(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, [contestId, submissionSetId]);
+
+  if (error) return <Message severity="error">{error}</Message>;
+  if (!loaded) return <LoadingProgress />;
+
+  const { contest, submissionSet } = loaded;
+  const { author } = submissionSet;
+  const authorName = `${author.first_name} ${author.last_name}`;
+
+  const photoAlt = (submission: Submission, index: number): string => {
+    const title = submission.title || t('admin_untitled_photograph');
+    // The photographs of a series link to different files, so each link
+    // needs its own name.
+    return submission.files.length > 1
+      ? t('admin_series_photo', {
+          title,
+          number: index + 1,
+          count: submission.files.length,
+        })
+      : title;
+  };
+
+  return (
+    <Page title={authorName}>
+      <dl className="admin-details">
+        <div className="admin-details__item">
+          <dt className="small">{t('contest')}</dt>
+          <dd className="body">{contest.title}</dd>
+        </div>
+        <div className="admin-details__item">
+          <dt className="small">{t('author')}</dt>
+          <dd className="body">{authorName}</dd>
+        </div>
+        {author.email !== null && (
+          <div className="admin-details__item">
+            <dt className="small">{t('email')}</dt>
+            <dd className="body">{author.email}</dd>
+          </div>
+        )}
+      </dl>
+      <ul className="admin-photos">
+        {submissionSet.submissions.map((submission) => {
+          const theme = contest.themes.find(
+            ({ id }) => id === submission.theme,
+          );
+          return (
+            <li key={submission.id} className="admin-photos__item">
+              <figure className="admin-photo">
+                {submission.files.map((file, index) => (
+                  <a
+                    key={file.id}
+                    className="admin-photo__link"
+                    href={file.file}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      className="admin-photo__img"
+                      src={file.thumbnail || file.file}
+                      alt={photoAlt(submission, index)}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </a>
+                ))}
+                <figcaption>
+                  <dl className="admin-photo__details">
+                    <div className="admin-details__item">
+                      <dt className="small">{t('title')}</dt>
+                      <dd className="body">
+                        {submission.title || t('admin_untitled_photograph')}
+                      </dd>
+                    </div>
+                    <div className="admin-details__item">
+                      <dt className="small">{t('theme')}</dt>
+                      <dd className="body">{theme?.title}</dd>
+                    </div>
+                    {submission.description && (
+                      <div className="admin-details__item">
+                        <dt className="small">{t('description')}</dt>
+                        <dd className="body">{submission.description}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </figcaption>
+              </figure>
+            </li>
+          );
+        })}
+      </ul>
+    </Page>
+  );
+};
+
+export default SubmissionSetView;

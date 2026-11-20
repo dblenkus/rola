@@ -1,0 +1,39 @@
+/*
+ * The notification, fixed at the bottom of the screen on paper. No shadow:
+ * its control-line outline sets it off the page.
+ *
+ * Notifications render outside the shell, where --shell-tabbar-space is not
+ * set, so the phone rule assumes the tab bar. --notifications-bottom-offset
+ * is the room another bottom element (the app's update prompt) takes, so the
+ * notification stacks above it instead of covering it; 0 by default.
+ */
+.notifications {
+  position: fixed;
+  z-index: 20;
+  right: max(var(--space-6), var(--safe-right));
+  bottom: calc(
+    var(--space-6) + var(--safe-bottom) +
+      var(--notifications-bottom-offset, 0px)
+  );
+  width: min(24rem, calc(100vw - 2 * var(--space-6)));
+}
+
+.notifications .ui-message:not(.ui-message--error) {
+  border-color: var(--control-line);
+}
+
+/* phone: the width of the screen inside 16 px margins, above the tab bar. */
+@media (width < 40rem) {
+  .notifications {
+    right: max(var(--space-4), var(--safe-right));
+    left: max(var(--space-4), var(--safe-left));
+    bottom: calc(
+      var(
+          --shell-tabbar-space,
+          calc(var(--shell-tabbar-height) + var(--safe-bottom))
+        ) +
+        var(--space-4) + var(--notifications-bottom-offset, 0px)
+    );
+    width: auto;
+  }
+}
