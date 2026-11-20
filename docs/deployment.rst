@@ -176,7 +176,8 @@ terminator make 2, and every further proxy that appends to
 
 * Too low, and every request seems to come from nginx or the terminator.
   All clients then share one budget, and 30 login attempts a minute from
-  anyone lock everybody out of the API and the Django admin login.
+  anyone lock everybody out of the API login, the Django admin login and
+  password changes.
 * Too high, and the counted entry is one the client wrote itself, so a client
   can claim a new address for each request and is never limited.
 
@@ -185,7 +186,8 @@ Request limits
 
 * The API login (``POST /api/v1/user/login``), the Django admin login
   (``POST /django-admin/login/``) and password changes
-  (``POST /api/v1/user/{id}/change_password``), which check the current
+  (``POST /api/v1/user/{id}/change_password`` and
+  ``POST /django-admin/password_change/``), which check the current
   password, share one budget of 30 attempts a minute per client address.
   Further attempts get 429 with ``Retry-After``.
 * Registration and account activation each have their own budget of 60
@@ -329,6 +331,23 @@ answering, so their response times are alike. Each registration of an
 existing address therefore emails that account, limited like any
 registration to 60 requests an hour per client address (`Request limits`_),
 with no separate limit per recipient address.
+
+A password change through the API, a reset link or the Django admin expires
+the account's login tokens and invalidates the reset links already sent to
+it. ``manage.py changepassword`` and a password written from
+``manage.py shell`` do neither: the tokens and links stay valid until they
+expire, tokens after two days and links after one. After such a change,
+revoke them, filling in the address:
+
+.. code-block:: shell
+
+   docker compose exec -T backend python manage.py shell -c "
+   from django.db.models import F
+   from rola.accounts.models import Token, User
+   user = User.objects.get(email__iexact='<address>')
+   Token.objects.expire_for_user(user)
+   User.objects.filter(pk=user.pk).update(password_reset_counter=F('password_reset_counter') + 1)
+   "
 
 Logs
 ====

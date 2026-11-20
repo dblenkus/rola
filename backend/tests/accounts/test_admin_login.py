@@ -1,26 +1,16 @@
 """Limit password guessing through the Django admin login."""
 
-from unittest.mock import patch
-
 import pytest
 from django.conf import settings
 from django.test import Client, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from rola.accounts.api.throttling import LoginThrottle
 from tests.factories import PASSWORD, create_user
 
 pytestmark = pytest.mark.django_db
 
 WRONG_PASSWORD = {"username": "organizer@example.org", "password": "wrong"}
-
-
-@pytest.fixture
-def budget():
-    """Allow two login attempts per client address."""
-    with patch.object(LoginThrottle, "rate", "2/hour", create=True):
-        yield
 
 
 def admin_login(credentials, **extra):

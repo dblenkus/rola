@@ -17,8 +17,9 @@ configuration:
 - `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, ordering
   filter and pagination, and the `readinesscheck` command.
 - `accounts/`: users, login tokens, registration, activation, password
-  resets and account emails; the password change and its revocations
-  (`services.py`); the admin site (`sites.py`).
+  resets and account emails; the password change that the API and the admin
+  share (`services.py`); the admin site (`sites.py`) and its password-change
+  form (`forms.py`).
 - `contests/`: what an organizer sets up: Contest, Theme, Institution.
 - `entries/`: what an entrant submits: Author, SubmissionSet, Submission and
   File (a photograph), with `photos.py` (validation, metadata stripping,
@@ -49,9 +50,9 @@ Inside an app:
   `routes.py`, whose `register(router)` adds the app's endpoints.
   `config/urls.py` calls each app's `register`. `accounts/api/` also holds
   `authentication.py` (the token authentication), `throttling.py` (the rate
-  limits, which the admin login in `sites.py` shares too), and in `routes.py`
-  the `urlpatterns` for the login path, which `config/urls.py` includes
-  before the router.
+  limits, which the admin login and password change in `sites.py` share
+  too), and in `routes.py` the `urlpatterns` for the login path, which
+  `config/urls.py` includes before the router.
 - `admin.py`, `management/commands/`, `migrations/0001_schema.py`.
 
 Tests live in `backend/tests/<app>/` (`accounts`, `contests`, `entries`,

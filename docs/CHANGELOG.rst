@@ -355,6 +355,10 @@ Fixes
 * A login with the old password that overlaps a password change or reset is
   refused. It used to receive a token that outlived the change, and an
   account whose stored hash the login upgraded got its old password back.
+* A password change in the Django admin expires the account's login tokens
+  and invalidates its outstanding reset links, as a change through the API
+  does; both used to stay valid. Its attempts count against the login limit,
+  which they used to bypass.
 * The activation email greets with "Hello!" instead of the first name given
   at registration. Anyone can register any address, so that name could put a
   stranger's text and links into a genuine mail from the platform.

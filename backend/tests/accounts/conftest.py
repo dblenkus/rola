@@ -1,8 +1,11 @@
-"""Provide an active account, its API client and a postal address."""
+"""Provide an active account, its API client, an address and a login budget."""
+
+from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
 
+from rola.accounts.api.throttling import LoginThrottle
 from rola.accounts.models import Token, User
 
 
@@ -33,3 +36,10 @@ def address():
         "postal_code": "1000",
         "country": "SI",
     }
+
+
+@pytest.fixture
+def budget():
+    """Allow two login attempts per client address."""
+    with patch.object(LoginThrottle, "rate", "2/hour", create=True):
+        yield
