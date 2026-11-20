@@ -7,7 +7,7 @@ from rola.contests.models import Contest, Institution, Theme
 
 
 class InstitutionSerializer(BaseSerializer):
-    """Serializer for Author objects."""
+    """Serializer for Institution objects."""
 
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""

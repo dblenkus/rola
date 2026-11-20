@@ -168,6 +168,23 @@ API changes
   ``submission_set``, and its filters ``?submissionset=`` and
   ``?submissionset__in=`` to ``?submission_set=`` and
   ``?submission_set__in=``.
+* Request bodies are JSON, except the JPEG body of ``POST /api/v1/file``. A
+  form-encoded or multipart body answers 415; such bodies used to be
+  accepted.
+* Only ``/api/v1/results/submission`` takes ``?ordering=``. The other lists
+  ignore it and keep their default order; they used to sort by any of their
+  fields.
+* The id filters take integers: ``?contest=`` and ``?theme=`` on
+  ``/api/v1/submission``, ``/api/v1/judge/submission`` and
+  ``/api/v1/results/submission``, ``?contest=`` on ``/api/v1/submissionset``,
+  ``?theme=`` and ``?submission=`` on ``/api/v1/rating``, and
+  ``?submission_set=`` and the comma-separated ``?submission_set__in=`` on
+  ``/api/v1/payment``. Any other value answers 400 with an error for that
+  filter alone, and an id that matches nothing, or nothing the caller may
+  see, answers an empty list. A value that was not a number used to answer
+  500 on ``?contest=`` of the submission lists and ``?theme=`` of ratings,
+  and an unknown id on the other filters answered 400 "Select a valid
+  choice.".
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
   backend's integer bounds; the backend serves no schema at runtime. Its
   security scheme ``tokenAuth`` is the HTTP ``bearer`` scheme.

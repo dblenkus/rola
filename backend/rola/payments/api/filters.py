@@ -2,17 +2,20 @@
 
 from django_filters import rest_framework as filters
 
+from rola.common.filters import IdFilter, IdInFilter
 from rola.payments.models import Payment
 
 
 class PaymentFilter(filters.FilterSet):
-    """Filter for Submission API endpoint."""
+    """Filter payments by submission set and payment status."""
+
+    submission_set = IdFilter()
+    submission_set__in = IdInFilter(field_name="submission_set", lookup_expr="in")
 
     class Meta:
-        """Configure submission-set and payment-status lookups."""
+        """Configure the payment-status lookup."""
 
         model = Payment
         fields = {
-            "submission_set": ["exact", "in"],
             "paid": ["exact"],
         }

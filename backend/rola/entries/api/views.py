@@ -105,7 +105,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     # SubmissionSerializer reads the request method, so the schema generator
     # cannot instantiate it here; SubmissionRequest is its request component,
-    # which update registers. A form body cannot hold a list.
+    # which update registers.
     create=extend_schema(
         parameters=[
             OpenApiParameter(
@@ -118,8 +118,6 @@ class AuthorViewSet(viewsets.ModelViewSet):
         ],
         request={
             "application/json": _one_or_many("SubmissionRequest"),
-            "application/x-www-form-urlencoded": _component("SubmissionRequest"),
-            "multipart/form-data": _component("SubmissionRequest"),
         },
         responses={
             200: OpenApiResponse(
