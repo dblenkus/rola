@@ -30,19 +30,19 @@ def test_login_is_rate_limited(db):
     client = APIClient()
     credentials = {"email": "nobody@example.com", "password": "wrong"}
     with patch.object(LoginThrottle, "rate", "1/hour", create=True):
-        assert client.post(reverse("login"), credentials).status_code == 400
-        assert client.post(reverse("login"), credentials).status_code == 429
+        assert client.post(reverse("token-list"), credentials).status_code == 400
+        assert client.post(reverse("token-list"), credentials).status_code == 429
 
 
 def test_login_limit_survives_a_full_cache(db):
     client = APIClient()
     credentials = {"email": "nobody@example.com", "password": "wrong"}
     with patch.object(LoginThrottle, "rate", "1/hour", create=True):
-        assert client.post(reverse("login"), credentials).status_code == 400
-        assert client.post(reverse("login"), credentials).status_code == 429
+        assert client.post(reverse("token-list"), credentials).status_code == 400
+        assert client.post(reverse("token-list"), credentials).status_code == 429
         for i in range(400):
             cache.set(f"throttle_registration_{i}", [time.time()], 3600)
-        assert client.post(reverse("login"), credentials).status_code == 429
+        assert client.post(reverse("token-list"), credentials).status_code == 429
 
 
 @pytest.mark.skipif(
@@ -50,7 +50,7 @@ def test_login_limit_survives_a_full_cache(db):
 )
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_checks_for_one_address_share_its_budget(rf):
-    request = rf.post(reverse("login"))
+    request = rf.post(reverse("token-list"))
     backend_pids = queue.SimpleQueue()
 
     def check_on_another_connection():
@@ -93,15 +93,15 @@ def test_registration_and_recovery_have_separate_limits(account, address):
         patch.object(RegistrationThrottle, "rate", "1/hour", create=True),
         patch.object(RecoveryThrottle, "rate", "1/hour", create=True),
     ):
-        reset_url = reverse("user-request-password-reset")
-        assert client.post(reset_url, recovery).status_code == 200
+        reset_url = reverse("password-reset-request-list")
+        assert client.post(reset_url, recovery).status_code == 202
         assert client.post(reset_url, recovery).status_code == 429
         response = client.post(
             reverse("user-list"),
             registration("first@example.com", address),
             format="json",
         )
-        assert response.status_code == 201
+        assert response.status_code == 202
         response = client.post(
             reverse("user-list"),
             registration("second@example.com", address),
@@ -120,7 +120,7 @@ def test_registration_and_activation_have_separate_limits(db, address):
 
     def activate(client, email):
         token = generate_activation_token(User.objects.get(email=email))
-        return client.post(reverse("user-activate-account"), {"token": token})
+        return client.post(reverse("activation-list"), {"token": token})
 
     with (
         patch.object(RegistrationThrottle, "rate", "1/hour", create=True),
@@ -128,37 +128,17 @@ def test_registration_and_activation_have_separate_limits(db, address):
     ):
         # Budgets are per client address, so each direction gets its own.
         client = APIClient(REMOTE_ADDR="198.51.100.1")
-        assert register(client, "first@example.com").status_code == 201
+        assert register(client, "first@example.com").status_code == 202
         assert register(client, "second@example.com").status_code == 429
-        assert activate(client, "first@example.com").status_code == 200
+        assert activate(client, "first@example.com").status_code == 204
 
         client = APIClient(REMOTE_ADDR="198.51.100.2")
-        assert activate(client, "pending@example.com").status_code == 200
+        assert activate(client, "pending@example.com").status_code == 204
         assert activate(client, "pending@example.com").status_code == 429
-        assert register(client, "third@example.com").status_code == 201
+        assert register(client, "third@example.com").status_code == 202
 
     assert User.objects.get(email="first@example.com").is_active
     assert User.objects.get(email="pending@example.com").is_active
-
-
-def test_password_change_shares_the_login_limit(client, account):
-    url = reverse("user-change-password", kwargs={"id": account.id})
-    with patch.object(LoginThrottle, "rate", "2/hour", create=True):
-        login = APIClient().post(
-            reverse("login"), {"email": account.email, "password": "wrong"}
-        )
-        wrong = client.post(
-            url, {"current_password": "wrong", "new_password": "Replacement!73"}
-        )
-        response = client.post(
-            url, {"current_password": "Original!73", "new_password": "Replacement!73"}
-        )
-    assert login.status_code == 400
-    assert wrong.status_code == 400
-    assert response.status_code == 429
-    assert 0 < int(response.headers["Retry-After"]) <= 3600
-    account.refresh_from_db()
-    assert account.check_password("Original!73")
 
 
 @pytest.mark.parametrize(("num_proxies", "second_status"), [(0, 429), (1, 400)])
@@ -174,10 +154,10 @@ def test_login_limit_counts_forwarded_clients_only_behind_trusted_proxies(
         patch.object(LoginThrottle, "rate", "1/hour", create=True),
     ):
         first = client.post(
-            reverse("login"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.1"
+            reverse("token-list"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.1"
         )
         second = client.post(
-            reverse("login"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.2"
+            reverse("token-list"), credentials, HTTP_X_FORWARDED_FOR="198.51.100.2"
         )
     assert first.status_code == 400
     assert second.status_code == second_status

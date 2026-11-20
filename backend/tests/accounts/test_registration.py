@@ -23,7 +23,7 @@ from tests.factories import (
 )
 
 
-@pytest.mark.parametrize(("length", "status"), [(100, 201), (101, 400)])
+@pytest.mark.parametrize(("length", "status"), [(100, 202), (101, 400)])
 def test_registration_validates_address_lengths(db, address, length, status):
     address = dict.fromkeys(address, "x" * length)
     response = APIClient().post(
@@ -39,7 +39,7 @@ def test_registration_validates_address_lengths(db, address, length, status):
     )
 
     assert response.status_code == status
-    if status == 201:
+    if status == 202:
         location = User.objects.get().location
         assert {field: getattr(location, field) for field in address} == address
     else:
@@ -114,7 +114,7 @@ def test_registration_of_an_existing_address_answers_like_a_new_one(
             reverse("user-list"), registration(email, address), format="json"
         )
 
-    assert existing.status_code == 201
+    assert existing.status_code == 202
     assert existing.content == b""
     assert User.objects.get() == account
     assert not Location.objects.exists()
@@ -122,10 +122,10 @@ def test_registration_of_an_existing_address_answers_like_a_new_one(
     assert message.to == [account.email]
     assert first_link(message).startswith("https://photos.example.com/password-reset?")
     response = client.post(
-        reverse("user-password-reset"),
+        reverse("password-reset-list"),
         {"token": link_token(message), "new_password": "Replacement!73"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 204
     account.refresh_from_db()
     assert account.check_password("Replacement!73")
 
@@ -153,7 +153,7 @@ def test_registration_of_an_existing_address_attempts_no_insert(account, address
             format="json",
         )
 
-    assert response.status_code == 201
+    assert response.status_code == 202
     # PostgreSQL logs a failed account insert with its values: the
     # registrant's email, names and password hash.
     tables = ('INSERT INTO "accounts_user"', 'INSERT INTO "accounts_location"')
@@ -173,23 +173,23 @@ def test_registration_of_an_inactive_address_sends_a_reset_link_that_activates(
         response = client.post(
             reverse("user-list"), registration(pending.email, address), format="json"
         )
-    assert response.status_code == 201
+    assert response.status_code == 202
     (message,) = mail.outbox
     assert message.to == [pending.email]
 
     response = client.post(
-        reverse("user-password-reset"),
+        reverse("password-reset-list"),
         {"token": link_token(message), "new_password": "Replacement!73"},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 204
     pending.refresh_from_db()
     assert pending.is_active
     assert pending.check_password("Replacement!73")
     login = client.post(
-        reverse("login"), {"email": pending.email, "password": "Replacement!73"}
+        reverse("token-list"), {"email": pending.email, "password": "Replacement!73"}
     )
-    assert login.status_code == 200
+    assert login.status_code == 201
 
 
 @pytest.mark.skipif(
@@ -197,7 +197,7 @@ def test_registration_of_an_inactive_address_sends_a_reset_link_that_activates(
 )
 @pytest.mark.django_db(transaction=True)
 @override_settings(ROLA_FRONTEND_URL="https://photos.example.com/")
-def test_concurrent_registrations_of_one_address_answer_201(address):
+def test_concurrent_registrations_of_one_address_answer_202(address):
     payload = registration("person@example.com", address)
     backend_pids = queue.SimpleQueue()
 
@@ -230,7 +230,7 @@ def test_concurrent_registrations_of_one_address_answer_201(address):
         # throttle's history in the cache table.
         cache.clear()
 
-    assert first.status_code == second.status_code == 201
+    assert first.status_code == second.status_code == 202
     assert first.content == second.content == b""
     assert User.objects.count() == Location.objects.count() == 1
     assert sorted(urlsplit(first_link(message)).path for message in mail.outbox) == [

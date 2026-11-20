@@ -4,6 +4,23 @@ info:
   version: 1.0.0
   description: Accounts, photography contests, submissions, judging and payments.
 paths:
+  /api/v1/activations:
+    post:
+      operationId: activations_create
+      description: Activate the account that the token names.
+      tags:
+      - activations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/author:
     get:
       operationId: author_list
@@ -452,6 +469,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedJudgeSubmissionList'
           description: ''
+  /api/v1/password-reset-requests:
+    post:
+      operationId: password_reset_requests_create
+      description: Email a reset link to an active account, answering alike for any
+        address.
+      tags:
+      - password-reset-requests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          description: No response body
+  /api/v1/password-resets:
+    post:
+      operationId: password_resets_create
+      description: Consume a reset token and set the new password.
+      tags:
+      - password-resets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/payment:
     get:
       operationId: payment_list
@@ -1099,194 +1151,12 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/user:
-    get:
-      operationId: user_list
-      description: List accounts visible to the caller.
-      parameters:
-      - in: query
-        name: current
-        schema:
-          type: string
-        description: Any non-empty value limits the list to the caller's own account.
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      tags:
-      - user
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedUserList'
-          description: ''
+  /api/v1/tokens:
     post:
-      operationId: user_create
-      description: Register an account, answering alike whether the address had one.
+      operationId: tokens_create
+      description: Issue a token for valid account credentials.
       tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '201':
-          description: No response body
-  /api/v1/user/{id}:
-    get:
-      operationId: user_retrieve
-      description: Manage the current account, with administrative access for superusers.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-        required: true
-      tags:
-      - user
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: ''
-    put:
-      operationId: user_update
-      description: Manage the current account, with administrative access for superusers.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-        required: true
-      tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: ''
-    patch:
-      operationId: user_partial_update
-      description: Manage the current account, with administrative access for superusers.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-        required: true
-      tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserUpdateRequest'
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-          description: ''
-    delete:
-      operationId: user_destroy
-      description: Manage the current account, with administrative access for superusers.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-        required: true
-      tags:
-      - user
-      security:
-      - tokenAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/user/{id}/change_password:
-    post:
-      operationId: user_change_password_create
-      description: Change the caller's password and expire previous tokens.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$
-        required: true
-      tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/v1/user/activate_account:
-    post:
-      operationId: user_activate_account_create
-      description: Activate an account using its email token.
-      tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ActivationRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
-          description: No response body
-  /api/v1/user/login:
-    post:
-      operationId: user_login_create
-      description: Validate credentials and return a token with its expiration.
-      tags:
-      - user
+      - tokens
       requestBody:
         content:
           application/json:
@@ -1296,56 +1166,39 @@ paths:
       security:
       - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token'
           description: ''
-  /api/v1/user/logout:
-    post:
-      operationId: user_logout_create
+  /api/v1/tokens/current:
+    delete:
+      operationId: tokens_current_destroy
       description: Expire the caller's token, and no other, and answer without a body.
       tags:
-      - user
+      - tokens
       security:
       - tokenAuth: []
       responses:
         '204':
           description: No response body
-  /api/v1/user/password_reset:
+  /api/v1/users:
     post:
-      operationId: user_password_reset_create
-      description: Consume a recovery token and set a new password.
+      operationId: users_create
+      description: Register an account, answering alike whether the address had one.
       tags:
-      - user
+      - users
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: '#/components/schemas/UserRequest'
         required: true
       security:
       - {}
       responses:
-        '200':
-          description: No response body
-  /api/v1/user/request_password_reset:
-    post:
-      operationId: user_request_password_reset_create
-      description: Request an account recovery email.
-      tags:
-      - user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RequestPasswordResetRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
+        '202':
           description: No response body
 components:
   schemas:
@@ -1488,21 +1341,6 @@ components:
       - last_name
       - reward
       - reward_theme
-    ChangePasswordRequest:
-      type: object
-      description: Validate a credential change against the current password.
-      properties:
-        current_password:
-          type: string
-          writeOnly: true
-          minLength: 1
-        new_password:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - current_password
-      - new_password
     Contest:
       type: object
       description: Serializer for Contest objects.
@@ -2062,29 +1900,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SubmissionSet'
-    PaginatedUserList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
     PasswordResetRequest:
       type: object
       description: Validate a signed recovery token and replacement password.
@@ -2206,46 +2021,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IdRelatedRequest'
-    PatchedUserUpdateRequest:
-      type: object
-      description: Update a profile without replacing its verified email or password.
-      properties:
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          description: Must be omitted; use the change-password endpoint.
-          maxLength: 128
-        email:
-          type: string
-          format: email
-          minLength: 1
-          description: Immutable after registration; omit or send the current address.
-          maxLength: 254
-        first_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        last_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        address:
-          type: string
-          minLength: 1
-          maxLength: 100
-        city:
-          type: string
-          minLength: 1
-          maxLength: 100
-        postal_code:
-          type: string
-          minLength: 1
-          maxLength: 100
-        country:
-          type: string
-          minLength: 1
-          maxLength: 100
     Payment:
       type: object
       description: Serializer for Payment objects.
@@ -2684,47 +2459,6 @@ components:
       required:
       - expires
       - token
-    User:
-      type: object
-      description: Expose a public profile with an embedded postal address.
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        first_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        last_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        address:
-          type: string
-          nullable: true
-        city:
-          type: string
-          nullable: true
-        postal_code:
-          type: string
-          nullable: true
-        country:
-          type: string
-          nullable: true
-      required:
-      - address
-      - city
-      - country
-      - email
-      - first_name
-      - id
-      - last_name
-      - postal_code
     UserRequest:
       type: object
       description: Validate a new account, including its required password.
@@ -2771,53 +2505,6 @@ components:
       - first_name
       - last_name
       - password
-      - postal_code
-    UserUpdateRequest:
-      type: object
-      description: Update a profile without replacing its verified email or password.
-      properties:
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          description: Must be omitted; use the change-password endpoint.
-          maxLength: 128
-        email:
-          type: string
-          format: email
-          minLength: 1
-          description: Immutable after registration; omit or send the current address.
-          maxLength: 254
-        first_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        last_name:
-          type: string
-          nullable: true
-          maxLength: 150
-        address:
-          type: string
-          minLength: 1
-          maxLength: 100
-        city:
-          type: string
-          minLength: 1
-          maxLength: 100
-        postal_code:
-          type: string
-          minLength: 1
-          maxLength: 100
-        country:
-          type: string
-          minLength: 1
-          maxLength: 100
-      required:
-      - address
-      - city
-      - country
-      - first_name
-      - last_name
       - postal_code
   securitySchemes:
     tokenAuth:

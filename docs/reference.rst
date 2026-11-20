@@ -59,9 +59,6 @@ Entries
 .. automodule:: rola.entries.api.permissions
    :members:
 
-.. automodule:: rola.entries.api.accounts
-   :members:
-
 .. automodule:: rola.entries.admin
    :members:
 

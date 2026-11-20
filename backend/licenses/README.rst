@@ -7,10 +7,9 @@ rest of the backend is licensed under AGPL-3.0-only (``../LICENSE-AGPL``).
 
 ``Apache-2.0.txt``
    Came with the Rolca contest, payment and rating apps: ``rola.contests``,
-   ``rola.entries`` (except ``rola.entries.api.accounts``), ``rola.payments``,
-   ``rola.judging``, the Slovenian catalogue in ``rola/locale``, and in
-   ``rola.common`` the ``models``, ``serializers`` and ``permissions``
-   modules.
+   ``rola.entries``, ``rola.payments``, ``rola.judging``, the Slovenian
+   catalogue in ``rola/locale``, and in ``rola.common`` the ``models``,
+   ``serializers`` and ``permissions`` modules.
 
 ``BSD-3-Clause.txt``
    Came with the drf_user account app: ``rola.accounts`` (except

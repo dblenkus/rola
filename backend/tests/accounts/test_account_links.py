@@ -42,7 +42,7 @@ def test_activation_email_links_to_the_configured_frontend(
             },
             format="json",
         )
-    assert response.status_code == 201
+    assert response.status_code == 202
     link = first_link(mail.outbox[0])
     assert link.startswith("https://photos.example.com/register/activate?")
     assert parse_qs(urlsplit(link).query)["token"]
@@ -54,9 +54,9 @@ def test_recovery_email_links_to_the_configured_frontend(
 ):
     with django_capture_on_commit_callbacks(execute=True):
         response = APIClient().post(
-            reverse("user-request-password-reset"), {"email": account.email}
+            reverse("password-reset-request-list"), {"email": account.email}
         )
-    assert response.status_code == 200
+    assert response.status_code == 202
     link = first_link(mail.outbox[0])
     assert link.startswith("https://photos.example.com/password-reset?")
     assert parse_qs(urlsplit(link).query)["token"]
@@ -67,10 +67,10 @@ def test_activation_link_can_be_opened_again(db):
     payload = {"token": generate_activation_token(user)}
     client = APIClient()
 
-    first = client.post(reverse("user-activate-account"), payload)
-    second = client.post(reverse("user-activate-account"), payload)
+    first = client.post(reverse("activation-list"), payload)
+    second = client.post(reverse("activation-list"), payload)
 
-    assert first.status_code == second.status_code == 200
+    assert first.status_code == second.status_code == 204
     user.refresh_from_db()
     assert user.is_active
 
@@ -167,17 +167,17 @@ def test_recovery_does_not_reveal_unknown_or_inactive_accounts(
     client = APIClient()
     with django_capture_on_commit_callbacks(execute=True):
         active = client.post(
-            reverse("user-request-password-reset"), {"email": account.email}
+            reverse("password-reset-request-list"), {"email": account.email}
         )
         unknown = client.post(
-            reverse("user-request-password-reset"), {"email": "unknown@example.com"}
+            reverse("password-reset-request-list"), {"email": "unknown@example.com"}
         )
         account.is_active = False
         account.save(update_fields=["is_active"])
         inactive = client.post(
-            reverse("user-request-password-reset"), {"email": account.email}
+            reverse("password-reset-request-list"), {"email": account.email}
         )
-    assert active.status_code == unknown.status_code == inactive.status_code == 200
+    assert active.status_code == unknown.status_code == inactive.status_code == 202
     assert active.data == unknown.data == inactive.data
     assert len(mail.outbox) == 1
 
@@ -187,7 +187,7 @@ def test_recovery_does_not_reveal_unknown_or_inactive_accounts(
 )
 def test_signed_malformed_recovery_payload_returns_validation_error(db, payload):
     response = APIClient().post(
-        reverse("user-password-reset"),
+        reverse("password-reset-list"),
         {
             "token": signing.dumps(payload, salt=PASSWORD_RESET_SALT),
             "new_password": "Replacement!73",
@@ -199,7 +199,7 @@ def test_signed_malformed_recovery_payload_returns_validation_error(db, payload)
 @pytest.mark.parametrize("payload", [None, {"email": "person@example.com"}, ["x"]])
 def test_signed_malformed_activation_payload_returns_validation_error(db, payload):
     response = APIClient().post(
-        reverse("user-activate-account"),
+        reverse("activation-list"),
         {"token": signing.dumps(payload, salt=USER_ACTIVATION_SALT)},
     )
     assert response.status_code == 400

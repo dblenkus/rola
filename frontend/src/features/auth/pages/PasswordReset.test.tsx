@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
-import { httpError, serveApi } from '../../../test/api';
+import { httpError, serveApi, withStatus } from '../../../test/api';
 import PasswordReset from './PasswordReset';
 
 function renderReset() {
@@ -28,7 +28,7 @@ it('asks for a new password on a titled page', () => {
 
 it('shows a rejected password on the field', async () => {
   serveApi({
-    'POST /user/password_reset': (config) => {
+    'POST /password-resets': (config) => {
       throw httpError(config, 400, {
         new_password: ['This password is too common.'],
       });
@@ -48,7 +48,7 @@ it('shows a rejected password on the field', async () => {
 });
 
 it('offers the way to login after a successful reset', async () => {
-  serveApi({ 'POST /user/password_reset': () => ({}) });
+  serveApi({ 'POST /password-resets': () => withStatus(204, '') });
   const user = userEvent.setup();
   renderReset();
   await user.type(screen.getByLabelText(/^New password/), 'Replacement!73');

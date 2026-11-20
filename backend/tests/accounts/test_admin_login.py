@@ -21,7 +21,7 @@ def admin_login(credentials, **extra):
 def api_login(**extra):
     """Post wrong API credentials."""
     credentials = {"email": "organizer@example.org", "password": "wrong"}
-    return APIClient().post(reverse("login"), credentials, **extra)
+    return APIClient().post(reverse("token-list"), credentials, **extra)
 
 
 def test_admin_login_attempts_beyond_the_budget_are_refused(budget):

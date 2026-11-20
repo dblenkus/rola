@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from rola.accounts.models import Token, User, token_digest
+from rola.entries.models import Author
 from tests.factories import bearer_client
 
 
@@ -17,29 +18,30 @@ class TokenTestCase(APITestCase):
 
     def test_login(self):
         response = self.client.post(
-            reverse("login"),
+            reverse("token-list"),
             {"email": self.USER_EMAIL, "password": self.USER_PASSWORD},
             format="json",
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.user.auth_tokens.count(), 1)
         self.assertCountEqual(response.data.keys(), ["token", "expires"])
         self.assertEqual(
             self.user.auth_tokens.get().digest, token_digest(response.data["token"])
         )
+        author = Author.objects.create(user=self.user, first_name="Own")
         self.client = bearer_client(response.data["token"])
-        accounts = self.client.get(reverse("user-list")).data["results"]
-        self.assertEqual([account["id"] for account in accounts], [str(self.user.id)])
+        authors = self.client.get(reverse("author-list")).data["results"]
+        self.assertEqual([listed["id"] for listed in authors], [author.id])
 
     def test_second_login(self):
         first = Token.objects.create_token(user=self.user)
 
         response = self.client.post(
-            reverse("login"),
+            reverse("token-list"),
             {"email": self.USER_EMAIL, "password": self.USER_PASSWORD},
             format="json",
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(self.user.auth_tokens.count(), 2)
         self.assertNotEqual(response.data["token"], first.key)
         self.assertCountEqual(
@@ -51,7 +53,7 @@ class TokenTestCase(APITestCase):
         User.objects.filter(pk=self.user.pk).update(is_active=False)
 
         response = self.client.post(
-            reverse("login"),
+            reverse("token-list"),
             {"email": self.USER_EMAIL, "password": self.USER_PASSWORD},
             format="json",
         )

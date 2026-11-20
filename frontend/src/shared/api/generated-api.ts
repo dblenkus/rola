@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/activations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Activate the account that the token names. */
+        post: operations["activations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/author": {
         parameters: {
             query?: never;
@@ -142,6 +159,40 @@ export interface paths {
         get: operations["judge_submission_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/password-reset-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Email a reset link to an active account, answering alike for any address. */
+        post: operations["password_reset_requests_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/password-resets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Consume a reset token and set the new password. */
+        post: operations["password_resets_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -358,140 +409,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/user": {
+    "/api/v1/tokens": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description List accounts visible to the caller. */
-        get: operations["user_list"];
+        get?: never;
+        put?: never;
+        /** @description Issue a token for valid account credentials. */
+        post: operations["tokens_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tokens/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Expire the caller's token, and no other, and answer without a body. */
+        delete: operations["tokens_current_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         /** @description Register an account, answering alike whether the address had one. */
-        post: operations["user_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Manage the current account, with administrative access for superusers. */
-        get: operations["user_retrieve"];
-        /** @description Manage the current account, with administrative access for superusers. */
-        put: operations["user_update"];
-        post?: never;
-        /** @description Manage the current account, with administrative access for superusers. */
-        delete: operations["user_destroy"];
-        options?: never;
-        head?: never;
-        /** @description Manage the current account, with administrative access for superusers. */
-        patch: operations["user_partial_update"];
-        trace?: never;
-    };
-    "/api/v1/user/{id}/change_password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Change the caller's password and expire previous tokens. */
-        post: operations["user_change_password_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/activate_account": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Activate an account using its email token. */
-        post: operations["user_activate_account_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Validate credentials and return a token with its expiration. */
-        post: operations["user_login_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Expire the caller's token, and no other, and answer without a body. */
-        post: operations["user_logout_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/password_reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Consume a recovery token and set a new password. */
-        post: operations["user_password_reset_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user/request_password_reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description Request an account recovery email. */
-        post: operations["user_request_password_reset_create"];
+        post: operations["users_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -546,11 +508,6 @@ export interface components {
             readonly reward_theme: number | null;
             /** @description Return the optional country supplied by the host user model. */
             readonly country: string | null;
-        };
-        /** @description Validate a credential change against the current password. */
-        ChangePasswordRequest: {
-            current_password: string;
-            new_password: string;
         };
         /** @description Serializer for Contest objects. */
         Contest: {
@@ -837,21 +794,6 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["SubmissionSet"][];
         };
-        PaginatedUserList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["User"][];
-        };
         /** @description Validate a signed recovery token and replacement password. */
         PasswordResetRequest: {
             token: string;
@@ -903,22 +845,6 @@ export interface components {
             title?: string | null;
             description?: string | null;
             files?: components["schemas"]["IdRelatedRequest"][];
-        };
-        /** @description Update a profile without replacing its verified email or password. */
-        PatchedUserUpdateRequest: {
-            /** @description Must be omitted; use the change-password endpoint. */
-            password?: string;
-            /**
-             * Format: email
-             * @description Immutable after registration; omit or send the current address.
-             */
-            email?: string;
-            first_name?: string | null;
-            last_name?: string | null;
-            address?: string;
-            city?: string;
-            postal_code?: string;
-            country?: string;
         };
         /** @description Serializer for Payment objects. */
         Payment: {
@@ -1079,40 +1005,11 @@ export interface components {
             /** Format: date-time */
             readonly expires: string;
         };
-        /** @description Expose a public profile with an embedded postal address. */
-        User: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: email */
-            email: string;
-            first_name: string | null;
-            last_name: string | null;
-            address: string | null;
-            city: string | null;
-            postal_code: string | null;
-            country: string | null;
-        };
         /** @description Validate a new account, including its required password. */
         UserRequest: {
             password: string;
             /** Format: email */
             email: string;
-            first_name: string | null;
-            last_name: string | null;
-            address: string;
-            city: string;
-            postal_code: string;
-            country: string;
-        };
-        /** @description Update a profile without replacing its verified email or password. */
-        UserUpdateRequest: {
-            /** @description Must be omitted; use the change-password endpoint. */
-            password?: string;
-            /**
-             * Format: email
-             * @description Immutable after registration; omit or send the current address.
-             */
-            email?: string;
             first_name: string | null;
             last_name: string | null;
             address: string;
@@ -1129,6 +1026,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    activations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivationRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     author_list: {
         parameters: {
             query?: {
@@ -1522,6 +1441,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaginatedJudgeSubmissionList"];
                 };
+            };
+        };
+    };
+    password_reset_requests_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    password_resets_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2112,33 +2075,48 @@ export interface operations {
             };
         };
     };
-    user_list: {
+    tokens_create: {
         parameters: {
-            query?: {
-                /** @description Any non-empty value limits the list to the caller's own account. */
-                current?: string;
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
             };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
+                };
+            };
+        };
+    };
+    tokens_current_destroy: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            200: {
+            /** @description No response body */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["PaginatedUserList"];
-                };
+                content?: never;
             };
         };
     };
-    user_create: {
+    users_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2152,229 +2130,7 @@ export interface operations {
         };
         responses: {
             /** @description No response body */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
-            };
-        };
-    };
-    user_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserUpdateRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
-            };
-        };
-    };
-    user_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedUserUpdateRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"];
-                };
-            };
-        };
-    };
-    user_change_password_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_activate_account_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ActivationRequest"];
-            };
-        };
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_login_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Token"];
-                };
-            };
-        };
-    };
-    user_logout_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_password_reset_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetRequest"];
-            };
-        };
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    user_request_password_reset_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RequestPasswordResetRequest"];
-            };
-        };
-        responses: {
-            /** @description No response body */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

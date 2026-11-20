@@ -20,8 +20,8 @@ holds the project configuration and one Django app per domain:
    pagination, and the ``readinesscheck`` command that the container health
    check runs.
 ``rola.accounts``
-   Accounts: registration, activation, token login, password recovery, the
-   profile and the account emails. It also installs the admin site, whose
+   Accounts: registration, activation, token login, password recovery and the
+   account emails. It also installs the admin site, whose
    login and password change share the API login's rate limit.
 ``rola.contests``
    What an organizer sets up: contests, themes and institutions.
@@ -39,9 +39,7 @@ The apps depend on each other in one direction. Each imports only from the
 apps before it in the order ``common``, ``accounts``, ``contests``,
 ``entries``, ``payments``, ``judging``, and ``config`` composes them. Where an
 earlier app needs a rule of a later one, the later app adds it: ``entries``
-registers the contest admin with the contest download, and refuses to delete
-an account through the API while the account has entries in a closed
-contest.
+registers the contest admin with the contest download.
 
 Each app has the same shape. ``models.py`` holds the models and a query set
 whose methods name the rules about which rows qualify, such as the contests
@@ -51,18 +49,17 @@ that the API checks before a change, such as whether a contest still accepts
 entries. The ``api`` package holds the serializers, views, filters and
 permissions, and ``routes.py``, which registers the app's endpoints on the
 project's router. The ``accounts`` API package also holds the token
-authentication and the rate limits, and its ``routes.py`` takes the account
-viewset that ``entries`` extends and lists the login and logout paths, which
-the project routes before the router's paths.
+authentication and the rate limits.
 The tests are in ``backend/tests``, one directory per app.
 
 The API under ``/api/v1`` accepts one credential, the login token, in the
 header ``Authorization: Bearer <token>``. A login answers with the token and
-the time it expires, two days later. A logout, ``POST /api/v1/user/logout``,
-expires the token that the request carries at once and leaves the account's
-other tokens valid. The token is ``rola_st_`` followed by 64 hexadecimal
-digits. The ``accounts_token`` table stores its SHA-256 digest instead of the
-token, so a token cannot be read from the database or from a copy of it.
+the time it expires, two days later. A logout,
+``DELETE /api/v1/tokens/current``, expires the token that the request carries
+at once and leaves the account's other tokens valid. The token is
+``rola_st_`` followed by 64 hexadecimal digits. The ``accounts_token`` table
+stores its SHA-256 digest instead of the token, so a token cannot be read from
+the database or from a copy of it.
 
 PostgreSQL holds all state. The ``rola_cache`` table, created by
 ``createcachetable``, keeps the rate-limit counters, so every Gunicorn worker

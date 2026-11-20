@@ -12,6 +12,7 @@ import {
   page,
   serveApi,
   signIn,
+  withStatus,
 } from '../test/api';
 import { open } from '../test/app';
 import { contest, jurySubmission } from '../test/fixtures';
@@ -73,10 +74,11 @@ describe('sessions', () => {
   it('refuses a login that site storage cannot keep', async () => {
     blockStorage();
     const adapter = serveApi({
-      'POST /user/login': () => ({
-        token: 'signed-in',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'signed-in',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -97,7 +99,7 @@ describe('sessions', () => {
         `${config.method} ${config.url}`,
         config.headers.get('Authorization'),
       ]),
-    ).toEqual([['post /user/login', undefined]]);
+    ).toEqual([['post /tokens', undefined]]);
   });
 
   it('keeps a later login when the API rejects the logout before it', async () => {
@@ -105,16 +107,17 @@ describe('sessions', () => {
     const rejectLogout: (() => void)[] = [];
     serveApi({
       'GET /contest': () => page([contest]),
-      'POST /user/logout': (config) =>
+      'DELETE /tokens/current': (config) =>
         new Promise((_resolve, reject) => {
           rejectLogout.push(() =>
             reject(httpError(config, 401, { detail: 'Token has expired' })),
           );
         }),
-      'POST /user/login': () => ({
-        token: 'later',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'later',
+          expires: '2999-01-01T00:00:00Z',
+        }),
     });
     const user = userEvent.setup();
     open('/contests');
@@ -152,7 +155,7 @@ describe('sessions', () => {
     const adapter = serveApi({
       'GET /contest': () => page([contest]),
       // Vitest fails the run if nothing handles the failed request.
-      'POST /user/logout': (config) => {
+      'DELETE /tokens/current': (config) => {
         throw networkError(config);
       },
     });
@@ -167,7 +170,7 @@ describe('sessions', () => {
       await screen.findByText('Network error occurred.'),
     ).toBeInTheDocument();
     expect(
-      adapter.mock.calls.filter(([config]) => config.url === '/user/logout'),
+      adapter.mock.calls.filter(([config]) => config.url === '/tokens/current'),
     ).toHaveLength(1);
     expect(localStorage.getItem('token')).toBeNull();
     await user.click(account);
@@ -176,10 +179,11 @@ describe('sessions', () => {
 
   it('returns to the full requested location after login', async () => {
     serveApi({
-      'POST /user/login': () => ({
-        token: 'signed-in',
-        expires: '2999-01-01T00:00:00Z',
-      }),
+      'POST /tokens': () =>
+        withStatus(201, {
+          token: 'signed-in',
+          expires: '2999-01-01T00:00:00Z',
+        }),
       'GET /contest/1': () => contest,
       'GET /judge/submission': () =>
         page([
@@ -232,7 +236,7 @@ describe('account requests', () => {
 
   it('reports a throttled activation instead of an invalid token', async () => {
     serveApi({
-      'POST /user/activate_account': (config) => {
+      'POST /activations': (config) => {
         throw httpError(
           config,
           429,
@@ -252,7 +256,7 @@ describe('account requests', () => {
 
   it('reports an invalid activation token', async () => {
     serveApi({
-      'POST /user/activate_account': (config) => {
+      'POST /activations': (config) => {
         throw httpError(config, 400, { non_field_errors: ['Bad token.'] });
       },
     });
@@ -266,12 +270,12 @@ describe('account requests', () => {
   it('clears a failed reset request after a successful retry', async () => {
     let attempts = 0;
     serveApi({
-      'POST /user/request_password_reset': (config) => {
+      'POST /password-reset-requests': (config) => {
         attempts += 1;
         if (attempts === 1) {
           throw httpError(config, 429, { detail: 'Request was throttled.' });
         }
-        return {};
+        return withStatus(202, '');
       },
     });
     const user = userEvent.setup();

@@ -44,8 +44,8 @@ function Destination() {
 describe('authentication flows', () => {
   it('stores a login and clears it on logout', async () => {
     serveApi({
-      'POST /user/login': () => token,
-      'POST /user/logout': () => withStatus(204, ''),
+      'POST /tokens': () => withStatus(201, token),
+      'DELETE /tokens/current': () => withStatus(204, ''),
     });
     const user = userEvent.setup();
     render(
@@ -106,7 +106,7 @@ describe('authentication flows', () => {
     const requests: unknown[] = [];
     const adapter = serveApi({
       // Never answered: logging out does not wait for the API.
-      'POST /user/logout': (config) => {
+      'DELETE /tokens/current': (config) => {
         requests.push({
           authorization: config.headers.get('Authorization'),
           body: config.data,
