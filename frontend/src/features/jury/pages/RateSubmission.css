@@ -6,10 +6,11 @@
  * the bottom.
  *
  * Below that: one scrolling column (bar, photographs, wall label,
- * filmstrip) over a bottom dock with the score keys, Previous, the score
- * with Clear, and Next. The dock is fixed to the window rather than sticky,
- * because it lives inside the "Photo score" section, which ends above the
- * filmstrip; the column keeps room for it at the bottom.
+ * filmstrip) over a bottom dock with the score keys over Previous, Clear and
+ * Next. The pressed key shows the score there. The dock is fixed to the
+ * window rather than sticky, because it lives inside the "Photo score"
+ * section, which ends above the filmstrip; the column keeps room for it at
+ * the bottom.
  */
 
 .judge-view {
@@ -37,10 +38,6 @@
   border-color: var(--grey-600);
   background: transparent;
   color: var(--on-viewing);
-}
-
-.judge-view .ui-loading__label {
-  color: var(--on-viewing-muted);
 }
 
 .judge-label__messages {
@@ -80,12 +77,14 @@
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: 1fr auto auto 1fr;
+    /* Three equal columns that fit any width from 320 px: no column may
+       grow past its share for its content. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(3, 48px);
     grid-template-areas:
-      'keys keys keys keys'
-      'keys keys keys keys'
-      'previous score clear next';
+      'keys keys keys'
+      'keys keys keys'
+      'previous clear next';
     gap: var(--space-2);
     padding: var(--space-2) max(var(--space-4), var(--safe-right))
       var(--safe-bottom) max(var(--space-4), var(--safe-left));
@@ -103,6 +102,20 @@
 
   .judge-nav__next {
     grid-area: next;
+  }
+
+  .judge-nav__previous,
+  .judge-nav__next {
+    min-width: 0;
+  }
+
+  /* Previous, Clear and Next fill their columns at 48 px. The narrow side
+     padding keeps "Naslednja" on one line at 320 px. */
+  .judge-dock .rl-btn {
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+    padding: 0 var(--space-1);
   }
 }
 
@@ -164,5 +177,27 @@
 
   .judge-label .judge-legend {
     margin-top: 20px;
+  }
+}
+
+/* Wide on a laptop-height window (below 56rem, so 1440 × 900 keeps the
+   layout above): the column tightens so that everything from the ID line
+   to Previous and Next fits at 1280 × 720 with a two-line title. The
+   keyboard legend comes last and is the first to scroll out of the column. */
+@media (width >= 64rem) and (height >= 37.5rem) and (height < 56rem) {
+  .judge-label {
+    padding-block: var(--space-6);
+  }
+
+  .judge-label .rl-photo-label__rule {
+    margin: var(--space-4) 0;
+  }
+
+  .judge-dock .judge-nav {
+    padding-top: var(--space-4);
+  }
+
+  .judge-label .judge-legend {
+    margin-top: var(--space-4);
   }
 }

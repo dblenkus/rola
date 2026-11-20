@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it } from 'vitest';
 import { createAppStore, type AppStore } from '../../../app/store';
@@ -178,6 +178,40 @@ it('moves the frames with the current photograph', async () => {
   expect(
     within(strip).getByRole('link', { name: 'Frame 31, unscored' }),
   ).toHaveAttribute('aria-current', 'true');
+});
+
+it('moves focus to the current frame when the focused frame leaves the strip', async () => {
+  serveJudging({ submissions: sixtySubmissions });
+  const user = userEvent.setup();
+  renderRater(store, { path: rateAt(130) });
+  expect(await screen.findByRole('img', { name: 'Photo 30' })).toBeVisible();
+  const edge = await screen.findByRole('link', { name: 'Frame 10, unscored' });
+  act(() => edge.focus());
+
+  await user.keyboard('{ArrowRight}');
+  expect(await screen.findByRole('img', { name: 'Photo 31' })).toBeVisible();
+  expect(edge).not.toBeInTheDocument();
+  expect(
+    within(filmstrip(11, 51, 60)).getByRole('link', {
+      name: 'Frame 31, unscored',
+    }),
+  ).toHaveFocus();
+});
+
+it('keeps focus on a focused frame that stays in the strip', async () => {
+  serveJudging({ submissions: sixtySubmissions });
+  const user = userEvent.setup();
+  renderRater(store, { path: rateAt(130) });
+  expect(await screen.findByRole('img', { name: 'Photo 30' })).toBeVisible();
+  const inside = await screen.findByRole('link', {
+    name: 'Frame 12, unscored',
+  });
+  act(() => inside.focus());
+
+  await user.keyboard('{ArrowRight}');
+  expect(await screen.findByRole('img', { name: 'Photo 31' })).toBeVisible();
+  await settle();
+  expect(inside).toHaveFocus();
 });
 
 it('shows fewer frames near the first photograph', async () => {

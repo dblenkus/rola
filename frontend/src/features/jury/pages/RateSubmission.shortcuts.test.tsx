@@ -8,6 +8,7 @@ import {
   pressedScore,
   renderRater,
   scoreKey,
+  scores,
   serveJudging,
   settle,
 } from './RateSubmission.testutils';
@@ -134,6 +135,51 @@ it('turns the shortcuts off and keeps the buttons working', async () => {
   expect(await screen.findByRole('img', { name: 'Third' })).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Previous' }));
   expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+});
+
+it('names no keyboard shortcuts on the controls while the shortcuts are off', async () => {
+  serveJudging({ submissions: threeSubmissions });
+  const user = userEvent.setup();
+  renderRater(store, { path: onSecond });
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await settle();
+  const controls = () => [
+    ...scores.map((value) => scoreKey(value)),
+    ...['Clear', 'Previous', 'Next'].map((name) =>
+      screen.getByRole('button', { name }),
+    ),
+  ];
+  for (const control of controls()) {
+    expect(control).toHaveAttribute('aria-keyshortcuts');
+  }
+
+  await user.click(shortcutsButton());
+  expect(shortcutsButton()).toHaveAttribute('aria-pressed', 'false');
+  for (const control of controls()) {
+    expect(control).not.toHaveAttribute('aria-keyshortcuts');
+  }
+
+  await user.click(shortcutsButton());
+  for (const control of controls()) {
+    expect(control).toHaveAttribute('aria-keyshortcuts');
+  }
+});
+
+it('marks the shortcuts switch with a check only while they are on', async () => {
+  serveJudging({ submissions: threeSubmissions });
+  const user = userEvent.setup();
+  renderRater(store, { path: onSecond });
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  const check = () =>
+    shortcutsButton().querySelector('svg[aria-hidden="true"]');
+  expect(check()).not.toBeNull();
+
+  await user.click(shortcutsButton());
+  expect(shortcutsButton()).toHaveAttribute('aria-pressed', 'false');
+  expect(check()).toBeNull();
+
+  await user.click(shortcutsButton());
+  expect(check()).not.toBeNull();
 });
 
 it('turns the shortcuts back on', async () => {

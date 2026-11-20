@@ -11,7 +11,10 @@ interface PhotographsProps {
 
 // The photograph on screen whole, or every photograph of a series whole with
 // its place in the series. Nothing is cropped, zoomed, rounded or laid over
-// them, and they change without a transition.
+// them, and they change without a transition. Each image is keyed by its
+// file, so that another photograph mounts an empty element: a browser keeps
+// painting an element's old picture until its new source has loaded. New
+// links for the same file keep the element.
 export default function Photographs({
   files,
   title,
@@ -24,6 +27,7 @@ export default function Photographs({
       <div className="judge-photos">
         {file && (
           <img
+            key={file.id}
             className="judge-photos__single"
             src={file.file}
             alt={title}
