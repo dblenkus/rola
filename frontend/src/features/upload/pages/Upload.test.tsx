@@ -554,6 +554,7 @@ describe('photograph upload', () => {
 
   it('starts an empty form for the next account after a logout', async () => {
     uploadApi({
+      'POST /user/logout': () => withStatus(204, ''),
       'POST /user/login': () => ({
         token: 'next-account',
         expires: '2999-01-01T00:00:00Z',

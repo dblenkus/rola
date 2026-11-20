@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadToken } from '../../../shared/api/token';
-import { blockStorage, serveApi } from '../../../test/api';
+import { blockStorage, serveApi, withStatus } from '../../../test/api';
 import AuthProvider, { userContext } from './AuthProvider';
 import PrivateRoute from './PrivateRoute';
 
@@ -43,7 +43,10 @@ function Destination() {
 
 describe('authentication flows', () => {
   it('stores a login and clears it on logout', async () => {
-    serveApi({ 'POST /user/login': () => token });
+    serveApi({
+      'POST /user/login': () => token,
+      'POST /user/logout': () => withStatus(204, ''),
+    });
     const user = userEvent.setup();
     render(
       <AuthProvider>
@@ -96,6 +99,70 @@ describe('authentication flows', () => {
     blockStorage();
     await user.click(screen.getByRole('button', { name: 'Log out' }));
     expect(screen.getByText('Signed out')).toBeInTheDocument();
+  });
+
+  it('asks the API to expire the session after clearing it', async () => {
+    localStorage.setItem('token', JSON.stringify(session));
+    const requests: unknown[] = [];
+    const adapter = serveApi({
+      // Never answered: logging out does not wait for the API.
+      'POST /user/logout': (config) => {
+        requests.push({
+          authorization: config.headers.get('Authorization'),
+          body: config.data,
+          stored: localStorage.getItem('token'),
+        });
+        return new Promise(() => {});
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <AuthProvider>
+        <Session />
+      </AuthProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Log out' }));
+    expect(screen.getByText('Signed out')).toBeInTheDocument();
+    expect(requests).toEqual([
+      {
+        authorization: 'Bearer example-token',
+        body: undefined,
+        stored: null,
+      },
+    ]);
+    expect(adapter).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['no session', null, () => {}],
+    [
+      'an expired session',
+      session,
+      () => {
+        vi.spyOn(Date, 'now').mockReturnValue(Date.parse(session.expires));
+      },
+    ],
+    [
+      'an unreadable session',
+      session,
+      () => localStorage.setItem('token', '{'),
+    ],
+    ['blocked storage', session, blockStorage],
+  ])('sends no logout request with %s', async (_name, stored, change) => {
+    if (stored) {
+      localStorage.setItem('token', JSON.stringify(stored));
+    }
+    const adapter = serveApi({});
+    const user = userEvent.setup();
+    render(
+      <AuthProvider>
+        <Session />
+      </AuthProvider>,
+    );
+    change();
+    await user.click(screen.getByRole('button', { name: 'Log out' }));
+    expect(screen.getByText('Signed out')).toBeInTheDocument();
+    expect(adapter).not.toHaveBeenCalled();
   });
 
   it('follows a logout in another tab', () => {

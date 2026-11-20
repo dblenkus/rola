@@ -51,8 +51,8 @@ Inside an app:
   `config/urls.py` calls each app's `register`. `accounts/api/` also holds
   `authentication.py` (the token authentication), `throttling.py` (the rate
   limits, which the admin login and password change in `sites.py` share
-  too), and in `routes.py` the `urlpatterns` for the login path, which
-  `config/urls.py` includes before the router.
+  too), and in `routes.py` the `urlpatterns` for the login and logout paths,
+  which `config/urls.py` includes before the router.
 - `admin.py`, `management/commands/`, `migrations/0001_schema.py`.
 
 Tests live in `backend/tests/<app>/` (`accounts`, `contests`, `entries`,

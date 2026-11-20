@@ -3,12 +3,14 @@
 from django.urls import path
 from rest_framework.routers import BaseRouter
 
-from rola.accounts.api.views import LoginView, UserViewSet
+from rola.accounts.api.views import LoginView, LogoutView, UserViewSet
 
-# The router's ``user/<pk>`` detail route would also match this path, so the
-# project includes these patterns before the router's.
+# Plain views outside the router, which the project includes before the
+# router's paths. The router's ``user/<id>`` detail route takes only a UUID,
+# so it matches neither.
 urlpatterns = [
     path("user/login", LoginView.as_view(), name="login"),
+    path("user/logout", LogoutView.as_view(), name="logout"),
 ]
 
 

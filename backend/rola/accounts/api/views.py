@@ -74,6 +74,18 @@ class LoginView(views.APIView):
         return Response(TokenSerializer(token).data)
 
 
+class LogoutView(views.APIView):
+    """Expire the login token that the request presents."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(request=None, responses={204: None})
+    def post(self, request):
+        """Expire the caller's token, and no other, and answer without a body."""
+        request.auth.expire()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @extend_schema_view(
     list=extend_schema(
         description="List accounts visible to the caller.",

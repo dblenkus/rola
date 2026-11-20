@@ -7,14 +7,16 @@ import {
   type ReactNode,
 } from 'react';
 
+import { reportUnexpected } from '../../../shared/api/errors';
 import {
+  authorizationHeader,
   loadToken,
   removeStored,
   sessionChanged,
   StorageBlocked,
   type Session,
 } from '../../../shared/api/token';
-import { loginUser, type LoginPayload } from '../api';
+import { loginUser, logoutUser, type LoginPayload } from '../api';
 
 interface AuthContext {
   user: Session | null;
@@ -62,8 +64,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    const session = loadToken();
     removeStored();
     setUser(null);
+    if (session) {
+      // The user is logged out whatever the API answers, so the request is
+      // not awaited. If it fails, the token stays valid until it expires; the
+      // API client reports a failure that no view can explain, as for any
+      // request.
+      logoutUser(authorizationHeader(session.token)).catch(reportUnexpected);
+    }
   }, []);
 
   const value = useMemo(
