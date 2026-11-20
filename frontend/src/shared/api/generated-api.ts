@@ -49,10 +49,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         get: operations["contest_list"];
         put?: never;
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         post: operations["contest_create"];
         delete?: never;
         options?: never;
@@ -67,16 +67,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         get: operations["contest_retrieve"];
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         put: operations["contest_update"];
         post?: never;
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         delete: operations["contest_destroy"];
         options?: never;
         head?: never;
-        /** @description API view Contest objects. */
+        /** @description API viewset for Contest objects. */
         patch: operations["contest_partial_update"];
         trace?: never;
     };
@@ -606,15 +606,15 @@ export interface components {
             /** Format: uri */
             thumbnail?: string | null;
         };
-        /** @description Serializer for File objects. */
+        /** @description Refer to a related object by its id. */
         IdRelated: {
             id: number;
         };
-        /** @description Serializer for File objects. */
+        /** @description Refer to a related object by its id. */
         IdRelatedRequest: {
             id: number;
         };
-        /** @description Serializer for Author objects. */
+        /** @description Serializer for Institution objects. */
         Institution: {
             readonly id: number;
             /** Format: date-time */
@@ -622,8 +622,13 @@ export interface components {
             /** Format: date-time */
             readonly modified: string;
             name: string;
-            kind: components["schemas"]["KindEnum"];
+            kind: components["schemas"]["InstitutionKindEnum"];
         };
+        /**
+         * @description * `1` - School
+         * @enum {integer}
+         */
+        InstitutionKindEnum: 1;
         /** @description Serializer for Contest objects. */
         JudgeContest: {
             readonly id: number;
@@ -676,11 +681,6 @@ export interface components {
             /** @description Count ratings submitted by the requesting judge. */
             readonly rating_count: number;
         };
-        /**
-         * @description * `1` - School
-         * @enum {integer}
-         */
-        KindEnum: 1;
         /** @description Authenticate an active account. */
         LoginRequest: {
             /** Format: email */
@@ -1132,8 +1132,6 @@ export interface operations {
     author_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1165,8 +1163,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AuthorRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["AuthorRequest"];
-                "multipart/form-data": components["schemas"]["AuthorRequest"];
             };
         };
         responses: {
@@ -1215,8 +1211,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AuthorRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["AuthorRequest"];
-                "multipart/form-data": components["schemas"]["AuthorRequest"];
             };
         };
         responses: {
@@ -1264,8 +1258,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedAuthorRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedAuthorRequest"];
-                "multipart/form-data": components["schemas"]["PatchedAuthorRequest"];
             };
         };
         responses: {
@@ -1283,8 +1275,6 @@ export interface operations {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1317,8 +1307,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ContestRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ContestRequest"];
-                "multipart/form-data": components["schemas"]["ContestRequest"];
             };
         };
         responses: {
@@ -1367,8 +1355,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ContestRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ContestRequest"];
-                "multipart/form-data": components["schemas"]["ContestRequest"];
             };
         };
         responses: {
@@ -1416,8 +1402,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedContestRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedContestRequest"];
-                "multipart/form-data": components["schemas"]["PatchedContestRequest"];
             };
         };
         responses: {
@@ -1468,8 +1452,6 @@ export interface operations {
                 name__iexact?: string;
                 name__istartswith?: string;
                 name__startswith?: string;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1495,8 +1477,6 @@ export interface operations {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1522,9 +1502,7 @@ export interface operations {
     judge_submission_list: {
         parameters: {
             query?: {
-                contest?: string;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
+                contest?: number;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1550,8 +1528,6 @@ export interface operations {
     payment_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1587,8 +1563,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PaymentRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PaymentRequest"];
-                "multipart/form-data": components["schemas"]["PaymentRequest"];
             };
         };
         responses: {
@@ -1637,8 +1611,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PaymentRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PaymentRequest"];
-                "multipart/form-data": components["schemas"]["PaymentRequest"];
             };
         };
         responses: {
@@ -1686,8 +1658,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedPaymentRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedPaymentRequest"];
-                "multipart/form-data": components["schemas"]["PatchedPaymentRequest"];
             };
         };
         responses: {
@@ -1704,14 +1674,12 @@ export interface operations {
     rating_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 submission?: number;
-                theme?: string;
+                theme?: number;
             };
             header?: never;
             path?: never;
@@ -1739,8 +1707,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RatingRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["RatingRequest"];
-                "multipart/form-data": components["schemas"]["RatingRequest"];
             };
         };
         responses: {
@@ -1789,8 +1755,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RatingRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["RatingRequest"];
-                "multipart/form-data": components["schemas"]["RatingRequest"];
             };
         };
         responses: {
@@ -1838,8 +1802,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedRatingRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedRatingRequest"];
-                "multipart/form-data": components["schemas"]["PatchedRatingRequest"];
             };
         };
         responses: {
@@ -1856,7 +1818,7 @@ export interface operations {
     results_submission_list: {
         parameters: {
             query?: {
-                contest?: string;
+                contest?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -1928,9 +1890,7 @@ export interface operations {
     submission_list: {
         parameters: {
             query?: {
-                contest?: string;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
+                contest?: number;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1966,8 +1926,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["SubmissionRequest"] | components["schemas"]["SubmissionRequest"][];
-                "application/x-www-form-urlencoded": components["schemas"]["SubmissionRequest"];
-                "multipart/form-data": components["schemas"]["SubmissionRequest"];
             };
         };
         responses: {
@@ -2026,8 +1984,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SubmissionRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["SubmissionRequest"];
-                "multipart/form-data": components["schemas"]["SubmissionRequest"];
             };
         };
         responses: {
@@ -2075,8 +2031,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedSubmissionRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedSubmissionRequest"];
-                "multipart/form-data": components["schemas"]["PatchedSubmissionRequest"];
             };
         };
         responses: {
@@ -2094,8 +2048,6 @@ export interface operations {
         parameters: {
             query?: {
                 contest?: number;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -2165,8 +2117,6 @@ export interface operations {
             query?: {
                 /** @description Any non-empty value limits the list to the caller's own account. */
                 current?: string;
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -2198,8 +2148,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["UserRequest"];
-                "multipart/form-data": components["schemas"]["UserRequest"];
             };
         };
         responses: {
@@ -2245,8 +2193,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UserUpdateRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["UserUpdateRequest"];
-                "multipart/form-data": components["schemas"]["UserUpdateRequest"];
             };
         };
         responses: {
@@ -2292,8 +2238,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedUserUpdateRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedUserUpdateRequest"];
-                "multipart/form-data": components["schemas"]["PatchedUserUpdateRequest"];
             };
         };
         responses: {
@@ -2319,8 +2263,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ChangePasswordRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ChangePasswordRequest"];
-                "multipart/form-data": components["schemas"]["ChangePasswordRequest"];
             };
         };
         responses: {
@@ -2343,8 +2285,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ActivationRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ActivationRequest"];
-                "multipart/form-data": components["schemas"]["ActivationRequest"];
             };
         };
         responses: {
@@ -2367,8 +2307,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["LoginRequest"];
-                "multipart/form-data": components["schemas"]["LoginRequest"];
             };
         };
         responses: {
@@ -2410,8 +2348,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PasswordResetRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PasswordResetRequest"];
-                "multipart/form-data": components["schemas"]["PasswordResetRequest"];
             };
         };
         responses: {
@@ -2434,8 +2370,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RequestPasswordResetRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["RequestPasswordResetRequest"];
-                "multipart/form-data": components["schemas"]["RequestPasswordResetRequest"];
             };
         };
         responses: {

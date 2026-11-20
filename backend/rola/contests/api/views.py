@@ -18,7 +18,7 @@ class InstitutionViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 class ContestViewSet(viewsets.ModelViewSet):
-    """API view Contest objects."""
+    """API viewset for Contest objects."""
 
     queryset = Contest.objects.all()
     serializer_class = ContestSerializer

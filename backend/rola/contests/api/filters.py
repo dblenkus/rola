@@ -15,7 +15,7 @@ TEXT_LOOKUPS = [
 
 
 class InstitutionFilter(filters.FilterSet):
-    """Filter for Institutuion API endpoint."""
+    """Filter for Institution API endpoint."""
 
     class Meta:
         """Configure supported institution lookups."""

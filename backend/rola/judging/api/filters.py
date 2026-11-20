@@ -2,18 +2,11 @@
 
 from django_filters import rest_framework as filters
 
-from rola.judging.models import Rating
+from rola.common.filters import IdFilter
 
 
 class RatingFilter(filters.FilterSet):
-    """Filter for Submission API endpoint."""
+    """Filter ratings by the theme or submission they rate."""
 
-    theme = filters.CharFilter(field_name="submission__theme")
-
-    class Meta:
-        """Filter ratings by submission."""
-
-        model = Rating
-        fields = {
-            "submission": ["exact"],
-        }
+    theme = IdFilter(field_name="submission__theme")
+    submission = IdFilter()

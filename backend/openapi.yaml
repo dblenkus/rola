@@ -9,12 +9,6 @@ paths:
       operationId: author_list
       description: API viewset for Author objects.
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -46,12 +40,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AuthorRequest'
         required: true
@@ -103,12 +91,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AuthorRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
         required: true
       security:
       - tokenAuth: []
@@ -134,12 +116,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedAuthorRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedAuthorRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedAuthorRequest'
       security:
@@ -171,18 +147,12 @@ paths:
   /api/v1/contest:
     get:
       operationId: contest_list
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       parameters:
       - in: query
         name: is_active
         schema:
           type: boolean
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -212,18 +182,12 @@ paths:
           description: ''
     post:
       operationId: contest_create
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       tags:
       - contest
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ContestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ContestRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ContestRequest'
         required: true
@@ -239,7 +203,7 @@ paths:
   /api/v1/contest/{id}:
     get:
       operationId: contest_retrieve
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       parameters:
       - in: path
         name: id
@@ -260,7 +224,7 @@ paths:
           description: ''
     put:
       operationId: contest_update
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       parameters:
       - in: path
         name: id
@@ -273,12 +237,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ContestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ContestRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ContestRequest'
         required: true
@@ -293,7 +251,7 @@ paths:
           description: ''
     patch:
       operationId: contest_partial_update
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       parameters:
       - in: path
         name: id
@@ -308,12 +266,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedContestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedContestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedContestRequest'
       security:
       - tokenAuth: []
       responses:
@@ -325,7 +277,7 @@ paths:
           description: ''
     delete:
       operationId: contest_destroy
-      description: API view Contest objects.
+      description: API viewset for Contest objects.
       parameters:
       - in: path
         name: id
@@ -404,12 +356,6 @@ paths:
         name: name__startswith
         schema:
           type: string
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -443,12 +389,6 @@ paths:
         name: is_active
         schema:
           type: boolean
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -484,13 +424,7 @@ paths:
       - in: query
         name: contest
         schema:
-          type: string
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
+          type: integer
       - name: page
         required: false
         in: query
@@ -523,12 +457,6 @@ paths:
       operationId: payment_list
       description: API viewset for Payment objects.
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -577,12 +505,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PaymentRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PaymentRequest'
         required: true
@@ -634,12 +556,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PaymentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PaymentRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PaymentRequest'
         required: true
       security:
       - tokenAuth: []
@@ -665,12 +581,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedPaymentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedPaymentRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedPaymentRequest'
       security:
@@ -704,12 +614,6 @@ paths:
       operationId: rating_list
       description: API viewset for Rating objects.
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -729,7 +633,7 @@ paths:
       - in: query
         name: theme
         schema:
-          type: string
+          type: integer
       tags:
       - rating
       security:
@@ -749,12 +653,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/RatingRequest'
         required: true
@@ -806,12 +704,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RatingRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RatingRequest'
         required: true
       security:
       - tokenAuth: []
@@ -837,12 +729,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedRatingRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedRatingRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedRatingRequest'
       security:
@@ -879,7 +765,7 @@ paths:
       - in: query
         name: contest
         schema:
-          type: string
+          type: integer
       - name: ordering
         required: false
         in: query
@@ -968,13 +854,7 @@ paths:
       - in: query
         name: contest
         schema:
-          type: string
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
+          type: integer
       - name: page
         required: false
         in: query
@@ -1029,12 +909,6 @@ paths:
               - type: array
                 items:
                   $ref: '#/components/schemas/SubmissionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
       security:
       - tokenAuth: []
       responses:
@@ -1098,12 +972,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SubmissionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SubmissionRequest'
         required: true
       security:
       - tokenAuth: []
@@ -1129,12 +997,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSubmissionRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSubmissionRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedSubmissionRequest'
       security:
@@ -1172,12 +1034,6 @@ paths:
         name: contest
         schema:
           type: integer
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -1253,12 +1109,6 @@ paths:
         schema:
           type: string
         description: Any non-empty value limits the list to the caller's own account.
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -1290,12 +1140,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserRequest'
         required: true
@@ -1343,12 +1187,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
         required: true
       security:
       - tokenAuth: []
@@ -1374,12 +1212,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserUpdateRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUserUpdateRequest'
       security:
@@ -1426,12 +1258,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ChangePasswordRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
         required: true
       security:
       - tokenAuth: []
@@ -1449,12 +1275,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ActivationRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ActivationRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ActivationRequest'
         required: true
       security:
       - {}
@@ -1470,12 +1290,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/LoginRequest'
         required: true
@@ -1510,12 +1324,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordResetRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
         required: true
       security:
       - {}
@@ -1531,12 +1339,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RequestPasswordResetRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RequestPasswordResetRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/RequestPasswordResetRequest'
         required: true
@@ -1829,7 +1631,7 @@ components:
       - modified
     IdRelated:
       type: object
-      description: Serializer for File objects.
+      description: Refer to a related object by its id.
       properties:
         id:
           type: integer
@@ -1837,7 +1639,7 @@ components:
       - id
     IdRelatedRequest:
       type: object
-      description: Serializer for File objects.
+      description: Refer to a related object by its id.
       properties:
         id:
           type: integer
@@ -1845,7 +1647,7 @@ components:
       - id
     Institution:
       type: object
-      description: Serializer for Author objects.
+      description: Serializer for Institution objects.
       properties:
         id:
           type: integer
@@ -1863,7 +1665,7 @@ components:
           maxLength: 100
         kind:
           allOf:
-          - $ref: '#/components/schemas/KindEnum'
+          - $ref: '#/components/schemas/InstitutionKindEnum'
           minimum: -32768
           maximum: 32767
       required:
@@ -1872,6 +1674,11 @@ components:
       - kind
       - modified
       - name
+    InstitutionKindEnum:
+      enum:
+      - 1
+      type: integer
+      description: '* `1` - School'
     JudgeContest:
       type: object
       description: Serializer for Contest objects.
@@ -2010,11 +1817,6 @@ components:
       - rating_count
       - submission_count
       - title
-    KindEnum:
-      enum:
-      - 1
-      type: integer
-      description: '* `1` - School'
     LoginRequest:
       type: object
       description: Authenticate an active account.

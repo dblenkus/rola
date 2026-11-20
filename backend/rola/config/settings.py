@@ -98,12 +98,17 @@ REST_FRAMEWORK = {
     # The browsable API's forms list related objects from unfiltered querysets,
     # which would show any account the titles of every submission.
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    # The frontend sends JSON only, and form bodies cannot hold the nested and
+    # list payloads that the endpoints take. The photograph upload sets its
+    # own parser.
+    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
+    # Views that support ordering add the ordering filter themselves, so that
+    # the other lists neither accept nor advertise an ordering parameter.
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.backends.DjangoFilterBackend",
-        "rola.common.filters.OrderingFilter",
     ),
     "DEFAULT_PAGINATION_CLASS": "rola.common.pagination.PageNumberPagination",
     "PAGE_SIZE": 500,
@@ -121,6 +126,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Accounts, photography contests, submissions, judging and payments.",
     "VERSION": "1.0.0",
     "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "InstitutionKindEnum": "rola.contests.models.Institution.KIND_CHOICES",
+    },
 }
 
 LANGUAGE_CODE = "en-us"

@@ -42,6 +42,13 @@ def test_schema_generates_without_warnings(tmp_path):
     )
 
 
+def test_institution_kinds_have_a_named_enum(components):
+    kind = components["Institution"]["properties"]["kind"]
+    assert kind["allOf"] == [ref("InstitutionKindEnum")]
+    assert components["InstitutionKindEnum"]["enum"] == [1]
+    assert "KindEnum" not in components
+
+
 def test_judging_contests_have_their_own_components(components):
     judge_themes = components["JudgeContest"]["properties"]["themes"]
     assert judge_themes["items"] == {"$ref": "#/components/schemas/JudgeTheme"}

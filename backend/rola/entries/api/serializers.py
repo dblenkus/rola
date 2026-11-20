@@ -8,7 +8,7 @@ from rola.entries.models import Author, File, Submission, SubmissionSet
 
 
 class IdRelatedSerializer(serializers.Serializer):
-    """Serializer for File objects."""
+    """Refer to a related object by its id."""
 
     id = serializers.IntegerField()
 

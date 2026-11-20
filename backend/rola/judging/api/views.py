@@ -13,8 +13,10 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import SHA1, Cast, Coalesce, Concat
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, permissions, viewsets
 
+from rola.common.filters import OrderingFilter
 from rola.contests.api.filters import ContestFilter
 from rola.contests.models import Contest, Theme
 from rola.entries.api.filters import SubmissionFilter
@@ -158,6 +160,7 @@ class SubmissionResultsViewSet(
         .order_by("pk")
     )
     serializer_class = SubmissionResultsSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = SubmissionFilter
     ordering_fields = ["rating_sum"]
 
