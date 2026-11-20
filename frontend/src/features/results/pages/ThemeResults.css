@@ -1,0 +1,47 @@
+/* The author's country, school or club, quieter than the name. */
+.results-author__details {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* An entry sits under its author's row. */
+.results-entry {
+  display: inline-block;
+  padding-inline-start: var(--space-4);
+}
+
+/* The title link reaches 44 px tall without making the row taller: it takes
+   the cell's 12 px of padding above and below the 20 px line. */
+.results-entry__link {
+  padding-block: var(--space-3);
+  margin-block: calc(-1 * var(--space-3));
+}
+
+.results-accepted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.results-accepted__icon {
+  display: block;
+  flex: none;
+}
+
+.results-empty {
+  margin: 0;
+  color: var(--text);
+}
+
+/* phone: the cells are stacked lines with 4 px of padding, so the link
+   grows the line to the tap target instead. */
+@media (width < 40rem) {
+  .results-entry__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    padding-block: 0;
+    margin-block: 0;
+  }
+}

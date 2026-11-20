@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router';
-
-import {
-  Alert,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-} from '@mui/material';
+import { useParams } from 'react-router';
 
 import { requestError } from '../../../shared/api/errors';
 import { Contest } from '../../../shared/api/types';
+import Button from '../../../shared/ui/Button';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
+import Table, {
+  TableBody,
+  TableCell,
+  TableRow,
+} from '../../../shared/ui/Table';
 import { getContest } from '../../contests';
 
 interface RouteMatchParams {
@@ -40,27 +37,20 @@ const SelectTheme: React.FC = () => {
     fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error) return <Message severity="error">{error}</Message>;
   if (!contest) return <LoadingProgress />;
 
   return (
-    <TableContainer component={Paper}>
+    <Page title={contest.title}>
       <Table>
         <TableBody>
-          <TableRow>
-            <TableCell colSpan={3}>
-              <b>{contest.title}</b>
-            </TableCell>
-          </TableRow>
           {contest.themes.map((theme) => (
             <TableRow key={theme.id}>
-              <TableCell padding="checkbox" />
-              <TableCell>{theme.title}</TableCell>
-              <TableCell align="right">
+              <TableCell header>{theme.title}</TableCell>
+              <TableCell align="end">
                 <Button
                   to={`/results/contest/${contest.id}/theme/${theme.id}`}
-                  component={Link}
-                  color="primary"
+                  aria-label={t('results_view_theme', { theme: theme.title })}
                 >
                   {t('view')}
                 </Button>
@@ -69,7 +59,7 @@ const SelectTheme: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-    </TableContainer>
+    </Page>
   );
 };
 

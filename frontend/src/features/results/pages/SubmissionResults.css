@@ -1,0 +1,77 @@
+/*
+ * The photo whole on paper, nothing on it. On phones the page margin is the
+ * 16 px around it; wider, 32 px more.
+ */
+.results-photos {
+  padding: var(--space-8);
+}
+
+.results-photo {
+  display: block;
+  max-width: 100%;
+  max-height: 85dvh;
+  margin-inline: auto;
+  object-fit: contain;
+  border-radius: var(--radius-none);
+}
+
+/* A series: every photo whole, as many columns as fit. */
+.results-photos--series {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  align-items: start;
+  gap: var(--space-8);
+}
+
+.results-photos--series .results-photo {
+  width: 100%;
+  height: auto;
+  max-height: 60dvh;
+}
+
+/* The wall label, in line with the photos' edge. */
+.results-label {
+  max-width: 40rem;
+  padding-inline: var(--space-8);
+  color: var(--text);
+}
+
+.results-label__title {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.results-label__author {
+  margin: var(--space-2) 0 0;
+}
+
+.results-label__award {
+  margin: var(--space-3) 0 0;
+}
+
+.results-label__description {
+  margin: var(--space-3) 0 0;
+}
+
+/* phone */
+@media (width < 40rem) {
+  .results-photos {
+    padding: 0 0 var(--space-4);
+  }
+
+  .results-photos--series {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .results-label {
+    padding-inline: 0;
+  }
+
+  /* h2-mobile (20 / 28); a media query cannot switch the type class. */
+  .results-label__title {
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+  }
+}
