@@ -1,12 +1,6 @@
-import type { InputChange } from '../../../shared/ui/InputField';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { Alert, Button } from '@mui/material';
-
-import InputField from '../../../shared/ui/InputField';
-
-import { authSx } from '../../../shared/ui/styles';
+import TextField, { type InputChange } from '../../../shared/ui/TextField';
+import AuthForm from './AuthForm';
 
 export interface Fields {
   email: string;
@@ -24,63 +18,50 @@ export interface Errors {
 interface LoginFormProps {
   fields: Fields;
   errors: Errors;
-  onChange: (event: InputChange) => void;
+  onChange: (change: InputChange) => void;
   onSubmit: () => Promise<void>;
 }
 
-const LoginForm: React.FC<LoginFormProps> = (props) => {
+export default function LoginForm({
+  errors,
+  fields,
+  onChange,
+  onSubmit,
+}: LoginFormProps) {
   const { t } = useTranslation();
-  const { errors, fields, onChange, onSubmit } = props;
 
   const getError = (field: string): string | null => {
     return errors[field]?.join(' ') ?? null;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    onSubmit();
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <InputField
+    <AuthForm
+      submitLabel={t('login')}
+      error={getError('non_field_errors')}
+      onSubmit={onSubmit}
+    >
+      <TextField
         name="email"
         label={t('email')}
         value={fields.email}
         error={getError('email')}
+        type="email"
         autoComplete="email"
+        inputMode="email"
         autoFocus
         required
         onChange={onChange}
       />
-      <InputField
+      <TextField
         name="password"
         label={t('password')}
         value={fields.password}
         error={getError('password')}
-        autoComplete="current-password"
         type="password"
+        autoComplete="current-password"
         required
         onChange={onChange}
       />
-      {getError('non_field_errors') !== null ? (
-        <Alert severity="error" sx={authSx.alert}>
-          {getError('non_field_errors')}
-        </Alert>
-      ) : (
-        false
-      )}
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        color="primary"
-        sx={authSx.submit}
-      >
-        {t('login')}
-      </Button>
-    </form>
+    </AuthForm>
   );
-};
-
-export default LoginForm;
+}

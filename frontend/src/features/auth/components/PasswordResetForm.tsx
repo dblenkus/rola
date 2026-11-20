@@ -1,13 +1,6 @@
-import type { InputChange } from '../../../shared/ui/InputField';
-import React from 'react';
-
 import { useTranslation } from 'react-i18next';
-
-import { Alert, Button } from '@mui/material';
-
-import InputField from '../../../shared/ui/InputField';
-
-import { authSx } from '../../../shared/ui/styles';
+import TextField, { type InputChange } from '../../../shared/ui/TextField';
+import AuthForm from './AuthForm';
 
 export interface Fields {
   new_password: string;
@@ -20,56 +13,41 @@ export interface Errors {
   [key: string]: string[] | null;
 }
 
-interface PasswordReserFormProps {
+interface PasswordResetFormProps {
   fields: Fields;
   errors: Errors;
-  onChange: (event: InputChange) => void;
+  onChange: (change: InputChange) => void;
   onSubmit: () => Promise<void>;
 }
 
-const PasswordResetForm: React.FC<PasswordReserFormProps> = (props) => {
+export default function PasswordResetForm({
+  errors,
+  fields,
+  onChange,
+  onSubmit,
+}: PasswordResetFormProps) {
   const { t } = useTranslation();
-  const { errors, fields, onChange, onSubmit } = props;
 
   const getError = (field: string): string | null => {
     return errors[field]?.join(' ') ?? null;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    onSubmit();
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <InputField
+    <AuthForm
+      submitLabel={t('password_reset')}
+      error={getError('non_field_errors')}
+      onSubmit={onSubmit}
+    >
+      <TextField
         name="new_password"
         label={t('new_password')}
         value={fields.new_password}
         error={getError('new_password')}
-        autoComplete="new-password"
         type="password"
+        autoComplete="new-password"
         required
         onChange={onChange}
       />
-      {getError('non_field_errors') !== null ? (
-        <Alert severity="error" sx={authSx.alert}>
-          {getError('non_field_errors')}
-        </Alert>
-      ) : (
-        false
-      )}
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        color="primary"
-        sx={authSx.submit}
-      >
-        {t('password_reset')}
-      </Button>
-    </form>
+    </AuthForm>
   );
-};
-
-export default PasswordResetForm;
+}

@@ -1,12 +1,11 @@
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
 import { Navigate, useLocation, type Location } from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid } from '@mui/material';
-
+import AuthPage from '../components/AuthPage';
 import PasswordResetForm, {
   Errors,
   Fields,
@@ -85,28 +84,18 @@ class PasswordResetView extends React.Component<
     }
 
     return (
-      <Grid container sx={{ justifyContent: 'center' }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card>
-            <CardHeader
-              title={t('password_reset')}
-              slotProps={{ title: { align: 'center' } }}
-            />
-            <CardContent>
-              {done ? (
-                <PasswordResetSuccess onClick={this.handleClick} />
-              ) : (
-                <PasswordResetForm
-                  fields={fields}
-                  errors={errors}
-                  onChange={this.handleChange}
-                  onSubmit={this.handleSubmit}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <AuthPage title={t('password_reset')}>
+        {done ? (
+          <PasswordResetSuccess onClick={this.handleClick} />
+        ) : (
+          <PasswordResetForm
+            fields={fields}
+            errors={errors}
+            onChange={this.handleChange}
+            onSubmit={this.handleSubmit}
+          />
+        )}
+      </AuthPage>
     );
   }
 }

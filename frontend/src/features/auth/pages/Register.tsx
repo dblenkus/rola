@@ -1,12 +1,11 @@
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import { Link as RouterLink } from 'react-router';
+import { Link } from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
-
+import AuthPage from '../components/AuthPage';
 import RegisterForm, { Errors, Fields } from '../components/RegisterForm';
 import RegisterConfirm from '../components/RegisterConfirm';
 
@@ -76,37 +75,27 @@ class RegisterView extends React.Component<
     const { t } = this.props;
 
     return (
-      <Grid container sx={{ justifyContent: 'center' }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card>
-            <CardHeader
-              title={t('register')}
-              slotProps={{ title: { align: 'center' } }}
+      <AuthPage title={t('register')}>
+        {done ? (
+          <RegisterConfirm email={fields.email} />
+        ) : (
+          <>
+            <RegisterForm
+              fields={fields}
+              errors={errors}
+              onChange={this.handleChange}
+              onSubmit={this.handleSubmit}
             />
-            <CardContent>
-              {done ? (
-                <RegisterConfirm email={fields.email} />
-              ) : (
-                <>
-                  <RegisterForm
-                    fields={fields}
-                    errors={errors}
-                    onChange={this.handleChange}
-                    onSubmit={this.handleSubmit}
-                  />
-                  <Grid container sx={{ justifyContent: 'flex-end' }}>
-                    <Grid>
-                      <Link component={RouterLink} to="/login" variant="body2">
-                        {t('already_have_account')}
-                      </Link>
-                    </Grid>
-                  </Grid>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+            <ul className="auth-links">
+              <li>
+                <Link className="auth-links__link body" to="/login">
+                  {t('already_have_account')}
+                </Link>
+              </li>
+            </ul>
+          </>
+        )}
+      </AuthPage>
     );
   }
 }

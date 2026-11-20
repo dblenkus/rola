@@ -1,10 +1,10 @@
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
-
+import Message from '../../../shared/ui/Message';
+import AuthPage from '../components/AuthPage';
 import PasswordResetRequestForm, {
   Fields,
 } from '../components/PasswordResetRequestForm';
@@ -57,28 +57,22 @@ class PasswordResetRequestView extends React.Component<
     const { t } = this.props;
 
     return (
-      <Grid container sx={{ justifyContent: 'center' }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card>
-            <CardHeader
-              title={t('password_reset')}
-              slotProps={{ title: { align: 'center' } }}
-            />
-            <CardContent>
-              {error && <Alert severity="error">{error}</Alert>}
-              {done ? (
-                <PasswordResetRequestConfirm email={fields.email} />
-              ) : (
-                <PasswordResetRequestForm
-                  fields={fields}
-                  onChange={this.handleChange}
-                  onSubmit={this.handleSubmit}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <AuthPage title={t('password_reset')}>
+        {error && (
+          <div className="auth-page__message">
+            <Message severity="error">{error}</Message>
+          </div>
+        )}
+        {done ? (
+          <PasswordResetRequestConfirm email={fields.email} />
+        ) : (
+          <PasswordResetRequestForm
+            fields={fields}
+            onChange={this.handleChange}
+            onSubmit={this.handleSubmit}
+          />
+        )}
+      </AuthPage>
     );
   }
 }

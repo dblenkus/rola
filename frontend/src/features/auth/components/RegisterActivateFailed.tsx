@@ -1,22 +1,8 @@
-import React from 'react';
-
 import { useTranslation } from 'react-i18next';
+import Confirm from './utils/Confirm';
 
-import { Typography } from '@mui/material';
-
-import { authSx } from '../../../shared/ui/styles';
-
-const RegisterActivateFailed: React.FC = () => {
+export default function RegisterActivateFailed() {
   const { t } = useTranslation();
 
-  return (
-    <>
-      <Typography component="h3" variant="h6">
-        {t('activation_failed')}
-      </Typography>
-      <Typography sx={authSx.paragraph}>{t('invalid_token')}</Typography>
-    </>
-  );
-};
-
-export default RegisterActivateFailed;
+  return <Confirm title={t('activation_failed')}>{t('invalid_token')}</Confirm>;
+}

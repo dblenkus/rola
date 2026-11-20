@@ -1,25 +1,19 @@
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import '../AuthPage.css';
 
-import { Typography } from '@mui/material';
-
-import { authSx } from '../../../../shared/ui/styles';
-
-interface RegisterConfirmProps {
+interface ConfirmProps {
   title: string;
+  // One or two lines of body text.
   children: ReactNode;
 }
 
-const RegisterConfirm: React.FC<RegisterConfirmProps> = (props) => {
-  const { title, children } = props;
-
+// A screen that says what happened and what to do next outside Rola, such as
+// following the link in an email.
+export default function Confirm({ title, children }: ConfirmProps) {
   return (
-    <>
-      <Typography component="h3" variant="h6">
-        {title}
-      </Typography>
-      <Typography sx={authSx.paragraph}>{children}</Typography>
-    </>
+    <div className="auth-status">
+      <h2 className="auth-status__title h3">{title}</h2>
+      <p className="auth-status__text body">{children}</p>
+    </div>
   );
-};
-
-export default RegisterConfirm;
+}
