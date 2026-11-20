@@ -260,19 +260,32 @@ server:
   uncompressed, so that the tokens in them are not exposed to compression
   side channels; a Compression Rule in Cloudflare that turns compression off
   for these two paths keeps it that way.
-* The ``Content-Security-Policy`` that nginx sends (see `HTTPS and
-  headers`_) makes browsers refuse the scripts that some Cloudflare features
-  add to the site's pages. Cloudflare's `Content Security Policy reference
-  <https://developers.cloudflare.com/fundamentals/reference/policies-compliances/content-security-policies/>`__
-  lists what they need: Rocket Loader a script from ``ajax.cloudflare.com``,
-  Web Analytics one from ``static.cloudflareinsights.com``, and Scrape
-  Shield, whose Email Address Obfuscation Cloudflare enables automatically,
-  inline scripts. `JavaScript Detections
+* `JavaScript Detections
   <https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/>`__,
-  which are always on with Bot Fight Mode, add an inline script as well.
-  Keep these features off for the site, or add the host they need to
+  which are always on with Bot Fight Mode, work with the
+  ``Content-Security-Policy`` that nginx sends (see `HTTPS and headers`_).
+  Cloudflare reads the nonce from the policy header and adds it to the
+  inline script it injects, which then loads its code from
+  ``/cdn-cgi/challenge-platform/`` on the site's own origin. Cloudflare
+  injects nothing into a response with ``Cache-Control: no-transform``,
+  which nginx does not send.
+* The policy makes browsers refuse the scripts of other Cloudflare features
+  that add them to the site's pages. Cloudflare's `Content Security Policy
+  reference
+  <https://developers.cloudflare.com/fundamentals/reference/policies-compliances/content-security-policies/>`__
+  lists what they need, and mentions no nonce for them: Rocket Loader a
+  script from ``ajax.cloudflare.com``, Web Analytics one from
+  ``static.cloudflareinsights.com``, and Scrape Shield, whose Email Address
+  Obfuscation Cloudflare enables automatically, ``'unsafe-inline'``. Keep
+  these features off for the site, or add the host they need to
   ``script-src`` in ``frontend/docker/default.conf`` and rebuild the
   frontend; allowing inline scripts would undo the policy.
+* Do not cache the site's pages at Cloudflare, for example with a Cache
+  Rule that caches everything. Cloudflare does not cache HTML by default,
+  but a cached page would replay one nonce to every visitor (see `HTTPS and
+  headers`_). nginx's ``Cache-Control: no-cache`` does not rule this out:
+  with such a rule, Cloudflare stores the page and revalidates it on each
+  use, and an Edge Cache TTL in the rule turns that revalidation off.
 
 Client addresses
 ================
@@ -329,16 +342,31 @@ a ``Referrer-Policy`` and a ``Content-Security-Policy`` to the files it
 serves, sends no version in ``Server``, and leaves proxied responses with
 Django's own security headers.
 
-The policy is ``script-src 'self'; object-src 'none'; base-uri 'self';
-form-action 'self'``. With it, the site's pages run scripts from the site's
-own origin only and no inline scripts, embed no plugins, and submit forms
-only to the site itself. All of the application's scripts come from its own
-origin. Anything else that puts an inline script, or a script from another
-host, into the pages, such as a proxy or CDN feature that rewrites HTML, is
-refused by the browser and breaks: turn it off, or extend the policy in
-``frontend/docker/default.conf`` and rebuild the frontend. API and Django
+The policy is ``script-src 'self' 'nonce-<nonce>'; object-src 'none';
+base-uri 'self'; form-action 'self'``, where ``<nonce>`` is nginx's
+``$request_id``: 16 random bytes from OpenSSL, in hexadecimal, new for every
+response. With it, the site's pages run scripts from the site's own origin
+and inline scripts that carry the response's nonce only, embed no plugins,
+and submit forms only to the site itself. The application uses no inline
+scripts: all of its scripts come from its own origin, and its pages do not
+use the nonce. The nonce is there for a proxy or CDN that injects an inline
+script and copies the nonce from the header onto it, as Cloudflare's
+JavaScript Detections do (see `Cloudflare Tunnel`_). Anything else that puts
+an inline script without the nonce, or a script from another host, into the
+pages is refused by the browser and breaks: turn it off, or extend the policy
+in ``frontend/docker/default.conf`` and rebuild the frontend. API and Django
 admin responses do not carry the policy, because with ``ROLA_USE_S3`` the
 Django admin's scripts come from the static bucket's host.
+
+The HTML document must not be served from a shared cache. A cache that
+stores the page with its header gives every visitor the same nonce, which
+anyone who fetched the page has seen, so markup injected into the page could
+carry it and run as a script. nginx sends the document with
+``Cache-Control: no-cache``, which lets a cache store it if it revalidates
+each use, so a cache in front of the site must be configured not to store
+it. The hashed files under ``/assets/``, which may be cached for a year,
+carry a nonce as well; that does no harm, because a browser applies only
+the document's policy to the page.
 
 Contest content
 ===============
