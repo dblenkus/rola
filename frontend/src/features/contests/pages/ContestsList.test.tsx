@@ -8,7 +8,7 @@ import ContestsList from './ContestsList';
 describe('contests list', () => {
   it('lists the active contests as rows under the page title', async () => {
     serveApi({
-      'GET /contest': () =>
+      'GET /contests': () =>
         page([contest, { ...contest, id: 3, title: 'Winter photographs' }]),
     });
     render(

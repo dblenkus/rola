@@ -45,7 +45,7 @@ describe('sessions', () => {
     signIn('revoked');
     const sent: unknown[] = [];
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         sent.push(config.headers.get('Authorization'));
         if (config.headers.has('Authorization')) {
           throw httpError(config, 401, { detail: 'Token has expired.' });
@@ -64,7 +64,7 @@ describe('sessions', () => {
 
   it('lists public contests when site storage is blocked', async () => {
     blockStorage();
-    serveApi({ 'GET /contest': () => page([contest]) });
+    serveApi({ 'GET /contests': () => page([contest]) });
     open('/contests');
     expect(
       await screen.findByRole('heading', { name: contest.title }),
@@ -106,7 +106,7 @@ describe('sessions', () => {
     signIn('earlier');
     const rejectLogout: (() => void)[] = [];
     serveApi({
-      'GET /contest': () => page([contest]),
+      'GET /contests': () => page([contest]),
       'DELETE /tokens/current': (config) =>
         new Promise((_resolve, reject) => {
           rejectLogout.push(() =>
@@ -153,7 +153,7 @@ describe('sessions', () => {
   it('stays logged out when the logout request gets no response', async () => {
     signIn();
     const adapter = serveApi({
-      'GET /contest': () => page([contest]),
+      'GET /contests': () => page([contest]),
       // Vitest fails the run if nothing handles the failed request.
       'DELETE /tokens/current': (config) => {
         throw networkError(config);
@@ -184,7 +184,7 @@ describe('sessions', () => {
           token: 'signed-in',
           expires: '2999-01-01T00:00:00Z',
         }),
-      'GET /contest/1': () => contest,
+      'GET /contests/1': () => contest,
       'GET /judge/submission': () =>
         page([
           jurySubmission(11, 'First photograph'),

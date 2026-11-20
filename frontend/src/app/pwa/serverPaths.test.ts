@@ -4,7 +4,7 @@ import { isServerPath } from './serverPaths';
 
 describe('isServerPath', () => {
   it.each([
-    '/api/v1/contest',
+    '/api/v1/contests',
     '/api',
     '/api?page=2',
     '/django-admin/',

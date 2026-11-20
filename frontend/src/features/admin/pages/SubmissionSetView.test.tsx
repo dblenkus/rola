@@ -22,7 +22,7 @@ function renderView(): void {
 
 function serveSet(data: SubmissionSet): void {
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /submissionset/5': () => data,
   });
 }
@@ -40,7 +40,7 @@ function definitions(list: HTMLElement): Record<string, string> {
 it('shows loading until the set arrives', async () => {
   let answer: (() => void) | undefined;
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /submissionset/5': () =>
       new Promise((resolve) => {
         answer = () => resolve(submissionSet);
@@ -161,7 +161,7 @@ it('numbers the photographs of a series', async () => {
 it('shows a failed load on a page named Submission', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /submissionset/5': (config) => {
       throw httpError(config, 404);
     },

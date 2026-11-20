@@ -17,7 +17,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, permissions, viewsets
 
 from rola.common.filters import OrderingFilter
-from rola.contests.api.filters import ContestFilter
 from rola.contests.models import Contest, Theme
 from rola.entries.api.filters import SubmissionFilter
 from rola.entries.models import Submission
@@ -83,7 +82,6 @@ class ContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     queryset = Contest.objects.all()
     serializer_class = JudgeContestSerializer
-    filterset_class = ContestFilter
     permission_classes = (IsActiveJudge,)
 
     def get_queryset(self):

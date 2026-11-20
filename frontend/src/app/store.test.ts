@@ -41,11 +41,11 @@ describe('unexpected API failures', () => {
     ['no response', networkError],
   ])('notify once on %s', async (_name, error) => {
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         throw error(config);
       },
     });
-    const shown = await notificationsDuring(() => apiClient.get('/contest'));
+    const shown = await notificationsDuring(() => apiClient.get('/contests'));
     expect(shown).toEqual([
       expect.objectContaining({
         message: 'Network error occurred.',
@@ -56,11 +56,11 @@ describe('unexpected API failures', () => {
 
   it('leave a client error to the view', async () => {
     serveApi({
-      'GET /contest': (config) => {
+      'GET /contests': (config) => {
         throw httpError(config, 403, { detail: 'Forbidden' });
       },
     });
-    const shown = await notificationsDuring(() => apiClient.get('/contest'));
+    const shown = await notificationsDuring(() => apiClient.get('/contests'));
     expect(shown).toEqual([]);
     expect(store.getState().notifications).toBeNull();
   });
@@ -79,7 +79,7 @@ describe('a stalled request', () => {
     stallRequests();
     let failure: unknown = null;
     const shown = notificationsDuring(() =>
-      apiClient.get('/contest').catch((error: unknown) => {
+      apiClient.get('/contests').catch((error: unknown) => {
         failure = error;
       }),
     );

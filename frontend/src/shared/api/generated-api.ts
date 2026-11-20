@@ -59,42 +59,38 @@ export interface paths {
         patch: operations["author_partial_update"];
         trace?: never;
     };
-    "/api/v1/contest": {
+    "/api/v1/contests": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API viewset for Contest objects. */
-        get: operations["contest_list"];
+        /** @description List and retrieve contests with their themes. */
+        get: operations["contests_list"];
         put?: never;
-        /** @description API viewset for Contest objects. */
-        post: operations["contest_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/contest/{id}": {
+    "/api/v1/contests/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API viewset for Contest objects. */
-        get: operations["contest_retrieve"];
-        /** @description API viewset for Contest objects. */
-        put: operations["contest_update"];
+        /** @description List and retrieve contests with their themes. */
+        get: operations["contests_retrieve"];
+        put?: never;
         post?: never;
-        /** @description API viewset for Contest objects. */
-        delete: operations["contest_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** @description API viewset for Contest objects. */
-        patch: operations["contest_partial_update"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/file": {
@@ -114,15 +110,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/institution": {
+    "/api/v1/institutions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description List institutions with optional filters. */
-        get: operations["institution_list"];
+        /** @description List institutions. */
+        get: operations["institutions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -533,24 +529,6 @@ export interface components {
             school_visible?: boolean;
             school_required?: boolean;
         };
-        /** @description Serializer for Contest objects. */
-        ContestRequest: {
-            title: string;
-            description?: string | null;
-            /** Format: date-time */
-            start_date: string;
-            /** Format: date-time */
-            end_date: string;
-            /** Format: binary */
-            header_image?: string | null;
-            notice_html?: string;
-            confirmation_html?: string;
-            date_of_birth_required?: boolean;
-            club_visible?: boolean;
-            club_required?: boolean;
-            school_visible?: boolean;
-            school_required?: boolean;
-        };
         /** @description Serializer for File objects. */
         File: {
             readonly id: number;
@@ -810,24 +788,6 @@ export interface components {
             club?: string | null;
             distinction?: string | null;
         };
-        /** @description Serializer for Contest objects. */
-        PatchedContestRequest: {
-            title?: string;
-            description?: string | null;
-            /** Format: date-time */
-            start_date?: string;
-            /** Format: date-time */
-            end_date?: string;
-            /** Format: binary */
-            header_image?: string | null;
-            notice_html?: string;
-            confirmation_html?: string;
-            date_of_birth_required?: boolean;
-            club_visible?: boolean;
-            club_required?: boolean;
-            school_visible?: boolean;
-            school_required?: boolean;
-        };
         /** @description Serializer for Payment objects. */
         PatchedPaymentRequest: {
             submission_set?: number;
@@ -958,13 +918,6 @@ export interface components {
             max_photos: number;
             /** @description Count submissions in this theme. */
             readonly submission_count: number;
-        };
-        /** @description Serializer for Theme objects. */
-        ThemeRequest: {
-            title: string;
-            is_series?: boolean;
-            /** Number of photos */
-            max_photos: number;
         };
         /** @description Serializer for Theme results. */
         ThemeResults: {
@@ -1190,7 +1143,7 @@ export interface operations {
             };
         };
     };
-    contest_list: {
+    contests_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -1198,7 +1151,6 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
-                submitted?: boolean;
             };
             header?: never;
             path?: never;
@@ -1216,30 +1168,7 @@ export interface operations {
             };
         };
     };
-    contest_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContestRequest"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contest"];
-                };
-            };
-        };
-    };
-    contest_retrieve: {
+    contests_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -1250,79 +1179,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contest"];
-                };
-            };
-        };
-    };
-    contest_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this contest. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContestRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Contest"];
-                };
-            };
-        };
-    };
-    contest_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this contest. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    contest_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this contest. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedContestRequest"];
-            };
-        };
         responses: {
             200: {
                 headers: {
@@ -1360,17 +1216,9 @@ export interface operations {
             };
         };
     };
-    institution_list: {
+    institutions_list: {
         parameters: {
             query?: {
-                /** @description * `1` - School */
-                kind?: 1;
-                name?: string;
-                name__contains?: string;
-                name__icontains?: string;
-                name__iexact?: string;
-                name__istartswith?: string;
-                name__startswith?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1395,12 +1243,10 @@ export interface operations {
     judge_contest_list: {
         parameters: {
             query?: {
-                is_active?: boolean;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
-                submitted?: boolean;
             };
             header?: never;
             path?: never;

@@ -67,7 +67,7 @@ export function uploadImage(
 export function getInstitutions(): AxiosPromise<
   PaginatedResponse<Institution>
 > {
-  return apiClient.get('/institution', { params: { page_size: 1000 } });
+  return apiClient.get('/institutions', { params: { page_size: 1000 } });
 }
 
 // The server answers a repeated idempotency key with the submissions it

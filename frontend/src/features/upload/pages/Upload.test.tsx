@@ -56,9 +56,9 @@ function photograph(name: string): File {
 
 function uploadApi(overrides: Parameters<typeof serveApi>[0] = {}) {
   return serveApi({
-    'GET /contest': () => page([contest, winter]),
-    'GET /contest/1': () => contest,
-    'GET /contest/3': () => winter,
+    'GET /contests': () => page([contest, winter]),
+    'GET /contests/1': () => contest,
+    'GET /contests/3': () => winter,
     'POST /file': () => storedPhotograph,
     'POST /author': () => author,
     'POST /submission': () => withStatus(201, []),
@@ -156,12 +156,12 @@ describe('photograph upload', () => {
     expect(
       adapter.mock.calls.map(([config]) => `${config.method} ${config.url}`),
     ).toEqual([
-      'get /contest/1',
+      'get /contests/1',
       'post /file',
       'post /file',
       'post /author',
       'post /submission',
-      'get /contest/1',
+      'get /contests/1',
     ]);
 
     await openFromContestList(user, 3);
@@ -307,8 +307,8 @@ describe('photograph upload', () => {
 
   it('shows a failed institution lookup', async () => {
     uploadApi({
-      'GET /contest/1': () => ({ ...contest, school_visible: true }),
-      'GET /institution': (config) => {
+      'GET /contests/1': () => ({ ...contest, school_visible: true }),
+      'GET /institutions': (config) => {
         throw httpError(config, 503);
       },
     });
@@ -600,7 +600,7 @@ describe('photograph upload', () => {
   it('shows no form until the next contest loads', async () => {
     const winterResponses: (() => void)[] = [];
     uploadApi({
-      'GET /contest/3': () =>
+      'GET /contests/3': () =>
         new Promise((resolve) => winterResponses.push(() => resolve(winter))),
     });
     const user = userEvent.setup();
@@ -711,7 +711,7 @@ describe('photograph upload', () => {
         new Promise((resolve) =>
           submissionResponses.push(() => resolve(withStatus(201, []))),
         ),
-      'GET /contest/3': () =>
+      'GET /contests/3': () =>
         new Promise((resolve) => winterResponses.push(() => resolve(winter))),
     });
     const user = userEvent.setup();
@@ -768,7 +768,7 @@ describe('photograph upload', () => {
   it("keeps the next contest's form when an earlier contest loads late", async () => {
     const contestResponses: (() => void)[] = [];
     uploadApi({
-      'GET /contest/1': () =>
+      'GET /contests/1': () =>
         new Promise((resolve) => contestResponses.push(() => resolve(contest))),
     });
     const user = userEvent.setup();
@@ -792,7 +792,7 @@ describe('photograph upload', () => {
   it("keeps the next account's form when the previous account's contest loads late", async () => {
     const contestResponses: (() => void)[] = [];
     uploadApi({
-      'GET /contest/1': () =>
+      'GET /contests/1': () =>
         new Promise((resolve) => contestResponses.push(() => resolve(contest))),
     });
     const user = userEvent.setup();
@@ -820,7 +820,7 @@ describe('photograph upload', () => {
 
   it("shows a contest's changed themes and required fields in a kept form", async () => {
     let current = contest;
-    uploadApi({ 'GET /contest/1': () => current });
+    uploadApi({ 'GET /contests/1': () => current });
     const user = userEvent.setup();
     open('/contest/1/upload');
     await fillAuthor(user);
@@ -869,7 +869,7 @@ describe('photograph upload', () => {
   it('sends the typed date of birth with the author', async () => {
     const authors: unknown[] = [];
     uploadApi({
-      'GET /contest/1': () => ({ ...contest, date_of_birth_required: true }),
+      'GET /contests/1': () => ({ ...contest, date_of_birth_required: true }),
       'POST /author': (config) => {
         authors.push(JSON.parse(String(config.data)));
         return author;
@@ -892,7 +892,7 @@ describe('photograph upload', () => {
 
   it('asks again for a required date of birth whose year was cut short', async () => {
     const adapter = uploadApi({
-      'GET /contest/1': () => ({ ...contest, date_of_birth_required: true }),
+      'GET /contests/1': () => ({ ...contest, date_of_birth_required: true }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');
@@ -917,6 +917,6 @@ describe('photograph upload', () => {
     ).toBeInTheDocument();
     expect(
       adapter.mock.calls.map(([config]) => `${config.method} ${config.url}`),
-    ).toEqual(['get /contest/1']);
+    ).toEqual(['get /contests/1']);
   });
 });

@@ -45,7 +45,7 @@ function renderTheme(
     throw new Error('The contest fixture has no theme');
   }
   serveApi({
-    'GET /contest/1': () => shownContest,
+    'GET /contests/1': () => shownContest,
     'GET /results/theme/2': () => ({ ...nature, submissions }),
   });
   render(
@@ -225,7 +225,7 @@ describe('the details after an author', () => {
 it('shows a failed load on a page named Results', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /results/theme/2': (config) => {
       throw httpError(config, 404);
     },

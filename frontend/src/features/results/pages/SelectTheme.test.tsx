@@ -7,7 +7,7 @@ import { contest } from '../../../test/fixtures';
 import SelectTheme from './SelectTheme';
 
 it('lists the contest themes with a link to each one', async () => {
-  serveApi({ 'GET /contest/1': () => contest });
+  serveApi({ 'GET /contests/1': () => contest });
   render(
     <MemoryRouter initialEntries={['/results/contest/1']}>
       <Routes>
@@ -39,7 +39,7 @@ it('lists the contest themes with a link to each one', async () => {
 it('shows a failed load on a page named Results', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
-    'GET /contest/1': (config) => {
+    'GET /contests/1': (config) => {
       throw httpError(config, 404);
     },
   });

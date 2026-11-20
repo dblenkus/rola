@@ -12,7 +12,7 @@ import { apiDateTime, contest } from '../../../test/fixtures';
 import ContestDetails from './ContestDetails';
 
 function openDetails(overrides: Partial<typeof contest> = {}) {
-  serveApi({ 'GET /contest/1': () => ({ ...contest, ...overrides }) });
+  serveApi({ 'GET /contests/1': () => ({ ...contest, ...overrides }) });
   return render(
     <MemoryRouter initialEntries={['/contest/1/details']}>
       <Routes>

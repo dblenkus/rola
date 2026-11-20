@@ -189,13 +189,13 @@ def test_forwarded_https_counts_only_behind_a_trusted_proxy(load_settings, trust
         SECURE_HSTS_SECONDS=loaded["SECURE_HSTS_SECONDS"],
         SECURE_PROXY_SSL_HEADER=loaded.get("SECURE_PROXY_SSL_HEADER"),
     ):
-        response = Client().get("/api/v1/contest", HTTP_X_FORWARDED_PROTO="https")
+        response = Client().get("/api/v1/contests", HTTP_X_FORWARDED_PROTO="https")
     if trust_proxy:
         assert response.status_code == 200
         assert response["Strict-Transport-Security"] == "max-age=31536000"
     else:
         assert response.status_code == 301
-        assert response["Location"] == "https://testserver/api/v1/contest"
+        assert response["Location"] == "https://testserver/api/v1/contests"
 
 
 def test_settings_reject_an_empty_boolean(load_settings):
@@ -235,11 +235,11 @@ def test_server_errors_are_logged_to_the_console():
             "rola.contests.api.views.ContestViewSet.list",
             side_effect=RuntimeError("database unavailable"),
         ):
-            response = Client(raise_request_exception=False).get("/api/v1/contest")
+            response = Client(raise_request_exception=False).get("/api/v1/contests")
     finally:
         handler.setStream(previous_stream)
     assert response.status_code == 500
-    assert "Internal Server Error: /api/v1/contest" in console.getvalue()
+    assert "Internal Server Error: /api/v1/contests" in console.getvalue()
     assert "RuntimeError: database unavailable" in console.getvalue()
 
 

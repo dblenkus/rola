@@ -13,7 +13,7 @@ beforeEach(() => {
 
 it('shows the confirmation text of the contest without running its scripts', async () => {
   serveApi({
-    'GET /contest/1': () => ({
+    'GET /contests/1': () => ({
       ...contest,
       // The script marks the document, which the test shares with the page,
       // with an attribute the page never sets; the page sets the title.
@@ -43,7 +43,7 @@ it('shows the confirmation text of the contest without running its scripts', asy
 });
 
 it('thanks the entrant and links back to the contests', async () => {
-  serveApi({ 'GET /contest/1': () => contest });
+  serveApi({ 'GET /contests/1': () => contest });
   open('/contest/1/confirm');
   expect(
     await screen.findByRole('heading', {

@@ -96,7 +96,7 @@ it('keeps the rater after a failed rating load', async () => {
   let unavailable = true;
   const saves: unknown[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': (config) => {
@@ -143,7 +143,7 @@ it('keeps the rater after a failed rating load', async () => {
 
 it('ignores rating keys when the theme does not load', async () => {
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
     'GET /rating': () => page([]),
   });
@@ -153,7 +153,7 @@ it('ignores rating keys when the theme does not load', async () => {
 
   const saves: unknown[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': (config) => {
       throw httpError(config, 503);
     },
@@ -176,7 +176,7 @@ it('ignores rating keys when the theme does not load', async () => {
 
 it('shows each submission its own rating while the judge moves on', async () => {
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     // The theme-wide ratings answer at once; each submission's own waits.
@@ -208,7 +208,7 @@ it('shows each submission its own rating while the judge moves on', async () => 
 it('stays on the shown submission when an earlier save finishes', async () => {
   const saves: (() => void)[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': ({ params }) =>
@@ -235,7 +235,7 @@ it('stays on the shown submission when an earlier save finishes', async () => {
 it('keeps the next rater on its submission when a closed rater saves late', async () => {
   const saves: (() => void)[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([
         jurySubmission(11, 'First'),
@@ -266,7 +266,7 @@ it('ignores new ratings while a rating save is pending', async () => {
   const saves: unknown[] = [];
   const answers: (() => void)[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': () => page([]),
@@ -301,7 +301,7 @@ it('ignores new ratings while a rating save is pending', async () => {
 it('ignores auto-repeated digit keys but not arrow keys', async () => {
   const saves: unknown[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([
         jurySubmission(11, 'First'),
@@ -338,7 +338,7 @@ it('ignores auto-repeated digit keys but not arrow keys', async () => {
 it('keeps the rater after a failed save', async () => {
   let attempts = 0;
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
     'GET /rating': () => page([]),
@@ -383,7 +383,7 @@ const twoThemes = {
 
 it('shows nothing from the previous theme while another theme loads', async () => {
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': () => page([jurySubmission(11, 'First')]),
     'GET /rating': () => page([]),
   });
@@ -395,7 +395,7 @@ it('shows nothing from the previous theme while another theme loads', async () =
   const ratingLoads: unknown[] = [];
   let answer: (data: PaginatedResponse<JurySubmission>) => void = () => {};
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': () =>
       new Promise((resolve) => {
         answer = resolve;
@@ -431,7 +431,7 @@ it('keeps the latest theme when an earlier load finishes last', async () => {
     (data: PaginatedResponse<JurySubmission>) => void
   >();
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': ({ params }) =>
       new Promise((resolve) => answers.set(String(params.theme), resolve)),
     'GET /rating': () => page([]),
@@ -453,7 +453,7 @@ it('keeps the latest theme when an earlier load finishes last', async () => {
 it('shows no error from a theme load the judge has left', async () => {
   let failFirstTheme: (() => void) | undefined;
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': (config) =>
       config.params.theme === 2
         ? new Promise((_resolve, reject) => {
@@ -491,7 +491,7 @@ it('shows no error from a theme load the judge has left', async () => {
 
 it('leaves the error of a failed theme behind when another theme opens', async () => {
   serveApi({
-    'GET /contest/1': () => twoThemes,
+    'GET /contests/1': () => twoThemes,
     'GET /judge/submission': (config) => {
       if (config.params.theme === 2) throw httpError(config, 503);
       return page([jurySubmission(21, 'Street'), jurySubmission(22, 'Bridge')]);
@@ -530,7 +530,7 @@ it('reports a theme that is not in the contest', async () => {
   const submissionLoads: unknown[] = [];
   // Theme 99 belongs to another contest, so the judge's list for it is empty.
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': ({ params }) => {
       submissionLoads.push(params.theme);
       return page([]);
@@ -548,7 +548,7 @@ it('reports a theme that is not in the contest', async () => {
 it('reloads expired photograph links at most once a minute', async () => {
   let loads = 0;
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     // Every load signs the links anew, as the server does.
     'GET /judge/submission': () => {
       loads += 1;
@@ -606,7 +606,7 @@ it('keeps the rater when reloading photograph links fails', async () => {
   let loads = 0;
   const saves: unknown[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': (config) => {
       loads += 1;
       if (failing) throw httpError(config, 503);
@@ -663,7 +663,7 @@ it('shows a failed reload on every submission whose photograph failed during it'
   let loads = 0;
   const failures: (() => void)[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': (config) => {
       loads += 1;
       if (loads === 1)
@@ -742,7 +742,7 @@ const threeSubmissions = [
 it('stays on the submission the judge moved to while photograph links reload', async () => {
   const held = heldReloads([threeSubmissions]);
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': held.handler,
     'GET /rating': () => page([]),
   });
@@ -781,7 +781,7 @@ it('stays on the last submission when a save finishes after a reload shortened t
   const held = heldReloads([threeSubmissions, threeSubmissions.slice(0, 2)]);
   const answers: (() => void)[] = [];
   serveApi({
-    'GET /contest/1': () => contest,
+    'GET /contests/1': () => contest,
     'GET /judge/submission': held.handler,
     'GET /rating': () => page([]),
     'POST /rating': () =>
