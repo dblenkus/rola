@@ -1,37 +1,24 @@
-import React from 'react';
+import Button from '../../../../shared/ui/Button';
+import '../AuthPage.css';
 
-import { Button, Typography } from '@mui/material';
-
-import { authSx } from '../../../../shared/ui/styles';
-
-interface RegisterActivateSuccessProps {
+interface SuccessProps {
   title: string;
   buttonText: string;
+  // Goes to the next step. The pages replace their own history entry, which
+  // a link cannot do, so this is a button.
   onClick: () => void;
 }
 
-const RegisterActivateSuccess: React.FC<RegisterActivateSuccessProps> = (
-  props,
-) => {
-  const { buttonText, title, onClick } = props;
-
+// A screen that says an account action succeeded, with the one next step.
+export default function Success({ buttonText, title, onClick }: SuccessProps) {
   return (
-    <>
-      <Typography component="h3" variant="h6">
-        {title}
-      </Typography>
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        color="primary"
-        sx={authSx.submit}
-        onClick={() => onClick()}
-      >
-        {buttonText}
-      </Button>
-    </>
+    <div className="auth-status">
+      <h2 className="auth-status__title h3">{title}</h2>
+      <div className="auth-status__action">
+        <Button variant="primary" block onPress={onClick}>
+          {buttonText}
+        </Button>
+      </div>
+    </div>
   );
-};
-
-export default RegisterActivateSuccess;
+}

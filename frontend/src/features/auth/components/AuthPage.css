@@ -1,0 +1,89 @@
+/*
+ * The sign-in and account pages: the small logo sits on the same narrow
+ * column as the page below it, with the page's margins. Page offers no slot
+ * above its title, so the logo has its own row and the page's top padding
+ * is the space between the logo and the title.
+ */
+.auth-page__logo {
+  width: 100%;
+  /* The narrow page's 400 px column; no token holds it. */
+  max-width: calc(400px + 2 * var(--ui-page-margin));
+  margin-inline: auto;
+  padding-top: var(--space-8);
+  padding-left: max(var(--ui-page-margin), var(--safe-left));
+  padding-right: max(var(--ui-page-margin), var(--safe-right));
+}
+
+/* A page's error above the form or result it belongs to. */
+.auth-page__message {
+  margin-bottom: var(--space-4);
+}
+
+/* A form is one column: fields, then the form's error, then its button. */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth-form__submit {
+  margin-top: var(--space-2);
+}
+
+/* Two fields side by side from the compact breakpoint up, stacked on
+   phones. */
+.auth-form__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* Links to the other account pages, under a hairline. Each link is a
+   block at least 44 px tall so it is a full tap target. */
+.auth-links {
+  margin: var(--space-6) 0 0;
+  padding: var(--space-2) 0 0;
+  border-top: var(--stroke-hairline) solid var(--line);
+  list-style: none;
+}
+
+.auth-links__link {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+/* A result screen: a heading, a line or two of text and the next step. */
+.auth-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.auth-status__title,
+.auth-status__text {
+  margin: 0;
+  color: var(--text);
+}
+
+.auth-status__action {
+  margin-top: var(--space-2);
+}
+
+/* wide */
+@media (width >= 64rem) {
+  .auth-page__logo {
+    padding-top: var(--space-12);
+  }
+}
+
+/* phone */
+@media (width < 40rem) {
+  .auth-page__logo {
+    padding-top: var(--space-6);
+  }
+
+  .auth-form__pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

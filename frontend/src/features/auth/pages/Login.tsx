@@ -1,17 +1,11 @@
-import type { InputChange } from '../../../shared/ui/InputField';
+import type { InputChange } from '../../../shared/ui/TextField';
 import React from 'react';
 
 import { withTranslation, WithTranslation } from 'react-i18next';
 
-import {
-  Link as RouterLink,
-  Navigate,
-  useLocation,
-  type Location,
-} from 'react-router';
+import { Link, Navigate, useLocation, type Location } from 'react-router';
 
-import { Card, CardContent, CardHeader, Grid, Link } from '@mui/material';
-
+import AuthPage from '../components/AuthPage';
 import { userContext } from '../components/AuthProvider';
 import LoginForm, { Errors, Fields } from '../components/LoginForm';
 import { formErrors } from '../../../shared/api/errors';
@@ -82,40 +76,29 @@ class LoginView extends React.Component<LoginViewProps, LoginViewState> {
     const { t } = this.props;
 
     return (
-      <Grid container sx={{ justifyContent: 'center' }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card>
-            <CardHeader
-              title={t('login')}
-              slotProps={{ title: { align: 'center' } }}
-            />
-            <CardContent>
-              <LoginForm
-                fields={fields}
-                errors={errors}
-                onChange={this.handleChange}
-                onSubmit={this.handleSubmit}
-              />
-              <Grid container>
-                <Grid size="grow">
-                  <Link
-                    component={RouterLink}
-                    to="/password-reset/request"
-                    variant="body2"
-                  >
-                    {t('forgot_password')}
-                  </Link>
-                </Grid>
-                <Grid>
-                  <Link component={RouterLink} to="/register" variant="body2">
-                    {t('new_registration')}
-                  </Link>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <AuthPage title={t('login')}>
+        <LoginForm
+          fields={fields}
+          errors={errors}
+          onChange={this.handleChange}
+          onSubmit={this.handleSubmit}
+        />
+        <ul className="auth-links">
+          <li>
+            <Link
+              className="auth-links__link body"
+              to="/password-reset/request"
+            >
+              {t('forgot_password')}
+            </Link>
+          </li>
+          <li>
+            <Link className="auth-links__link body" to="/register">
+              {t('new_registration')}
+            </Link>
+          </li>
+        </ul>
+      </AuthPage>
     );
   }
 }

@@ -6,8 +6,8 @@ import { WithTranslation, withTranslation } from 'react-i18next';
 
 import { Navigate, useLocation, type Location } from 'react-router';
 
-import { Alert, Card, CardContent, CardHeader, Grid } from '@mui/material';
-
+import Message from '../../../shared/ui/Message';
+import AuthPage from '../components/AuthPage';
 import RegisterActivateFailed from '../components/RegisterActivateFailed';
 import RegisterActivateSuccess from '../components/RegisterActivateSuccess';
 
@@ -71,25 +71,15 @@ class RegisterActivateView extends React.Component<
     }
 
     return (
-      <Grid container sx={{ justifyContent: 'center' }}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card>
-            <CardHeader
-              title={t('account_activation')}
-              slotProps={{ title: { align: 'center' } }}
-            />
-            <CardContent>
-              {failure ? (
-                <Alert severity="error">{failure}</Alert>
-              ) : succeeded ? (
-                <RegisterActivateSuccess onClick={this.handleClick} />
-              ) : (
-                <RegisterActivateFailed />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <AuthPage title={t('account_activation')}>
+        {failure ? (
+          <Message severity="error">{failure}</Message>
+        ) : succeeded ? (
+          <RegisterActivateSuccess onClick={this.handleClick} />
+        ) : (
+          <RegisterActivateFailed />
+        )}
+      </AuthPage>
     );
   }
 }

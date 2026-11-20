@@ -1,13 +1,6 @@
-import type { InputChange } from '../../../shared/ui/InputField';
-import React from 'react';
-
 import { useTranslation } from 'react-i18next';
-
-import { Button } from '@mui/material';
-
-import InputField from '../../../shared/ui/InputField';
-
-import { authSx } from '../../../shared/ui/styles';
+import TextField, { type InputChange } from '../../../shared/ui/TextField';
+import AuthForm from './AuthForm';
 
 export interface Fields {
   email: string;
@@ -16,42 +9,31 @@ export interface Fields {
 
 interface PasswordResetRequestFormProps {
   fields: Fields;
-  onChange: (event: InputChange) => void;
+  onChange: (change: InputChange) => void;
   onSubmit: () => Promise<void>;
 }
 
-const PasswordResetRequestForm: React.FC<PasswordResetRequestFormProps> = (
-  props,
-) => {
+export default function PasswordResetRequestForm({
+  fields,
+  onChange,
+  onSubmit,
+}: PasswordResetRequestFormProps) {
   const { t } = useTranslation();
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    props.onSubmit();
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <InputField
+    <AuthForm submitLabel={t('send_reset_link')} onSubmit={onSubmit}>
+      <TextField
         name="email"
         label={t('email')}
-        value={props.fields.email}
+        value={fields.email}
+        error={null}
+        type="email"
         autoComplete="email"
+        inputMode="email"
         autoFocus
         required
-        onChange={props.onChange}
+        onChange={onChange}
       />
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        color="primary"
-        sx={authSx.submit}
-      >
-        {t('send_reset_link')}
-      </Button>
-    </form>
+    </AuthForm>
   );
-};
-
-export default PasswordResetRequestForm;
+}
