@@ -1,0 +1,5 @@
+/* Why Edit is unavailable, once under the table. */
+.upload-submissions__note {
+  margin: var(--space-3) 0 0;
+  color: var(--text-muted);
+}

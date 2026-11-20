@@ -1,5 +1,3 @@
-import { DateTime } from 'luxon';
-
 import {
   authorizationHeader,
   loadToken,
@@ -19,6 +17,15 @@ export class SessionChanged extends Error {
     super('The session changed during the upload');
     this.name = 'SessionChanged';
   }
+}
+
+// The day as the API takes it, "2010-03-07", from the date's local calendar
+// fields: the date picker gives local midnight, which an ISO string in UTC
+// would move to the day before east of Greenwich.
+export function apiDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 // Photographs go up one at a time, so a failure stops the upload before
@@ -74,7 +81,7 @@ export default async function upload(
     {
       first_name,
       last_name,
-      dob: dob ? DateTime.fromJSDate(dob).toFormat('yyyy-MM-dd') : '',
+      dob: dob ? apiDate(dob) : '',
       school: school ?? '',
       mentor: mentor ?? '',
       club: club ?? '',

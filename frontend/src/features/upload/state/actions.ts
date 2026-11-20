@@ -26,6 +26,7 @@ import {
 } from './reducer';
 import { imageStore } from './reducerImage';
 import { getEmptyImageError } from './utils';
+import type { ImageSize } from '../models';
 
 export {
   uploadComplete,
@@ -145,9 +146,13 @@ export const imageUpdate =
     imageChoices.set(slot, choice);
     let url = '';
     let errors = getEmptyImageError();
+    let size: ImageSize | undefined;
     if (file) {
       try {
-        url = (await imageReader(file)).src;
+        // Validation reads the same width and height.
+        const { src, width, height } = await imageReader(file);
+        url = src;
+        size = { width, height };
       } catch {
         // The browser cannot decode it, for example HEIC data saved as .jpg.
         // The slot takes the file with the error rather than keeping an
@@ -163,6 +168,11 @@ export const imageUpdate =
       return;
     }
     dispatch(
-      imageStore(theme_id, submission_id, image_id, { file, url, errors }),
+      imageStore(theme_id, submission_id, image_id, {
+        file,
+        url,
+        errors,
+        ...(size && { size }),
+      }),
     );
   };

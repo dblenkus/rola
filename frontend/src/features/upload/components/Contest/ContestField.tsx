@@ -1,22 +1,21 @@
-import React from 'react';
+import React, { useId } from 'react';
 
-import { WithTranslation, withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  Grid,
-  Typography,
-} from '@mui/material';
+import Button, { ButtonBar } from '../../../../shared/ui/Button';
+import Message from '../../../../shared/ui/Message';
+import type { InputChange } from '../../../../shared/ui/TextField';
 
+import { useDeadline } from '../../../contests';
 import { ContestModel, DateChange } from '../../models';
-import type { InputChange } from '../../../../shared/ui/InputField';
 
 import AuthorField from '../Author/AuthorField';
+import ContestHead from '../ContestHead/ContestHead';
 import ThemeField from '../Theme/ThemeField';
+import './ContestField.css';
 
-interface ContestFieldProps extends WithTranslation {
+interface ContestFieldProps {
+  contestId: number;
   contest: ContestModel;
   handleAuthorChange: (payload: InputChange | DateChange) => void;
   handleSubmissionChange: (
@@ -34,99 +33,94 @@ interface ContestFieldProps extends WithTranslation {
   uploading: boolean;
 }
 
-class ContestField extends React.Component<ContestFieldProps> {
-  render(): React.ReactNode {
-    const { t } = this.props;
+// The upload form: the contest's header, the entrant's details, a section per
+// theme, and the sticky bar with the upload action.
+const ContestField: React.FC<ContestFieldProps> = ({
+  contestId,
+  contest,
+  handleAuthorChange,
+  handleSubmissionChange,
+  handleImageChange,
+  handleSubmit,
+  uploading,
+}) => {
+  const { t } = useTranslation();
+  const progressId = useId();
+  const deadline = useDeadline(contest.meta.endDate);
 
-    const {
-      contest,
-      handleAuthorChange,
-      handleSubmissionChange,
-      handleImageChange,
-      handleSubmit,
-      uploading,
-    } = this.props;
+  const handleClick = (event: React.FormEvent): void => {
+    event.preventDefault();
+    handleSubmit();
+  };
 
-    const handleClick = (event: React.FormEvent): void => {
-      event.preventDefault();
-      handleSubmit();
-    };
+  return (
+    <div className="upload-page">
+      <ContestHead
+        contestId={contestId}
+        title={contest.meta.title}
+        endDate={contest.meta.endDate}
+      />
+      {contest.meta.description && (
+        <p className="upload-page__description body">
+          {contest.meta.description}
+        </p>
+      )}
+      <form className="upload-form" onSubmit={handleClick} noValidate>
+        <AuthorField
+          handleAUthorChange={handleAuthorChange}
+          author={contest.author}
+          showDob={contest.meta.dobRequired}
+          showClub={contest.meta.clubShow}
+          requiredClub={contest.meta.clubRequired}
+          showSchool={contest.meta.schoolShow}
+          requiredSchool={contest.meta.schoolRequired}
+        />
 
-    const onSubmissionChange =
-      (theme_id: number) =>
-      (submission_id: number, payload: { name: string; value: string }): void =>
-        handleSubmissionChange(theme_id, submission_id, payload);
+        {contest.themes.map((theme) => (
+          <ThemeField
+            key={theme.meta.id}
+            theme={theme}
+            handleSubmissionChange={(submission_id, payload) =>
+              handleSubmissionChange(theme.meta.id, submission_id, payload)
+            }
+            handleImageChange={(submission_id, image_id, payload) =>
+              handleImageChange(theme.meta.id, submission_id, image_id, payload)
+            }
+          />
+        ))}
+        {contest.errors.hasError && (
+          <div className="upload-form__message">
+            <Message severity="error">{t('fix_errors')}</Message>
+          </div>
+        )}
+        <ButtonBar
+          // Editing is not available yet; deleting is, until entries close.
+          note={
+            deadline.remaining !== null &&
+            t('upload_bar_note', { date: deadline.date })
+          }
+        >
+          {uploading ? (
+            // The upload reports no progress, only that it runs, so this
+            // says so in words, without a bar.
+            <div
+              className="upload-form__progress"
+              role="progressbar"
+              aria-labelledby={progressId}
+            >
+              <span id={progressId} className="body">
+                {t('upload_uploading')}
+              </span>
+            </div>
+          ) : (
+            <Button type="submit" variant="primary" size="large" block>
+              {t('upload')}
+            </Button>
+          )}
+        </ButtonBar>
+      </form>
+    </div>
+  );
+};
 
-    const onImageChange =
-      (theme_id: number) =>
-      (
-        submission_id: number,
-        image_id: number,
-        payload: { file: File | undefined },
-      ): void => {
-        handleImageChange(theme_id, submission_id, image_id, payload);
-      };
-
-    return (
-      <Grid container>
-        <Grid size={{ xs: 12 }}>
-          <Typography align="center" variant="h2">
-            {contest.meta.title}
-          </Typography>
-        </Grid>
-        <Grid size={{ xs: 12 }}>
-          <Typography align="center" variant="body1">
-            {contest.meta.description}
-          </Typography>
-        </Grid>
-
-        <Grid size={{ xs: 12 }}>
-          <form onSubmit={handleClick} noValidate>
-            <AuthorField
-              handleAUthorChange={handleAuthorChange}
-              author={contest.author}
-              showDob={contest.meta.dobRequired}
-              showClub={contest.meta.clubShow}
-              requiredClub={contest.meta.clubRequired}
-              showSchool={contest.meta.schoolShow}
-              requiredSchool={contest.meta.schoolRequired}
-            />
-
-            {contest.themes.map((theme) => {
-              return (
-                <ThemeField
-                  key={theme.meta.id}
-                  theme={theme}
-                  handleSubmissionChange={onSubmissionChange(theme.meta.id)}
-                  handleImageChange={onImageChange(theme.meta.id)}
-                />
-              );
-            })}
-            {contest.errors.hasError && (
-              <Alert sx={{ mb: 2 }} severity="error">
-                {t('fix_errors')}
-              </Alert>
-            )}
-            {uploading ? (
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <CircularProgress />
-              </div>
-            ) : (
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                sx={{ p: 2 }}
-              >
-                {t('upload')}
-              </Button>
-            )}
-          </form>
-        </Grid>
-      </Grid>
-    );
-  }
-}
-
-export default withTranslation()(ContestField);
+export default ContestField;

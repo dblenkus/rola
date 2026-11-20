@@ -1,0 +1,114 @@
+/*
+ * The upload page after the design system's entrant screen. On phones the
+ * header, the entry rows and the submit bar run to the screen's edges with
+ * their own 16 px padding, so the column has no margin of its own there; on
+ * wider screens it is at most 720 px inside the page margins. The DOM is the
+ * same at every width.
+ */
+.upload-page {
+  width: 100%;
+  max-width: calc(720px + 2 * var(--ui-page-margin));
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding-left: max(var(--ui-page-margin), var(--safe-left));
+  padding-right: max(var(--ui-page-margin), var(--safe-right));
+}
+
+.upload-page__description {
+  margin: var(--space-4) var(--space-4) 0;
+  color: var(--text);
+}
+
+/* A section's head: its title, and for a theme the count and rules, with
+   the rows' 16 px inset. */
+.upload-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4) var(--space-3);
+}
+
+.upload-section-head__title {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+/* The entrant's details in one column. */
+.upload-author__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 480px;
+  padding: 0 var(--space-4);
+}
+
+/* "1 of 2 photos" at 600 beside its strip. */
+.upload-theme__count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text);
+}
+
+.upload-theme__count > .body-dense {
+  font-weight: 600;
+}
+
+.upload-theme__count > .rl-strip:not(.rl-strip--segmented) {
+  flex: 1;
+  min-width: var(--space-16);
+}
+
+.upload-theme__rules {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* The list's last row closes on a hairline, as the rows open on one. */
+.upload-theme .rl-entry-list {
+  border-bottom: var(--stroke-hairline) solid var(--line);
+}
+
+/* A series' one title and description, under its photographs. */
+.upload-series {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.upload-form__message {
+  padding: var(--space-8) var(--space-4) 0;
+}
+
+/* The sticky submit bar sits above the phone's tab bar where there is one
+   (none in the upload page's task layout), and clear of the home indicator
+   where nothing else is below it. */
+.upload-form > .rl-btn-bar {
+  z-index: 1;
+  bottom: var(--shell-tabbar-space);
+  margin-top: var(--space-8);
+  padding-bottom: calc(
+    var(--space-6) + max(0px, var(--safe-bottom) - var(--shell-tabbar-space))
+  );
+}
+
+/* While uploading, the words take the button's 48 px. */
+.upload-form__progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* phone: the column runs to the edges; the parts bring their padding. */
+@media (width < 40rem) {
+  .upload-page {
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+}

@@ -1,65 +1,174 @@
-import React from 'react';
+import React, { useId, useRef, type ReactNode } from 'react';
 
-import { FormControl, FormHelperText } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
-import ShowImage from './ShowImage';
-import ImageButtons from './ImageButtons';
-import ImageInput from './ImageInput';
+import Button, { ButtonRow } from '../../../../shared/ui/Button';
+import Icon from '../../../../shared/ui/Icon';
+import Thumbnail from '../../../../shared/ui/Thumbnail';
 
-import { ImageModel } from '../../models';
+import { ImageModel, ImageSize } from '../../models';
+import { fileType } from '../../utils/validate';
+import './ImageField.css';
 
 export interface ImageFieldProps {
   image: ImageModel;
   handleImageChange: (payload: { file: File | undefined }) => void;
+  // The photograph's place in its theme, from 1; names the photograph.
+  slot?: number;
+  // Shows the check named "OK": the row is complete and has no problem.
+  complete?: boolean;
+  // The row's text fields, between the photograph and its technical line.
+  children?: ReactNode;
 }
 
-class ImageField extends React.Component<ImageFieldProps> {
-  imageRef = React.createRef<HTMLInputElement>();
+// The slot as the entrant's rows write it: "01".
+export const slotNumber = (slot: number): string =>
+  String(slot).padStart(2, '0');
 
-  handleClick = (): void => {
-    if (this.imageRef.current) this.imageRef.current.click();
-  };
+type Orientation = 'landscape' | 'portrait' | 'square';
 
-  _updateImage = (file: File | undefined): void => {
-    const { handleImageChange } = this.props;
-    handleImageChange({ file });
-  };
+const orientation = ({ width, height }: ImageSize): Orientation => {
+  if (width > height) return 'landscape';
+  if (height > width) return 'portrait';
+  return 'square';
+};
 
-  handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+// One photograph slot of an entry row: the photograph whole in the 64 px
+// well, the row's fields, the technical line with the slot and the pixel
+// size, the file's problem, and the actions. The parts are the row's own
+// children, laid out by the rl-entry-row classes.
+const ImageField: React.FC<ImageFieldProps> = ({
+  image,
+  handleImageChange,
+  slot,
+  complete = false,
+  children,
+}) => {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const errorId = useId();
+  const { file, url, size, errors } = image;
+  const problem = errors.file;
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     event.preventDefault();
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      this._updateImage(file);
+    const chosen = event.target.files?.[0];
+    if (chosen) {
+      handleImageChange({ file: chosen });
     }
   };
 
-  handleRemove = (): void => {
-    this._updateImage(undefined);
+  const handleRemove = (): void => {
+    handleImageChange({ file: undefined });
     // Otherwise the input keeps the file, and choosing the same photograph
     // again fires no change event.
-    if (this.imageRef.current) {
-      this.imageRef.current.value = '';
+    if (inputRef.current) {
+      inputRef.current.value = '';
     }
   };
 
-  render(): React.ReactNode {
-    const { image } = this.props;
+  const alt =
+    slot !== undefined && size !== undefined
+      ? t(`upload_photo_alt_${orientation(size)}`, {
+          slot: slotNumber(slot),
+        })
+      : t('selected_photo');
 
-    const hasError = !!image.errors.file;
-
-    return (
-      <FormControl error={hasError}>
-        <ImageInput handleChange={this.handleChange} imageRef={this.imageRef} />
-        <ShowImage src={image.url} error={hasError} />
-        <ImageButtons
-          handleChange={this.handleClick}
-          handleRemove={this.handleRemove}
-          imageSelected={!!image.file}
+  const technical = (slot !== undefined || size || complete) && (
+    <div className="rl-entry-row__tech mono-label">
+      {slot !== undefined && (
+        <span className="rl-entry-row__slot">{slotNumber(slot)}</span>
+      )}
+      {size && (
+        <span>
+          {t('upload_pixel_size', {
+            width: size.width,
+            height: size.height,
+          })}
+        </span>
+      )}
+      {complete && (
+        <Icon
+          name="check"
+          size={14}
+          label={t('upload_ok')}
+          className="rl-entry-row__ok"
         />
-        {hasError && <FormHelperText>{image.errors.file}</FormHelperText>}
-      </FormControl>
-    );
-  }
-}
+      )}
+    </div>
+  );
+
+  const describedBy = problem === null ? {} : { 'aria-describedby': errorId };
+  const actions = file ? (
+    <>
+      <Button
+        size="dense"
+        onPress={() => inputRef.current?.click()}
+        {...describedBy}
+      >
+        {t('change')}
+      </Button>
+      <Button size="dense" variant="quiet" onPress={handleRemove}>
+        {t('remove')}
+      </Button>
+    </>
+  ) : (
+    <Button
+      size="dense"
+      onPress={() => inputRef.current?.click()}
+      {...describedBy}
+    >
+      {t('select')}
+    </Button>
+  );
+
+  return (
+    <>
+      <input
+        type="file"
+        hidden
+        aria-label={t('select_photo')}
+        accept={fileType}
+        onChange={handleChange}
+        ref={inputRef}
+      />
+      {url ? (
+        <Thumbnail
+          fit="contain"
+          size={64}
+          src={url}
+          alt={alt}
+          loading="eager"
+        />
+      ) : (
+        <Thumbnail fit="contain" size={64} label={t('no_photo_selected')} />
+      )}
+      <div className="rl-entry-row__body">
+        {children}
+        {problem === null ? (
+          <>
+            {technical}
+            <div className="upload-entry__actions">
+              <ButtonRow>{actions}</ButtonRow>
+            </div>
+          </>
+        ) : (
+          // A problem with the file, not the field: the field keeps its
+          // border, and the message sits beside the action that fixes it.
+          <div className="rl-entry-row__problem">
+            <div>
+              <div className="rl-field__error" id={errorId}>
+                <Icon name="alert" />
+                <span>{problem}</span>
+              </div>
+              {technical}
+            </div>
+            <div className="upload-entry__fix">{actions}</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
 
 export default ImageField;

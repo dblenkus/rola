@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { ImageError, ImageMeta } from '../models';
+import { ImageError, ImageMeta, ImageSize } from '../models';
 import { getEmptyImage } from './utils';
 
 // The photograph slot an action is for; the upload, theme and submission
@@ -9,6 +9,15 @@ export interface ImageTarget {
   themeId: number;
   submissionId: number;
   imageId: number;
+}
+
+// What a photograph slot holds after a choice: the file, its preview, the
+// problem reading it, and its pixel size once the browser decoded it.
+export interface ImageChoice {
+  file: File | undefined;
+  url: string;
+  errors: ImageError;
+  size?: ImageSize;
 }
 
 const imageSlice = createSlice({
@@ -22,21 +31,25 @@ const imageSlice = createSlice({
     imageStore: {
       reducer: (
         state,
-        action: PayloadAction<
-          { file: File | undefined; url: string; errors: ImageError },
-          string,
-          ImageTarget
-        >,
-      ) => ({
-        ...state,
-        meta: { ...state.meta, isChanged: true },
-        ...action.payload,
-      }),
+        action: PayloadAction<ImageChoice, string, ImageTarget>,
+      ) => {
+        const { file, url, errors, size } = action.payload;
+        // The size belongs to the photograph it was measured on, so a choice
+        // without one (a removal, an unreadable file) clears it.
+        return {
+          ...state,
+          meta: { ...state.meta, isChanged: true },
+          file,
+          url,
+          errors,
+          size,
+        };
+      },
       prepare: (
         themeId: number,
         submissionId: number,
         imageId: number,
-        payload: { file: File | undefined; url: string; errors: ImageError },
+        payload: ImageChoice,
       ) => ({ payload, meta: { themeId, submissionId, imageId } }),
     },
   },
