@@ -113,4 +113,5 @@ nginx on ``127.0.0.1:8080``. nginx serves the built application, its hashed
 ``/assets/``, uploaded ``/media/`` and the collected ``/static2/`` files
 itself, and passes ``/api`` and ``/django-admin`` to Gunicorn in the backend
 container. :doc:`deployment` describes what the TLS terminator
-must do.
+must do, and the Cloudflare Tunnel that ``compose.tunnel.yaml`` runs in the
+terminator's place, with no port published on the host.

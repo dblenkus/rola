@@ -30,7 +30,8 @@ new code goes.
   ([backend/README.rst](backend/README.rst)).
 - `frontend/`: the React frontend ([frontend/README.md](frontend/README.md)).
 - `compose.yaml`: the development stack. `compose.production.yaml`: the
-  production stack ([docs/deployment.rst](docs/deployment.rst)).
+  production stack, and `compose.tunnel.yaml`: its Cloudflare Tunnel variant
+  ([docs/deployment.rst](docs/deployment.rst)).
 - `docs/`: the Sphinx documentation, including the one-off
   [data transfer](docs/transfer.rst) from the previous deployment, and
   [docs/CHANGELOG.rst](docs/CHANGELOG.rst).

@@ -4,12 +4,15 @@ Deployment
 
 ``compose.production.yaml`` runs Rola on one server behind a TLS terminator.
 This page describes the services, their configuration, what the TLS
-terminator must do, and how to start, upgrade and maintain the stack. The
-one-off move of the data from the previous deployment is in :doc:`transfer`.
+terminator must do, and how to start, upgrade and maintain the stack.
+``compose.tunnel.yaml`` puts a Cloudflare Tunnel in the terminator's place;
+see `Cloudflare Tunnel`_. The one-off move of the data from the previous
+deployment is in :doc:`transfer`.
 
 Run every command on this page from the repository root. The server's
 ``.env`` sets ``COMPOSE_FILE=compose.production.yaml`` (see `Configuration`_),
-so every ``docker compose`` command run there uses the production stack.
+or both files for `Cloudflare Tunnel`_, so every ``docker compose`` command
+run there uses the production stack.
 
 The production file names its Compose project ``rola-production``, so its
 volumes are ``rola-production_db``, ``rola-production_media`` and
@@ -39,13 +42,20 @@ Services
    publishes no port.
 
 ``frontend``
-   nginx as uid 101, published on ``127.0.0.1:8080``. It serves the
+   nginx as uid 101, published on ``127.0.0.1:8080`` unless
+   ``compose.tunnel.yaml`` is used. It serves the
    built frontend, ``/media/`` from the ``media`` volume and ``/static2/``
    from the ``static`` volume, and passes ``/api`` and ``/django-admin`` to
    the backend. It looks up the backend's address again every 10 seconds, so
    it keeps working when the backend container is recreated. It waits up to 120 seconds for the backend's response and
    keeps up to 4 GiB of a response in a temporary file in its container;
    see `Contest downloads`_.
+
+``tunnel``
+   Only with ``compose.tunnel.yaml``: cloudflared as uid 65532, which
+   connects out to Cloudflare and passes visitors' requests to the frontend.
+   Its health check fails while it has no connection to Cloudflare. See
+   `Cloudflare Tunnel`_.
 
 The images are built on the server from the checked-out revision; no image is
 published to a registry.
@@ -54,7 +64,8 @@ Configuration
 =============
 
 Copy ``.env.example`` to ``.env``, fill it in, and keep it out of Git. Keep
-its ``COMPOSE_FILE`` line, which selects the production Compose file.
+its ``COMPOSE_FILE`` line, which selects the production Compose file, or
+use the one for `Cloudflare Tunnel`_.
 Compose refuses to start while a value it requires is missing, and the
 settings refuse to load while one they require is missing. The Compose file
 itself sets ``ROLA_DEBUG=false``, ``ROLA_TRUST_PROXY=true`` and
@@ -97,6 +108,9 @@ as a secret key or a password, in single quotes.
    * - ``VITE_SENTRY_DSN``
      - always
      - The Sentry DSN for frontend error reports, built into the frontend.
+   * - ``TUNNEL_TOKEN``
+     - with ``compose.tunnel.yaml``
+     - The Cloudflare Tunnel's token. See `Cloudflare Tunnel`_.
    * - ``ROLA_DEFAULT_FROM_EMAIL``
      - when ``ROLA_USE_SES`` is on
      - The sender of account email. SES rejects Django's default sender.
@@ -163,6 +177,93 @@ header, every request is redirected again, in a loop. Set
 passes the original in ``X-Forwarded-Host``. Never publish the backend
 itself: it trusts these headers from whoever sends them.
 
+Cloudflare Tunnel
+=================
+
+``compose.tunnel.yaml`` publishes the site through a `Cloudflare Tunnel
+<https://developers.cloudflare.com/tunnel/>`__ instead of a TLS terminator
+on the server. Cloudflare terminates TLS and reads all traffic in clear
+text. cloudflared, in the ``tunnel`` service, connects out to Cloudflare and
+passes each request to the frontend, so the server needs no certificate and
+no port that the internet can reach.
+
+Merged after ``compose.production.yaml``, the file:
+
+* adds the ``tunnel`` service, on a network that it shares with the frontend
+  only, so that no route set in Cloudflare reaches the backend or the
+  database;
+* no longer publishes the frontend on ``127.0.0.1:8080``;
+* gives ``migrate`` and ``backend`` an empty ``TUNNEL_TOKEN``, because
+  ``env_file`` would otherwise hand them the token from ``.env``.
+
+In Cloudflare, create a remotely managed tunnel and give it one route: the
+site's host name, with the service ``http://frontend:8080``. The host name
+belongs to a zone of the same Cloudflare account. Adding the route in the
+dashboard creates the host name's DNS record, a CNAME to the tunnel, and
+Cloudflare refuses the route while the host name has another A, AAAA or
+CNAME record. Leave the route's HTTP Host Header setting empty, because
+Django checks the unchanged ``Host`` (see `TLS terminator`_). Turn on Always
+Use HTTPS for the zone, so that Cloudflare redirects plain HTTP itself. Then
+change these lines of ``.env``:
+
+.. code-block:: text
+
+   COMPOSE_FILE=compose.production.yaml:compose.tunnel.yaml
+   TUNNEL_TOKEN=<the tunnel's token>
+   ROLA_NUM_PROXIES=2
+
+Cloudflare sets ``X-Forwarded-Proto`` to the scheme the visitor used,
+whatever the visitor sent, and appends the visitor's address to
+``X-Forwarded-For``. cloudflared passes both on and adds nothing, and nginx
+appends cloudflared's address, so Cloudflare and nginx are the 2 proxies
+that ``ROLA_NUM_PROXIES`` counts (see `Client addresses`_).
+
+Follow `First start`_ and `Upgrades`_ with ``docker compose pull db tunnel``
+in place of ``docker compose pull db``. ``up --wait`` also waits until
+cloudflared has a connection to Cloudflare. The site is public as soon as
+the route exists and cloudflared has connected, which is before ``check
+--deploy`` and ``createsuperuser`` in `First start`_; add the route
+afterwards to keep the site closed until then. An upgrade that brings a new
+cloudflared image restarts the ``tunnel`` service, and Cloudflare answers
+visitors with an error page until it has connected again.
+
+For :doc:`transfer`, create the tunnel and change ``.env`` while preparing
+the new stack, but add no route yet: the host name's DNS record still points
+at the old deployment. Where the transfer points the TLS terminator at
+``127.0.0.1:8080``, delete that DNS record and add the route instead. To
+roll back, remove the route and point the DNS record at the old deployment
+again.
+
+The token is all a connector needs. Every cloudflared that starts with it
+joins the tunnel, and Cloudflare may send a visitor's request to any of
+them, so run one stack with the token. If the token leaks, follow "Rotate a
+compromised token" in Cloudflare's `tunnel token reference
+<https://developers.cloudflare.com/tunnel/reference/tunnel-tokens/>`__:
+replace the token, then delete the tunnel's connections. Replacing the token
+alone only refuses new connections, and a connector that has already joined
+keeps receiving requests.
+
+Behind Cloudflare, some limits differ from those of a terminator on the
+server:
+
+* Cloudflare waits 125 seconds for a response, and only its Enterprise plan
+  can change that. Gunicorn's 120 seconds remain the limit for `Contest
+  downloads`_.
+* Cloudflare accepts request bodies of up to 100 MB on its Free and Pro
+  plans, more than nginx's 10 MiB.
+* Cloudflare caches ``/media/`` and ``/assets/`` files for as long as nginx
+  tells browsers to keep them, a year. A photograph that was deleted on the
+  server can therefore stay available at its address until it is purged from
+  Cloudflare's cache. Cloudflare keeps ``/static2/`` files, which come
+  without a cache header, for two hours, and tells browsers to keep them
+  for the zone's Browser Cache TTL, four hours by default, so the Django
+  admin's stylesheets and scripts can lag an upgrade by that long.
+* Cloudflare compresses HTML and JSON responses on their way to the
+  visitor. nginx leaves the responses of ``/api`` and ``/django-admin``
+  uncompressed, so that the tokens in them are not exposed to compression
+  side channels; a Compression Rule in Cloudflare that turns compression off
+  for these two paths keeps it that way.
+
 Client addresses
 ================
 
@@ -172,7 +273,9 @@ address. Behind proxies, the backend takes that address from
 the header, because each proxy appends the address it received the request
 from. Set it to the number of proxies in front of Gunicorn: nginx and the TLS
 terminator make 2, and every further proxy that appends to
-``X-Forwarded-For``, such as a CDN or a load balancer, adds one.
+``X-Forwarded-For``, such as a CDN or a load balancer, adds one. With
+``compose.tunnel.yaml``, Cloudflare and nginx make 2, because cloudflared
+does not append to the header.
 
 * Too low, and every request seems to come from nginx or the terminator.
   All clients then share one budget, and 30 login attempts a minute from
@@ -350,6 +453,15 @@ nginx, for example while the backend is unreachable, it records the full
 request line, query string included, and the ``Referer``. Such a line can hold
 an activation or reset token, so treat the container output as confidential:
 do not share it or forward it to a log service unfiltered.
+
+With ``compose.tunnel.yaml``, cloudflared logs to the same output. It does
+not log the requests it passes on, but for a request that it cannot pass to
+the frontend, or that the visitor aborts, it records the full address, query
+string included, so such a line can hold an activation or reset token too.
+Cloudflare also streams cloudflared's log, with the address and headers of
+every request, to account members who may edit the tunnel, in the dashboard
+and through ``cloudflared tail``. Give that permission only to people who
+may read the container output.
 
 First start
 ===========
