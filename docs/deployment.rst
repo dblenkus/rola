@@ -489,13 +489,13 @@ longest request is the contest download; see `Contest downloads`_.
 Account recovery
 ================
 
-A password-reset request gets the same 200 response for unknown, inactive and
+A password-reset request gets the same 202 response for unknown, inactive and
 active addresses, but only an active account gets an email, and the request
 sends it before answering. The response time can therefore still reveal
 whether an address has an active account. The recovery limit slows such
 probing; removing the difference would need asynchronous mail delivery.
 
-Registration answers 201 with an empty body for every address. A new address
+Registration answers 202 with an empty body for every address. A new address
 gets an activation link. An address that already has an account, active or
 not, gets a password-reset link instead, and completing the reset activates
 the account. Both paths hash the submitted password and send one email before
