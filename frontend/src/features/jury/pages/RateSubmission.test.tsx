@@ -26,6 +26,7 @@ import type {
   Rating,
 } from '../../../shared/api/types';
 import RateSubmission from './RateSubmission';
+import { pressedScore, scoreKey } from './RateSubmission.testutils';
 
 interface PendingRating {
   submission: number;
@@ -91,19 +92,6 @@ function renderRater(path = '/judge/contest/1/theme/2/rate?submission=11') {
   );
 }
 
-function filledStars(): number {
-  return screen
-    .getAllByTestId('StarIcon')
-    .filter((star) => getComputedStyle(star).color === 'rgb(255, 180, 0)')
-    .length;
-}
-
-function star(value: number): HTMLElement {
-  const icon = screen.getAllByTestId('StarIcon')[value - 1];
-  if (!icon) throw new Error(`No star for rating ${value}`);
-  return icon;
-}
-
 it('keeps the rater after a failed rating load', async () => {
   let unavailable = true;
   const saves: unknown[] = [];
@@ -133,7 +121,7 @@ it('keeps the rater after a failed rating load', async () => {
   ).toBeInTheDocument();
   expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
   await user.keyboard('6');
-  await waitFor(() => expect(filledStars()).toBe(6));
+  await waitFor(() => expect(pressedScore()).toBe(6));
   expect(
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
@@ -147,7 +135,7 @@ it('keeps the rater after a failed rating load', async () => {
   ).not.toBeInTheDocument();
   await user.keyboard('{ArrowRight}');
   expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
-  await waitFor(() => expect(filledStars()).toBe(4));
+  await waitFor(() => expect(pressedScore()).toBe(4));
   expect(
     screen.queryByText('Request failed. Please try again.'),
   ).not.toBeInTheDocument();
@@ -191,10 +179,13 @@ it('shows each submission its own rating while the judge moves on', async () => 
     'GET /contest/1': () => contest,
     'GET /judge/submission': () =>
       page([jurySubmission(11, 'First'), jurySubmission(12, 'Second')]),
+    // The theme-wide ratings answer at once; each submission's own waits.
     'GET /rating': ({ params }) =>
-      new Promise((resolve) =>
-        pending.push({ submission: params.submission, resolve }),
-      ),
+      params.theme !== undefined
+        ? page([])
+        : new Promise((resolve) =>
+            pending.push({ submission: params.submission, resolve }),
+          ),
   });
   const user = userEvent.setup();
   renderRater();
@@ -203,15 +194,15 @@ it('shows each submission its own rating while the judge moves on', async () => 
   await user.keyboard('{ArrowRight}');
   expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
   await answerRating(12, 5);
-  expect(filledStars()).toBe(5);
+  expect(pressedScore()).toBe(5);
   await answerRating(11, 7);
-  expect(filledStars()).toBe(5);
+  expect(pressedScore()).toBe(5);
 
   await user.keyboard('{ArrowLeft}');
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
-  expect(filledStars()).toBe(0);
+  expect(pressedScore()).toBe(0);
   await answerRating(11, 7);
-  expect(filledStars()).toBe(7);
+  expect(pressedScore()).toBe(7);
 });
 
 it('stays on the shown submission when an earlier save finishes', async () => {
@@ -232,13 +223,13 @@ it('stays on the shown submission when an earlier save finishes', async () => {
   await user.keyboard('5');
   await user.keyboard('{ArrowRight}');
   expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
-  await waitFor(() => expect(filledStars()).toBe(3));
+  await waitFor(() => expect(pressedScore()).toBe(3));
   expect(saves).toHaveLength(1);
   saves[0]?.();
   await settle();
   expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-  expect(filledStars()).toBe(3);
+  expect(pressedScore()).toBe(3);
 });
 
 it('keeps the next rater on its submission when a closed rater saves late', async () => {
@@ -268,6 +259,7 @@ it('keeps the next rater on its submission when a closed rater saves late', asyn
   await settle();
   expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
   expect(screen.queryByRole('img', { name: 'Third' })).not.toBeInTheDocument();
+  expect(pressedScore()).toBe(0);
 });
 
 it('ignores new ratings while a rating save is pending', async () => {
@@ -290,18 +282,19 @@ it('ignores new ratings while a rating save is pending', async () => {
   await user.keyboard('5');
   await waitFor(() => expect(saves).toHaveLength(1));
   await user.keyboard('7');
-  await user.click(star(7));
+  await user.click(scoreKey(7));
   await settle();
   expect(saves).toEqual([{ submission: 11, rating: 5 }]);
-  expect(filledStars()).toBe(0);
+  expect(pressedScore()).toBe(0);
 
   answers[0]?.();
-  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await waitFor(() => expect(pressedScore()).toBe(5));
+  expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
   await user.keyboard('7');
   await waitFor(() => expect(saves).toHaveLength(2));
   expect(saves).toEqual([
     { submission: 11, rating: 5 },
-    { submission: 12, rating: 7 },
+    { submission: 11, rating: 7 },
   ]);
 });
 
@@ -326,15 +319,18 @@ it('ignores auto-repeated digit keys but not arrow keys', async () => {
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
 
   await user.keyboard('7');
-  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await waitFor(() => expect(pressedScore()).toBe(7));
   // fireEvent dispatches at once; the rater listens for keys on the shown
   // submission only after its effects have run.
   await settle();
   fireEvent.keyDown(window, { key: '7', repeat: true });
   await settle();
   expect(saves).toEqual([{ submission: 11, rating: 7 }]);
-  expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
+  expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
 
+  fireEvent.keyDown(window, { key: 'ArrowRight', repeat: true });
+  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await settle();
   fireEvent.keyDown(window, { key: 'ArrowRight', repeat: true });
   expect(await screen.findByRole('img', { name: 'Third' })).toBeVisible();
 });
@@ -372,7 +368,8 @@ it('keeps the rater after a failed save', async () => {
   await user.keyboard('{ArrowLeft}');
   expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
   await user.keyboard('5');
-  expect(await screen.findByRole('img', { name: 'Second' })).toBeVisible();
+  await waitFor(() => expect(pressedScore()).toBe(5));
+  expect(screen.getByRole('img', { name: 'First' })).toBeVisible();
   expect(attempts).toBe(2);
   expect(
     screen.queryByText('Request failed. Please try again.'),
@@ -403,8 +400,9 @@ it('shows nothing from the previous theme while another theme loads', async () =
       new Promise((resolve) => {
         answer = resolve;
       }),
+    // Only a submission's own ratings belong to the theme shown.
     'GET /rating': ({ params }) => {
-      ratingLoads.push(params.submission);
+      if (params.submission !== undefined) ratingLoads.push(params.submission);
       return page([]);
     },
     'POST /rating': (config) => {
@@ -537,6 +535,7 @@ it('reports a theme that is not in the contest', async () => {
       submissionLoads.push(params.theme);
       return page([]);
     },
+    'GET /rating': () => page([]),
   });
   renderRater('/judge/contest/1/theme/99/rate');
   expect(
@@ -642,6 +641,7 @@ it('keeps the rater when reloading photograph links fails', async () => {
   ).not.toBeInTheDocument();
   await user.keyboard('7');
   await waitFor(() => expect(saves).toEqual([{ submission: 11, rating: 7 }]));
+  await user.keyboard('{ArrowRight}');
 
   // Once its photograph loads, nothing is left to retry.
   fireEvent.load(await screen.findByRole('img', { name: 'Second' }));
@@ -806,4 +806,5 @@ it('stays on the last submission when a save finishes after a reload shortened t
   await settle();
   expect(screen.getByRole('img', { name: 'Second' })).toBeVisible();
   expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(pressedScore()).toBe(5);
 });

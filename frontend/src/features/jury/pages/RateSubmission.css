@@ -1,0 +1,168 @@
+/*
+ * The judge's scoring view draws the whole window on the viewing surface.
+ *
+ * Wide (at least 64rem by 37.5rem): one screen without page scroll, the bar
+ * over the photograph area and the wall label column, the filmstrip along
+ * the bottom.
+ *
+ * Below that: one scrolling column (bar, photographs, wall label,
+ * filmstrip) over a bottom dock with the score keys, Previous, the score
+ * with Clear, and Next. The dock is fixed to the window rather than sticky,
+ * because it lives inside the "Photo score" section, which ends above the
+ * filmstrip; the column keeps room for it at the bottom.
+ */
+
+.judge-view {
+  /* Three 48 px rows with an 8 px gap above each. */
+  --judge-dock-height: calc(3 * 48px + 3 * var(--space-2));
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-right: var(--safe-right);
+  padding-left: var(--safe-left);
+}
+
+/* The loading and error states: the bar over the message. */
+.judge-view--status .judge-view__status {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* The kit's colours are for paper; on the viewing surface the error hue
+   falls to 1.7:1, so an error is the alert icon and words in on-viewing. */
+.judge-view .ui-message {
+  border-color: var(--grey-600);
+  background: transparent;
+  color: var(--on-viewing);
+}
+
+.judge-view .ui-loading__label {
+  color: var(--on-viewing-muted);
+}
+
+.judge-label__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media not all and (width >= 64rem) and (height >= 37.5rem) {
+  .judge-view {
+    padding-bottom: calc(
+      var(--judge-dock-height) + var(--stroke-hairline) + var(--safe-bottom)
+    );
+  }
+
+  .judge-view--status {
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .judge-label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: 0 var(--space-4) var(--space-6);
+  }
+
+  /* The rule leads to the score pad, which is in the dock here. */
+  .judge-label .rl-photo-label__rule,
+  .judge-view .rl-keycap {
+    display: none;
+  }
+
+  .judge-dock {
+    position: fixed;
+    z-index: 1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+    grid-template-rows: repeat(3, 48px);
+    grid-template-areas:
+      'keys keys keys keys'
+      'keys keys keys keys'
+      'previous score clear next';
+    gap: var(--space-2);
+    padding: var(--space-2) max(var(--space-4), var(--safe-right))
+      var(--safe-bottom) max(var(--space-4), var(--safe-left));
+    border-top: var(--stroke-hairline) solid var(--grey-600);
+    background: var(--viewing);
+  }
+
+  .judge-dock .judge-nav {
+    display: contents;
+  }
+
+  .judge-nav__previous {
+    grid-area: previous;
+  }
+
+  .judge-nav__next {
+    grid-area: next;
+  }
+}
+
+@media (width >= 64rem) and (height >= 37.5rem) {
+  .judge-view {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 376px;
+    grid-template-rows: auto minmax(0, 1fr) 140px;
+    grid-template-areas:
+      'bar bar'
+      'photos label'
+      'filmstrip filmstrip';
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .judge-view.judge-view--status {
+    display: flex;
+    height: auto;
+  }
+
+  .judge-view > .judge-bar {
+    grid-area: bar;
+  }
+
+  .judge-view > .judge-photos {
+    grid-area: photos;
+  }
+
+  .judge-view > .judge-filmstrip {
+    grid-area: filmstrip;
+  }
+
+  /* The wall label column, 352 px of text inside 32 / 24 / 32 px. */
+  .judge-label {
+    display: flex;
+    flex-direction: column;
+    grid-area: label;
+    min-height: 0;
+    padding: var(--space-8) var(--space-6) var(--space-8) 0;
+    overflow-y: auto;
+  }
+
+  .judge-label__messages {
+    margin-bottom: 20px;
+  }
+
+  /* The flexible gap between the score pad and the navigation. */
+  .judge-dock {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+  }
+
+  .judge-dock .judge-nav {
+    margin-top: auto;
+    padding-top: var(--space-6);
+  }
+
+  .judge-label .judge-legend {
+    margin-top: 20px;
+  }
+}

@@ -3,8 +3,10 @@ import type {
   Contest,
   Image,
   JurySubmission,
+  Rating,
   Submission,
   SubmissionSet,
+  Theme,
 } from '../shared/api/types';
 
 export const contest: Contest = {
@@ -35,6 +37,14 @@ export const contest: Contest = {
   school_show: false,
   school_required: false,
 };
+
+// The contest with its theme changed, as a series theme or a renamed one.
+export function contestWithTheme(changes: Partial<Theme>): Contest {
+  return {
+    ...contest,
+    themes: contest.themes.map((theme) => ({ ...theme, ...changes })),
+  };
+}
 
 export const author: Author = {
   id: 4,
@@ -75,6 +85,21 @@ export function jurySubmission(id: number, title: string): JurySubmission {
     title,
     description: null,
     files: [photograph(id)],
+  };
+}
+
+// A judge's score for a submission, under its own id.
+export function rating(
+  id: number,
+  submissionId: number,
+  value: number,
+): Rating {
+  return {
+    id,
+    created: '2026-01-01T00:00:00Z',
+    modified: '2026-01-01T00:00:00Z',
+    submission: submissionId,
+    rating: value,
   };
 }
 

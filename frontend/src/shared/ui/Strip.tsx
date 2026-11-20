@@ -7,17 +7,26 @@ declare module 'react' {
   }
 }
 
-interface ContinuousStripProps {
+type ContinuousStripProps = {
   value: number;
   max: number;
-  // What is counted, in the interface language: "Scored 274 of 412".
-  label: string;
   // Marks the bar's head with a 1 × 9 px tick.
   tick?: boolean;
   segments?: never;
   filled?: never;
-  decorative?: never;
-}
+} & (
+  | {
+      // What is counted, in the interface language: "Scored 274 of 412".
+      label: string;
+      decorative?: never;
+    }
+  | {
+      // Words beside the strip already say the same, so it is hidden from
+      // assistive technology.
+      decorative: true;
+      label?: never;
+    }
+);
 
 type SegmentedStripProps = {
   segments: number;
@@ -56,7 +65,7 @@ function requireCount(name: string, count: number): void {
 // whole steps as segments. Always pair it with the figure it shows.
 export default function Strip(props: StripProps) {
   if (props.segments === undefined) {
-    const { value, max, label, tick } = props;
+    const { value, max, tick } = props;
     if (!(max > 0) || !Number.isFinite(max)) {
       throw new Error(`Strip: max must be a positive number, not ${max}`);
     }
@@ -65,14 +74,19 @@ export default function Strip(props: StripProps) {
         `Strip: value must be between 0 and ${max}, not ${value}`,
       );
     }
+    const semantics = props.decorative
+      ? { 'aria-hidden': true }
+      : {
+          role: 'progressbar',
+          'aria-label': props.label,
+          'aria-valuemin': 0,
+          'aria-valuemax': max,
+          'aria-valuenow': value,
+        };
     return (
       <div
         className="rl-strip"
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={max}
-        aria-valuenow={value}
+        {...semantics}
         style={{ '--rl-value': `${(value / max) * 100}%` }}
       >
         <span className="rl-strip__bar" />

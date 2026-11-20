@@ -1,0 +1,15 @@
+/* Previous and Next share the column's width, 8 px apart. */
+.judge-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.judge-nav .rl-btn {
+  width: 100%;
+}
+
+/* Previous is drawn at 500 and Next, the view's main action, at 600. */
+.judge-nav__previous .rl-btn {
+  font-weight: 500;
+}

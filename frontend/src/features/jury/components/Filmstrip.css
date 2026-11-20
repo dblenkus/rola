@@ -1,0 +1,21 @@
+/* The frames scroll inside the strip, and the perforations scroll with them
+   (background-attachment: local), so they stay centred on every frame. */
+.rl-filmstrip.judge-filmstrip {
+  flex: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  background-attachment: local;
+  scrollbar-width: none;
+}
+
+/* The frames end with the strip's inset after the last one. */
+.judge-filmstrip .rl-filmstrip__frames {
+  width: max-content;
+  padding-right: var(--rl-film-inset);
+}
+
+/* A frame without a photograph keeps its place on the rebate. */
+.judge-filmstrip__empty {
+  background: var(--viewing);
+}

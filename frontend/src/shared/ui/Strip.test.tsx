@@ -27,6 +27,22 @@ describe('continuous', () => {
     expect(strip.querySelector('.rl-strip__tick')).toBeNull();
   });
 
+  it('is hidden from assistive technology when decorative', () => {
+    const { container } = render(
+      <>
+        <Strip value={1} max={4} tick decorative />
+        <span>Scored 1 / 4</span>
+      </>,
+    );
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    const strip = container.querySelector('.rl-strip');
+    expect(strip).toHaveAttribute('aria-hidden', 'true');
+    expect(strip).not.toHaveAttribute('role');
+    expect(strip).not.toHaveAttribute('aria-valuenow');
+    expect(strip).toHaveStyle({ '--rl-value': '25%' });
+    expect(strip?.querySelector('.rl-strip__tick')).not.toBeNull();
+  });
+
   it.each([
     [-1, 10],
     [11, 10],

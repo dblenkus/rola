@@ -1,0 +1,44 @@
+/* Below the wide layout the pad's parts take their places in the page's
+   bottom dock: its wrappers give way to their contents, the keys fill the
+   width at 48 px, and the score sits small beside Clear. The DOM stays the
+   same, and the wrappers carry no role. */
+@media not all and (width >= 64rem) and (height >= 37.5rem) {
+  .judge-scorepad,
+  .judge-scorepad__head,
+  .judge-scorepad__actions {
+    display: contents;
+  }
+
+  .judge-scorepad__label,
+  .judge-scorepad .rl-scorepad__hint {
+    display: none;
+  }
+
+  .judge-scorepad__actions .rl-btn {
+    grid-area: clear;
+    height: 48px;
+  }
+
+  .judge-scorepad__score {
+    grid-area: score;
+    align-self: center;
+  }
+
+  .judge-scorepad .rl-scorepad__numeral {
+    margin: 0;
+    font-size: 20px;
+    line-height: 24px;
+    letter-spacing: 0;
+  }
+
+  .judge-scorepad__keys {
+    grid-area: keys;
+    grid-template-columns: repeat(5, 1fr);
+    margin-top: 0;
+  }
+
+  .judge-scorepad__keys .rl-scorepad__key {
+    width: auto;
+    height: 48px;
+  }
+}
