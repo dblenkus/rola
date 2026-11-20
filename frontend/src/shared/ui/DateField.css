@@ -1,0 +1,33 @@
+/* The segments sit in the input's box. The input's class is repeated so these
+   rules win whatever order the style sheets load in. */
+.rl-field__input.ui-datefield__input {
+  display: flex;
+  align-items: center;
+  cursor: text;
+}
+
+.ui-datefield__segment {
+  padding: 0 1px;
+  border-radius: var(--radius-control);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-datefield__segment[data-placeholder] {
+  color: var(--text-muted);
+}
+
+/* One ring around the whole field replaces the ring on each segment; the
+   segment being typed in gets the well fill. */
+.ui-datefield__segment:focus-visible {
+  outline: none;
+}
+
+.ui-datefield__segment[data-focused] {
+  background: var(--well);
+  color: var(--text);
+}
+
+.rl-field__input.ui-datefield__input:has(:focus-visible) {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}

@@ -113,5 +113,11 @@
   "view": "View",
   "yes": "Yes",
   "ui_loading": "Loading",
-  "ui_skip_to_content": "Skip to content"
+  "ui_skip_to_content": "Skip to content",
+  "ui_loading_options": "Loading options…",
+  "ui_no_options": "No options",
+  "ui_pagination": "Pages",
+  "ui_pagination_previous": "Go to previous page",
+  "ui_pagination_next": "Go to next page",
+  "ui_close": "Close"
 }

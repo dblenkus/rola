@@ -1,0 +1,45 @@
+/* A message sits on paper inside a hairline; only an error takes the error
+   hue, for its text, icon and edge. */
+.ui-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4);
+  border: var(--stroke-hairline) solid var(--line);
+  background: var(--paper);
+  color: var(--text);
+}
+
+.ui-message--error {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* The 16 px icon is centred on the first 22 px line of body text. */
+.ui-message__icon {
+  display: block;
+  flex: none;
+  margin-top: 3px;
+}
+
+.ui-message__text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The 44 px close button sits in the corner without growing the message. */
+.ui-message__close {
+  flex: none;
+  margin: -10px calc(-1 * var(--space-3)) -10px 0;
+}
+
+.ui-message__close .rl-btn {
+  width: var(--touch-target);
+  padding: 0;
+  color: var(--text);
+}
+
+.ui-message__close .rl-btn > svg {
+  display: block;
+}

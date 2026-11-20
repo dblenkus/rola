@@ -1,0 +1,38 @@
+/* Menus are not designed yet: paper with a 1 px control-line outline and no
+   shadow. */
+.ui-menu__popover {
+  box-sizing: border-box;
+  min-width: max(var(--trigger-width), 12rem);
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--text);
+}
+
+.ui-menu {
+  margin: 0;
+  padding: var(--space-1) 0;
+}
+
+.ui-menu__item {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  box-sizing: border-box;
+  padding: 0 var(--space-4);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* The item under the keyboard or the pointer gets the well fill and no other
+   change. */
+.ui-menu__item[data-focused],
+.ui-menu__item[data-hovered] {
+  background: var(--well);
+}
+
+/* The ring is drawn inside the item so the popover does not clip it. */
+.ui-menu__item:focus-visible {
+  outline-offset: calc(-1 * var(--focus-width));
+}

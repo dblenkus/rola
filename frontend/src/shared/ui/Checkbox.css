@@ -1,0 +1,46 @@
+/* The whole row is the tap target: at least 44 px tall, the box and its
+   label 8 px apart. */
+.ui-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ui-checkbox__box {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+}
+
+/* Selected is shown by inversion and the check, not by colour alone. */
+.ui-checkbox[data-selected] .ui-checkbox__box {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.ui-checkbox__box > svg {
+  display: block;
+}
+
+/* The input itself is visually hidden, so the box carries the focus ring. */
+.ui-checkbox[data-focus-visible] .ui-checkbox__box {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+.ui-checkbox[data-disabled] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
