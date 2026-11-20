@@ -23,7 +23,7 @@ from rola.accounts.models import Token, User, token_digest
 from rola.accounts.utils.signing import (
     generate_reset_token,
 )
-from tests.factories import wait_until_blocked_by_this_connection
+from tests.factories import logged_in_client, wait_until_blocked_by_this_connection
 
 
 def test_password_change_revokes_login_and_recovery_tokens(client, account):
@@ -97,10 +97,7 @@ def test_profile_update_waiting_on_a_password_change_keeps_it(flow):
     user = User.objects.create_user(
         email="person@example.com", password="Original!73", is_active=True
     )
-    client = APIClient()
-    client.credentials(
-        HTTP_AUTHORIZATION=f"Bearer {Token.objects.create_token(user=user).key}"
-    )
+    client = logged_in_client(user)
     backend_pids = queue.SimpleQueue()
 
     def update_on_another_connection():

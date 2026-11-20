@@ -12,6 +12,7 @@ from rest_framework.test import APITestCase
 from rola.accounts.models import Token, User
 from rola.accounts.settings import accounts_settings
 from rola.accounts.utils.signing import generate_activation_token, generate_reset_token
+from tests.factories import bearer_client
 
 
 class UserManagementTest(APITestCase):
@@ -57,7 +58,7 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.data["count"], 0)
 
     def test_list_user(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user_token.key}")
+        self.client = bearer_client(self.user_token.key)
 
         response = self.client.get(self.list_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -88,7 +89,7 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.data["results"][0]["id"], str(self.user.id))
 
     def test_list_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token.key}")
+        self.client = bearer_client(self.admin_token.key)
 
         response = self.client.get(self.list_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -107,7 +108,7 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_user(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user_token.key}")
+        self.client = bearer_client(self.user_token.key)
 
         response = self.client.get(self.user_detail_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -120,7 +121,7 @@ class UserManagementTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_user_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token.key}")
+        self.client = bearer_client(self.admin_token.key)
 
         response = self.client.get(self.user_detail_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -241,7 +242,7 @@ class ChangePasswordTest(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.user_token.key}")
+        self.client = bearer_client(self.user_token.key)
 
     def test_reset_password(self):
         new_password = "n3wp4ss!"

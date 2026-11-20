@@ -8,13 +8,7 @@ from django.utils.timezone import now
 from rest_framework.test import APIClient
 
 from rola.accounts.models import Token, User
-
-
-def client_for(token):
-    """Send the given login token with every API call."""
-    client = APIClient()
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
-    return client
+from tests.factories import bearer_client
 
 
 def own_accounts(client):
@@ -59,8 +53,8 @@ def test_logout_keeps_every_other_token(account, client):
 
     assert client.post(reverse("logout")).status_code == 204
 
-    assert own_accounts(client_for(same_account)) == [account.email]
-    assert own_accounts(client_for(other_account)) == [stranger.email]
+    assert own_accounts(bearer_client(same_account.key)) == [account.email]
+    assert own_accounts(bearer_client(other_account.key)) == [stranger.email]
     assert expired_tokens().count() == 1
     for token in (same_account, other_account):
         assert Token.objects.get(pk=token.pk).expires == token.expires
@@ -78,7 +72,7 @@ def test_logout_without_credentials_is_refused_and_expires_nothing(account, clie
 def test_expired_token_cannot_log_out(account):
     token = Token.objects.create_token(user=account, expires=now() - timedelta(hours=1))
 
-    response = client_for(token).post(reverse("logout"))
+    response = bearer_client(token.key).post(reverse("logout"))
 
     assert response.status_code == 401
     assert response.data == {"detail": "Token has expired"}
