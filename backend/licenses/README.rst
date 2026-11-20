@@ -14,5 +14,6 @@ rest of the backend is licensed under AGPL-3.0-only (``../LICENSE-AGPL``).
 
 ``BSD-3-Clause.txt``
    Came with the drf_user account app: ``rola.accounts`` (except
-   ``rola.accounts.sites`` and ``RolaAdminConfig`` in ``rola.accounts.apps``)
+   ``rola.accounts.sites``, ``rola.accounts.forms`` and ``RolaAdminConfig``
+   in ``rola.accounts.apps``)
    and the ``IsSuperUser`` permission in ``rola.common.permissions``.

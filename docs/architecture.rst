@@ -22,7 +22,7 @@ holds the project configuration and one Django app per domain:
 ``rola.accounts``
    Accounts: registration, activation, token login, password recovery, the
    profile and the account emails. It also installs the admin site, whose
-   login shares the API login's rate limit.
+   login and password change share the API login's rate limit.
 ``rola.contests``
    What an organizer sets up: contests, themes and institutions.
 ``rola.entries``

@@ -155,7 +155,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().clean()
         self.email = type(self).objects.normalize_email(self.email)
 
-    def check_password(self, raw_password):
+    def check_password(self, raw_password: str | None) -> bool:
         """Check the password and upgrade an outdated hash that is still stored.
 
         Django saves the upgraded hash over the row, which would restore the
