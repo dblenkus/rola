@@ -47,7 +47,7 @@ def test_lists_ignore_ordering_outside_results(world):
     pay(submitted(world))
     pay(submitted(world))
     world.client.force_authenticate(world.admin)
-    for path, model in [("/api/v1/contests", Contest), ("/api/v1/payment", Payment)]:
+    for path, model in [("/api/v1/contests", Contest), ("/api/v1/payments", Payment)]:
         response = world.client.get(path, {"ordering": "-id"})
         assert response.status_code == 200, response.data
         rows = [row["id"] for row in response.data["results"]]
@@ -62,9 +62,8 @@ ID_FILTERS = [
     ("/api/v1/submission-sets", "contest"),
     ("/api/v1/rating", "theme"),
     ("/api/v1/rating", "submission"),
-    ("/api/v1/payment", "submission_set"),
 ]
-ID_LIST_FILTERS = [("/api/v1/payment", "submission_set__in")]
+ID_LIST_FILTERS = [("/api/v1/payments", "submission_set__in")]
 
 
 @pytest.fixture
@@ -73,7 +72,7 @@ def caller(world):
 
     def client(path):
         Judge.objects.get_or_create(judge=world.owner, contest=world.contest)
-        if path == "/api/v1/payment":
+        if path == "/api/v1/payments":
             world.client.force_authenticate(world.admin)
         return world.client
 

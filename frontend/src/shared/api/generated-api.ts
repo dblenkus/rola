@@ -174,42 +174,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/payment": {
+    "/api/v1/payments": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API viewset for Payment objects. */
-        get: operations["payment_list"];
+        /** @description List payments and set a submission set's payment, for superusers. */
+        get: operations["payments_list"];
         put?: never;
-        /** @description API viewset for Payment objects. */
-        post: operations["payment_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/payment/{id}": {
+    "/api/v1/payments/{submission_set}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description API viewset for Payment objects. */
-        get: operations["payment_retrieve"];
-        /** @description API viewset for Payment objects. */
-        put: operations["payment_update"];
+        get?: never;
+        /**
+         * @description Set whether a submission set is paid, creating its payment if needed.
+         *
+         *     Answers 201 when the payment is created and 200 when it existed.
+         */
+        put: operations["payments_update"];
         post?: never;
-        /** @description API viewset for Payment objects. */
-        delete: operations["payment_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** @description API viewset for Payment objects. */
-        patch: operations["payment_partial_update"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/rating": {
@@ -730,30 +730,24 @@ export interface components {
             token: string;
             new_password: string;
         };
-        /** @description Serializer for Payment objects. */
-        PatchedPaymentRequest: {
-            submission_set?: number;
-            paid?: boolean;
-        };
         /** @description Serializer for Rating objects. */
         PatchedRatingRequest: {
             submission?: number;
             rating?: number;
         };
-        /** @description Serializer for Payment objects. */
+        /** @description Serialize a payment, whose submission set the request path names. */
         Payment: {
             readonly id: number;
             /** Format: date-time */
             readonly created: string;
             /** Format: date-time */
             readonly modified: string;
-            submission_set: number;
-            paid?: boolean;
+            readonly submission_set: number;
+            paid: boolean;
         };
-        /** @description Serializer for Payment objects. */
+        /** @description Serialize a payment, whose submission set the request path names. */
         PaymentRequest: {
-            submission_set: number;
-            paid?: boolean;
+            paid: boolean;
         };
         /** @description Serializer for Rating objects. */
         Rating: {
@@ -1140,15 +1134,13 @@ export interface operations {
             };
         };
     };
-    payment_list: {
+    payments_list: {
         parameters: {
             query?: {
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
-                paid?: boolean;
-                submission_set?: number;
                 /** @description Multiple values may be separated by commas. */
                 submission_set__in?: number[];
             };
@@ -1168,11 +1160,14 @@ export interface operations {
             };
         };
     };
-    payment_create: {
+    payments_update: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description The id of the submission set that the payment is for. */
+                submission_set: number;
+            };
             cookie?: never;
         };
         requestBody: {
@@ -1181,102 +1176,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The set's payment, updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+            /** @description The set's payment, created. */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Payment"];
-                };
-            };
-        };
-    };
-    payment_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Payment"];
-                };
-            };
-        };
-    };
-    payment_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaymentRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Payment"];
-                };
-            };
-        };
-    };
-    payment_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    payment_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedPaymentRequest"];
-            };
-        };
-        responses: {
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };

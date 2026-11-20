@@ -119,6 +119,21 @@ API changes
   ``?theme=``, and ``/api/v1/judge/submission`` and
   ``/api/v1/results/submission`` no longer declare ``?contest=`` and ignore
   it.
+* Payments move to ``/api/v1/payments``, still for superusers only.
+  ``GET /api/v1/payments`` lists them, filtered only by the comma-separated
+  ``?submission_set__in=``. ``PUT /api/v1/payments/{submission_set}``, with
+  the submission set's id in the path and a body of ``{"paid": …}`` alone,
+  sets that set's payment: it answers 201 with the payment when it creates
+  it and 200 when the payment existed, and 404 for an unknown set.
+  ``submission_set`` in the body is ignored. It replaces
+  ``POST /api/v1/payment`` with a body of ``submission_set`` and ``paid``,
+  which answered 201 also when it updated an existing payment.
+* Removed payment operations and filters: ``GET``, ``PUT``, ``PATCH`` and
+  ``DELETE`` on a payment by its own id, and the list's ``?submission_set=``
+  and ``?paid=`` filters. The singular ``/api/v1/payment`` paths answer 404,
+  ``POST /api/v1/payments`` and ``GET``, ``PATCH`` and ``DELETE`` on
+  ``/api/v1/payments/{submission_set}`` answer 405, and the list ignores
+  ``?submission_set=`` and ``?paid=``.
 * Every error on a submission's ``files`` is a list of messages, as on the
   other fields. An upload deleted while an upload request attached it used
   to answer ``{"files": "An upload is no longer available."}``, with a
@@ -195,9 +210,8 @@ API changes
   ``max_photos`` and ``submissions_number`` to ``submission_count``, and
   ``ratings_number`` to ``rating_count`` in judges' themes. Authors in
   ``/api/v1/authors`` and in submissions and submission sets: ``dob`` to
-  ``date_of_birth``. ``/api/v1/payment``: ``submissionset`` to
-  ``submission_set``, and its filters ``?submissionset=`` and
-  ``?submissionset__in=`` to ``?submission_set=`` and
+  ``date_of_birth``. Payments in ``/api/v1/payments``: ``submissionset`` to
+  ``submission_set``, and the filter ``?submissionset__in=`` to
   ``?submission_set__in=``.
 * Request bodies are JSON, except the JPEG body of ``POST /api/v1/files``. A
   form-encoded or multipart body answers 415; such bodies used to be
@@ -208,9 +222,8 @@ API changes
 * The id filters take integers: ``?contest=`` on ``/api/v1/submissions`` and
   ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judge/submission``
   and ``/api/v1/results/submission``, ``?theme=`` and ``?submission=`` on
-  ``/api/v1/rating``, and
-  ``?submission_set=`` and the comma-separated ``?submission_set__in=`` on
-  ``/api/v1/payment``. Any other value answers 400 with an error for that
+  ``/api/v1/rating``, and the comma-separated ``?submission_set__in=`` on
+  ``/api/v1/payments``. Any other value answers 400 with an error for that
   filter alone, and an id that matches nothing, or nothing the caller may
   see, answers an empty list. A value that was not a number used to answer
   500 on ``?contest=`` of the submission lists and ``?theme=`` of ratings,

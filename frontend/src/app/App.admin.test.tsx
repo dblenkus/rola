@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
 import store from './store';
 import { deleteMessage } from '../features/notifications/state/actions';
-import { httpError, page, serveApi, signIn } from '../test/api';
+import { httpError, page, serveApi, signIn, withStatus } from '../test/api';
 import { open } from '../test/app';
 import { contest, submissionSet } from '../test/fixtures';
 import type { PaginatedResponse, Payment } from '../shared/api/types';
@@ -23,7 +23,7 @@ describe('admin submission list', () => {
     const adapter = serveApi({
       'GET /contests/1': () => contest,
       'GET /submission-sets': () => page([submissionSet]),
-      'GET /payment': () => page([]),
+      'GET /payments': () => page([]),
       'DELETE /submission-sets/5': () => null,
     });
     const listRequests = () =>
@@ -77,7 +77,7 @@ describe('admin submission list', () => {
         }
         return { ...page(results), count: sets.length };
       },
-      'GET /payment': () => page([]),
+      'GET /payments': () => page([]),
       'DELETE /submission-sets/21': () => {
         sets = sets.slice(0, 20);
         return null;
@@ -106,22 +106,25 @@ describe('admin submission list', () => {
   it('shows stored payments and reloads them after a change', async () => {
     signIn();
     let paid = true;
+    const storedPayment = (): Payment => ({
+      id: 8,
+      created: '2026-01-01T00:00:00Z',
+      modified: '2026-01-01T00:00:00Z',
+      submission_set: submissionSet.id,
+      paid,
+    });
+    const requestBodies: unknown[] = [];
     serveApi({
       'GET /contests/1': () => contest,
       'GET /submission-sets': () => page([submissionSet]),
-      'GET /payment': (): PaginatedResponse<Payment> =>
-        page([
-          {
-            id: 8,
-            created: '2026-01-01T00:00:00Z',
-            modified: '2026-01-01T00:00:00Z',
-            submission_set: submissionSet.id,
-            paid,
-          },
-        ]),
-      'POST /payment': (config) => {
-        paid = JSON.parse(config.data).paid;
-        return {};
+      'GET /payments': (): PaginatedResponse<Payment> =>
+        page([storedPayment()]),
+      // The set already has a payment, so the API answers 200.
+      'PUT /payments/5': (config) => {
+        const body = JSON.parse(config.data);
+        requestBodies.push(body);
+        paid = body.paid;
+        return storedPayment();
       },
     });
     const user = userEvent.setup();
@@ -130,7 +133,51 @@ describe('admin submission list', () => {
 
     await user.click(screen.getByRole('checkbox'));
     await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked());
-    expect(paid).toBe(false);
+    expect(requestBodies).toEqual([{ paid: false }]);
+  });
+
+  it('shows a payment the same whether the change created or updated it', async () => {
+    signIn();
+    let stored: Payment | undefined;
+    const answers: { body: unknown; status: number }[] = [];
+    serveApi({
+      'GET /contests/1': () => contest,
+      'GET /submission-sets': () => page([submissionSet]),
+      'GET /payments': (): PaginatedResponse<Payment> =>
+        page(stored ? [stored] : []),
+      // Like the API, answers 201 when it creates the payment of the set and
+      // 200 when it changes the one the set has.
+      'PUT /payments/5': (config) => {
+        const body = JSON.parse(config.data);
+        const status = stored ? 200 : 201;
+        answers.push({ body, status });
+        stored = {
+          id: 8,
+          created: '2026-01-01T00:00:00Z',
+          modified: '2026-01-02T00:00:00Z',
+          submission_set: submissionSet.id,
+          paid: body.paid,
+        };
+        return withStatus(status, stored);
+      },
+    });
+    const user = userEvent.setup();
+    open('/admin/contest/1/submissions');
+    await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked());
+
+    await user.click(screen.getByRole('checkbox'));
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked());
+    await user.click(screen.getByRole('checkbox'));
+    await waitFor(() => expect(screen.getByRole('checkbox')).not.toBeChecked());
+    await user.click(screen.getByRole('checkbox'));
+    await waitFor(() => expect(screen.getByRole('checkbox')).toBeChecked());
+
+    expect(answers).toEqual([
+      { body: { paid: true }, status: 201 },
+      { body: { paid: false }, status: 200 },
+      { body: { paid: true }, status: 200 },
+    ]);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('requests no payments for an empty list', async () => {
@@ -150,13 +197,19 @@ describe('admin submission list', () => {
     serveApi({
       'GET /contests/1': () => contest,
       'GET /submission-sets': () => page([submissionSet]),
-      'GET /payment': () => page([]),
-      'POST /payment': (config) => {
+      'GET /payments': () => page([]),
+      'PUT /payments/5': (config) => {
         attempts += 1;
         if (attempts === 1) {
           throw httpError(config, 400);
         }
-        return {};
+        return withStatus(201, {
+          id: 8,
+          created: '2026-01-01T00:00:00Z',
+          modified: '2026-01-01T00:00:00Z',
+          submission_set: submissionSet.id,
+          paid: true,
+        });
       },
     });
     const user = userEvent.setup();
@@ -181,7 +234,7 @@ describe('admin submission list', () => {
     serveApi({
       'GET /contests/1': () => contest,
       'GET /submission-sets': () => page([submissionSet]),
-      'GET /payment': () => page([]),
+      'GET /payments': () => page([]),
       'DELETE /submission-sets/5': (config) => {
         throw httpError(config, 403, { detail: 'Forbidden' });
       },
@@ -224,7 +277,7 @@ describe('admin submission list', () => {
           count: sets.length,
         };
       },
-      'GET /payment': (config) =>
+      'GET /payments': (config) =>
         config.params.submission_set__in === '21'
           ? page<Payment>([
               {
@@ -272,7 +325,7 @@ describe('admin submission list', () => {
           count: sets.length,
         };
       },
-      'GET /payment': (config) =>
+      'GET /payments': (config) =>
         page<Payment>(
           config.params.submission_set__in === '21'
             ? [
@@ -286,14 +339,23 @@ describe('admin submission list', () => {
               ]
             : [],
         ),
-      'POST /payment': () =>
+      'PUT /payments/1': () =>
         new Promise((resolve) => {
-          finishUpdate = () => resolve({});
+          finishUpdate = () =>
+            resolve(
+              withStatus(201, {
+                id: 9,
+                created: '2026-01-01T00:00:00Z',
+                modified: '2026-01-01T00:00:00Z',
+                submission_set: 1,
+                paid: true,
+              }),
+            );
         }),
     });
     const paymentLoads = () =>
       adapter.mock.calls.filter(
-        ([config]) => config.method === 'get' && config.url === '/payment',
+        ([config]) => config.method === 'get' && config.url === '/payments',
       ).length;
     const user = userEvent.setup();
     open('/admin/contest/1/submissions');
