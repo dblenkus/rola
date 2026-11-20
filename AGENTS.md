@@ -64,11 +64,22 @@ fixtures in `tests/conftest.py`.
 
 `frontend/src/`:
 
-- `app/`: `main.tsx`, `App.tsx`, `routes.tsx` (every route), `store.ts` (the
-  Redux store, which also registers the API client's unexpected-failure
-  handler), `layout/` (header, account menu), `i18n/`, `sentry.ts`.
+- `design/`: the design system. `tokens.json` and `components.css` (its
+  `rl-` classes) are vendored; `tokens.css` is generated from `tokens.json`;
+  `fonts.css` (self-hosted Inter and DM Mono), `app.css` (app-wide rules and
+  the breakpoints, `width < 40rem` and `width >= 64rem`), `logos/`.
+- `app/`: `main.tsx`, `App.tsx` (picks the layout per route), `routes.tsx`
+  (every route, each page `React.lazy` in its own Suspense boundary;
+  `preloadPages()` for tests), `store.ts` (the Redux store, which also
+  registers the API client's unexpected-failure handler), `layout/`
+  (`StandardLayout`, `BareLayout` for the judge's scoring view, `AppBar`,
+  `MainNav`, `LanguageSwitch`, `AccountMenu`), `NotFound.tsx`,
+  `RouteErrorBoundary.tsx`, `RouteFocus.tsx`, `AriaProviders.tsx`, `pwa/`
+  (worker registration, update prompt, offline notice, `serverPaths.ts`),
+  `i18n/` (`locales/en` and `locales/sl`), `sentry.ts`.
 - `shared/`: `api/` (the axios `client.ts`, `errors.ts`, `token.ts`,
-  pagination, `types.ts` and the generated `generated-api.ts`), `ui/`,
+  pagination, `types.ts` and the generated `generated-api.ts`), `ui/` (the
+  kit on React Aria Components: `Button`, `TextField`, `Page`, `Table`, …),
   `hooks/`, `utils/`.
 - `features/<feature>/`: `auth`, `contests`, `upload`, `jury`, `results`,
   `admin`, `notifications`. Each has an `api.ts` of named functions, and as
@@ -76,11 +87,17 @@ fixtures in `tests/conftest.py`.
   `actions.ts` the thunks and selectors).
 - `test/`: fixtures, API mocks, setup and app test helpers. Tests sit next to
   the code they cover as `*.test.ts(x)`.
+- `sw.ts`: the service worker, built by `vite-plugin-pwa`.
 
 Import rule, enforced by the local rules in `eslint.config.js`:
 `shared/` imports nothing from `app/` or `features/`, and a feature imports
 another feature only through that feature's `index.ts`. `app/` may import
 any feature file.
+
+Styling: the design system's classes and tokens, no MUI or CSS-in-JS. A
+component's CSS sits beside it, with classes prefixed `ui-` in `shared/ui/`,
+`shell-` in `app/layout/`, `pwa-` in `app/pwa/`, and the feature's name in a
+feature (`upload-`, `jury-`, …).
 
 ## Where new code goes
 
@@ -92,7 +109,17 @@ any feature file.
 - Endpoint: a viewset in the app's `api/views.py` with its serializer, and a
   line in the app's `api/routes.py`.
 - Management command: the app's `management/commands/`.
-- Page: `features/<feature>/pages/`, and its route in `app/routes.tsx`.
+- Page: `features/<feature>/pages/`, with one `h1` and a document title
+  (`shared/ui/Page`, or `shared/hooks/usePageTitle`) and its CSS beside it,
+  and a lazy entry in `app/routes.tsx`'s `pageRoutes`. A path that the
+  server must answer instead of the app also goes into
+  `app/pwa/serverPaths.ts`, `frontend/docker/default.conf` and the
+  development proxy in `vite.config.ts`.
+- Shared component: `shared/ui/`, on React Aria Components where it is
+  interactive, styled with the design system's classes and its own `ui-`
+  CSS.
+- User-visible string: a key in both `app/i18n/locales/en` and
+  `locales/sl`.
 - API call: a named function in `features/<feature>/api.ts` that uses
   `apiClient` from `shared/api/client.ts` and the types in
   `shared/api/types.ts`. Export it from the feature's `index.ts` if another
@@ -112,6 +139,7 @@ From the repository root, with the uv and Node.js versions that
 - One part: `make backend-test`, `make backend-test-postgresql`,
   `make backend-lint`, `make backend-format`, `make backend-types`,
   `make docs`, `make frontend-test`, `make frontend-lint`, `make api-contract`.
+- From `frontend/`: `npm run tokens` regenerates `src/design/tokens.css`.
 - The whole stack: `docker compose up --build --wait`, then
   http://localhost:8080.
 
@@ -135,5 +163,13 @@ From the repository root, with the uv and Node.js versions that
   `backend/pyproject.toml` lists the strict flags one by one, because mypy
   applies `strict = true` in an override to every module; add a new strict
   module to that override's list.
+- `frontend/src/design/components.css` and `tokens.css` are not edited by
+  hand. A change to `tokens.json` regenerates `tokens.css` in the same
+  commit; `npm run build` fails otherwise.
+- The service worker caches only the build's own files, never API responses
+  or photographs.
+- The DOM does not depend on the viewport width: layouts respond through CSS
+  only. jsdom cannot test them; check layout changes by hand as
+  `docs/contributing.rst` describes.
 - The repository is public: no internal links or customer names in code,
   commits or pull requests.

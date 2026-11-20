@@ -84,25 +84,65 @@ session that ends in another way, such as by expiry, sends no request.
 
 ``frontend/src`` is organized by feature:
 
+``design``
+   Rola's design system: the design tokens in ``tokens.json`` and the
+   ``tokens.css`` generated from them, the system's component styles in
+   ``components.css``, the font faces, the app-wide rules in ``app.css``
+   and the logos.
 ``app``
-   The entry point, the routes, the Redux store, the page layout, the
-   translations and the Sentry setup.
+   The entry point, the routes, the Redux store, the application shell, the
+   translations, the service worker's registration and the Sentry setup.
 ``shared``
-   Code that knows no feature: the API client and types, user interface
-   components, hooks and utilities.
+   Code that knows no feature: the API client and types, the component kit,
+   hooks and utilities.
 ``features``
    ``auth``, ``contests``, ``upload``, ``jury``, ``results``, ``admin`` and
    ``notifications``. Each holds its API calls in ``api.ts``, and its
    components, pages and Redux Toolkit slices.
 ``test``
    Fixtures, API mocks and the test setup.
+``sw.ts``
+   The service worker.
 
 ESLint enforces the direction of the imports: ``shared`` imports nothing from
 ``app`` or a feature, and a feature imports another feature only through the
 other feature's ``index.ts``. Features may import the store's types and
-hooks from ``app``; no rule covers that direction. The API client therefore does not import the
-store: the store registers the client's handler for unexpected failures,
-which shows the error notification, when it is created.
+hooks from ``app``; no rule covers that direction. The API client therefore
+does not import the store: the store registers the client's handler for
+unexpected failures, which shows the error notification, when it is created.
+
+The design system comes from outside the repository. ``components.css`` is
+its published stylesheet, kept unchanged, and its classes start with
+``rl-``. The kit in ``shared/ui`` builds the components that pages use on
+those classes, with React Aria Components supplying keyboard, touch and
+screen-reader behaviour. A component's own CSS sits beside it, with classes
+that start with ``ui-``; the shell's start with ``shell-``, the service
+worker prompts' with ``pwa-``, and each feature's with the feature's name,
+such as ``upload-``. The layout responds
+to the viewport through CSS alone, with two breakpoints, phones below
+40rem and wide screens from 64rem, so every width renders the same DOM.
+
+The shell in ``app`` picks a layout per route: the standard one with the
+app bar, the main navigation and the footer; its task variant for the
+upload form, which hides the bars on a phone; and a bare one for the judge's
+scoring view, which takes the whole window. The main navigation is one
+``nav``, in the app bar on wider screens and a tab bar fixed to the bottom
+on phones. Every page is a lazily loaded chunk with its own Suspense
+boundary, an error boundary around the routes shows a page that failed to
+render with a reload button, and an unknown address shows "Page not found".
+Each page has one ``h1`` and its own document title, and after a navigation
+focus moves to the page's ``main``.
+
+The service worker, built from ``src/sw.ts`` by ``vite-plugin-pwa``,
+precaches the build output: scripts, styles, fonts, icons and
+``index.html``. It answers navigations with the precached ``index.html``,
+except those to the paths that ``app/pwa/serverPaths.ts`` lists, which the
+server answers. It caches nothing at run time, so API responses, which
+belong to one account, and photographs, whose S3 links expire, always come
+from the network. A new version installs in the background and waits until
+the person presses Reload in the update prompt, because an entrant may be
+uploading and a judge scoring, and open pages still need the old version's
+chunks. Only production builds register the worker.
 
 The API contract
 ================
@@ -122,6 +162,12 @@ A TLS terminator on the host forwards requests to the frontend container's
 nginx on ``127.0.0.1:8080``. nginx serves the built application, its hashed
 ``/assets/``, uploaded ``/media/`` and the collected ``/static2/`` files
 itself, and passes ``/api`` and ``/django-admin`` to Gunicorn in the backend
-container. :doc:`deployment` describes what the TLS terminator
+container. It serves ``/sw.js`` and ``/site.webmanifest`` uncached, so
+browsers find a new release, and answers 404 instead of the application for
+a missing file at the root or under ``/assets/``. Once a browser has the
+service worker, the worker answers navigations to the application's pages
+and requests for its precached files itself, and leaves every other request
+to the network.
+:doc:`deployment` describes what the TLS terminator
 must do, and the Cloudflare Tunnel that ``compose.tunnel.yaml`` runs in the
 terminator's place, with no port published on the host.
