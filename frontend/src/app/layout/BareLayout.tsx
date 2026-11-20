@@ -5,8 +5,10 @@ import SkipLink from '../../shared/ui/SkipLink';
 import './Shell.css';
 
 // The page alone at the window's full width, without the app bar, the tab bar
-// or the footer, for a screen that brings its own bar (the rater). The
-// BottomStack is rendered inside the shell so it gets --shell-tabbar-space.
+// or the footer, for a screen that brings its own bars (the rater). With no
+// tab bar, --shell-tabbar-space is 0 at every width; the BottomStack is
+// rendered inside the shell so that Shell.css can lift it above the rater's
+// dock where the dock is fixed to the bottom.
 export default function BareLayout({
   bottomStack,
   children,

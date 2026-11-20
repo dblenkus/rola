@@ -5,6 +5,12 @@
  * breakpoint.
  */
 
+/* The bars' text keeps normal figures and punctuation (see app.css); the
+   judge bar's count keeps tabular ones. */
+.rl-appbar {
+  font-variant-numeric: normal;
+}
+
 :root {
   /* The phone's tab bar without the safe area: 56 px links under a 1 px
      hairline. */
@@ -51,7 +57,8 @@
    the menu and combo box popovers (React Aria sets 100000 on them). */
 .shell-bottom-stack {
   --shell-bottom-margin: var(--space-6);
-  /* The room a page's sticky submit bar takes; see the rule below. */
+  /* The room a bar at the bottom of the page takes (the upload form's
+     submit bar, the judge's dock); see the rules below. */
   --shell-bottom-bar-clearance: 0px;
   position: fixed;
   z-index: 20;
@@ -81,12 +88,19 @@
 /* A sticky submit bar on the page (the upload form): the stack sits above
    it, so it never covers the button. CSS cannot read the bar's height, so
    this assumes the bar's 12 px and 24 px paddings, a large (48 px) button and
-   its hairline. It does not count the bar's optional note above the button,
-   which the stack may cover. */
+   its hairline, and with the bar's note above the button the note's caption
+   lines (16 px each) and its 10 px margin: one line from the compact width
+   up, two on phones, where the note wraps. */
 .shell:has(.rl-btn-bar) .shell-bottom-stack {
+  --shell-bottom-bar-note: 0px;
   --shell-bottom-bar-clearance: calc(
-    var(--space-3) + var(--space-12) + var(--space-6) + var(--stroke-hairline)
+    var(--space-3) + var(--space-12) + var(--space-6) + var(--stroke-hairline) +
+      var(--shell-bottom-bar-note)
   );
+}
+
+.shell:has(.rl-btn-bar__note) .shell-bottom-stack {
+  --shell-bottom-bar-note: calc(16px + 10px);
 }
 
 .shell-account {
@@ -126,6 +140,10 @@
     --shell-tabbar-space: calc(var(--shell-tabbar-height) + var(--safe-bottom));
     /* Under the footer, so the tab bar covers neither it nor the page. */
     padding-bottom: var(--shell-tabbar-space);
+  }
+
+  .shell:has(.rl-btn-bar__note) .shell-bottom-stack {
+    --shell-bottom-bar-note: calc(2 * 16px + 10px);
   }
 
   /* The width of the screen inside 16 px margins. */
@@ -189,13 +207,36 @@
     height: var(--touch-target);
   }
 
-  /* A task screen brings its own header and bottom bar. */
-  .shell--task {
+  /* A task screen brings its own header, with a back link, and bottom bar,
+     but only once its content has loaded: while it loads, or when loading
+     fails, the app bar and the tab bar stay, so there is a way out. A
+     browser without :has() keeps them too. */
+  .shell--task:has(.rl-contest-head) {
     --shell-tabbar-space: 0px;
     padding-bottom: 0;
   }
 
-  .shell--task .shell-appbar {
+  .shell--task:has(.rl-contest-head) .shell-appbar {
     display: none;
+  }
+
+  /* The bare layout has no tab bar. */
+  .shell--bare {
+    --shell-tabbar-space: 0px;
+    padding-bottom: 0;
+  }
+}
+
+/* The judge's dock, fixed at the bottom where the rater is not laid out for
+   a wide, tall window (the same query as in RateSubmission.css): the stack
+   sits above it, so it never covers the score keys. CSS cannot read the
+   dock's height, so this assumes the dock's three 48 px rows, its 8 px top
+   padding and two 8 px gaps, and its hairline; the dock's bottom padding is
+   the safe area, which the stack's own offset already includes. */
+@media not all and (width >= 64rem) and (height >= 37.5rem) {
+  .shell:has(.judge-dock) .shell-bottom-stack {
+    --shell-bottom-bar-clearance: calc(
+      3 * 48px + 3 * var(--space-2) + var(--stroke-hairline)
+    );
   }
 }
