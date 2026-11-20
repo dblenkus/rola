@@ -138,5 +138,11 @@
   "shell_not_found_home": "Go to the home page",
   "shell_error_title": "Something went wrong",
   "shell_error_text": "This page could not be shown. Reload it to try again.",
-  "shell_error_reload": "Reload"
+  "shell_error_reload": "Reload",
+  "admin_paid_checkbox": "Paid: {{name}}",
+  "admin_state_paid": "Paid",
+  "admin_state_unpaid": "Not paid",
+  "admin_actions": "Actions",
+  "admin_untitled_photograph": "Untitled photograph",
+  "admin_series_photo": "{{title}}, photo {{number}} of {{count}}"
 }

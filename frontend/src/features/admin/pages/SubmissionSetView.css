@@ -1,0 +1,72 @@
+/* The set's details: each term in small text-muted over its value. */
+.admin-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+  margin: 0 0 var(--space-8);
+  color: var(--text);
+}
+
+.admin-details__item dt {
+  color: var(--text-muted);
+}
+
+.admin-details__item dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The photographs, as many columns as fit, each shown whole on paper. */
+.admin-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  align-items: start;
+  gap: var(--space-8) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-photo {
+  margin: 0;
+}
+
+.admin-photo__link {
+  display: block;
+}
+
+.admin-photo__link + .admin-photo__link {
+  margin-top: var(--space-2);
+}
+
+.admin-photo__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 24rem;
+  object-fit: contain;
+  object-position: left top;
+  border: 0;
+  border-radius: var(--radius-none);
+}
+
+.admin-photo__details {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  color: var(--text);
+}
+
+/* phone: one photograph to a row. */
+@media (width < 40rem) {
+  .admin-photos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .admin-details {
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+}

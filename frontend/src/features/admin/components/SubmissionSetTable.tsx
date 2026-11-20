@@ -1,23 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  Alert,
-  LabelDisplayedRowsArgs,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableFooter,
-  TableHead,
-  TablePagination,
-  TableRow,
-} from '@mui/material';
-
 import { Payment, SubmissionSet } from '../../../shared/api/types';
 import SubmissionSetTableRow from './SubmissionSetTableRow';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Pagination, { type DisplayedRows } from '../../../shared/ui/Pagination';
+import Table, {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '../../../shared/ui/Table';
 import usePagination from '../../../shared/api/usePagination';
 import { requestError } from '../../../shared/api/errors';
 import {
@@ -92,19 +86,6 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     };
   }, [fetchPayments]);
 
-  const handlePageChange = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ): void => {
-    changePage(newPage + 1);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    changePageSize(parseInt(event.target.value, 10));
-  };
-
   const handlePaidChange = async (
     submissionSetId: number,
     paid: boolean,
@@ -126,7 +107,7 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     from,
     to,
     count: total,
-  }: LabelDisplayedRowsArgs): React.ReactNode => {
+  }: DisplayedRows): string => {
     return t('displayed_rows', { from, to, total });
   };
 
@@ -134,57 +115,53 @@ const SubmissionSetTable: React.FC<SubmissionSetTableProps> = ({
     payments.sets === submissionSets ? payments.results : [];
 
   if (error || paginationError)
-    return <Alert severity="error">{error || paginationError}</Alert>;
+    return <Message severity="error">{error || paginationError}</Message>;
   if (isLoading) return <LoadingProgress />;
 
   return (
     <>
-      {paymentError && <Alert severity="error">{paymentError}</Alert>}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('name')}</TableCell>
-              <TableCell>{t('submited')}</TableCell>
-              <TableCell>{t('n_themes')}</TableCell>
-              <TableCell>{t('n_submissions')}</TableCell>
-              <TableCell>{t('paid')}</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {submissionSets.map((submissionSet) => {
-              const payment = shownPayments.find(
-                (p) => p.submissionset === submissionSet.id,
-              );
-              return (
-                <SubmissionSetTableRow
-                  key={submissionSet.id}
-                  contestId={contestId}
-                  submissionSet={submissionSet}
-                  payment={payment}
-                  onPaidChange={handlePaidChange}
-                  onDelete={onDelete}
-                />
-              );
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={[1, 20, 50, 100]}
-                count={count}
-                rowsPerPage={pageSize}
-                page={page - 1}
-                onPageChange={handlePageChange}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage={t('rows_per_page')}
-                labelDisplayedRows={getLabelDisplayedRows}
+      {paymentError && <Message severity="error">{paymentError}</Message>}
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('name')}</TableCell>
+            <TableCell>{t('submited')}</TableCell>
+            <TableCell>{t('n_themes')}</TableCell>
+            <TableCell>{t('n_submissions')}</TableCell>
+            <TableCell>{t('paid')}</TableCell>
+            <TableCell>
+              <span className="visually-hidden">{t('admin_actions')}</span>
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {submissionSets.map((submissionSet) => {
+            const payment = shownPayments.find(
+              (p) => p.submissionset === submissionSet.id,
+            );
+            return (
+              <SubmissionSetTableRow
+                key={submissionSet.id}
+                contestId={contestId}
+                submissionSet={submissionSet}
+                payment={payment}
+                onPaidChange={handlePaidChange}
+                onDelete={onDelete}
               />
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
+            );
+          })}
+        </TableBody>
+      </Table>
+      <Pagination
+        rowsPerPageOptions={[1, 20, 50, 100]}
+        count={count}
+        rowsPerPage={pageSize}
+        page={page}
+        onPageChange={changePage}
+        onRowsPerPageChange={changePageSize}
+        labelRowsPerPage={t('rows_per_page')}
+        labelDisplayedRows={getLabelDisplayedRows}
+      />
     </>
   );
 };
