@@ -17,7 +17,7 @@ dependencies = [
     "django-storages[s3]>=1.14.6,<2",
     "djangorestframework>=3.18.3,<3.19",
     "drf-spectacular>=0.30,<0.31",
-    "gunicorn>=27.0.0,<28",
+    "gunicorn>=27.0.1,<28",
     "Pillow>=13.0,<14",
     "psycopg[binary]>=3.3.8,<4",
 ]
