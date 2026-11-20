@@ -6,6 +6,7 @@ import Notifications from '../features/notifications/components/Notifications';
 
 import AriaProviders from './AriaProviders';
 import BareLayout from './layout/BareLayout';
+import BottomStack from './layout/BottomStack';
 import StandardLayout from './layout/StandardLayout';
 import OfflineNotice from './pwa/OfflineNotice';
 import UpdatePrompt from './pwa/UpdatePrompt';
@@ -16,9 +17,9 @@ import store from './store';
 
 // The rater gives its photographs the window's full width and brings its
 // own bar. The upload form brings its own header and submit bar on phones.
-// The offline band and the update prompt sit inside the layout's main: the
-// band at its top, under the app bar, and the prompt where the layout's tab
-// bar space leaves room.
+// The offline band sits at the top of the layout's main, under the app bar.
+// The notification and the update prompt share the layout's bottom stack,
+// the prompt nearest the corner, where the layout's tab bar space leaves room.
 function Shell() {
   const rater = useMatch(raterPath);
   const upload = useMatch(uploadPath);
@@ -28,13 +29,20 @@ function Shell() {
       <RouteErrorBoundary>
         <AppRoutes />
       </RouteErrorBoundary>
-      <UpdatePrompt />
     </>
   );
+  const bottomStack = (
+    <BottomStack>
+      <Notifications />
+      <UpdatePrompt />
+    </BottomStack>
+  );
   return rater ? (
-    <BareLayout>{content}</BareLayout>
+    <BareLayout bottomStack={bottomStack}>{content}</BareLayout>
   ) : (
-    <StandardLayout task={upload !== null}>{content}</StandardLayout>
+    <StandardLayout task={upload !== null} bottomStack={bottomStack}>
+      {content}
+    </StandardLayout>
   );
 }
 
@@ -44,7 +52,6 @@ const App = () => {
       <AuthProvider>
         <BrowserRouter>
           <AriaProviders>
-            <Notifications />
             <RouteFocus />
             <Shell />
           </AriaProviders>

@@ -3,22 +3,10 @@
  * shadow; neither takes a colour.
  */
 
-/* Fixed at the bottom, above the phone's tab bar and the safe area.
-   --shell-tabbar-space comes from the layout the prompt is rendered in. */
+/* Right-aligned in the layout's bottom stack, which places it. */
 .pwa-update {
-  /* A sticky submit bar on the page: its two paddings, a large (48 px)
-     button and its hairline. The prompt sits above it, so it never covers
-     the button. */
-  --pwa-bar-clearance: 0px;
-  position: fixed;
-  z-index: 20;
-  right: max(var(--space-4), var(--safe-right));
-  bottom: calc(
-    max(var(--shell-tabbar-space, 0px), var(--safe-bottom)) +
-      var(--pwa-bar-clearance) + var(--space-3)
-  );
-  left: max(var(--space-4), var(--safe-left));
   box-sizing: border-box;
+  width: 100%;
   max-width: 24rem;
   margin-left: auto;
   padding: var(--space-3) var(--space-4);
@@ -26,12 +14,6 @@
   border-radius: var(--radius-control);
   background: var(--paper);
   color: var(--text);
-}
-
-.shell:has(.rl-btn-bar) .pwa-update {
-  --pwa-bar-clearance: calc(
-    var(--space-3) + var(--space-12) + var(--space-6) + var(--stroke-hairline)
-  );
 }
 
 .pwa-update__text {
@@ -42,15 +24,6 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-/* wide: the bottom-right corner, in line with the page margin. */
-@media (width >= 64rem) {
-  .pwa-update {
-    right: max(var(--ui-page-margin), var(--safe-right));
-    left: auto;
-    width: 24rem;
-  }
 }
 
 /* A full-width band at the top of the page, under the app bar. */

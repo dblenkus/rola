@@ -10,12 +10,16 @@ interface StandardLayoutProps {
   // A task screen that brings its own header and bottom bar on phones: the
   // app bar and the tab bar are hidden there. Wide screens are unchanged.
   task?: boolean;
+  // The BottomStack, rendered inside the shell so it gets the shell's
+  // --shell-tabbar-space.
+  bottomStack: ReactNode;
   children: ReactNode;
 }
 
 // The app bar, the page and the footer.
 export default function StandardLayout({
   task = false,
+  bottomStack,
   children,
 }: StandardLayoutProps) {
   return (
@@ -25,6 +29,7 @@ export default function StandardLayout({
       <main id="main" className="shell-main" tabIndex={-1}>
         {children}
       </main>
+      {bottomStack}
       <Footer />
     </div>
   );
