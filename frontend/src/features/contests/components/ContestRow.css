@@ -1,0 +1,77 @@
+/*
+ * The entrant's contest list, after the organiser's ContestRow: rows with a
+ * bottom hairline and ContestRow's 22 / 16 px padding, aligned on the first
+ * baselines. Without stage and participation the grid has three columns: the
+ * contest, the key date at the right, and the action.
+ */
+.contests-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: var(--space-6);
+  align-items: baseline;
+  padding: 22px var(--space-4);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+}
+
+.contests-row__title {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+/* ContestRow's type line: small, text-muted, 2 px below the name. */
+.contests-row__description {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  overflow-wrap: break-word;
+}
+
+/* The label over the date over the note, right-aligned. */
+.contests-row__date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+  text-align: right;
+}
+
+/* Only the phone's one-line date carries the clock. */
+.contests-row__clock {
+  display: none;
+}
+
+/* phone */
+@media (width < 40rem) {
+  /* The page margin already sets the row in from the screen's edge. */
+  .contests-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 0;
+  }
+
+  /* The name's 24 px line grows to the 44 px tap target without moving. */
+  .contests-row__title .rl-contest-row__name {
+    display: inline-block;
+    padding-block: calc((var(--touch-target) - 24px) / 2);
+    margin-block: calc((var(--touch-target) - 24px) / -2);
+  }
+
+  /* One line under the description: clock, label, date, note. */
+  .contests-row__date {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-2);
+    margin-top: var(--space-2);
+    text-align: left;
+  }
+
+  .contests-row__clock {
+    display: block;
+    flex: none;
+    align-self: center;
+  }
+
+  .contests-row__action {
+    margin-top: var(--space-4);
+  }
+}

@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Alert, Grid, Typography } from '@mui/material';
-
-import ContestCard from '../components/ContestCard';
+import ContestRow from '../components/ContestRow';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
+import Message from '../../../shared/ui/Message';
+import Page from '../../../shared/ui/Page';
 import { reportUnexpected } from '../../../shared/api/errors';
 import type { Contest } from '../../../shared/api/types';
 import fetchAll from '../../../shared/api/fetchAll';
 import { getActiveContests } from '../api';
+import './ContestsList.css';
 
 export default function ContestsListView() {
   const { t } = useTranslation();
@@ -30,20 +31,33 @@ export default function ContestsListView() {
     };
   }, []);
 
+  return (
+    <Page title={t('active_contests')}>
+      <ContestsListContent failed={failed} contests={contests} />
+    </Page>
+  );
+}
+
+function ContestsListContent({
+  failed,
+  contests,
+}: {
+  failed: boolean;
+  contests: Contest[] | null;
+}) {
+  const { t } = useTranslation();
   if (failed) {
-    return <Alert severity="error">{t('could_not_load_contests')}</Alert>;
+    return <Message severity="error">{t('could_not_load_contests')}</Message>;
   }
   if (!contests) return <LoadingProgress />;
-  if (!contests.length)
-    return <Typography>{t('no_active_contests')}</Typography>;
-
+  if (!contests.length) {
+    return <p className="body">{t('no_active_contests')}</p>;
+  }
   return (
-    <Grid container spacing={2}>
+    <ul className="contests-list">
       {contests.map((contest) => (
-        <Grid key={contest.id} size={{ xs: 12, sm: 6, md: 4 }}>
-          <ContestCard contest={contest} />
-        </Grid>
+        <ContestRow key={contest.id} contest={contest} />
       ))}
-    </Grid>
+    </ul>
   );
 }

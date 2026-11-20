@@ -1,0 +1,7 @@
+/* The contest rows (ContestRow) as a plain list. */
+.contests-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text);
+}
