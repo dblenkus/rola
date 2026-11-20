@@ -260,6 +260,19 @@ server:
   uncompressed, so that the tokens in them are not exposed to compression
   side channels; a Compression Rule in Cloudflare that turns compression off
   for these two paths keeps it that way.
+* The ``Content-Security-Policy`` that nginx sends (see `HTTPS and
+  headers`_) makes browsers refuse the scripts that some Cloudflare features
+  add to the site's pages. Cloudflare's `Content Security Policy reference
+  <https://developers.cloudflare.com/fundamentals/reference/policies-compliances/content-security-policies/>`__
+  lists what they need: Rocket Loader a script from ``ajax.cloudflare.com``,
+  Web Analytics one from ``static.cloudflareinsights.com``, and Scrape
+  Shield, whose Email Address Obfuscation Cloudflare enables automatically,
+  inline scripts. `JavaScript Detections
+  <https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/>`__,
+  which are always on with Bot Fight Mode, add an inline script as well.
+  Keep these features off for the site, or add the host they need to
+  ``script-src`` in ``frontend/docker/default.conf`` and rebuild the
+  frontend; allowing inline scripts would undo the policy.
 
 Client addresses
 ================
@@ -311,9 +324,21 @@ for a year, so the site cannot move back to plain HTTP.
 ``manage.py check --deploy`` warns about the missing ``includeSubDomains``
 and ``preload`` (``security.W005`` and ``security.W021``); that is intended.
 
-nginx adds ``X-Frame-Options: DENY``, ``X-Content-Type-Options: nosniff``
-and a ``Referrer-Policy`` to the files it serves, sends no version in
-``Server``, and leaves proxied responses with Django's own security headers.
+nginx adds ``X-Frame-Options: DENY``, ``X-Content-Type-Options: nosniff``,
+a ``Referrer-Policy`` and a ``Content-Security-Policy`` to the files it
+serves, sends no version in ``Server``, and leaves proxied responses with
+Django's own security headers.
+
+The policy is ``script-src 'self'; object-src 'none'; base-uri 'self';
+form-action 'self'``. With it, the site's pages run scripts from the site's
+own origin only and no inline scripts, embed no plugins, and submit forms
+only to the site itself. All of the application's scripts come from its own
+origin. Anything else that puts an inline script, or a script from another
+host, into the pages, such as a proxy or CDN feature that rewrites HTML, is
+refused by the browser and breaks: turn it off, or extend the policy in
+``frontend/docker/default.conf`` and rebuild the frontend. API and Django
+admin responses do not carry the policy, because with ``ROLA_USE_S3`` the
+Django admin's scripts come from the static bucket's host.
 
 Contest content
 ===============
@@ -330,7 +355,8 @@ so they can restyle or cover the rest of it, and images and stylesheets may
 come from any host, which then sees the entrant's address.
 
 Payment buttons are not supported for now. A payment provider's script in a
-confirmation text does not run.
+confirmation text does not run, and the policy in `HTTPS and headers`_ lets
+a form submit only to the site itself.
 
 Uploads
 =======
