@@ -19,7 +19,7 @@ dependencies = [
     "drf-spectacular>=0.30,<0.31",
     "gunicorn>=27.0.1,<28",
     "Pillow>=13.0,<14",
-    "psycopg[binary]>=3.3.8,<4",
+    "psycopg[binary]>=3.3.9,<4",
 ]
 
 [project.urls]
