@@ -45,6 +45,10 @@ interface ActionProps extends CommonProps {
 interface LinkProps extends CommonProps {
   // Goes to another page: renders a link that looks like a button.
   to: To;
+  // Replaces the current history entry instead of adding one.
+  replace?: boolean;
+  // The router location state the next page reads.
+  state?: unknown;
 }
 
 export type ButtonProps = ActionProps | LinkProps;
@@ -80,6 +84,8 @@ export default function Button(props: ButtonProps) {
 
 function ButtonLink({
   to,
+  replace,
+  state,
   variant = 'secondary',
   size = 'default',
   block = false,
@@ -88,7 +94,13 @@ function ButtonLink({
   ...aria
 }: LinkProps) {
   return (
-    <Link to={to} className={classes(variant, size, block, false)} {...aria}>
+    <Link
+      to={to}
+      {...(replace === undefined ? {} : { replace })}
+      {...(state === undefined ? {} : { state })}
+      className={classes(variant, size, block, false)}
+      {...aria}
+    >
       {icon && <Icon name={icon} className="rl-btn__icon" />}
       {children}
     </Link>

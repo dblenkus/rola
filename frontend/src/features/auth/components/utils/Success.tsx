@@ -4,8 +4,7 @@ import '../AuthPage.css';
 interface SuccessProps {
   title: string;
   buttonText: string;
-  // Goes to the next step. The pages replace their own history entry, which
-  // a link cannot do, so this is a button.
+  // Goes to the next step; the pages replace their own history entry.
   onClick: () => void;
 }
 

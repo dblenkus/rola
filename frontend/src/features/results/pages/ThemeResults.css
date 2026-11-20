@@ -4,15 +4,17 @@
   font-weight: 400;
 }
 
-/* An entry sits under its author's row. */
-.results-entry {
-  display: inline-block;
-  padding-inline-start: var(--space-4);
+/* An entry sits under its author's row, indented by space-4 past the
+   cell's own space-4. The selector outranks the table's phone rule for its
+   cells' padding. */
+.ui-table__body .ui-table__cell.results-entry {
+  padding-inline-start: var(--space-8);
 }
 
 /* The title link reaches 44 px tall without making the row taller: it takes
    the cell's 12 px of padding above and below the 20 px line. */
 .results-entry__link {
+  display: inline-block;
   padding-block: var(--space-3);
   margin-block: calc(-1 * var(--space-3));
 }

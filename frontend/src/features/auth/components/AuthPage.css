@@ -1,17 +1,10 @@
 /*
- * The sign-in and account pages: the small logo sits on the same narrow
- * column as the page below it, with the page's margins. Page offers no slot
- * above its title, so the logo has its own row and the page's top padding
- * is the space between the logo and the title.
+ * The sign-in and account pages. The small logo (40 px tall) sits space-6
+ * above the title at every width: more than the 20 px clear space the logo
+ * needs on every side. The page's top padding is at least that above it.
  */
 .auth-page__logo {
-  width: 100%;
-  /* The narrow page's 400 px column; no token holds it. */
-  max-width: calc(400px + 2 * var(--ui-page-margin));
-  margin-inline: auto;
-  padding-top: var(--space-8);
-  padding-left: max(var(--ui-page-margin), var(--safe-left));
-  padding-right: max(var(--ui-page-margin), var(--safe-right));
+  margin-bottom: var(--space-6);
 }
 
 /* A page's error above the form or result it belongs to. */
@@ -70,19 +63,8 @@
   margin-top: var(--space-2);
 }
 
-/* wide */
-@media (width >= 64rem) {
-  .auth-page__logo {
-    padding-top: var(--space-12);
-  }
-}
-
 /* phone */
 @media (width < 40rem) {
-  .auth-page__logo {
-    padding-top: var(--space-6);
-  }
-
   .auth-form__pair {
     grid-template-columns: minmax(0, 1fr);
   }

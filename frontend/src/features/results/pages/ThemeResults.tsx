@@ -107,11 +107,10 @@ const ThemeResults: React.FC = () => {
   // Only accepted entries open on their own page.
   const renderTitle = (submission: ResultsThemeSubmission): React.ReactNode => {
     const title = submission.title || t('results_untitled');
-    if (!submission.accepted)
-      return <span className="results-entry">{title}</span>;
+    if (!submission.accepted) return title;
     return (
       <Link
-        className="results-entry results-entry__link"
+        className="results-entry__link"
         to={`/results/contest/${contestId}/theme/${themeId}/submission/${submission.id}`}
       >
         {title}
@@ -153,7 +152,9 @@ const ThemeResults: React.FC = () => {
                   </TableRow>
                   {submissions.map((submission) => (
                     <TableRow key={submission.id}>
-                      <TableCell>{renderTitle(submission)}</TableCell>
+                      <TableCell className="results-entry">
+                        {renderTitle(submission)}
+                      </TableCell>
                       <TableCell align="end">
                         {renderReward(submission)}
                       </TableCell>

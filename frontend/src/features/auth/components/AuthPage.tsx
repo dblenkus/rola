@@ -9,18 +9,21 @@ interface AuthPageProps {
   children: ReactNode;
 }
 
-// The frame of the sign-in and account pages: the small logo above one
-// narrow column with the page's title. The logo is decorative because the
-// app bar already names Rola.
+// The frame of the sign-in and account pages: one narrow column with the
+// small logo above the page's title. The logo is decorative because the app
+// bar already names Rola.
 export default function AuthPage({ title, children }: AuthPageProps) {
   return (
-    <div className="auth-page">
-      <div className="auth-page__logo">
-        <Logo variant="small" decorative />
-      </div>
-      <Page width="narrow" title={title}>
-        {children}
-      </Page>
-    </div>
+    <Page
+      width="narrow"
+      title={title}
+      before={
+        <div className="auth-page__logo">
+          <Logo variant="small" decorative />
+        </div>
+      }
+    >
+      {children}
+    </Page>
   );
 }

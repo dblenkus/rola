@@ -46,7 +46,12 @@ export default function AccountMenu() {
 
   return (
     <div className="shell-account">
-      <Menu aria-label={t('account_menu')} items={items}>
+      <Menu
+        aria-label={t('account_menu')}
+        items={items}
+        triggerClassName="rl-appbar__account"
+        chevronClassName="rl-appbar__chevron"
+      >
         {email === undefined ? (
           <Icon name="user" />
         ) : (

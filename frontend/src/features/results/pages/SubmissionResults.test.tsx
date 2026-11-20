@@ -53,10 +53,13 @@ it('shows the photo named by its title, with the wall label', async () => {
   const photo = await screen.findByRole('img', { name: 'Bridges' });
   expect(photo).toHaveAttribute('src', 'https://media.example/21.jpg');
   expect(photo).toHaveAttribute('loading', 'eager');
-  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-    'Bridges',
-  );
+  // The wall label's visible title is the page's one h1, not a copy of it.
+  const heading = screen.getByRole('heading', { level: 1 });
+  expect(heading).toHaveTextContent('Bridges');
+  expect(heading).toHaveClass('photo-title');
+  expect(heading).not.toHaveClass('visually-hidden');
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  expect(screen.getAllByText('Bridges')).toEqual([heading]);
   expect(document.title).toBe('Bridges · Rola');
   expect(screen.getByText('Ana Novak (SI)')).toBeInTheDocument();
   expect(screen.getByText('Morning fog over the river.')).toBeInTheDocument();

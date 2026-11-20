@@ -1,12 +1,14 @@
 /*
- * The deadline line under the title, after the entrant's contest header: the
- * clock, 8 px, then "Entries close 15 Nov 2026 · 22 days left". It sits in the
- * page's lead, which is text-muted; the date is text at 600.
+ * The deadline line under the title, after the entrant's contest header: in
+ * small type and text colour, the 16 px clock, 8 px, then "Entries close
+ * 15 Nov 2026 · 22 days left" with the date at 600. It sits in the page's
+ * lead, which is text-muted, so it sets its own colour.
  */
 .contests-deadline {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  color: var(--text);
 }
 
 .contests-deadline__clock {
@@ -15,7 +17,6 @@
 }
 
 .contests-deadline strong {
-  color: var(--text);
   font-weight: 600;
 }
 

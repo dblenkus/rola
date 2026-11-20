@@ -5,6 +5,10 @@ import './Table.css';
 // rather than a row.
 const InHead = createContext(false);
 
+function joinClasses(...names: (string | undefined)[]): string {
+  return names.filter(Boolean).join(' ');
+}
+
 // The explicit roles keep the table's semantics on phones, where its rows
 // are laid out as stacked blocks.
 
@@ -42,9 +46,15 @@ export function TableBody({ children }: { children: ReactNode }) {
   );
 }
 
-export function TableRow({ children }: { children: ReactNode }) {
+interface TableRowProps {
+  children: ReactNode;
+  // Added to the row's own class.
+  className?: string;
+}
+
+export function TableRow({ children, className }: TableRowProps) {
   return (
-    <tr className="ui-table__row" role="row">
+    <tr className={joinClasses('ui-table__row', className)} role="row">
       {children}
     </tr>
   );
@@ -60,6 +70,8 @@ interface TableCellProps {
   label?: string;
   align?: 'start' | 'center' | 'end';
   colSpan?: number;
+  // Added to the cell's own classes.
+  className?: string;
 }
 
 export function TableCell({
@@ -68,13 +80,15 @@ export function TableCell({
   label,
   align = 'start',
   colSpan,
+  className: extraClassName,
 }: TableCellProps) {
   const inHead = useContext(InHead);
-  const className = [
+  const className = joinClasses(
     'ui-table__cell',
     `ui-table__cell--${align}`,
     inHead ? 'mono-label' : 'body-dense',
-  ].join(' ');
+    extraClassName,
+  );
   if (inHead || header) {
     return (
       <th
