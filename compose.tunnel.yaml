@@ -1,0 +1,41 @@
+# Merged after compose.production.yaml, this file publishes the site through
+# a Cloudflare Tunnel instead of a TLS terminator on the server. See
+# "Cloudflare Tunnel" in docs/deployment.rst.
+
+services:
+  # env_file hands every .env entry to migrate and backend; the token is for
+  # the tunnel service only.
+  migrate:
+    environment:
+      TUNNEL_TOKEN: ""
+
+  backend:
+    environment:
+      TUNNEL_TOKEN: ""
+
+  frontend:
+    ports: !reset []
+    networks: [default, tunnel]
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.11.0
+    # The health check reads the metrics server, from inside the container.
+    command: [tunnel, --metrics, "127.0.0.1:20241", run]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env.}
+    # On a network with the frontend alone, so that no route set in
+    # Cloudflare can reach the backend or the database.
+    networks: [tunnel]
+    depends_on:
+      frontend:
+        condition: service_started
+    healthcheck:
+      test: [CMD, cloudflared, tunnel, --metrics, "127.0.0.1:20241", ready]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  tunnel:

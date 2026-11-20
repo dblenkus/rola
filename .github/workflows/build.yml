@@ -185,6 +185,19 @@ jobs:
           VITE_SENTRY_DSN=https://ci-fake-key@sentry.invalid/1
           EOF
           docker compose -f compose.production.yaml config --quiet
+      - name: Check compose.tunnel.yaml merged into the production stack
+        run: |
+          echo 'TUNNEL_TOKEN=ci-only-fake-token' >> .env
+          docker compose -f compose.production.yaml -f compose.tunnel.yaml config --quiet
+          docker compose -f compose.production.yaml -f compose.tunnel.yaml config --format json |
+            jq --exit-status '
+              (.services.frontend.ports // []) == []
+              and .services.migrate.environment.TUNNEL_TOKEN == ""
+              and .services.backend.environment.TUNNEL_TOKEN == ""
+              and .services.tunnel.environment.TUNNEL_TOKEN == "ci-only-fake-token"
+              and (.services.frontend.networks | keys) == ["default", "tunnel"]
+              and ([.services | to_entries[] | select(.value.networks | has("tunnel")) | .key] | sort)
+                == ["frontend", "tunnel"]'
 
   github-config:
     runs-on: ubuntu-26.04
