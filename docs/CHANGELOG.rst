@@ -145,6 +145,11 @@ API changes
 * The database stores the SHA-256 digest of a login token instead of the
   token, so a token cannot be read from the ``accounts_token`` table or from
   a copy of the database.
+* ``POST /api/v1/user/logout`` expires the login token that the request
+  carries and answers 204 with an empty body. The account's other tokens
+  stay valid, and a later request with the expired token answers 401. The
+  API had no logout, so a token stayed valid until it expired, two days
+  after the login.
 * The API answers JSON only. Django REST framework's browsable HTML pages,
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
@@ -273,6 +278,10 @@ Deployment changes
 Fixes
 -----
 
+* Logging out expires the login token on the server. It used to remove the
+  token only from the browser's storage, so a copy of it kept working until
+  it expired. A session that ends in another way (expiry, a token that the
+  server rejected, a logout in another tab) sends no request.
 * After an upload, opening another upload form in the same tab no longer
   jumps to the confirmation page.
 * A failed upload releases the upload button and says that it failed, and an

@@ -285,6 +285,13 @@ class Token(models.Model):
         """Return whether the token has reached its expiry."""
         return self.expires <= now()
 
+    def expire(self) -> None:
+        """Expire this token now, leaving the account's other tokens as they are."""
+        self.expires = now()
+        # An update changes nothing if the row is already gone, as after the
+        # account was deleted, where saving would fail.
+        type(self).objects.filter(pk=self.pk).update(expires=self.expires)
+
     def __str__(self):
         """Describe the token without revealing its key or digest."""
         return f"Token issued {self.created}"

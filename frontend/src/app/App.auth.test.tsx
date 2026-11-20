@@ -5,7 +5,14 @@ import './i18n/config';
 import { apiClient } from '../shared/api/client';
 import store from './store';
 import { deleteMessage } from '../features/notifications/state/actions';
-import { blockStorage, httpError, page, serveApi, signIn } from '../test/api';
+import {
+  blockStorage,
+  httpError,
+  networkError,
+  page,
+  serveApi,
+  signIn,
+} from '../test/api';
 import { open } from '../test/app';
 import { contest, jurySubmission } from '../test/fixtures';
 
@@ -89,6 +96,80 @@ describe('sessions', () => {
         config.headers.get('Authorization'),
       ]),
     ).toEqual([['post /user/login', undefined]]);
+  });
+
+  it('keeps a later login when the API rejects the logout before it', async () => {
+    signIn('earlier');
+    const rejectLogout: (() => void)[] = [];
+    serveApi({
+      'GET /contest': () => page([contest]),
+      'POST /user/logout': (config) =>
+        new Promise((_resolve, reject) => {
+          rejectLogout.push(() =>
+            reject(httpError(config, 401, { detail: 'Token has expired' })),
+          );
+        }),
+      'POST /user/login': () => ({
+        token: 'later',
+        expires: '2999-01-01T00:00:00Z',
+      }),
+    });
+    const user = userEvent.setup();
+    open('/contests');
+    const account = screen.getByRole('button', {
+      name: 'account of current user',
+    });
+    await user.click(account);
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }));
+    await user.click(account);
+    await user.click(screen.getByRole('menuitem', { name: 'Login' }));
+    await user.type(
+      await screen.findByRole('textbox', { name: /email/i }),
+      'ana@example.com',
+    );
+    await user.type(screen.getByLabelText(/password/i), 'example-password');
+    await user.click(screen.getByRole('button', { name: 'Login' }));
+    expect(
+      await screen.findByRole('heading', { name: contest.title }),
+    ).toBeInTheDocument();
+    const later = localStorage.getItem('token');
+    expect(JSON.parse(later ?? 'null')).toMatchObject({ token: 'later' });
+    expect(rejectLogout).toHaveLength(1);
+    // Vitest fails the run if nothing handles the rejected request.
+    rejectLogout.forEach((reject) => reject());
+    await user.click(account);
+    expect(
+      screen.getByRole('menuitem', { name: 'Logout' }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('token')).toBe(later);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('stays logged out when the logout request gets no response', async () => {
+    signIn();
+    const adapter = serveApi({
+      'GET /contest': () => page([contest]),
+      // Vitest fails the run if nothing handles the failed request.
+      'POST /user/logout': (config) => {
+        throw networkError(config);
+      },
+    });
+    const user = userEvent.setup();
+    open('/contests');
+    const account = screen.getByRole('button', {
+      name: 'account of current user',
+    });
+    await user.click(account);
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }));
+    expect(
+      await screen.findByText('Network error occurred.'),
+    ).toBeInTheDocument();
+    expect(
+      adapter.mock.calls.filter(([config]) => config.url === '/user/logout'),
+    ).toHaveLength(1);
+    expect(localStorage.getItem('token')).toBeNull();
+    await user.click(account);
+    expect(screen.getByRole('menuitem', { name: 'Login' })).toBeInTheDocument();
   });
 
   it('returns to the full requested location after login', async () => {

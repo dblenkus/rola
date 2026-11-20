@@ -45,6 +45,15 @@ def test_profile_endpoints_require_a_token(paths):
     assert change_password["security"] == [{"tokenAuth": []}]
 
 
+def test_logout_requires_a_token_and_exchanges_no_body(paths):
+    assert list(paths["/api/v1/user/logout"]) == ["post"]
+    logout = paths["/api/v1/user/logout"]["post"]
+    assert logout["security"] == [{"tokenAuth": []}]
+    assert "requestBody" not in logout
+    assert list(logout["responses"]) == ["204"]
+    assert "content" not in logout["responses"]["204"]
+
+
 def test_registration_responds_without_a_body(paths):
     assert "content" not in paths["/api/v1/user"]["post"]["responses"]["201"]
 

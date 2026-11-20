@@ -16,6 +16,14 @@ export function loginUser(payload: LoginPayload): AxiosPromise<AuthToken> {
   return apiClient.post('/user/login', payload);
 }
 
+// Names the session to expire, because logging out removes it from storage
+// before the request is sent.
+export function logoutUser(authorization: string): AxiosPromise<void> {
+  return apiClient.post('/user/logout', undefined, {
+    headers: { Authorization: authorization },
+  });
+}
+
 export function registerUser(payload: RegisterPayload): AxiosPromise {
   return apiClient.post('/user', payload);
 }

@@ -1488,6 +1488,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Token'
           description: ''
+  /api/v1/user/logout:
+    post:
+      operationId: user_logout_create
+      description: Expire the caller's token, and no other, and answer without a body.
+      tags:
+      - user
+      security:
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/user/password_reset:
     post:
       operationId: user_password_reset_create
