@@ -34,7 +34,7 @@ export function updatePayment(
   submissionSetId: number,
   paid: boolean,
 ): AxiosPromise<Payment> {
-  return apiClient.post('/payment', { submissionset: submissionSetId, paid });
+  return apiClient.post('/payment', { submission_set: submissionSetId, paid });
 }
 
 export function getPaymentsBySubmissionSets(
@@ -42,7 +42,7 @@ export function getPaymentsBySubmissionSets(
 ): AxiosPromise<PaginatedResponse<Payment>> {
   return apiClient.get('/payment', {
     params: {
-      submissionset__in: submissionSetIds.join(','),
+      submission_set__in: submissionSetIds.join(','),
       page_size: submissionSetIds.length,
     },
   });

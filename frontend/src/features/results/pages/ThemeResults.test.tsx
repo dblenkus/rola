@@ -169,7 +169,7 @@ it('says so when the theme has no published results', async () => {
 describe('the details after an author', () => {
   function authorRowText(
     details: { school: string | null; club: string | null },
-    shownContest: Contest = { ...contest, school_show: true },
+    shownContest: Contest = { ...contest, school_visible: true },
   ): Promise<string | null> {
     renderTheme(
       [

@@ -144,12 +144,12 @@ const validateAuthor = (
   initial: boolean,
   contest: ContestModel,
 ): AuthorModel => {
-  const { first_name, last_name, dob, school, club } = author;
+  const { first_name, last_name, date_of_birth, school, club } = author;
   const errors = {
     first_name: !first_name && !initial ? i18next.t('enter_first_name') : null,
     last_name: !last_name && !initial ? i18next.t('enter_last_name') : null,
-    dob:
-      contest.meta.dobRequired && !dob && !initial
+    date_of_birth:
+      contest.meta.dateOfBirthRequired && !date_of_birth && !initial
         ? i18next.t('enter_dob')
         : null,
     school:
@@ -166,7 +166,7 @@ const validateAuthor = (
       !initial &&
       (!first_name ||
         !last_name ||
-        (contest.meta.dobRequired && !dob) ||
+        (contest.meta.dateOfBirthRequired && !date_of_birth) ||
         (contest.meta.schoolRequired && !school) ||
         (contest.meta.clubRequired && !club)),
   };

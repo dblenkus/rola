@@ -21,7 +21,7 @@ function payment(submissionSetId: number, paid: boolean): Payment {
     id: 100 + submissionSetId,
     created: '2026-01-01T00:00:00Z',
     modified: '2026-01-01T00:00:00Z',
-    submissionset: submissionSetId,
+    submission_set: submissionSetId,
     paid,
   };
 }

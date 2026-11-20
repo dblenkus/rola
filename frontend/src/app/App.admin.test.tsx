@@ -115,7 +115,7 @@ describe('admin submission list', () => {
             id: 8,
             created: '2026-01-01T00:00:00Z',
             modified: '2026-01-01T00:00:00Z',
-            submissionset: submissionSet.id,
+            submission_set: submissionSet.id,
             paid,
           },
         ]),
@@ -225,13 +225,13 @@ describe('admin submission list', () => {
         };
       },
       'GET /payment': (config) =>
-        config.params.submissionset__in === '21'
+        config.params.submission_set__in === '21'
           ? page<Payment>([
               {
                 id: 8,
                 created: '2026-01-01T00:00:00Z',
                 modified: '2026-01-01T00:00:00Z',
-                submissionset: 21,
+                submission_set: 21,
                 paid: true,
               },
             ])
@@ -274,13 +274,13 @@ describe('admin submission list', () => {
       },
       'GET /payment': (config) =>
         page<Payment>(
-          config.params.submissionset__in === '21'
+          config.params.submission_set__in === '21'
             ? [
                 {
                   id: 8,
                   created: '2026-01-01T00:00:00Z',
                   modified: '2026-01-01T00:00:00Z',
-                  submissionset: 21,
+                  submission_set: 21,
                   paid: true,
                 },
               ]

@@ -307,7 +307,7 @@ describe('photograph upload', () => {
 
   it('shows a failed institution lookup', async () => {
     uploadApi({
-      'GET /contest/1': () => ({ ...contest, school_show: true }),
+      'GET /contest/1': () => ({ ...contest, school_visible: true }),
       'GET /institution': (config) => {
         throw httpError(config, 503);
       },
@@ -829,8 +829,8 @@ describe('photograph upload', () => {
       modified: '2026-01-01T00:00:00Z',
       title: 'Cities',
       is_series: false,
-      n_photos: 1,
-      submissions_number: 0,
+      max_photos: 1,
+      submission_count: 0,
     };
     current = {
       ...contest,
@@ -841,7 +841,7 @@ describe('photograph upload', () => {
         })),
         cities,
       ],
-      school_show: true,
+      school_visible: true,
       school_required: true,
     };
 
@@ -864,7 +864,7 @@ describe('photograph upload', () => {
   it('sends the typed date of birth with the author', async () => {
     const authors: unknown[] = [];
     uploadApi({
-      'GET /contest/1': () => ({ ...contest, dob_required: true }),
+      'GET /contest/1': () => ({ ...contest, date_of_birth_required: true }),
       'POST /author': (config) => {
         authors.push(JSON.parse(String(config.data)));
         return author;
@@ -880,12 +880,14 @@ describe('photograph upload', () => {
     expect(
       await screen.findByText('Thank you for uploading photos!'),
     ).toBeInTheDocument();
-    expect(authors).toEqual([expect.objectContaining({ dob: '2010-03-07' })]);
+    expect(authors).toEqual([
+      expect.objectContaining({ date_of_birth: '2010-03-07' }),
+    ]);
   });
 
   it('asks again for a required date of birth whose year was cut short', async () => {
     const adapter = uploadApi({
-      'GET /contest/1': () => ({ ...contest, dob_required: true }),
+      'GET /contest/1': () => ({ ...contest, date_of_birth_required: true }),
     });
     const user = userEvent.setup();
     open('/contest/1/upload');

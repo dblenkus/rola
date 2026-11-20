@@ -74,14 +74,21 @@ export default async function upload(
     throw new Error('Upload called without any photograph');
   }
 
-  const { first_name, last_name, school, mentor, club, distinction, dob } =
-    contest.author;
+  const {
+    first_name,
+    last_name,
+    school,
+    mentor,
+    club,
+    distinction,
+    date_of_birth,
+  } = contest.author;
   checkSession();
   const { data: author } = await createAuthor(
     {
       first_name,
       last_name,
-      dob: dob ? apiDate(dob) : '',
+      date_of_birth: date_of_birth ? apiDate(date_of_birth) : '',
       school: school ?? '',
       mentor: mentor ?? '',
       club: club ?? '',

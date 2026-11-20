@@ -518,7 +518,7 @@ export interface components {
             /** @description Return author's email for superusers, ``None`` field otherwise. */
             readonly email: string | null;
             /** Format: date */
-            dob?: string | null;
+            date_of_birth?: string | null;
             school?: string | null;
             mentor?: string | null;
             club?: string | null;
@@ -529,7 +529,7 @@ export interface components {
             first_name: string;
             last_name: string;
             /** Format: date */
-            dob?: string | null;
+            date_of_birth?: string | null;
             school?: string | null;
             mentor?: string | null;
             club?: string | null;
@@ -570,10 +570,10 @@ export interface components {
             header_image?: string | null;
             notice_html?: string;
             confirmation_html?: string;
-            dob_required?: boolean;
-            club_show?: boolean;
+            date_of_birth_required?: boolean;
+            club_visible?: boolean;
             club_required?: boolean;
-            school_show?: boolean;
+            school_visible?: boolean;
             school_required?: boolean;
         };
         /** @description Serializer for Contest objects. */
@@ -588,10 +588,10 @@ export interface components {
             header_image?: string | null;
             notice_html?: string;
             confirmation_html?: string;
-            dob_required?: boolean;
-            club_show?: boolean;
+            date_of_birth_required?: boolean;
+            club_visible?: boolean;
             club_required?: boolean;
-            school_show?: boolean;
+            school_visible?: boolean;
             school_required?: boolean;
         };
         /** @description Serializer for File objects. */
@@ -642,10 +642,10 @@ export interface components {
             header_image?: string | null;
             notice_html?: string;
             confirmation_html?: string;
-            dob_required?: boolean;
-            club_show?: boolean;
+            date_of_birth_required?: boolean;
+            club_visible?: boolean;
             club_required?: boolean;
-            school_show?: boolean;
+            school_visible?: boolean;
             school_required?: boolean;
         };
         /** @description Serialize a submission for judging, without its author. */
@@ -670,11 +670,11 @@ export interface components {
             title: string;
             is_series?: boolean;
             /** Number of photos */
-            n_photos: number;
+            max_photos: number;
             /** @description Count paid submissions available for judging. */
-            readonly submissions_number: number;
+            readonly submission_count: number;
             /** @description Count ratings submitted by the requesting judge. */
-            readonly ratings_number: number;
+            readonly rating_count: number;
         };
         /**
          * @description * `1` - School
@@ -862,7 +862,7 @@ export interface components {
             first_name?: string;
             last_name?: string;
             /** Format: date */
-            dob?: string | null;
+            date_of_birth?: string | null;
             school?: string | null;
             mentor?: string | null;
             club?: string | null;
@@ -880,15 +880,15 @@ export interface components {
             header_image?: string | null;
             notice_html?: string;
             confirmation_html?: string;
-            dob_required?: boolean;
-            club_show?: boolean;
+            date_of_birth_required?: boolean;
+            club_visible?: boolean;
             club_required?: boolean;
-            school_show?: boolean;
+            school_visible?: boolean;
             school_required?: boolean;
         };
         /** @description Serializer for Payment objects. */
         PatchedPaymentRequest: {
-            submissionset?: number;
+            submission_set?: number;
             paid?: boolean;
         };
         /** @description Serializer for Rating objects. */
@@ -927,12 +927,12 @@ export interface components {
             readonly created: string;
             /** Format: date-time */
             readonly modified: string;
-            submissionset: number;
+            submission_set: number;
             paid?: boolean;
         };
         /** @description Serializer for Payment objects. */
         PaymentRequest: {
-            submissionset: number;
+            submission_set: number;
             paid?: boolean;
         };
         /** @description Serializer for Rating objects. */
@@ -1029,16 +1029,16 @@ export interface components {
             title: string;
             is_series?: boolean;
             /** Number of photos */
-            n_photos: number;
+            max_photos: number;
             /** @description Count submissions in this theme. */
-            readonly submissions_number: number;
+            readonly submission_count: number;
         };
         /** @description Serializer for Theme objects. */
         ThemeRequest: {
             title: string;
             is_series?: boolean;
             /** Number of photos */
-            n_photos: number;
+            max_photos: number;
         };
         /** @description Serializer for Theme results. */
         ThemeResults: {
@@ -1050,9 +1050,9 @@ export interface components {
             title: string;
             is_series?: boolean;
             /** Number of photos */
-            n_photos: number;
+            max_photos: number;
             /** @description Count submissions in this theme. */
-            readonly submissions_number: number;
+            readonly submission_count: number;
             readonly submissions: components["schemas"]["ThemeSubmissionResults"][];
         };
         /** @description Serialize a submission in published theme results, without its score. */
@@ -1557,9 +1557,9 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 paid?: boolean;
-                submissionset?: number;
+                submission_set?: number;
                 /** @description Multiple values may be separated by commas. */
-                submissionset__in?: number[];
+                submission_set__in?: number[];
             };
             header?: never;
             path?: never;

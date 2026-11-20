@@ -25,7 +25,7 @@ def create_judge_and_submission():
         end_date=now - timedelta(days=1),
         publish_date=now + timedelta(days=1),
     )
-    theme = Theme.objects.create(contest=contest, title="Nature", n_photos=4)
+    theme = Theme.objects.create(contest=contest, title="Nature", max_photos=4)
     author = Author.objects.create(first_name="Alice", last_name="Photographer")
     submission = Submission.objects.create(author=author, theme=theme)
     return Judge.objects.create(contest=contest, judge=user), submission

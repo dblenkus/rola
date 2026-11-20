@@ -37,7 +37,7 @@ class SubmissionViewSetTest(APITestCase):
         )
 
         theme = Theme.objects.create(
-            title="Test theme", contest=self.contest, n_photos=2
+            title="Test theme", contest=self.contest, max_photos=2
         )
 
         author1 = Author.objects.create(user=self.user1)

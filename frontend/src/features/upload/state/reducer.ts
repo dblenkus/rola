@@ -39,10 +39,10 @@ const contestMeta = (contest: Contest): ContestMeta => ({
   noticeHtml: contest.notice_html ?? '',
   headerImage: contest.header_image ?? null,
   endDate: contest.end_date,
-  dobRequired: contest.dob_required ?? false,
-  clubShow: contest.club_show ?? false,
+  dateOfBirthRequired: contest.date_of_birth_required ?? false,
+  clubVisible: contest.club_visible ?? false,
   clubRequired: contest.club_required ?? false,
-  schoolShow: contest.school_show ?? false,
+  schoolVisible: contest.school_visible ?? false,
   schoolRequired: contest.school_required ?? false,
 });
 

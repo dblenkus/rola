@@ -141,7 +141,7 @@ const ThemeResults: React.FC = () => {
               const author = getAuthor(submissions);
               const reward = getAuthorReward(author);
               const details = authorDetails(t, {
-                place: contest.school_show ? author.school : author.country,
+                place: contest.school_visible ? author.school : author.country,
                 club: author.club,
               });
               return (

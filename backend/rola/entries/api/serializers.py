@@ -39,7 +39,7 @@ class AuthorSerializer(BaseSerializer):
             "first_name",
             "last_name",
             "email",
-            "dob",
+            "date_of_birth",
             "school",
             "mentor",
             "club",

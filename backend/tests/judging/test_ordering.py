@@ -30,7 +30,7 @@ def scores(world):
         user=world.owner, author=world.author, contest=world.contest
     )
     group.submissions.add(*submissions)
-    Payment.objects.create(submissionset=group, paid=True)
+    Payment.objects.create(submission_set=group, paid=True)
     result = {
         submission.pk: 3 + index % 3 for index, submission in enumerate(submissions)
     }

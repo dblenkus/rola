@@ -38,7 +38,7 @@ const segmentWidth = (segments: number): { segmentWidth?: number } => {
 
 // A theme of the entry: its title, how many of its photographs are selected,
 // the rules a photograph must meet, and its entry rows. The theme's photo
-// limit is the number of slots the form opened for it (its n_photos).
+// limit is the number of slots the form opened for it (its max_photos).
 const ThemeField: React.FC<ThemeFieldProps> = ({
   theme,
   handleSubmissionChange,

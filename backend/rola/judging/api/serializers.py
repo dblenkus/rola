@@ -79,24 +79,24 @@ class RatingSerializer(BaseSerializer):
 class JudgeThemeSerializer(CoreThemeSerializer):
     """Serializer for Theme objects."""
 
-    ratings_number = serializers.SerializerMethodField("get_ratings_number")
-    submissions_number = serializers.SerializerMethodField("get_submissions_number")
+    rating_count = serializers.SerializerMethodField("get_rating_count")
+    submission_count = serializers.SerializerMethodField("get_submission_count")
 
     class Meta(CoreThemeSerializer.Meta):
         """Serializer configuration."""
 
         fields = CoreThemeSerializer.Meta.fields + [
-            "ratings_number",
+            "rating_count",
         ]
 
     # The judging contest queryset annotates both counts. Reading them
     # directly fails loudly if a queryset loses the annotations, instead of
     # counting each theme again.
-    def get_ratings_number(self, theme) -> int:
+    def get_rating_count(self, theme) -> int:
         """Count ratings submitted by the requesting judge."""
         return theme.rating_count
 
-    def get_submissions_number(self, theme) -> int:
+    def get_submission_count(self, theme) -> int:
         """Count paid submissions available for judging."""
         return theme.submission_count
 
@@ -226,9 +226,9 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
             contest = self.context["contest"]
         else:
             contest = submission.theme.contest
-        if not contest.school_show:
+        if not contest.school_visible:
             data["author"]["school"] = None
-        if not contest.club_show:
+        if not contest.club_visible:
             data["author"]["club"] = None
 
         return data

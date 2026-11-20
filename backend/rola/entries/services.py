@@ -152,12 +152,12 @@ def limit_photos(
     entered = File.objects.filter(submission__author=author, submission__theme=theme)
     if submission is not None:
         entered = entered.exclude(submission=submission)
-    if entered.count() + count > theme.n_photos:
+    if entered.count() + count > theme.max_photos:
         raise exceptions.ValidationError(
             {
                 "files": [
                     f'Too many photographs for the theme "{theme.title}", '
-                    f"which accepts {theme.n_photos} per author."
+                    f"which accepts {theme.max_photos} per author."
                 ]
             }
         )

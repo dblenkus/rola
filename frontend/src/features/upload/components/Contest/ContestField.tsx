@@ -69,10 +69,10 @@ const ContestField: React.FC<ContestFieldProps> = ({
         <AuthorField
           handleAUthorChange={handleAuthorChange}
           author={contest.author}
-          showDob={contest.meta.dobRequired}
-          showClub={contest.meta.clubShow}
+          showDateOfBirth={contest.meta.dateOfBirthRequired}
+          showClub={contest.meta.clubVisible}
           requiredClub={contest.meta.clubRequired}
-          showSchool={contest.meta.schoolShow}
+          showSchool={contest.meta.schoolVisible}
           requiredSchool={contest.meta.schoolRequired}
         />
 

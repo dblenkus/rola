@@ -115,12 +115,12 @@ def test_superusers_delete_submission_sets_until_publication(world):
     assert list(published_set.submissions.all()) == [published]
 
 
-def test_a_theme_accepts_at_most_n_photos_per_author(world):
-    world.theme.n_photos = 2
+def test_a_theme_accepts_at_most_its_max_photos_per_author(world):
+    world.theme.max_photos = 2
     world.theme.save()
-    city = Theme.objects.create(contest=world.contest, title="City", n_photos=1)
+    city = Theme.objects.create(contest=world.contest, title="City", max_photos=1)
     series = Theme.objects.create(
-        contest=world.contest, title="Series", is_series=True, n_photos=3
+        contest=world.contest, title="Series", is_series=True, max_photos=3
     )
 
     def post(data):

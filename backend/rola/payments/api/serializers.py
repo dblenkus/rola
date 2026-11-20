@@ -13,13 +13,13 @@ class PaymentSerializer(BaseSerializer):
         """Serializer configuration."""
 
         model = Payment
-        fields = BaseSerializer.Meta.fields + ["submissionset", "paid"]
-        extra_kwargs: dict[str, dict[str, Any]] = {"submissionset": {"validators": []}}
+        fields = BaseSerializer.Meta.fields + ["submission_set", "paid"]
+        extra_kwargs: dict[str, dict[str, Any]] = {"submission_set": {"validators": []}}
 
     def create(self, validated_data):
         """Create or update payment status for one submission set."""
-        submissionset = validated_data.pop("submissionset")
+        submission_set = validated_data.pop("submission_set")
         payment, _ = Payment.objects.update_or_create(
-            submissionset=submissionset, defaults=validated_data
+            submission_set=submission_set, defaults=validated_data
         )
         return payment

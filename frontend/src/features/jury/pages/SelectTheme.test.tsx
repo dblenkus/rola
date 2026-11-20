@@ -19,9 +19,9 @@ function juryTheme(
     modified: '2026-01-01T00:00:00Z',
     title,
     is_series: false,
-    n_photos: 2,
-    ratings_number: ratings,
-    submissions_number: submissions,
+    max_photos: 2,
+    rating_count: ratings,
+    submission_count: submissions,
   };
 }
 

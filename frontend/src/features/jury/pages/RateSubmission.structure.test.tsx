@@ -143,7 +143,7 @@ it('shows every photograph of a series with its place in the series', async () =
   const consoleError = vi.spyOn(console, 'error');
   const files = [21, 22, 23, 24].flatMap((id) => jurySubmission(id, '').files);
   serveJudging({
-    contest: contestWithTheme({ is_series: true, n_photos: 4 }),
+    contest: contestWithTheme({ is_series: true, max_photos: 4 }),
     submissions: [{ ...jurySubmission(11, 'Bridges'), files }],
   });
   renderRater(store);
@@ -173,7 +173,7 @@ it('shows a series of more than six photographs in full', async () => {
   const ids = [21, 22, 23, 24, 25, 26, 27, 28];
   const files = ids.flatMap((id) => jurySubmission(id, '').files);
   serveJudging({
-    contest: contestWithTheme({ is_series: true, n_photos: 8 }),
+    contest: contestWithTheme({ is_series: true, max_photos: 8 }),
     submissions: [{ ...jurySubmission(11, 'Bridges'), files }],
   });
   renderRater(store);

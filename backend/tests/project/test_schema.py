@@ -45,17 +45,17 @@ def test_schema_generates_without_warnings(tmp_path):
 def test_judging_contests_have_their_own_components(components):
     judge_themes = components["JudgeContest"]["properties"]["themes"]
     assert judge_themes["items"] == {"$ref": "#/components/schemas/JudgeTheme"}
-    assert "ratings_number" in components["JudgeTheme"]["properties"]
+    assert "rating_count" in components["JudgeTheme"]["properties"]
     themes = components["Contest"]["properties"]["themes"]
     assert themes["items"] == {"$ref": "#/components/schemas/Theme"}
-    assert "ratings_number" not in components["Theme"]["properties"]
+    assert "rating_count" not in components["Theme"]["properties"]
 
 
 def test_counts_and_acceptance_are_typed(components):
-    assert components["Theme"]["properties"]["submissions_number"]["type"] == "integer"
+    assert components["Theme"]["properties"]["submission_count"]["type"] == "integer"
     judge_theme = components["JudgeTheme"]["properties"]
-    assert judge_theme["ratings_number"]["type"] == "integer"
-    assert judge_theme["submissions_number"]["type"] == "integer"
+    assert judge_theme["rating_count"]["type"] == "integer"
+    assert judge_theme["submission_count"]["type"] == "integer"
     assert (
         components["SubmissionResults"]["properties"]["accepted"]["type"] == "boolean"
     )

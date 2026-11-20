@@ -13,7 +13,7 @@ class ThemeInline(admin.TabularInline):
     """Inline Theme tabular used in `ContestAdmin`."""
 
     model = Theme
-    fields = ("title", "n_photos", "is_series")
+    fields = ("title", "max_photos", "is_series")
     extra = 1
 
 
@@ -30,7 +30,7 @@ class ContestAdmin(admin.ModelAdmin):
         ("Dates", {"fields": ("start_date", "end_date", "publish_date")}),
         (
             "Author informations",
-            {"fields": ("dob_required", "club_required", "school_required")},
+            {"fields": ("date_of_birth_required", "club_required", "school_required")},
         ),
         (
             "Details",
