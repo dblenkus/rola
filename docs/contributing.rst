@@ -175,7 +175,9 @@ does the same. The image job builds the development and production targets
 of both Dockerfiles, with a fake value for the frontend's build argument,
 and pushes nothing. It starts the production frontend image and checks that
 its page carries the ``Content-Security-Policy``, with a nonce that differs
-between two requests, and loads scripts from the site's own paths only. The
+between two requests, carries ``Cache-Control: no-store``, answers a
+revalidation by its ``Last-Modified`` or by its file's ``ETag`` with the
+page instead of 304, and loads scripts from the site's own paths only. The
 Compose job runs ``docker compose config`` on ``compose.yaml``, on
 ``compose.production.yaml``, and on the production file merged with
 ``compose.tunnel.yaml``, where it also checks what the merge removes and

@@ -281,11 +281,11 @@ server:
   ``script-src`` in ``frontend/docker/default.conf`` and rebuild the
   frontend; allowing inline scripts would undo the policy.
 * Do not cache the site's pages at Cloudflare, for example with a Cache
-  Rule that caches everything. Cloudflare does not cache HTML by default,
-  but a cached page would replay one nonce to every visitor (see `HTTPS and
-  headers`_). nginx's ``Cache-Control: no-cache`` does not rule this out:
-  with such a rule, Cloudflare stores the page and revalidates it on each
-  use, and an Edge Cache TTL in the rule turns that revalidation off.
+  Rule that caches everything. A cached page would replay one nonce to
+  every visitor (see `HTTPS and headers`_). By default, Cloudflare does not
+  cache a response with nginx's ``Cache-Control: no-store``, but a Cache
+  Rule whose Edge TTL is "Ignore cache-control header and use this TTL"
+  ignores that header completely and stores the page.
 
 Client addresses
 ================
@@ -361,12 +361,17 @@ Django admin's scripts come from the static bucket's host.
 The HTML document must not be served from a shared cache. A cache that
 stores the page with its header gives every visitor the same nonce, which
 anyone who fetched the page has seen, so markup injected into the page could
-carry it and run as a script. nginx sends the document with
-``Cache-Control: no-cache``, which lets a cache store it if it revalidates
-each use, so a cache in front of the site must be configured not to store
-it. The hashed files under ``/assets/``, which may be cached for a year,
-carry a nonce as well; that does no harm, because a browser applies only
-the document's policy to the page.
+carry it and run as a script. Nor may a browser reuse its own copy: a copy
+revalidated with a 304 is shown under the policy of the 304, whose nonce is
+new, so the browser refuses the script that a proxy injected into the
+stored copy. nginx therefore sends the document with
+``Cache-Control: no-store``, sends no ``ETag`` for it, and answers a
+request to revalidate a copy, by its ``Last-Modified`` or by the ``ETag``
+it sent earlier, with the whole page instead of 304. The other files at the
+site's root, such as the icons and the manifest, keep
+``Cache-Control: no-cache``. The hashed files under ``/assets/``, which may
+be cached for a year, carry a nonce as well; that does no harm, because a
+browser applies only the document's policy to the page.
 
 Contest content
 ===============
