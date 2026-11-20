@@ -66,8 +66,12 @@ fixtures in `tests/conftest.py`.
 
 - `design/`: the design system. `tokens.json` and `components.css` (its
   `rl-` classes) are vendored; `tokens.css` is generated from `tokens.json`;
-  `fonts.css` (self-hosted Inter and DM Mono), `app.css` (app-wide rules and
-  the breakpoints, `width < 40rem` and `width >= 64rem`), `logos/`.
+  `layers.css` (the cascade layers, `base` below `design-system`, which holds
+  `tokens.css` and `components.css`), `fonts.css` (self-hosted Inter and DM
+  Mono), `app.css` (app-wide rules, the element defaults in `base`, and the
+  breakpoints, `width < 40rem` and `width >= 64rem`), `logos/`. All other
+  CSS is unlayered, so an app rule beats a vendored one whatever its
+  specificity or the order the build links the files in; keep it that way.
 - `app/`: `main.tsx`, `App.tsx` (picks the layout per route), `routes.tsx`
   (every route, each page `React.lazy` in its own Suspense boundary;
   `preloadPages()` for tests), `store.ts` (the Redux store, which also
@@ -75,8 +79,11 @@ fixtures in `tests/conftest.py`.
   (`StandardLayout`, `BareLayout` for the judge's scoring view, `AppBar`,
   `MainNav`, `LanguageSwitch`, `AccountMenu`), `NotFound.tsx`,
   `RouteErrorBoundary.tsx`, `RouteFocus.tsx`, `AriaProviders.tsx`, `pwa/`
-  (worker registration, update prompt, offline notice, `serverPaths.ts`),
-  `i18n/` (`locales/en` and `locales/sl`), `sentry.ts`.
+  (worker registration, update prompt, offline notice, and what `sw.ts`
+  imports: `serverPaths.ts`, `navigationHandler.ts`,
+  `workerMessageHandler.ts` and the messages in `workerMessages.ts`, which
+  use no DOM-only or worker-only globals), `i18n/` (`locales/en` and
+  `locales/sl`), `sentry.ts`.
 - `shared/`: `api/` (the axios `client.ts`, `errors.ts`, `token.ts`,
   pagination, `types.ts` and the generated `generated-api.ts`), `ui/` (the
   kit on React Aria Components: `Button`, `TextField`, `Page`, `Table`, …),
@@ -167,7 +174,8 @@ From the repository root, with the uv and Node.js versions that
   hand. A change to `tokens.json` regenerates `tokens.css` in the same
   commit; `npm run build` fails otherwise.
 - The service worker caches only the build's own files, never API responses
-  or photographs.
+  or photographs, and gets documents from the network whenever it can be
+  reached: every document carries its own script policy nonce.
 - The DOM does not depend on the viewport width: layouts respond through CSS
   only. jsdom cannot test them; check layout changes by hand as
   `docs/contributing.rst` describes.

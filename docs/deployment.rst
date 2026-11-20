@@ -255,10 +255,10 @@ server:
   Cloudflare's cache. ``/sw.js``, ``/site.webmanifest`` and the other files
   at the root come with ``Cache-Control: no-cache``, so Cloudflare checks
   them with nginx on every request, and a release reaches browsers on their
-  next check, as without Cloudflare. Cloudflare keeps ``/static2/`` files, which come
-  without a cache header, for two hours, and tells browsers to keep them
-  for the zone's Browser Cache TTL, four hours by default, so the Django
-  admin's stylesheets and scripts can lag an upgrade by that long.
+  next check, as without Cloudflare. Cloudflare keeps ``/static2/`` files,
+  which come without a cache header, for two hours, and tells browsers to
+  keep them for the zone's Browser Cache TTL, four hours by default, so the
+  Django admin's stylesheets and scripts can lag an upgrade by that long.
 * Cloudflare compresses HTML and JSON responses on their way to the
   visitor. nginx leaves the responses of ``/api`` and ``/django-admin``
   uncompressed, so that the tokens in them are not exposed to compression
@@ -618,12 +618,23 @@ worker only over HTTPS, which `TLS terminator`_ already requires, and on
 ``localhost``.
 
 The worker keeps a copy of the build's own files: its scripts, styles,
-fonts, icons and ``index.html``. It answers the application's pages from
-that copy, so the site opens without the network and, offline, shows its
-shell with a notice. It stores nothing else. Requests to ``/api``,
-``/django-admin``, ``/media`` and ``/static2``, photographs in S3, and any
-path with a file extension that it does not hold go to the network and the
-browser's HTTP cache as without a worker.
+fonts, icons, the manifest and ``index.html``. It serves the scripts,
+styles, fonts, icons and the manifest from that copy. The application's pages come from nginx whenever the
+network can be reached, whatever nginx answers; only when the request fails
+does the worker answer with its stored ``index.html``, so the site opens
+without the network and, offline, shows its shell with a notice. It stores
+nothing else. Requests to ``/api``, ``/django-admin``, ``/media`` and
+``/static2``, photographs in S3, and any path with a file extension that it
+does not hold go to the network and the browser's HTTP cache as without a
+worker.
+
+The worker stores ``index.html`` even when nginx forbids caching it, because
+the Cache API that holds the worker's copy is not an HTTP cache. It stores
+the response with the headers it came with, including the
+``Content-Security-Policy`` and its nonce, and uses it only when the network
+cannot be reached, so an offline page shows a nonce under the policy that
+was sent with it. Online, every page load gets a new document with a new
+nonce from nginx.
 
 nginx sends these caching headers for the frontend's files:
 
@@ -640,11 +651,11 @@ nginx sends these caching headers for the frontend's files:
    * - ``/sw.js``, ``/site.webmanifest``
      - ``no-cache``
      - 404
-   * - other files at the root, such as icons and ``index.html``
+   * - other files at the root, such as icons
      - ``no-cache``
      - 404
-   * - every other path
-     - ``no-cache``
+   * - every other path, and ``/index.html``
+     - ``no-store``
      - ``index.html``, the application
 
 The manifest goes out as ``application/manifest+json``. A missing file at
@@ -652,18 +663,28 @@ the root answers 404 instead of the application, because a browser that
 asked for ``/sw.js`` would otherwise try to run the application's HTML as a
 worker.
 
-After an upgrade, people keep the version they have open until they press
-Reload in the prompt or close every tab and window of the site. A browser
-checks for a new worker when it opens the site, and the
-application asks it to check again when the site is shown again or gets
-focus, at most once a minute, which also covers an installed app resumed
-from the app switcher. The new worker downloads the new release in the
-background and then waits: the application shows "A new version is
-available." with Reload and Later, and loads the new release only after
-Reload. It never reloads by itself, because an entrant may be uploading and
-a judge scoring. Until then, the old worker serves the old release's files
-from its copy, so the open pages keep working although the server no longer
-has them. Later puts the prompt off until the next release or the next
+After an upgrade, a page that is opened or reloaded online comes from nginx
+and runs the new release at once. A page that was already open keeps its
+version until the person presses Reload in the prompt. A browser checks for
+a new worker when it opens the site, and the application asks it to check
+again when the site is shown again or gets focus, at most once a minute,
+which also covers an installed app resumed from the app switcher. The new
+worker downloads the new release in the background and then waits, and each
+open page asks it whether it was built together with that page and whether
+any other window of the site is open. A page of the new release that is the
+site's only window lets it take over at once, without a prompt or a reload.
+While other windows are open, one of them may still run the previous
+release, so a page of the new release leaves the worker waiting and asks
+again at its next check; the worker takes over once that page is alone. A
+page of the previous release shows "A new version is available." with
+Reload and Later, and loads the new release only after Reload. It never
+reloads by itself, because an entrant may be uploading and a judge scoring.
+Until the new worker takes over, the old worker serves the old release's
+files from its copy, so the open pages keep working although the server no
+longer has them. Taking over deletes that copy, so once a person has
+pressed Reload in one window, a page of the previous release in another
+window that loads a part it has not loaded yet fails into the error page
+with Reload. Later puts the prompt off until the next release or the next
 page load.
 
 Cutover from the previous deployment

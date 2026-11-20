@@ -113,7 +113,11 @@ unexpected failures, which shows the error notification, when it is created.
 
 The design system comes from outside the repository. ``components.css`` is
 its published stylesheet, kept unchanged, and its classes start with
-``rl-``. The kit in ``shared/ui`` builds the components that pages use on
+``rl-``. ``layers.css`` puts it and ``tokens.css`` in a ``design-system``
+cascade layer, above a ``base`` layer for the element defaults in
+``app.css``; the app's own rules are unlayered, so they override the design
+system whatever their specificity and whatever order the production build
+links the files in. The kit in ``shared/ui`` builds the components that pages use on
 those classes, with React Aria Components supplying keyboard, touch and
 screen-reader behaviour. A component's own CSS sits beside it, with classes
 that start with ``ui-``; the shell's start with ``shell-``, the service
@@ -134,15 +138,22 @@ Each page has one ``h1`` and its own document title, and after a navigation
 focus moves to the page's ``main``.
 
 The service worker, built from ``src/sw.ts`` by ``vite-plugin-pwa``,
-precaches the build output: scripts, styles, fonts, icons and
-``index.html``. It answers navigations with the precached ``index.html``,
-except those to the paths that ``app/pwa/serverPaths.ts`` lists, which the
-server answers. It caches nothing at run time, so API responses, which
-belong to one account, and photographs, whose S3 links expire, always come
-from the network. A new version installs in the background and waits until
-the person presses Reload in the update prompt, because an entrant may be
-uploading and a judge scoring, and open pages still need the old version's
-chunks. Only production builds register the worker.
+precaches the build output: scripts, styles, fonts, icons,
+``site.webmanifest`` and ``index.html``. Navigations go to the network, and only when the network
+cannot be reached does the worker answer them with the precached
+``index.html``, because every document carries a script policy nonce of its
+own (see :doc:`deployment`). Navigations to the paths that
+``app/pwa/serverPaths.ts`` lists are left to the server. The worker caches
+nothing at run time, so API responses, which belong to one account, and
+photographs, whose S3 links expire, always come from the network. A new
+version installs in the background and waits, because taking over deletes
+the previous version's files, which open pages may still need: an entrant
+may be uploading and a judge scoring. A page built with the new version,
+loaded from the network after the release, lets it take over without a
+prompt when it is the site's only open window; while other windows are
+open, it asks again at its next update check. A page of the previous
+version shows the update prompt, and the new version takes over when the
+person presses Reload. Only production builds register the worker.
 
 The API contract
 ================
@@ -165,9 +176,10 @@ itself, and passes ``/api`` and ``/django-admin`` to Gunicorn in the backend
 container. It serves ``/sw.js`` and ``/site.webmanifest`` uncached, so
 browsers find a new release, and answers 404 instead of the application for
 a missing file at the root or under ``/assets/``. Once a browser has the
-service worker, the worker answers navigations to the application's pages
-and requests for its precached files itself, and leaves every other request
-to the network.
+service worker, the worker answers requests for its precached files itself,
+passes navigations to the application's pages to nginx and answers them
+itself only when nginx cannot be reached, and leaves every other request to
+the network.
 :doc:`deployment` describes what the TLS terminator
 must do, and the Cloudflare Tunnel that ``compose.tunnel.yaml`` runs in the
 terminator's place, with no port published on the host.

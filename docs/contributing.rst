@@ -407,7 +407,11 @@ from the design system and are never edited here:
 
 ``fonts.css``, ``app.css`` and the CSS beside the kit's components in
 ``src/shared/ui`` are the repository's own. Adjust the design system's
-styles there, never in ``components.css``.
+styles there, never in ``components.css``. ``layers.css`` imports
+``tokens.css`` and ``components.css`` into the ``design-system`` cascade
+layer, so an unlayered rule of the app overrides them even with a lower
+specificity; put only element defaults in ``app.css``'s ``base`` layer,
+which stays below them.
 
 To update the design system, from ``frontend/``:
 
