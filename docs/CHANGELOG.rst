@@ -156,6 +156,11 @@ Deployment changes
   ``rola-production_static``. ``.env.example`` sets
   ``COMPOSE_FILE=compose.production.yaml``, so on the server ``docker
   compose`` uses the production stack without ``-f``.
+* ``compose.tunnel.yaml``, merged after ``compose.production.yaml``,
+  publishes the site through a Cloudflare Tunnel instead of a TLS terminator
+  on the server. Its cloudflared service needs ``TUNNEL_TOKEN`` and reaches
+  the frontend only, and with it the frontend's port is not published on the
+  host, as "Cloudflare Tunnel" in ``docs/deployment.rst`` describes.
 * Gunicorn serves the backend instead of Daphne. Redis, Channels, the backup
   worker and the backup feature are removed.
 * The images run PostgreSQL 18.6 (from 12), Python 3.14.10, Node.js 26.13.0
