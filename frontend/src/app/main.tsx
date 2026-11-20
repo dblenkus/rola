@@ -6,9 +6,14 @@ import '../design/components.css';
 import '../design/app.css';
 import './i18n/config';
 import App from './App';
+import { registerServiceWorker } from './pwa/registerServiceWorker';
 import { sentryOptions } from './sentry';
 
 Sentry.init(sentryOptions);
+// Only the production build has a worker; the development server has none.
+if (import.meta.env.PROD) {
+  registerServiceWorker();
+}
 const root = document.getElementById('root');
 if (!root) {
   throw new Error('Application root is missing');
