@@ -43,6 +43,52 @@
   padding-right: max(var(--ui-page-margin), var(--safe-right));
 }
 
+/* The notification above the update prompt, fixed at the bottom right, above
+   the phone's tab bar (whose space includes the safe area) or the safe area
+   where no tab bar is shown. The empty stack lets the page take every click.
+   z-index: above the sticky app bar and the phone's tab bar (10) and a page's
+   sticky submit bar (1); below the dialog overlay and the skip link (100) and
+   the menu and combo box popovers (React Aria sets 100000 on them). */
+.shell-bottom-stack {
+  --shell-bottom-margin: var(--space-6);
+  /* The room a page's sticky submit bar takes; see the rule below. */
+  --shell-bottom-bar-clearance: 0px;
+  position: fixed;
+  z-index: 20;
+  right: max(var(--shell-bottom-margin), var(--safe-right));
+  bottom: calc(
+    var(--shell-bottom-margin) +
+      max(var(--shell-tabbar-space), var(--safe-bottom)) +
+      var(--shell-bottom-bar-clearance)
+  );
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(24rem, calc(100vw - 2 * var(--shell-bottom-margin)));
+  pointer-events: none;
+}
+
+.shell-bottom-stack > * {
+  pointer-events: auto;
+}
+
+/* An empty child (the update prompt's live region while no update waits)
+   stays in the accessibility tree but takes no place, so it adds no gap. */
+.shell-bottom-stack > :empty {
+  position: absolute;
+}
+
+/* A sticky submit bar on the page (the upload form): the stack sits above
+   it, so it never covers the button. CSS cannot read the bar's height, so
+   this assumes the bar's 12 px and 24 px paddings, a large (48 px) button and
+   its hairline. It does not count the bar's optional note above the button,
+   which the stack may cover. */
+.shell:has(.rl-btn-bar) .shell-bottom-stack {
+  --shell-bottom-bar-clearance: calc(
+    var(--space-3) + var(--space-12) + var(--space-6) + var(--stroke-hairline)
+  );
+}
+
 .shell-account {
   display: flex;
   align-items: center;
@@ -80,6 +126,13 @@
     --shell-tabbar-space: calc(var(--shell-tabbar-height) + var(--safe-bottom));
     /* Under the footer, so the tab bar covers neither it nor the page. */
     padding-bottom: var(--shell-tabbar-space);
+  }
+
+  /* The width of the screen inside 16 px margins. */
+  .shell-bottom-stack {
+    --shell-bottom-margin: var(--space-4);
+    left: max(var(--shell-bottom-margin), var(--safe-left));
+    width: auto;
   }
 
   /* The tab bar is the fixed chrome here, so the bar scrolls away. */
