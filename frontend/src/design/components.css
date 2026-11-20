@@ -1,0 +1,1703 @@
+/* The component styles of the Rola design system, vendored as published,
+   without the Google Fonts import (fonts.css loads the same faces from this
+   site). Do not edit: re-sync the file from the design system instead. */
+/* ---- base.css ---- */
+
+/* Page defaults, as on every D screen: Inter with tabular figures on the paper ground. */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* The judge's viewing surface. Controls inside it switch to their on-viewing colours (see core.css). */
+.rl-on-viewing {
+  background: var(--viewing);
+  color: var(--on-viewing);
+}
+
+/* Focus ring: 2 px solid, 3 px off the control. Ink on paper and well, paper on the viewing surface. */
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+.rl-on-viewing :focus-visible {
+  outline-color: var(--focus-on-dark);
+}
+
+/* ---- core.css ---- */
+/* Rola core components. Values are copied from the D screens (D-Organiser, D-Judge, D-Entrant, D-Brand).
+   Colour, spacing, radius and stroke come from tokens; sizes with no token stay literal. */
+
+/* ======================================================================
+   Button
+   ====================================================================== */
+.rl-btn {
+  /* Side padding without and with a leading icon; the size modifiers change both. */
+  --rl-btn-pad: 0 20px;
+  --rl-btn-pad-icon: 0 20px 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--touch-target);
+  margin: 0;
+  padding: var(--rl-btn-pad);
+  box-sizing: border-box;
+  border: var(--stroke-hairline) solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rl-btn:has(> .rl-btn__icon:first-child) {
+  padding: var(--rl-btn-pad-icon);
+}
+
+/* A key cap inside a button sits 10 px from the label (Počisti, Prejšnja, Naslednja). */
+.rl-btn:has(> .rl-keycap) {
+  gap: 10px;
+}
+
+.rl-btn__icon {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* Variants on paper */
+.rl-btn--primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
+}
+
+.rl-btn--secondary {
+  border-color: var(--ink);
+  background: var(--paper);
+  color: var(--text);
+}
+
+.rl-btn--quiet {
+  border-color: var(--control-line);
+  color: var(--text);
+}
+
+/* Locked: the action exists but is not available yet. Dashed, lock icon, aria-disabled, reason beside it. */
+.rl-btn--locked {
+  --rl-btn-pad: 0 16px;
+  --rl-btn-pad-icon: 0 16px;
+  height: 40px;
+  border: var(--stroke-hairline) dashed var(--control-line);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: not-allowed;
+}
+
+/* Sizes */
+.rl-btn--large {
+  height: 48px;
+}
+
+.rl-btn--dense {
+  --rl-btn-pad: 0 12px;
+  --rl-btn-pad-icon: 0 14px 0 12px;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.rl-btn--small {
+  --rl-btn-pad: 0 10px;
+  --rl-btn-pad-icon: 0 10px;
+  height: 36px;
+  font-size: 14px;
+}
+
+/* Full width on a phone (the entrant's sticky submit): 16 px, the input-mobile size, as drawn. */
+.rl-btn--block {
+  display: flex;
+  width: 100%;
+  font-size: 16px;
+}
+
+/* Key caps inside buttons are quieter than the label. */
+.rl-btn .rl-keycap {
+  color: var(--text-muted);
+}
+
+.rl-btn--primary .rl-keycap {
+  color: var(--on-ink);
+}
+
+.rl-btn--large .rl-keycap {
+  font-size: 12px;
+  padding: 1px 6px;
+}
+
+/* A row of buttons, or a locked button with its reason. */
+.rl-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rl-btn-reason {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.rl-btn-reason > svg {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* The entrant's sticky submit bar: a top hairline, no shadow, 12 / 16 / 24 px padding (D-Entrant). */
+.rl-btn-bar {
+  position: sticky;
+  bottom: 0;
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4) var(--space-6);
+  border-top: var(--stroke-hairline) solid var(--line);
+  background: var(--paper);
+}
+
+.rl-btn-bar__note {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+}
+
+/* On the viewing surface no button is filled: the primary is a paper outline at 600 (Naslednja).
+   D draws no secondary there, so secondary takes the quiet control-line outline. */
+.rl-on-viewing .rl-btn {
+  color: var(--on-viewing);
+}
+
+.rl-on-viewing .rl-btn--primary {
+  border-color: var(--on-viewing);
+  background: transparent;
+  color: var(--on-viewing);
+}
+
+.rl-on-viewing .rl-btn--secondary {
+  border-color: var(--control-line);
+  background: transparent;
+}
+
+.rl-on-viewing .rl-btn--locked {
+  color: var(--on-viewing-muted);
+}
+
+.rl-on-viewing .rl-btn .rl-keycap,
+.rl-on-viewing .rl-btn-reason {
+  color: var(--on-viewing-muted);
+}
+
+/* ======================================================================
+   KeyCap
+   Inter 500, never DM Mono: the mono slashed zero reads as "Ø" on the 0 key.
+   ====================================================================== */
+.rl-keycap {
+  display: inline-block;
+  box-sizing: border-box;
+  padding: 1px 5px;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.rl-keycap--large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  border-bottom-width: var(--stroke-strip);
+  font-size: 14px;
+}
+
+.rl-on-viewing .rl-keycap {
+  color: var(--on-viewing);
+}
+
+/* The judge's keyboard legend: key caps and words in one wrapping line, 6 px apart, with a forced
+   break between the score keys and the navigation keys (D-Judge). Set its text with the small class. */
+.rl-keylegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.rl-keylegend__sep {
+  margin: 0 2px;
+}
+
+.rl-keylegend__break {
+  flex-basis: 100%;
+  height: 0;
+}
+
+.rl-on-viewing .rl-keylegend {
+  color: var(--on-viewing-muted);
+}
+
+/* ======================================================================
+   TextField
+   ====================================================================== */
+.rl-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-family: var(--font-sans);
+}
+
+.rl-field__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Label kept for screen readers only, as in the entrant's photo rows. */
+.rl-field__label--hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.rl-field__input {
+  width: 100%;
+  height: var(--touch-target);
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 12px;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-field__input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* The 2 px border takes 1 px of padding so the text does not move. */
+.rl-field--invalid .rl-field__input {
+  padding: 0 11px;
+  border: var(--stroke-error) solid var(--error);
+}
+
+.rl-field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--error);
+}
+
+.rl-field__error > svg {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+/* Touch screens get 16 px text so iOS Safari does not zoom into the field (D-Entrant). */
+@media (pointer: coarse) {
+  .rl-field__input {
+    font-size: 16px;
+  }
+}
+
+/* ======================================================================
+   Tabs
+   ====================================================================== */
+/* 41 px: D-Organiser draws a 40 px row plus the 1 px hairline under it. */
+.rl-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  height: 41px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  font-family: var(--font-sans);
+}
+
+.rl-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  margin: 0 0 -1px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: var(--stroke-strip) solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rl-tabs__tab[aria-selected="true"],
+.rl-tabs__tab[aria-current]:not([aria-current="false"]) {
+  border-bottom-color: var(--ink);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rl-tabs__count {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.rl-tabs__tab[aria-selected="true"] .rl-tabs__count,
+.rl-tabs__tab[aria-current]:not([aria-current="false"]) .rl-tabs__count {
+  font-weight: 600;
+}
+
+/* A score filter: the score is the strong part, the count stays muted ("10 · 4"). */
+.rl-tabs__tab strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rl-tabs__sep {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.rl-tabs__divider {
+  flex: none;
+  width: 1px;
+  margin: 16px 8px;
+  background: var(--line);
+}
+
+/* The judge dock: a 52 px tool row with no hairline under it. */
+.rl-tabs--dock {
+  gap: var(--space-1);
+  height: 52px;
+  border-bottom: 0;
+}
+
+.rl-tabs--dock .rl-tabs__tab {
+  margin-bottom: 0;
+  padding: 0 12px;
+}
+
+.rl-on-viewing .rl-tabs {
+  border-bottom-color: var(--grey-600);
+}
+
+.rl-on-viewing .rl-tabs__tab {
+  color: var(--on-viewing-muted);
+}
+
+.rl-on-viewing .rl-tabs__tab[aria-selected="true"],
+.rl-on-viewing .rl-tabs__tab[aria-current]:not([aria-current="false"]) {
+  border-bottom-color: var(--on-viewing);
+  color: var(--on-viewing);
+}
+
+.rl-on-viewing .rl-tabs__count,
+.rl-on-viewing .rl-tabs__tab strong {
+  color: var(--on-viewing);
+}
+
+.rl-on-viewing .rl-tabs__sep {
+  color: var(--on-viewing-muted);
+}
+
+.rl-on-viewing .rl-tabs__divider {
+  background: var(--grey-600);
+}
+
+/* ======================================================================
+   Section head: a panel sub-section's title with a figure or link on the right, over a hairline
+   ("Prijavljene fotografije · Vseh 412" in D-Organiser). Title in h4, the link in label.
+   ====================================================================== */
+.rl-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  color: var(--text);
+}
+
+.rl-section-head__title {
+  margin: 0;
+}
+
+.rl-section-head__link {
+  color: var(--text);
+}
+
+.rl-section-head__link:hover {
+  color: var(--text-muted);
+}
+
+/* ======================================================================
+   Strip (trak): how far something has come.
+   Continuous: 1 px track, 3 px bar from the left, optional 1 px head tick.
+   Segmented: separate segments, 3 px on / 1 px off.
+   Ticked: one strip with stage boundary ticks, for the labelled stage timeline.
+   The consumer sets --rl-value (a percentage) and, for segmented and ticked, --rl-segments.
+   ====================================================================== */
+.rl-strip {
+  --rl-strip-ink: var(--ink);
+  position: relative;
+  z-index: 0;
+  display: block;
+  box-sizing: border-box;
+  height: var(--stroke-strip);
+}
+
+.rl-strip::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 1px;
+  height: var(--stroke-hairline);
+  background: var(--control-line);
+}
+
+.rl-strip__bar {
+  display: block;
+  width: var(--rl-value, 0%);
+  height: var(--stroke-strip);
+  background: var(--rl-strip-ink);
+}
+
+/* The head tick sits on the bar's last pixel. */
+.rl-strip__tick {
+  position: absolute;
+  left: calc(var(--rl-value, 0%) - 1px);
+  top: -3px;
+  width: 1px;
+  height: 9px;
+  background: var(--rl-strip-ink);
+}
+
+/* Ticked form: 9 px tall, ticks at every stage boundary and at the end.
+   Ticks the bar has passed are ink; ticks ahead are control-line. */
+.rl-strip--ticked {
+  height: 9px;
+  padding-top: 3px;
+}
+
+.rl-strip--ticked::before {
+  top: 4px;
+}
+
+.rl-strip--ticked .rl-strip__tick {
+  top: 0;
+}
+
+.rl-strip--ticked::after,
+.rl-strip--ticked .rl-strip__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.rl-strip--ticked::after {
+  z-index: -1;
+  background:
+    linear-gradient(to left, var(--control-line) 1px, transparent 1px),
+    repeating-linear-gradient(to right, var(--control-line) 0 1px, transparent 1px calc(100% / var(--rl-segments)));
+  clip-path: inset(0 0 0 calc(var(--rl-value, 0%) + 1px));
+}
+
+.rl-strip--ticked .rl-strip__bar::after {
+  background:
+    linear-gradient(to left, var(--rl-strip-ink) 1px, transparent 1px),
+    repeating-linear-gradient(to right, var(--rl-strip-ink) 0 1px, transparent 1px calc(100% / var(--rl-segments)));
+  clip-path: inset(0 calc(100% - var(--rl-value, 0%)) 0 0);
+}
+
+/* Segmented form: 7 px tall, 3 px gaps. Segment width defaults to 22 px (5 stages);
+   7 setup steps use 16 px, 10 photos 12 px, the stage chip 7 px with 2 px gaps. 1fr fills the container. */
+.rl-strip--segmented {
+  display: grid;
+  grid-template-columns: repeat(var(--rl-segments), var(--rl-seg-width, 22px));
+  column-gap: var(--rl-seg-gap, 3px);
+  align-items: center;
+  height: 7px;
+}
+
+.rl-strip--segmented::before {
+  content: none;
+}
+
+.rl-strip__seg {
+  display: block;
+  height: var(--stroke-hairline);
+  background: var(--control-line);
+}
+
+.rl-strip__seg--on {
+  height: var(--stroke-strip);
+  background: var(--rl-strip-ink);
+}
+
+/* Stage names and dates under a ticked strip, one column per segment. */
+.rl-strip-labels {
+  display: grid;
+  grid-template-columns: repeat(var(--rl-segments), minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  row-gap: 2px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.rl-strip-labels__item {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  min-width: 0;
+}
+
+.rl-strip-labels__name {
+  grid-row: 1;
+  padding-right: 6px;
+  color: var(--text-muted);
+}
+
+.rl-strip-labels__item:last-child .rl-strip-labels__name {
+  padding-right: 0;
+}
+
+.rl-strip-labels__date {
+  grid-row: 2;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rl-strip-labels__item[aria-current="step"] .rl-strip-labels__name,
+.rl-strip-labels__item[aria-current="step"] .rl-strip-labels__date {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rl-on-viewing .rl-strip {
+  --rl-strip-ink: var(--on-viewing);
+}
+
+.rl-on-viewing .rl-strip-labels__name {
+  color: var(--on-viewing-muted);
+}
+
+.rl-on-viewing .rl-strip-labels__date,
+.rl-on-viewing .rl-strip-labels__item[aria-current="step"] .rl-strip-labels__name {
+  color: var(--on-viewing);
+}
+
+/* ======================================================================
+   StageChip: the stage name with its 5-segment strip. Inverted only for the final stage.
+   ====================================================================== */
+.rl-stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px 0 8px;
+  border: var(--stroke-hairline) solid var(--line);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rl-stage-chip .rl-strip {
+  --rl-seg-width: 7px;
+  --rl-seg-gap: 2px;
+}
+
+.rl-stage-chip--final {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-weight: 600;
+}
+
+.rl-stage-chip--final .rl-strip {
+  --rl-strip-ink: var(--on-ink);
+}
+
+/* ======================================================================
+   AppBar: the organiser's 64 px bar; rl-appbar--judge is the judge's bar on the viewing surface.
+   ====================================================================== */
+.rl-appbar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-12);
+  height: var(--space-16);
+  box-sizing: border-box;
+  padding: 0 var(--space-12);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The header logo file is 57 x 26 with no padding. 3 px under it puts every straight edge on a whole
+   pixel and the logo's baseline on the nav labels' baseline in a 64 px bar with its hairline. */
+.rl-appbar__logo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding-bottom: 3px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rl-appbar__nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-8);
+}
+
+.rl-appbar__link {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding-top: var(--stroke-strip);
+  border-bottom: var(--stroke-strip) solid transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.rl-appbar__link[aria-current]:not([aria-current="false"]) {
+  border-bottom-color: var(--ink);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rl-appbar__spacer {
+  flex: 1;
+}
+
+.rl-appbar__lang {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.rl-appbar__lang-option {
+  height: 32px;
+  margin: 0;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.rl-appbar__lang-option[aria-pressed="true"] {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.rl-appbar__lang-sep {
+  color: var(--text-muted);
+}
+
+.rl-appbar__account {
+  display: flex;
+  align-self: center;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  margin: 0;
+  padding: 0 var(--space-1) 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rl-appbar__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-control);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.rl-appbar__chevron {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* Judge bar */
+.rl-appbar--judge {
+  align-items: center;
+  gap: var(--space-6);
+  padding: 0 var(--space-6);
+  border-bottom: 0;
+}
+
+.rl-appbar--judge .rl-appbar__logo {
+  padding-bottom: var(--space-1);
+}
+
+.rl-appbar.rl-on-viewing,
+.rl-on-viewing .rl-appbar {
+  background: var(--viewing);
+  color: var(--on-viewing);
+}
+
+.rl-appbar__divider {
+  flex: none;
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+
+.rl-appbar__context {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rl-appbar__title {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.rl-appbar__subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.rl-appbar__stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.rl-appbar__stat-label,
+.rl-appbar__stat-note {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+}
+
+.rl-appbar__stat-note {
+  margin-left: var(--space-4);
+}
+
+.rl-appbar__stat-note strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rl-appbar__stat-value {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rl-appbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rl-appbar__user > svg {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* Judging progress runs the full width along the bar's bottom edge. */
+.rl-appbar .rl-appbar__strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.rl-appbar__strip .rl-strip__tick {
+  top: -5px;
+  height: 13px;
+}
+
+.rl-on-viewing .rl-appbar__divider {
+  background: var(--grey-600);
+}
+
+.rl-on-viewing .rl-appbar__subtitle,
+.rl-on-viewing .rl-appbar__stat-label,
+.rl-on-viewing .rl-appbar__stat-note,
+.rl-on-viewing .rl-appbar__user {
+  color: var(--on-viewing-muted);
+}
+
+.rl-on-viewing .rl-appbar__stat-note strong,
+.rl-on-viewing .rl-appbar__logo {
+  color: var(--on-viewing);
+}
+
+/* ======================================================================
+   Logo: inline artwork drawn in currentColor. The class pins that colour to the files' two inks:
+   ink by default, paper with --reversed or inside rl-on-viewing. Nothing else may paint it.
+   ====================================================================== */
+.rl-logo {
+  display: block;
+  flex: none;
+  color: var(--ink);
+}
+
+.rl-logo--reversed,
+.rl-on-viewing .rl-logo {
+  color: var(--paper);
+}
+
+/* ---- product.css ---- */
+/* Rola product components: Judging (ScorePad, ScoreBadge, Filmstrip, PhotoLabel),
+   Contests (ContestRow, JudgeRow, AwardMark), Entries (EntryRow, Thumbnail).
+   Values are copied from the D · Srebro screens (D-Judge, D-Organiser, D-Entrant, D-Brand).
+   Colours, spacing, radius, strokes and film geometry come from tokens. Type comes from the
+   type-style classes in tokens.css (.small, .score-key, .frame-number ...) set in the markup;
+   this file only sets the weight where a screen differs from the style, and the few sizes no
+   style covers. The shared rl-btn, rl-keycap, rl-field and rl-strip classes come from core.css. */
+
+/* ---------------------------------------------------------------- ScorePad */
+/* Judge only: lives on the viewing surface (inside .rl-on-viewing). */
+
+.rl-scorepad {
+  width: calc(5 * 64px + 4 * var(--space-2));
+  color: var(--on-viewing);
+}
+
+/* min-height is the numeral's line (104 px), so the keys stay put when the score is cleared. */
+.rl-scorepad__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 104px;
+}
+
+.rl-scorepad__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-bottom: 6px;
+}
+
+.rl-scorepad__label {
+  color: var(--on-viewing-muted);
+}
+
+.rl-scorepad__score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.rl-scorepad__numeral {
+  color: var(--on-viewing);
+}
+
+/* No score yet: a dash at the size of "/ 10", so nothing large stands in for a score.
+   The 4 px margin keeps "/ 10" on the scored numeral's baseline. */
+.rl-scorepad__numeral--empty {
+  margin-bottom: 4px;
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--on-viewing-muted);
+}
+
+.rl-scorepad__max {
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--on-viewing-muted);
+}
+
+/* The polite live region the page writes "Ocena 8" or "Ocena počiščena" into; screen readers only. */
+.rl-scorepad__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.rl-scorepad__keys {
+  display: grid;
+  grid-template-columns: repeat(5, 64px);
+  gap: var(--space-2);
+  margin-top: 20px;
+}
+
+.rl-scorepad__key {
+  position: relative;
+  width: 64px;
+  height: 60px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: var(--stroke-hairline) solid var(--control-line);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--on-viewing);
+  cursor: pointer;
+}
+
+/* The keyboard key printed in the corner (key-hint): Inter, never DM Mono, so 0 cannot read as Ø. */
+.rl-scorepad__hint {
+  position: absolute;
+  left: 6px;
+  top: var(--space-1);
+  color: var(--on-viewing-muted);
+}
+
+/* Selected score: inverted. aria-pressed for the recommended buttons, aria-checked for the screen's radios. */
+.rl-scorepad__key[aria-pressed="true"],
+.rl-scorepad__key[aria-checked="true"] {
+  border-color: var(--on-viewing);
+  background: var(--on-viewing);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.rl-scorepad__key[aria-pressed="true"] .rl-scorepad__hint,
+.rl-scorepad__key[aria-checked="true"] .rl-scorepad__hint {
+  color: var(--grey-600);
+}
+
+/* -------------------------------------------------------------- ScoreBadge */
+/* Default ground is ink (the filmstrip); inside .rl-on-viewing it takes the viewing colours. */
+
+.rl-score-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rl-score-badge--scored {
+  background: var(--on-ink);
+  color: var(--ink);
+}
+
+.rl-score-badge--current {
+  font-weight: 700;
+}
+
+.rl-score-badge--unscored {
+  border: var(--stroke-hairline) solid var(--control-line);
+  background: transparent;
+  color: var(--grey-500);
+  font-weight: 400;
+}
+
+/* The brand board's specimen size. */
+.rl-score-badge--lg {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+}
+
+.rl-on-viewing .rl-score-badge--scored {
+  background: var(--on-viewing);
+}
+
+/* grey-500 text is 3.2:1 on viewing, so the unscored dash uses on-viewing-muted there. */
+.rl-on-viewing .rl-score-badge--unscored {
+  color: var(--on-viewing-muted);
+}
+
+/* ---------------------------------------------------------------- Filmstrip */
+/* Ink rebate, perforations along both edges, frames at frame-pitch: 8 holes per frame, centred.
+   The holes show the viewing grey, as if the strip lay on the judge's viewing surface. */
+
+.rl-filmstrip {
+  --rl-film-inset: var(--space-6);
+  --rl-perf-x: calc(var(--rl-film-inset) + var(--frame-width) / 2 - var(--perf-pitch) / 2 - var(--perf-width) / 2);
+  position: relative;
+  height: 140px;
+  box-sizing: border-box;
+  padding: 20px var(--rl-film-inset) 0;
+  overflow: hidden;
+  background-color: var(--ink);
+  background-image:
+    linear-gradient(to right, var(--viewing) var(--perf-width), transparent var(--perf-width)),
+    linear-gradient(to right, var(--viewing) var(--perf-width), transparent var(--perf-width));
+  background-size: var(--perf-pitch) var(--perf-height);
+  background-repeat: repeat-x;
+  /* x: one hole edge half a pitch and half a hole left of the first frame's centre, so 8 holes centre on every frame.
+     y: top row 8 px below the top edge, bottom row 7 px above the bottom edge, as on the judge screen. */
+  background-position:
+    var(--rl-perf-x) var(--space-2),
+    var(--rl-perf-x) calc(100% - 7px);
+}
+
+.rl-filmstrip__frames {
+  display: flex;
+  gap: calc(var(--frame-pitch) - var(--frame-width));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-filmstrip__frames > li {
+  flex: none;
+}
+
+.rl-filmstrip__frame {
+  display: block;
+  width: var(--frame-width);
+  color: inherit;
+  text-decoration: none;
+}
+
+.rl-filmstrip__frame:focus-visible {
+  outline: var(--focus-width) solid var(--focus-on-dark);
+  outline-offset: var(--focus-offset);
+}
+
+.rl-filmstrip__photo {
+  display: block;
+  width: var(--frame-width);
+  height: 75px;
+  object-fit: cover;
+  border-radius: var(--radius-none);
+}
+
+.rl-filmstrip__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 20px;
+  margin-top: var(--space-2);
+}
+
+.rl-filmstrip__number {
+  color: var(--grey-500);
+}
+
+/* Current frame: 2 px white outline 2 px off the photo, "▸ 275" in white at 500. */
+.rl-filmstrip__frame[aria-current="true"] .rl-filmstrip__photo {
+  outline: var(--focus-width) solid var(--on-ink);
+  outline-offset: 2px;
+}
+
+.rl-filmstrip__frame[aria-current="true"] .rl-filmstrip__number {
+  color: var(--on-ink);
+  font-weight: 500;
+}
+
+/* On ink the unscored dash stays grey-500 (5.3:1), also when the strip sits inside .rl-on-viewing. */
+.rl-filmstrip .rl-score-badge--unscored {
+  color: var(--grey-500);
+}
+
+/* --------------------------------------------------------------- PhotoLabel */
+/* The judge's gallery wall label. Judge only: lives on the viewing surface. */
+
+.rl-photo-label {
+  color: var(--on-viewing);
+}
+
+.rl-photo-label__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.rl-photo-label__id {
+  color: var(--on-viewing);
+  font-weight: 500;
+}
+
+.rl-photo-label__position {
+  color: var(--on-viewing-muted);
+}
+
+.rl-photo-label__title {
+  margin: var(--space-3) 0 0;
+}
+
+.rl-photo-label__description {
+  margin: var(--space-2) 0 0;
+  color: var(--on-viewing-muted);
+}
+
+/* Optional closing rule between the label and the ScorePad. */
+.rl-photo-label__rule {
+  height: 0;
+  margin: 28px 0 20px;
+  border: 0;
+  border-top: var(--stroke-hairline) solid var(--grey-600);
+}
+
+/* --------------------------------------------------------------- ContestRow */
+/* The organiser's contest list: a column head, rows, and a section label for past contests. */
+
+.rl-contest-list {
+  --rl-contest-columns: 224px 168px 1fr 140px;
+  color: var(--text);
+}
+
+.rl-contest-list__head {
+  display: grid;
+  grid-template-columns: var(--rl-contest-columns);
+  column-gap: var(--space-6);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  color: var(--text-muted);
+}
+
+.rl-contest-list__head > :last-child {
+  text-align: right;
+}
+
+.rl-contest-list__section {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 40px;
+  box-sizing: border-box;
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4) var(--space-2);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+}
+
+.rl-contest-list__section-label {
+  color: var(--text-muted);
+}
+
+.rl-contest-list__section-link {
+  color: var(--text);
+}
+
+.rl-contest-row {
+  display: grid;
+  grid-template-columns: var(--rl-contest-columns, 224px 168px 1fr 140px);
+  column-gap: var(--space-6);
+  align-items: baseline;
+  padding: 22px var(--space-4);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  color: var(--text);
+}
+
+/* The selected row (the one the detail panel shows) sits on the well. */
+.rl-contest-row[aria-current="true"] {
+  background: var(--well);
+}
+
+.rl-contest-row__name {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rl-contest-row__name:hover,
+.rl-contest-row__link:hover,
+.rl-contest-list__section-link:hover {
+  color: var(--text-muted);
+}
+
+.rl-contest-row__type {
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.rl-contest-row__stage-name {
+  font-weight: 600;
+}
+
+.rl-contest-row__stage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* 5 segments of 22 px with 3 px gaps (the segmented strip's default). */
+.rl-contest-row__stage .rl-strip {
+  flex: none;
+}
+
+.rl-contest-row__step {
+  flex: none;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.rl-contest-row__fact {
+  font-weight: 500;
+}
+
+.rl-contest-row__fact--muted {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.rl-contest-row__fact--muted strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Setup steps: 7 segments of 16 px with 3 px gaps. */
+.rl-contest-row__facts .rl-strip {
+  --rl-seg-width: 16px;
+  margin-top: var(--space-2);
+}
+
+.rl-contest-row__date {
+  text-align: right;
+}
+
+.rl-contest-row__date-label,
+.rl-contest-row__date-note {
+  color: var(--text-muted);
+}
+
+.rl-contest-row__date-value {
+  font-weight: 600;
+}
+
+.rl-contest-row__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 6px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rl-contest-row__link svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+/* ----------------------------------------------------------------- JudgeRow */
+/* The organiser's judge list. Each judge's strip is the row divider: no extra hairline. */
+
+.rl-judge-list {
+  color: var(--text);
+}
+
+.rl-judge-list__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+}
+
+.rl-judge-list__title {
+  margin: 0;
+}
+
+.rl-judge-list__count {
+  color: var(--text-muted);
+}
+
+.rl-judge-list__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-judge-row {
+  padding: 14px 0 6px;
+}
+
+.rl-judge-row__line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rl-judge-row__name {
+  font-weight: 500;
+}
+
+.rl-judge-row__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.rl-judge-row__status svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.rl-judge-row__progress {
+  color: var(--text-muted);
+}
+
+.rl-judge-row__progress strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.rl-judge-row .rl-strip {
+  margin-top: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- AwardMark */
+/* Intentional addition (no award design exists yet): a monoline award ribbon and the award's name.
+   No hue, no fill, no inversion. */
+
+.rl-award {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.rl-award__icon {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* Compact: the ribbon alone (14 px) beside a thumbnail's ID; the name stays for screen readers. */
+.rl-award--compact .rl-award__icon {
+  width: 14px;
+  height: 14px;
+}
+
+.rl-award--compact .rl-award__name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- Thumbnail */
+/* A photo in a well. Cover crops to fill; contain shows the whole photo so orientation stays visible. */
+
+.rl-thumb {
+  min-width: 0;
+  margin: 0;
+}
+
+.rl-thumb__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  overflow: hidden;
+  border-radius: var(--radius-none);
+  background: var(--well);
+}
+
+.rl-thumb__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-none);
+}
+
+.rl-thumb--cover .rl-thumb__img {
+  object-fit: cover;
+}
+
+.rl-thumb--contain .rl-thumb__img {
+  object-fit: contain;
+}
+
+/* The entrant's 64 px square well. */
+.rl-thumb--64 .rl-thumb__box {
+  width: 64px;
+  height: 64px;
+}
+
+.rl-thumb__id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+}
+
+/* The organiser's row of entries: six cells, 8 px apart. */
+.rl-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------ Contest head */
+/* The entrant's phone header (D-Entrant): back link, contest and organiser, deadline line, hairline. */
+
+.rl-contest-head {
+  padding: var(--space-2) var(--space-4) 14px var(--space-1);
+  border-bottom: var(--stroke-hairline) solid var(--line);
+  color: var(--text);
+}
+
+.rl-contest-head__top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.rl-contest-head__back {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  color: var(--text);
+}
+
+.rl-contest-head__back > svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.rl-contest-head__titles {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+/* h3 with the screen's -0.01em. */
+.rl-contest-head__title {
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.rl-contest-head__org {
+  color: var(--text-muted);
+}
+
+.rl-contest-head__deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0 var(--space-3);
+}
+
+.rl-contest-head__deadline > svg {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.rl-contest-head__deadline strong {
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------- EntryRow */
+/* The entrant's mobile row: 64 px well, title field, technical line in mono. */
+
+.rl-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text);
+}
+
+.rl-entry-row {
+  display: flex;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+  border-top: var(--stroke-hairline) solid var(--line);
+}
+
+.rl-entry-row > .rl-thumb {
+  flex: none;
+}
+
+.rl-entry-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The entrant's row is a phone layout: input-mobile size (16 px) on every pointer, as drawn. */
+.rl-entry-row .rl-field__input {
+  font-size: 16px;
+}
+
+.rl-entry-row .rl-field__error {
+  margin-top: var(--space-1);
+}
+
+.rl-entry-row__tech {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+}
+
+.rl-field--invalid + .rl-entry-row__tech,
+.rl-entry-row__problem .rl-entry-row__tech {
+  margin-top: 2px;
+}
+
+.rl-entry-row__slot {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.rl-entry-row__ok {
+  display: block;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: var(--text);
+}
+
+/* A file problem (too small): message and technical line on the left, Replace on the right. */
+.rl-entry-row__problem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.rl-entry-row__problem .rl-field__error {
+  margin-top: 0;
+}
+
+.rl-entry-row__problem .rl-btn {
+  flex: none;
+}
+
+/* Uploading: slot number, the strip, and the percentage. */
+.rl-entry-row__tech--upload {
+  gap: var(--space-2);
+  margin-top: 6px;
+}
+
+.rl-entry-row__tech--upload .rl-strip {
+  flex: 1;
+}
+
+.rl-entry-row__upload-label {
+  color: var(--text);
+}
