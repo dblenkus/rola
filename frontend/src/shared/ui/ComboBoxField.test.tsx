@@ -171,6 +171,61 @@ describe('combo box field', () => {
     expect(input).not.toHaveAttribute('aria-invalid');
   });
 
+  it('loads again when text is typed after a failure', async () => {
+    const loadOptions = vi
+      .fn<() => Promise<string[]>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(schools);
+    render(<Field loadOptions={loadOptions} />);
+    const user = userEvent.setup();
+    const input = screen.getByRole('combobox', { name: 'School' });
+    await user.click(input);
+    await screen.findByText('Could not load schools.');
+
+    await user.keyboard('vič');
+    expect(
+      await screen.findByRole('option', { name: 'Vič Grammar' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+    expect(loadOptions).toHaveBeenCalledTimes(2);
+    expect(
+      screen.queryByText('Could not load schools.'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('loads again when the focused field is clicked after a failure', async () => {
+    const loadOptions = vi
+      .fn<() => Promise<string[]>>()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(schools);
+    render(<Field loadOptions={loadOptions} />);
+    const user = userEvent.setup();
+    const input = screen.getByRole('combobox', { name: 'School' });
+    await user.click(input);
+    await screen.findByText('Could not load schools.');
+
+    await user.click(input);
+    expect(await screen.findAllByRole('option')).toHaveLength(3);
+    expect(input).toHaveFocus();
+    expect(loadOptions).toHaveBeenCalledTimes(2);
+  });
+
+  it('caps the height of a long list, which then scrolls', async () => {
+    const many = Array.from({ length: 40 }, (_, index) => `School ${index}`);
+    render(<Field loadOptions={() => Promise.resolve(many)} />);
+    await userEvent
+      .setup()
+      .click(screen.getByRole('combobox', { name: 'School' }));
+    const list = await screen.findByRole('listbox');
+    const popover = list.closest('.ui-combobox__popover');
+    if (!(popover instanceof HTMLElement)) {
+      throw new Error('The list is not in its popover');
+    }
+    // React Aria writes the popover's max-height inline, over the style
+    // sheet's; the cap must come through it.
+    await waitFor(() => expect(popover.style.maxHeight).toBe('320px'));
+  });
+
   it('describes an error and marks the field invalid', () => {
     render(<Field error="Please enter the school." />);
     const input = screen.getByRole('combobox', { name: 'School' });

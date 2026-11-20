@@ -9,3 +9,13 @@
 .ui-loading__label {
   color: var(--text-muted);
 }
+
+/* The mark has no file for the viewing surface and must not be recoloured,
+   so there only the word shows. */
+.rl-on-viewing .ui-loading .rl-logo {
+  display: none;
+}
+
+.rl-on-viewing .ui-loading__label {
+  color: var(--on-viewing-muted);
+}

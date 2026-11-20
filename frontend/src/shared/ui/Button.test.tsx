@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import Button, { ButtonBar, ButtonRow } from './Button';
@@ -220,6 +220,54 @@ describe('locked button', () => {
     expect(button).toHaveAttribute('aria-keyshortcuts', 'Enter');
     await userEvent.setup().click(button);
     expect(onPress).not.toHaveBeenCalled();
+  });
+});
+
+describe('lockable button', () => {
+  function Lockable() {
+    const [locked, setLocked] = useState(false);
+    return (
+      <>
+        <Button
+          locked={locked ? { reason: 'Not ready' } : null}
+          onPress={() => setLocked(true)}
+        >
+          Finish
+        </Button>
+        <button type="button" onClick={() => setLocked(false)}>
+          Unlock
+        </button>
+      </>
+    );
+  }
+
+  it('keeps focus when it becomes locked', async () => {
+    render(<Lockable />);
+    const button = screen.getByRole('button', { name: 'Finish' });
+    const user = userEvent.setup();
+    await user.tab();
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByRole('button', { name: 'Finish' })).toBe(button);
+    expect(button).toHaveFocus();
+    expect(button).toHaveClass('rl-btn--locked');
+    expect(button).toHaveAccessibleDescription('Not ready');
+    expect(screen.getByText('Not ready').parentElement).toHaveClass(
+      'rl-btn-row',
+    );
+  });
+
+  it('is the same element after it is unlocked, without a row', async () => {
+    render(<Lockable />);
+    const button = screen.getByRole('button', { name: 'Finish' });
+    const user = userEvent.setup();
+    await user.click(button);
+    await user.click(screen.getByRole('button', { name: 'Unlock' }));
+
+    expect(screen.getByRole('button', { name: 'Finish' })).toBe(button);
+    expect(button).not.toHaveClass('rl-btn--locked');
+    expect(screen.queryByText('Not ready')).not.toBeInTheDocument();
+    expect(button.closest('.rl-btn-row')).toBeNull();
   });
 });
 

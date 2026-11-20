@@ -14,8 +14,8 @@ interface PageProps {
   // 'standard': up to 1120 px; 'narrow': up to 400 px, for sign-in style
   // pages; 'full': the whole width inside the page margins.
   width?: 'standard' | 'narrow' | 'full';
-  // Content above the title, in the page column, such as the sign-in
-  // pages' logo. It brings its own space to the title.
+  // Content above the title, in the page column. It brings its own space
+  // to the title.
   before?: ReactNode;
   // Controls beside the title on wide screens and under it on phones.
   actions?: ReactNode;

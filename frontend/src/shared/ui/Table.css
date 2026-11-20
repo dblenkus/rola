@@ -1,7 +1,9 @@
+/* Figures line up down the columns (see app.css). */
 .ui-table {
   width: 100%;
   border-collapse: collapse;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .ui-table__cell {
@@ -17,9 +19,11 @@
   font-weight: 400;
 }
 
-/* A row's head (a name or title) keeps body-dense at 500. */
+/* A row's head (a name or title) keeps body-dense at 500, and running
+   text's normal figures and hyphens ("Dolgoimenska-Priimkovska"). */
 .ui-table__body th.ui-table__cell {
   font-weight: 500;
+  font-variant-numeric: normal;
 }
 
 .ui-table__cell--start {
@@ -62,10 +66,17 @@
     border-bottom: var(--stroke-hairline) solid var(--line);
   }
 
+  /* No side padding: the page margin sets the rows in, so labels and
+     values line up with the page's title. */
   .ui-table__body .ui-table__cell {
-    padding: var(--space-1) var(--space-4);
+    padding: var(--space-1) 0;
     border-bottom: 0;
     text-align: start;
+  }
+
+  /* An empty cell without a label would only add an empty line. */
+  .ui-table__body .ui-table__cell:empty:not([data-label]) {
+    display: none;
   }
 
   /* The label in mono-label (11 / 16, DM Mono), text-muted. The empty

@@ -38,6 +38,14 @@ export function formatDate(date: Date, language: DateLanguage): string {
   return [day, englishMonth.format(date), year].join(NBSP);
 }
 
+// The date and the time as Rola writes them, in the browser's time zone:
+// the date as formatDate writes it, a comma, and the 24-hour time without a
+// leading zero on the hour, "20. 11. 2026, 18:18" and "20 Nov 2026, 18:18".
+export function formatDateTime(date: Date, language: DateLanguage): string {
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${formatDate(date, language)},${NBSP}${date.getHours()}:${minutes}`;
+}
+
 // Whole calendar days from `now` to `date` in the browser's time zone: 0 on
 // the day itself, negative after it. Counting calendar dates rather than
 // 24-hour spans keeps daylight-saving days from shifting the count.

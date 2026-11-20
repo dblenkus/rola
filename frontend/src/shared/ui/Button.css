@@ -1,0 +1,31 @@
+/* A label keeps normal figures and punctuation (see app.css). */
+.rl-btn {
+  font-variant-numeric: normal;
+}
+
+/*
+ * An unavailable button (aria-disabled, the `inert` prop) stays focusable and
+ * keeps its outline, whose 3:1 boundary is the control's edge, but its label
+ * goes quiet: text-muted on paper (6.5:1), on-viewing-muted on the viewing
+ * surface (8.4:1). A primary button on paper keeps its label, because
+ * text-muted on its ink fill would fall below 4.5:1; on the viewing surface
+ * the primary is an outline, so it goes quiet too. Locked buttons have their
+ * own look.
+ */
+.rl-btn[aria-disabled='true']:not(.rl-btn--locked) {
+  cursor: default;
+}
+
+.rl-btn[aria-disabled='true']:not(.rl-btn--locked, .rl-btn--primary) {
+  color: var(--text-muted);
+}
+
+.rl-on-viewing .rl-btn[aria-disabled='true']:not(.rl-btn--locked) {
+  color: var(--on-viewing-muted);
+}
+
+/* An unlocked button that can be locked sits in a wrapper that keeps it the
+   same element when it locks; the wrapper itself is not laid out. */
+.ui-btn-lockable {
+  display: contents;
+}

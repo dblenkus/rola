@@ -28,6 +28,22 @@
   font-family: var(--font-sans);
 }
 
+/* iOS zooms the page when a control under 16 px takes focus; the design
+   system sets its inputs to 16 px on touch screens for the same reason. The
+   parent class outranks the select's `body` type class. */
+@media (pointer: coarse) {
+  .ui-pagination .ui-pagination__select {
+    font-size: 16px;
+  }
+}
+
+/* The shown rows ("1–10 od 33") and the page size keep their figures'
+   widths as they change (see app.css). */
+.ui-pagination__select,
+.ui-pagination__shown {
+  font-variant-numeric: tabular-nums;
+}
+
 .ui-pagination__steps {
   display: inline-flex;
   gap: var(--space-2);
@@ -41,11 +57,4 @@
 
 .ui-pagination__steps .rl-btn > svg {
   display: block;
-}
-
-/* An unavailable step keeps its outline and is announced as unavailable;
-   the muted chevron shows it too. */
-.ui-pagination__steps .rl-btn[aria-disabled='true'] {
-  color: var(--text-muted);
-  cursor: default;
 }

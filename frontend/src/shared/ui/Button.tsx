@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Link, type To } from 'react-router';
 import Icon, { type IconName } from './Icon';
+import './Button.css';
 
 type Variant = 'primary' | 'secondary' | 'quiet';
 type Size = 'default' | 'large' | 'dense' | 'small';
@@ -20,20 +21,22 @@ interface CommonProps {
   'aria-label'?: string;
   'aria-describedby'?: string;
   'aria-keyshortcuts'?: string;
-  autoFocus?: boolean;
 }
 
 interface ActionProps extends CommonProps {
   to?: never;
   type?: 'button' | 'submit';
+  autoFocus?: boolean;
   // Called on activation by pointer, touch, Enter or Space. React Aria's
   // Button also calls a plain onClick, but this component offers onPress
   // only, so every rendering behaves alike.
   onPress?: () => void;
   // An action that exists but is not available yet: drawn locked, with the
   // reason beside it. It stays focusable so the reason is read out, and
-  // ignores activation.
-  locked?: { reason: string };
+  // ignores activation. Null for a button that can be locked but is not:
+  // such a button stays the same element, and keeps focus, as it locks and
+  // unlocks, while one whose `locked` comes and goes is replaced.
+  locked?: { reason: string } | null;
   // Focusable and announced as unavailable, drawn as usual, and ignores
   // activation, such as Previous on the first photo.
   inert?: boolean;
@@ -49,6 +52,8 @@ interface LinkProps extends CommonProps {
   replace?: boolean;
   // The router location state the next page reads.
   state?: unknown;
+  // React focuses only form controls on mount, never a link.
+  autoFocus?: never;
 }
 
 export type ButtonProps = ActionProps | LinkProps;
@@ -124,11 +129,12 @@ function ActionButton({
   ...aria
 }: ActionProps) {
   const reasonId = useId();
-  const unavailable = locked !== undefined || inert;
+  const isLocked = locked !== undefined && locked !== null;
+  const unavailable = isLocked || inert;
   const shown = locked ? 'lock' : icon;
-  const descriptions = joinIds(locked && reasonId, describedBy);
+  const descriptions = joinIds(isLocked ? reasonId : undefined, describedBy);
   const shared = {
-    className: classes(variant, size, block, locked !== undefined),
+    className: classes(variant, size, block, isLocked),
     // An unavailable button must not submit its form.
     type: unavailable ? 'button' : type,
     ...(descriptions ? { 'aria-describedby': descriptions } : {}),
@@ -156,15 +162,19 @@ function ActionButton({
       </button>
     );
 
-  if (!locked) return button;
+  if (locked === undefined) return button;
+  // A lockable button keeps its wrapper, so the button is not remounted when
+  // it locks or unlocks. Unlocked, the wrapper takes no part in the layout.
   return (
-    <ButtonRow>
-      <span className="rl-btn-reason" id={reasonId}>
-        <Icon name="alert" />
-        {locked.reason}
-      </span>
+    <div className={locked === null ? 'ui-btn-lockable' : 'rl-btn-row'}>
+      {locked !== null && (
+        <span className="rl-btn-reason" id={reasonId}>
+          <Icon name="alert" />
+          {locked.reason}
+        </span>
+      )}
       {button}
-    </ButtonRow>
+    </div>
   );
 }
 
