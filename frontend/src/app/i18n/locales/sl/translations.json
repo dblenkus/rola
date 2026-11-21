@@ -214,5 +214,9 @@
   "judge_frame_scored": "Sličica {{number}}, ocena {{score}}",
   "judge_frame_unscored": "Sličica {{number}}, neocenjena",
   "admin_submissions": "Prijave",
-  "admin_submission": "Prijava"
+  "admin_submission": "Prijava",
+  "appearance_label": "Videz",
+  "appearance_system": "Sistemski",
+  "appearance_light": "Svetel",
+  "appearance_dark": "Temen"
 }

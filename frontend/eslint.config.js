@@ -105,6 +105,14 @@ export default defineConfig(
     },
   },
   {
+    // The classic scripts that index.html links, which run in the page.
+    files: ['public/**/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: { document: 'readonly', localStorage: 'readonly' },
+    },
+  },
+  {
     files: ['src/shared/**/*.{ts,tsx}'],
     plugins: { local },
     rules: {

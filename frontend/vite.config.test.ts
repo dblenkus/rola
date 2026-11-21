@@ -37,6 +37,21 @@ describe('the web app manifest', () => {
 
 describe('the appearance before the first paint', () => {
   const html = read('./index.html');
+  const script = '<script src="/appearance.js"></script>';
+
+  it('is set by a classic script in the head, before the app module', () => {
+    const head = /<head>([\s\S]*)<\/head>/.exec(html)?.[1] ?? '';
+    expect(head).toContain(script);
+    const entry = html.indexOf('<script type="module"');
+    expect(entry).toBeGreaterThan(-1);
+    expect(html.indexOf(script)).toBeLessThan(entry);
+  });
+
+  it('comes from a script that public/ holds', () => {
+    expect(existsSync(new URL('./public/appearance.js', import.meta.url))).toBe(
+      true,
+    );
+  });
 
   it('lets the browser draw its own controls in either scheme', () => {
     const meta = /<meta name="color-scheme" content="([^"]+)"/.exec(html);

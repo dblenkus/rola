@@ -7,10 +7,14 @@ import '../design/fonts.css';
 import '../design/app.css';
 import './i18n/config';
 import App from './App';
+import { startAppearance } from './appearance/appearanceSetting';
 import { registerServiceWorker } from './pwa/registerServiceWorker';
 import { sentryOptions } from './sentry';
 
 Sentry.init(sentryOptions);
+// public/appearance.js applied the stored choice before the first paint; this
+// applies it again and follows the other tabs.
+startAppearance();
 // Only the production build has a worker; the development server has none.
 if (import.meta.env.PROD) {
   registerServiceWorker();

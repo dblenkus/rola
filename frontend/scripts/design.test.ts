@@ -78,6 +78,16 @@ describe('the cascade layers', () => {
   });
 });
 
+describe('main.tsx', () => {
+  it('starts the appearance before it renders', () => {
+    const start = main.search(/^startAppearance\(\);$/m);
+    const render = main.indexOf('.render(<App />)');
+    expect(start).toBeGreaterThan(-1);
+    expect(render).toBeGreaterThan(-1);
+    expect(start).toBeLessThan(render);
+  });
+});
+
 /** The declarations of the rule whose selector is `selector`, at any indent. */
 function rule(css: string, selector: string): string | undefined {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
