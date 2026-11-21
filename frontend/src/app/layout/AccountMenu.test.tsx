@@ -1,11 +1,12 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiClient } from '../../shared/api/client';
 import { serveApi, signIn } from '../../test/api';
 import { open } from '../../test/app';
 import store from '../store';
 import { authorUpdate } from '../../features/upload/state/actions';
+import { startAppearance } from '../appearance/appearanceSetting';
 
 beforeEach(() => {
   localStorage.clear();
@@ -103,5 +104,88 @@ describe('signed in', () => {
     expect(
       screen.getAllByRole('menuitem').map((item) => item.textContent),
     ).toEqual(['Register', 'Login']);
+  });
+});
+
+describe('appearance', () => {
+  let stop = () => {};
+
+  beforeEach(() => {
+    document.documentElement.removeAttribute('data-theme');
+    stop = startAppearance();
+  });
+
+  afterEach(() => {
+    stop();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  const options = () =>
+    screen
+      .getAllByRole('menuitemradio')
+      .map((option) => [
+        option.textContent,
+        option.getAttribute('aria-checked'),
+      ]);
+
+  it.each([
+    ['signed out', () => {}],
+    ['signed in', () => signIn()],
+  ])('is offered %s, following the device at first', async (_, setUp) => {
+    setUp();
+    const user = userEvent.setup();
+    open('/contests');
+    await user.click(trigger());
+    expect(
+      screen.getByRole('group', { name: 'Appearance' }),
+    ).toBeInTheDocument();
+    expect(options()).toEqual([
+      ['System', 'true'],
+      ['Light', 'false'],
+      ['Dark', 'false'],
+    ]);
+  });
+
+  it('applies and remembers dark, and checks it the next time', async () => {
+    const user = userEvent.setup();
+    open('/contests');
+    await user.click(trigger());
+    await user.click(screen.getByRole('menuitemradio', { name: 'Dark' }));
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    expect(localStorage.getItem('rola.appearance')).toBe('dark');
+    await waitFor(() =>
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument(),
+    );
+    await user.click(trigger());
+    expect(options()).toEqual([
+      ['System', 'false'],
+      ['Light', 'false'],
+      ['Dark', 'true'],
+    ]);
+  });
+
+  it('checks the stored choice when the menu opens', async () => {
+    stop();
+    localStorage.setItem('rola.appearance', 'light');
+    stop = startAppearance();
+    const user = userEvent.setup();
+    open('/contests');
+    await user.click(trigger());
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Light' }),
+    ).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('follows the device again on system', async () => {
+    stop();
+    localStorage.setItem('rola.appearance', 'dark');
+    stop = startAppearance();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    const user = userEvent.setup();
+    open('/contests');
+    await user.click(trigger());
+    await user.click(screen.getByRole('menuitemradio', { name: 'System' }));
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
+    expect(localStorage.getItem('rola.appearance')).toBeNull();
   });
 });

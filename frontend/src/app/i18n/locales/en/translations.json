@@ -200,5 +200,9 @@
   "judge_frame_scored": "Frame {{number}}, score {{score}}",
   "judge_frame_unscored": "Frame {{number}}, unscored",
   "admin_submissions": "Submissions",
-  "admin_submission": "Submission"
+  "admin_submission": "Submission",
+  "appearance_label": "Appearance",
+  "appearance_system": "System",
+  "appearance_light": "Light",
+  "appearance_dark": "Dark"
 }
