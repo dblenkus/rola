@@ -5,22 +5,35 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { TOKENS_CSS, buildTokensCss } from './build-tokens.ts';
-import { parseTokens, renderTokensCss } from './tokens.ts';
+import { colorLiteral, parseTokens, renderTokensCss } from './tokens.ts';
 
 const FRONTEND = fileURLToPath(new URL('..', import.meta.url));
 
+const THEMES = [
+  { id: 'light', name: 'Light' },
+  { id: 'dark', name: 'Dark' },
+];
+
 const COLORS = [
-  { name: 'ink', value: '#111111', usage: 'Text.' },
-  { name: 'paper', value: '#FFFFFF' },
+  { name: 'ink', value: { light: '#111111', dark: '#EDEDED' }, usage: 'Text.' },
+  { name: 'paper', value: { light: '#FFFFFF', dark: '#111111' } },
+  { name: 'viewing', value: '#3A3A3A' },
   { name: 'text', value: '{ink}' },
   { name: 'focus', value: '{text}' },
 ];
+
+const COLOR_NAMES = ['ink', 'paper', 'viewing', 'text', 'focus'];
+
+const LIGHT_SELECTOR = ':root, [data-theme="light"]';
+const DARK_SELECTOR = '[data-theme="dark"]';
+const MEDIA = '@media (prefers-color-scheme: dark)';
+const SYSTEM_DARK_SELECTOR = ':root:not([data-theme])';
 
 function fixture(): Record<string, unknown> {
   return {
     name: 'Fixture',
     version: 1,
-    color: { themes: [{ id: 'light', name: 'Light' }], tokens: COLORS },
+    color: { themes: THEMES, tokens: COLORS },
     type: {
       fonts: [],
       families: { sans: 'Inter, sans-serif', mono: '"DM Mono", monospace' },
@@ -78,13 +91,26 @@ function rootBlock(css: string): string {
   return /:root \{\n([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
 }
 
+function escape(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** The body of the rule for `selector`, at any indentation. */
+function ruleBlock(css: string, selector: string): string {
+  const match = new RegExp(
+    `^( *)${escape(selector)} \\{\\n([\\s\\S]*?)\\n\\1\\}`,
+    'm',
+  ).exec(css);
+  return match?.[2] ?? '';
+}
+
 function classBlock(css: string, name: string): string | undefined {
   return new RegExp(`^\\.${name} \\{\\n([\\s\\S]*?)\\n\\}`, 'm').exec(css)?.[1];
 }
 
 function withColors(colors: unknown[]): Record<string, unknown> {
   const raw = fixture();
-  raw.color = { themes: [{ id: 'light', name: 'Light' }], tokens: colors };
+  raw.color = { themes: THEMES, tokens: colors };
   return raw;
 }
 
@@ -98,18 +124,64 @@ describe('renderTokensCss', () => {
     );
   });
 
-  it('declares the light colour scheme on :root', () => {
-    expect(root).toContain('  color-scheme: light;');
+  const light = ruleBlock(css, LIGHT_SELECTOR);
+  const dark = ruleBlock(css, DARK_SELECTOR);
+  const systemDark = ruleBlock(css, SYSTEM_DARK_SELECTOR);
+
+  it('renders the colours as the light, dark and system-dark blocks, in that order', () => {
+    const starts = [
+      `\n${LIGHT_SELECTOR} {\n`,
+      `\n${DARK_SELECTOR} {\n`,
+      `\n${MEDIA} {\n  ${SYSTEM_DARK_SELECTOR} {\n`,
+      '\n:root {\n',
+    ].map((start) => css.indexOf(start));
+    expect(starts.every((start) => start > 0)).toBe(true);
+    expect([...starts].sort((a, b) => a - b)).toEqual(starts);
   });
 
-  it('renders literal colours as they are', () => {
-    expect(root).toContain('  --ink: #111111;');
-    expect(root).toContain('  --paper: #FFFFFF;');
+  it('declares the colour scheme of each block', () => {
+    expect(light).toMatch(/^ {2}color-scheme: light;$/m);
+    expect(dark).toMatch(/^ {2}color-scheme: dark;$/m);
+    expect(systemDark).toMatch(/^ {4}color-scheme: dark;$/m);
   });
 
-  it('renders colour aliases, including aliases of aliases, as var()', () => {
-    expect(root).toContain('  --text: var(--ink);');
-    expect(root).toContain('  --focus: var(--text);');
+  it('declares every colour and alias in every block', () => {
+    for (const block of [light, dark, systemDark]) {
+      const declared = Array.from(
+        block.matchAll(/^ +--([\w-]+):/gm),
+        (match) => match[1],
+      );
+      expect(declared).toEqual(COLOR_NAMES);
+    }
+  });
+
+  it("renders each theme's literal colours in its blocks", () => {
+    expect(light).toContain('  --ink: #111111;');
+    expect(light).toContain('  --paper: #FFFFFF;');
+    for (const block of [dark, systemDark]) {
+      expect(block).toContain('  --ink: #EDEDED;');
+      expect(block).toContain('  --paper: #111111;');
+    }
+  });
+
+  it('applies a plain hex value to both themes', () => {
+    for (const block of [light, dark, systemDark]) {
+      expect(block).toContain('  --viewing: #3A3A3A;');
+    }
+  });
+
+  it('renders colour aliases, including aliases of aliases, as var() in every block', () => {
+    for (const block of [light, dark, systemDark]) {
+      expect(block).toContain('  --text: var(--ink);');
+      expect(block).toContain('  --focus: var(--text);');
+    }
+  });
+
+  it('puts no colour and no colour scheme in the plain :root block', () => {
+    expect(root).not.toContain('color-scheme');
+    for (const name of COLOR_NAMES) {
+      expect(root).not.toContain(`--${name}:`);
+    }
   });
 
   it('renders every {"tokens": [...]} section', () => {
@@ -178,15 +250,71 @@ describe('parseTokens failures', () => {
     );
   });
 
-  it('rejects a themed colour value', () => {
+  it('rejects a themed value without a dark value', () => {
+    expect(() =>
+      parseTokens(
+        withColors([...COLORS, { name: 'line', value: { light: '#DDDDDD' } }]),
+      ),
+    ).toThrow("colour 'line' has no dark value");
+  });
+
+  it('rejects a themed value for an unknown theme', () => {
     expect(() =>
       parseTokens(
         withColors([
           ...COLORS,
-          { name: 'line', value: { light: '#DDDDDD', dark: '#333333' } },
+          {
+            name: 'line',
+            value: { light: '#DDDDDD', dark: '#303030', dim: '#222222' },
+          },
         ]),
       ),
-    ).toThrow("token 'line' value must be a non-empty string");
+    ).toThrow("colour 'line' has unknown theme 'dim'");
+  });
+
+  it('rejects a themed value that is not a hex colour', () => {
+    expect(() =>
+      parseTokens(
+        withColors([
+          ...COLORS,
+          { name: 'line', value: { light: '#DDDDDD', dark: 'rgb(0 0 0)' } },
+        ]),
+      ),
+    ).toThrow("colour 'line' dark value 'rgb(0 0 0)' is not a hex colour");
+  });
+
+  it('rejects a themed value that is not a string', () => {
+    expect(() =>
+      parseTokens(
+        withColors([
+          ...COLORS,
+          { name: 'line', value: { light: '#DDDDDD', dark: 3 } },
+        ]),
+      ),
+    ).toThrow("colour 'line' dark value must be a string");
+  });
+
+  it('rejects an alias inside a themed value', () => {
+    expect(() =>
+      parseTokens(
+        withColors([
+          ...COLORS,
+          { name: 'line', value: { light: '{ink}', dark: '#303030' } },
+        ]),
+      ),
+    ).toThrow(
+      "colour 'line' light value '{ink}' is an alias; an alias is never themed",
+    );
+  });
+
+  it('rejects a colour value that is neither a string nor an object', () => {
+    expect(() =>
+      parseTokens(
+        withColors([...COLORS, { name: 'line', value: ['#DDDDDD'] }]),
+      ),
+    ).toThrow(
+      "colour 'line' value must be a hex colour, an alias or an object of light, dark hex colours",
+    );
   });
 
   it('rejects an alias cycle', () => {
@@ -200,17 +328,21 @@ describe('parseTokens failures', () => {
     ).toThrow("colour 'a' has an alias cycle: a -> b -> a");
   });
 
-  it('rejects a second theme', () => {
-    const raw = fixture();
-    raw.color = {
-      themes: [
-        { id: 'light', name: 'Light' },
+  it.each([
+    [[{ id: 'light', name: 'Light' }], 'light'],
+    [
+      [
         { id: 'dark', name: 'Dark' },
+        { id: 'light', name: 'Light' },
       ],
-      tokens: COLORS,
-    };
+      'dark, light',
+    ],
+    [[...THEMES, { id: 'dim', name: 'Dim' }], 'light, dark, dim'],
+  ])('rejects the themes %j', (themes, got) => {
+    const raw = fixture();
+    raw.color = { themes, tokens: COLORS };
     expect(() => parseTokens(raw)).toThrow(
-      'color.themes must be exactly light, got light, dark',
+      `color.themes must be exactly light, dark, got ${got}`,
     );
   });
 
@@ -327,6 +459,27 @@ describe('parseTokens failures', () => {
     };
     expect(() => parseTokens(raw)).toThrow(
       "type style 'body' fontSize 'large' is not a px, em or rem length",
+    );
+  });
+});
+
+describe('colorLiteral', () => {
+  const tokens = parseTokens(fixture());
+
+  it("gives a colour's literal in each theme", () => {
+    expect(colorLiteral(tokens, 'ink', 'light')).toBe('#111111');
+    expect(colorLiteral(tokens, 'ink', 'dark')).toBe('#EDEDED');
+    expect(colorLiteral(tokens, 'viewing', 'dark')).toBe('#3A3A3A');
+  });
+
+  it("follows aliases to the theme's literal", () => {
+    expect(colorLiteral(tokens, 'focus', 'light')).toBe('#111111');
+    expect(colorLiteral(tokens, 'focus', 'dark')).toBe('#EDEDED');
+  });
+
+  it('rejects an unknown colour', () => {
+    expect(() => colorLiteral(tokens, 'grey-200', 'light')).toThrow(
+      "unknown colour 'grey-200'",
     );
   });
 });

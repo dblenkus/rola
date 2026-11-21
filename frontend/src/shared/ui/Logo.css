@@ -1,0 +1,14 @@
+/*
+ * Which file shows on the page's ground. --ui-logo-ink and
+ * --ui-logo-reversed (app.css) follow the theme, and inherit, so a subtree
+ * pinned with data-theme="light" shows the ink file. The hidden file has
+ * display: none, which also takes it out of the accessibility tree.
+ * Unlayered, so these beat the design system's .rl-logo { display: block }.
+ */
+.ui-logo--ink {
+  display: var(--ui-logo-ink);
+}
+
+.ui-logo--reversed {
+  display: var(--ui-logo-reversed);
+}
