@@ -242,7 +242,7 @@ Deployment changes
   host, as "Cloudflare Tunnel" in ``docs/deployment.rst`` describes.
 * Gunicorn serves the backend instead of Daphne. Redis, Channels, the backup
   worker and the backup feature are removed.
-* The images run PostgreSQL 18.6 (from 12), Python 3.14.10, Node.js 26.13.0
+* The images run PostgreSQL 18.6 (from 12), Python 3.14.10, Node.js 26.13.1
   for the build, and nginx 1.30.6. Both application containers run as
   non-root users.
 * nginx listens on port 8080, published on ``127.0.0.1`` only, and serves the
