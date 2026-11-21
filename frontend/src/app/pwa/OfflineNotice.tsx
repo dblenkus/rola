@@ -21,13 +21,18 @@ function isOnline(): boolean {
 /**
  * A band under the app bar while the browser is offline. The app shell still
  * loads from the service worker, but nothing it shows is cached. The live
- * region is always rendered, so screen readers announce the band.
+ * region is always rendered, so screen readers announce the band. `theme`
+ * pins a theme on the band, whatever the page's theme.
  */
-export default function OfflineNotice() {
+export default function OfflineNotice({
+  theme,
+}: {
+  theme?: 'light' | undefined;
+}) {
   const { t } = useTranslation();
   const online = useSyncExternalStore(subscribe, isOnline);
   return (
-    <div role="status">
+    <div role="status" data-theme={theme}>
       {!online && (
         <p className="pwa-offline small">
           <Icon name="alert" className="pwa-offline__icon" />

@@ -47,6 +47,43 @@ it('shows the photograph with its id, position and title', async () => {
   expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
 });
 
+// The view keeps the light theme's values on its viewing surface whatever the
+// page's theme, while it loads and once it has loaded.
+it('pins the light theme on the view while it loads', () => {
+  serveJudging({ submissions: twoSubmissions });
+  renderRater(store);
+
+  const views = document.querySelectorAll('.rl-on-viewing');
+  expect(views).toHaveLength(1);
+  expect(views[0]).toHaveClass('judge-view--status');
+  expect(views[0]).toHaveAttribute('data-theme', 'light');
+});
+
+it('pins the light theme on the status view of an empty theme', async () => {
+  serveJudging({ submissions: [] });
+  renderRater(store);
+
+  const empty = await screen.findByText(
+    'This theme has no photographs to judge.',
+  );
+  expect(empty.closest('.rl-on-viewing')).toHaveAttribute(
+    'data-theme',
+    'light',
+  );
+});
+
+it('pins the light theme on the loaded view', async () => {
+  serveJudging({ submissions: twoSubmissions });
+  renderRater(store);
+  expect(await screen.findByRole('img', { name: 'First' })).toBeVisible();
+
+  const views = document.querySelectorAll('.rl-on-viewing');
+  expect(views).toHaveLength(1);
+  expect(views[0]).not.toHaveClass('judge-view--status');
+  expect(views[0]).toHaveAttribute('data-theme', 'light');
+  expect(views[0]).toContainElement(photoScore());
+});
+
 it('shows the position of the photograph after moving on', async () => {
   serveJudging({ submissions: twoSubmissions });
   const user = userEvent.setup();

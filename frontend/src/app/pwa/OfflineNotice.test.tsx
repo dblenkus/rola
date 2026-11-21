@@ -39,3 +39,19 @@ it('shows the notice when the page loads offline', () => {
 
   expect(screen.getByRole('status')).toHaveTextContent('You are offline.');
 });
+
+it('carries a pinned theme on the band', () => {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+  render(<OfflineNotice theme="light" />);
+
+  expect(screen.getByRole('status')).toHaveAttribute('data-theme', 'light');
+});
+
+it('takes the page theme when none is pinned', () => {
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+  render(<OfflineNotice />);
+
+  expect(screen.getByRole('status')).not.toHaveAttribute('data-theme');
+});
