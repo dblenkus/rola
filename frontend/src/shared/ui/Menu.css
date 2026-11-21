@@ -3,15 +3,21 @@
 .ui-menu__popover {
   box-sizing: border-box;
   min-width: max(var(--trigger-width), 12rem);
+  /* Grows to fit the choice's row, but keeps the page's gutters; a row
+     wider than that wraps its options under the label. */
+  max-width: calc(100vw - 2 * var(--space-4));
   border: var(--stroke-hairline) solid var(--control-line);
   border-radius: var(--radius-control);
   background: var(--paper);
   color: var(--text);
 }
 
+/* The list itself holds the focus when the menu is opened with a pointer;
+   the open panel shows that, and a ring is drawn only on an item. */
 .ui-menu {
   margin: 0;
   padding: var(--space-1) 0;
+  outline: none;
 }
 
 .ui-menu__item {
@@ -35,4 +41,84 @@
 /* The ring is drawn inside the item so the popover does not clip it. */
 .ui-menu__item:focus-visible {
   outline-offset: calc(-1 * var(--focus-width));
+}
+
+/* The single-choice group, below a hairline when items come before it. */
+.ui-menu__item + .ui-menu__choice {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: var(--stroke-hairline) solid var(--line);
+}
+
+.ui-menu__header {
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+}
+
+/* The label and the options share one row. The section's padding and the
+   options' add up to the items' 16 px inset, so the label's text and the
+   first option's line up with the items' text, also when the options wrap
+   to a second line. The label sits on the options' baseline. */
+.ui-menu__choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  padding: 0 var(--space-2);
+}
+
+/* Each option is a tap target of at least 44 by 44 px. */
+.ui-menu__option {
+  justify-content: center;
+  min-width: var(--touch-target);
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* The selected option is marked as the app bar's selected language is: in
+   the text colour, by weight and an underline. */
+.ui-menu__option[data-selected] {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Icon options form one control at the row's end, the label at its start,
+   centred against the icons. The last option reaches the popover's edge, as
+   the items' fill does, which puts its icon in line with the items' text. */
+.ui-menu__choice--icons {
+  align-items: center;
+  padding-right: 0;
+}
+
+.ui-menu__choice--icons .ui-menu__header {
+  margin-right: auto;
+}
+
+.ui-menu__option--icon {
+  align-items: stretch;
+  width: var(--touch-target);
+  padding: 0;
+}
+
+/* Fills the option, so its tooltip shows anywhere on it. */
+.ui-menu__icon {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The selected icon is marked as the current tab is: in the text colour,
+   with a bar beneath it as wide as the 16 px icon. */
+.ui-menu__option--icon[data-selected] .ui-menu__icon::after {
+  position: absolute;
+  bottom: 7px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 2px;
+  background: var(--text);
+  content: '';
 }

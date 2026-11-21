@@ -115,6 +115,38 @@ const glyphs = {
     size: 16,
     shape: <path d="M4 4l8 8M12 4l-8 8" />,
   },
+  // App additions, not drawn by the design system: the appearance's
+  // following the device, light and dark, on the 16 px grid.
+  monitor: {
+    grid: 16,
+    stroke: 1.5,
+    size: 16,
+    shape: (
+      <>
+        <rect x="2" y="2.5" width="12" height="8.25" rx="1" />
+        <path d="M8 10.75v2.75M5 14h6" />
+      </>
+    ),
+  },
+  sun: {
+    grid: 16,
+    stroke: 1.5,
+    size: 16,
+    shape: (
+      <>
+        <circle cx="8" cy="8" r="2.5" />
+        <path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15M3 3l1.75 1.75M11.25 11.25L13 13M3 13l1.75-1.75M11.25 4.75L13 3" />
+      </>
+    ),
+  },
+  // The crescent is one closed outline; its tips are mitred, so the circles
+  // sit off the grid's centre to keep the tips inside it.
+  moon: {
+    grid: 16,
+    stroke: 1.5,
+    size: 16,
+    shape: <path d="M13.5 9.25A6 6 0 1 1 6.5 2.25 5 5 0 0 0 13.5 9.25z" />,
+  },
 } satisfies Record<string, Glyph>;
 
 export type IconName = keyof typeof glyphs;
