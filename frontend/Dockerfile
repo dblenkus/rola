@@ -1,4 +1,4 @@
-FROM node:26.13.0-alpine3.24 AS dependencies
+FROM node:26.13.1-alpine3.24 AS dependencies
 WORKDIR /app
 RUN chown node:node /app
 USER node
