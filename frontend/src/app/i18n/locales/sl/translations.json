@@ -109,6 +109,7 @@
   "upload": "Naloži",
   "upload_already_received": "Fotografije so bile prejete že ob prejšnjem poskusu. Prijavo preveri pod »$t(edit_submissions)«.",
   "upload_contest_closed": "Natečaj je zaprt. Tvoje fotografije niso bile oddane.",
+  "upload_default_confirmation": "Tvoje fotografije so oddane.",
   "upload_failed": "Nalaganje ni uspelo. Poskusi znova.",
   "upload_photos": "Naloži fotografije",
   "upload_succeeded": "Tvoje fotografije za natečaj {{contest}} so naložene.",

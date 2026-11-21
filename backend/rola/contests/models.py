@@ -105,10 +105,10 @@ class Contest(BaseModel):
     header_image = models.ImageField(null=True, blank=True)
 
     #: notice in HTML form
-    notice_html = models.TextField(default="")
+    notice_html = models.TextField(default="", blank=True)
 
     #: confirmation in HTML form
-    confirmation_html = models.TextField(default="")
+    confirmation_html = models.TextField(default="", blank=True)
 
     confirmation_email = models.ForeignKey(
         "accounts.Email", null=True, blank=True, on_delete=models.SET_NULL

@@ -125,3 +125,15 @@ def test_contest_change_form_saves_a_visible_or_optional_field(
     contest.refresh_from_db()
     assert getattr(contest, f"{field}_visible") is visible
     assert getattr(contest, f"{field}_required") is required
+
+
+def test_contest_change_form_saves_an_empty_notice_and_confirmation(world):
+    contest = world.contest
+    data = {**change_form_data(world), "notice_html": "", "confirmation_html": ""}
+
+    response = admin_browser(world).post(change_url(contest), data)
+
+    assert response.status_code == 302
+    contest.refresh_from_db()
+    assert contest.notice_html == ""
+    assert contest.confirmation_html == ""

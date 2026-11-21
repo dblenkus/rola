@@ -56,3 +56,35 @@ it('thanks the entrant and links back to the contests', async () => {
     screen.getByRole('link', { name: 'Back to contests' }),
   ).toHaveAttribute('href', '/contests');
 });
+
+const defaultConfirmation = 'Your photographs have been submitted.';
+
+it.each([
+  ['an empty', ''],
+  ['a whitespace-only', ' \n\t '],
+])(
+  'shows the default confirmation text for %s contest confirmation',
+  async (_, confirmationHtml) => {
+    serveApi({
+      'GET /contests/1': () => ({
+        ...contest,
+        confirmation_html: confirmationHtml,
+      }),
+    });
+    open('/contest/1/confirm');
+    expect(await screen.findByText(defaultConfirmation)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Thank you for uploading photos!',
+      }),
+    ).toBeInTheDocument();
+  },
+);
+
+it('shows the contest confirmation text instead of the default one', async () => {
+  serveApi({ 'GET /contests/1': () => contest });
+  open('/contest/1/confirm');
+  expect(await screen.findByText('Submission received')).toBeInTheDocument();
+  expect(screen.queryByText(defaultConfirmation)).not.toBeInTheDocument();
+});
