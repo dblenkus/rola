@@ -7,7 +7,6 @@ from rola.judging.api.views import (
     JudgingSubmissionViewSet,
     RatingViewSet,
     SubmissionResultsViewSet,
-    ThemeResultsViewSet,
 )
 
 
@@ -20,7 +19,6 @@ def register(router: BaseRouter) -> None:
         "judging/submissions", JudgingSubmissionViewSet, basename="judging-submission"
     )
     router.register("judging/ratings", RatingViewSet, basename="judging-rating")
-    router.register("results/themes", ThemeResultsViewSet, basename="results-theme")
     router.register(
         "results/submissions", SubmissionResultsViewSet, basename="results-submission"
     )

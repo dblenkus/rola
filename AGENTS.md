@@ -15,8 +15,8 @@ configuration:
 - `config/`: settings (`settings.py`, `test_settings.py`, `environment.py`),
   `urls.py`, `wsgi.py`. Not an app.
 - `common/`: `BaseModel`, `BaseSerializer`, the shared permissions, the id
-  and ordering filters (`filters.py`, with the id range in `ids.py`),
-  pagination, and the `readinesscheck` command.
+  filters (`filters.py`, with the id range in `ids.py`), pagination, and the
+  `readinesscheck` command.
 - `accounts/`: users, login tokens, registration, activation, password
   resets and account emails; the password change that the password reset
   and the admin share (`services.py`); the admin site (`sites.py`) and its

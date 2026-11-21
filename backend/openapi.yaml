@@ -424,14 +424,8 @@ paths:
   /api/v1/results/submissions:
     get:
       operationId: results_submissions_list
-      description: List and retrieve accepted, paid submissions after publication.
+      description: List and retrieve the paid submissions of published theme results.
       parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
       - name: page
         required: false
         in: query
@@ -463,7 +457,7 @@ paths:
   /api/v1/results/submissions/{id}:
     get:
       operationId: results_submissions_retrieve
-      description: List and retrieve accepted, paid submissions after publication.
+      description: List and retrieve the paid submissions of published theme results.
       parameters:
       - in: path
         name: id
@@ -482,29 +476,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmissionResults'
-          description: ''
-  /api/v1/results/themes/{id}:
-    get:
-      operationId: results_themes_retrieve
-      description: Retrieve published results for a theme.
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this theme.
-        required: true
-      tags:
-      - results
-      security:
-      - tokenAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ThemeResults'
           description: ''
   /api/v1/submission-sets:
     get:
@@ -1498,7 +1469,7 @@ components:
       - theme
     SubmissionResults:
       type: object
-      description: Serialize published submission results and awards.
+      description: Serialize a published submission, its acceptance and its awards.
       properties:
         id:
           type: integer
@@ -1528,15 +1499,16 @@ components:
             $ref: '#/components/schemas/File'
           nullable: true
           readOnly: true
+          description: The photographs, or null unless accepted.
         accepted:
           type: boolean
-          description: Report whether the submission reached the acceptance threshold.
+          description: Whether the total of the ratings reaches the theme's threshold.
           readOnly: true
         score:
           type: integer
           readOnly: true
           nullable: true
-          description: The total of the submission's ratings, or null without any.
+          description: The total of the ratings, or null unless accepted.
         reward_kind:
           type: string
           nullable: true
@@ -1639,104 +1611,6 @@ components:
       - modified
       - submission_count
       - title
-    ThemeResults:
-      type: object
-      description: Serializer for Theme results.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        created:
-          type: string
-          format: date-time
-          readOnly: true
-        modified:
-          type: string
-          format: date-time
-          readOnly: true
-        title:
-          type: string
-          maxLength: 100
-        is_series:
-          type: boolean
-        max_photos:
-          type: integer
-          maximum: 2147483647
-          minimum: -2147483648
-          title: Number of photos
-        submission_count:
-          type: integer
-          description: Count the paid submissions in this theme.
-          readOnly: true
-        submissions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ThemeSubmissionResults'
-          readOnly: true
-      required:
-      - created
-      - id
-      - max_photos
-      - modified
-      - submission_count
-      - submissions
-      - title
-    ThemeSubmissionResults:
-      type: object
-      description: Serialize a submission in published theme results, without its
-        score.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        created:
-          type: string
-          format: date-time
-          readOnly: true
-        modified:
-          type: string
-          format: date-time
-          readOnly: true
-        author:
-          $ref: '#/components/schemas/AuthorResults'
-        theme:
-          type: integer
-        title:
-          type: string
-          nullable: true
-          maxLength: 100
-        description:
-          type: string
-          nullable: true
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/File'
-          nullable: true
-          readOnly: true
-        accepted:
-          type: boolean
-          description: Report whether the submission reached the acceptance threshold.
-          readOnly: true
-        reward_kind:
-          type: string
-          nullable: true
-          description: Return the human-readable award kind when present.
-          readOnly: true
-        reward_label:
-          type: string
-          readOnly: true
-          nullable: true
-      required:
-      - accepted
-      - author
-      - created
-      - files
-      - id
-      - modified
-      - reward_kind
-      - reward_label
-      - theme
     Token:
       type: object
       description: Represent a newly issued token and its expiration.

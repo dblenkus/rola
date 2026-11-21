@@ -266,7 +266,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List and retrieve accepted, paid submissions after publication. */
+        /** @description List and retrieve the paid submissions of published theme results. */
         get: operations["results_submissions_list"];
         put?: never;
         post?: never;
@@ -283,25 +283,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List and retrieve accepted, paid submissions after publication. */
+        /** @description List and retrieve the paid submissions of published theme results. */
         get: operations["results_submissions_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/results/themes/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Retrieve published results for a theme. */
-        get: operations["results_themes_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -792,7 +775,7 @@ export interface components {
             description?: string | null;
             files: number[];
         };
-        /** @description Serialize published submission results and awards. */
+        /** @description Serialize a published submission, its acceptance and its awards. */
         SubmissionResults: {
             readonly id: number;
             /** Format: date-time */
@@ -803,10 +786,11 @@ export interface components {
             theme: number;
             title?: string | null;
             description?: string | null;
+            /** @description The photographs, or null unless accepted. */
             readonly files: components["schemas"]["File"][] | null;
-            /** @description Report whether the submission reached the acceptance threshold. */
+            /** @description Whether the total of the ratings reaches the theme's threshold. */
             readonly accepted: boolean;
-            /** @description The total of the submission's ratings, or null without any. */
+            /** @description The total of the ratings, or null unless accepted. */
             readonly score: number | null;
             /** @description Return the human-readable award kind when present. */
             readonly reward_kind: string | null;
@@ -842,39 +826,6 @@ export interface components {
             max_photos: number;
             /** @description Count submissions in this theme. */
             readonly submission_count: number;
-        };
-        /** @description Serializer for Theme results. */
-        ThemeResults: {
-            readonly id: number;
-            /** Format: date-time */
-            readonly created: string;
-            /** Format: date-time */
-            readonly modified: string;
-            title: string;
-            is_series?: boolean;
-            /** Number of photos */
-            max_photos: number;
-            /** @description Count the paid submissions in this theme. */
-            readonly submission_count: number;
-            readonly submissions: components["schemas"]["ThemeSubmissionResults"][];
-        };
-        /** @description Serialize a submission in published theme results, without its score. */
-        ThemeSubmissionResults: {
-            readonly id: number;
-            /** Format: date-time */
-            readonly created: string;
-            /** Format: date-time */
-            readonly modified: string;
-            author: components["schemas"]["AuthorResults"];
-            theme: number;
-            title?: string | null;
-            description?: string | null;
-            readonly files: components["schemas"]["File"][] | null;
-            /** @description Report whether the submission reached the acceptance threshold. */
-            readonly accepted: boolean;
-            /** @description Return the human-readable award kind when present. */
-            readonly reward_kind: string | null;
-            readonly reward_label: string | null;
         };
         /** @description Represent a newly issued token and its expiration. */
         Token: {
@@ -1286,8 +1237,6 @@ export interface operations {
     results_submissions_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
@@ -1328,28 +1277,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmissionResults"];
-                };
-            };
-        };
-    };
-    results_themes_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this theme. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ThemeResults"];
                 };
             };
         };

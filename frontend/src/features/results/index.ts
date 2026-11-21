@@ -1,1 +1,1 @@
-export { getResultsOverview } from './api';
+export { getResultsByTheme } from './api';

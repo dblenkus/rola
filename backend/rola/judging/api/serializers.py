@@ -105,11 +105,18 @@ class AuthorResultsSerializer(serializers.ModelSerializer):
 
 
 class SubmissionResultsSerializer(CoreSubmissionSerializer):
-    """Serialize published submission results and awards."""
+    """Serialize a published submission, its acceptance and its awards."""
 
+    # The results queryset annotates ``score``, null unless accepted. An
+    # accepted entry always has a total, so a score is what marks it.
     author = AuthorResultsSerializer()
-    files = serializers.SerializerMethodField("get_files")
-    accepted = serializers.SerializerMethodField("get_accepted")
+    files = serializers.SerializerMethodField(
+        "get_files", help_text="The photographs, or null unless accepted."
+    )
+    accepted = serializers.SerializerMethodField(
+        "get_accepted",
+        help_text="Whether the total of the ratings reaches the theme's threshold.",
+    )
     reward_kind = serializers.SerializerMethodField("get_reward_kind")
     reward_label = serializers.CharField(
         source="reward.label", read_only=True, allow_null=True
@@ -117,7 +124,7 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
     score = serializers.IntegerField(
         read_only=True,
         allow_null=True,
-        help_text="The total of the submission's ratings, or null without any.",
+        help_text="The total of the ratings, or null unless accepted.",
     )
 
     class Meta(CoreSubmissionSerializer.Meta):
@@ -130,32 +137,17 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
             "reward_label",
         ]
 
-    def _is_accepted(self, submission):
-        if submission.score is None:
-            return False
-
-        if "accept_threshold" in self.context:
-            return submission.score >= self.context["accept_threshold"]
-
-        return submission.score >= submission.theme.results.accepted_threshold
-
     def get_accepted(self, submission) -> bool:
-        """Report whether the submission reached the acceptance threshold."""
-        return self._is_accepted(submission)
+        """Return whether the submission is accepted, that is, has a score."""
+        return submission.score is not None
 
     @extend_schema_field(FileSerializer(many=True, allow_null=True))
     def get_files(self, submission):
         """Expose files only for accepted submissions."""
-        if not self._is_accepted(submission):
+        if not self.get_accepted(submission):
             return None
 
-        return FileSerializer(
-            submission.files,
-            many=True,
-            context={
-                "request": self.context["request"],
-            },
-        ).data
+        return FileSerializer(submission.files, many=True, context=self.context).data
 
     def get_reward_kind(self, submission) -> str | None:
         """Return the human-readable award kind when present."""
@@ -167,58 +159,10 @@ class SubmissionResultsSerializer(CoreSubmissionSerializer):
     def to_representation(self, submission):
         """Publish the author's school and club only if the contest shows them."""
         data = super().to_representation(submission)
-        if "contest" in self.context:
-            contest = self.context["contest"]
-        else:
-            contest = submission.theme.contest
+        contest = submission.theme.contest
         if not contest.school_visible:
             data["author"]["school"] = None
         if not contest.club_visible:
             data["author"]["club"] = None
 
         return data
-
-
-class ThemeSubmissionResultsSerializer(SubmissionResultsSerializer):
-    """Serialize a submission in published theme results, without its score."""
-
-    class Meta(SubmissionResultsSerializer.Meta):
-        """Serializer configuration."""
-
-        fields = [
-            field
-            for field in SubmissionResultsSerializer.Meta.fields
-            if field != "score"
-        ]
-
-
-class ThemeResultsSerializer(CoreThemeSerializer):
-    """Serializer for Theme results."""
-
-    submissions = serializers.SerializerMethodField("get_submissions")
-
-    class Meta(CoreThemeSerializer.Meta):
-        """Serializer configuration."""
-
-        fields = CoreThemeSerializer.Meta.fields + [
-            "submissions",
-        ]
-
-    def get_submission_count(self, theme) -> int:
-        """Count the paid submissions in this theme."""
-        # The theme results queryset prefetches the paid submissions, so
-        # counting them issues no query.
-        return len(theme.submission_set.all())
-
-    @extend_schema_field(ThemeSubmissionResultsSerializer(many=True))
-    def get_submissions(self, theme):
-        """Serialize each submission against the theme acceptance threshold."""
-        return ThemeSubmissionResultsSerializer(
-            theme.submission_set.all(),
-            many=True,
-            context={
-                "request": self.context["request"],
-                "accept_threshold": theme.results.accepted_threshold,
-                "contest": theme.contest,
-            },
-        ).data

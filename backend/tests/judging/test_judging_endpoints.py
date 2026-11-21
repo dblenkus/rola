@@ -4,18 +4,22 @@ import queue
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from types import SimpleNamespace
 
 import pytest
 from django.db import connection, transaction
 from django.urls import resolve
 from django.utils import timezone
 from drf_spectacular.generators import SchemaGenerator
+from rest_framework.fields import DateTimeField
 from rest_framework.test import APIClient
 
 from rola.contests.models import Contest, Theme
 from rola.judging.models import Judge, Rating, ThemeResults
+from rola.payments.models import Payment
 from tests.factories import (
     pay,
+    photo,
     submitted,
     wait_until_blocked_by_this_connection,
 )
@@ -487,6 +491,8 @@ def test_judges_list_their_contests_and_submissions(world, judge, entry):
         ("get", "/api/v1/results/theme/{theme}"),
         ("get", "/api/v1/results/submission"),
         ("get", "/api/v1/results/submission/{submission}"),
+        ("get", "/api/v1/results/themes/{theme}"),
+        ("put", "/api/v1/results/themes/{theme}"),
     ],
 )
 def test_removed_judging_paths_are_not_served(world, judge, entry, method, path):
@@ -517,7 +523,6 @@ def test_removed_judging_paths_are_not_served(world, judge, entry, method, path)
         ("post", "/api/v1/judging/submissions"),
         ("post", "/api/v1/results/submissions"),
         ("put", "/api/v1/results/submissions/{submission}"),
-        ("put", "/api/v1/results/themes/{theme}"),
     ],
 )
 def test_removed_judging_methods_are_not_allowed(world, judge, entry, method, path):
@@ -568,31 +573,200 @@ def test_submission_results_expose_the_total_as_score(world, results):
     listing = APIClient().get("/api/v1/results/submissions").json()["results"]
     detail = APIClient().get(f"/api/v1/results/submissions/{pk}").json()
 
+    assert [row["id"] for row in listing] == list(results)
     for row in [*listing, detail]:
         assert row["score"] == results[row["id"]]
         assert "rating" not in row
-    theme = APIClient().get(f"/api/v1/results/themes/{world.theme.pk}").json()
-    assert [row["id"] for row in theme["submissions"]] == list(results)
-    for row in theme["submissions"]:
-        assert "score" not in row
-        assert "rating" not in row
 
 
-def test_submission_results_order_by_score_with_ties_by_primary_key(results):
-    by_pk = sorted(results.items())
+@pytest.mark.parametrize(
+    "ordering", ["score", "-score", "rating_sum", "-rating_sum", "rating", "-rating"]
+)
+def test_submission_results_ignore_ordering(results, ordering):
+    assert result_rows({"ordering": ordering}) == sorted(results.items())
 
-    assert result_rows() == by_pk
-    assert result_rows({"ordering": "-score"}) == sorted(
-        by_pk, key=lambda row: (-row[1], row[0])
+
+@pytest.fixture
+def published(world):
+    """Publish a theme's entries, beside entries that its results do not list.
+
+    The fixture theme's threshold is 5. ``accepted`` totals 5, ``declined``
+    totals 4 and ``unrated`` has no rating; all three are paid. ``unpaid``
+    totals 9 in an unpaid set. ``unpublished`` (a contest whose results are
+    not published) and ``unjudged`` (a published theme without results) are
+    paid and total 9.
+    """
+    judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    entries = SimpleNamespace()
+    for name in ["accepted", "declined", "unrated", "unpaid"]:
+        item = submitted(world, title=name.capitalize())
+        item.files.add(photo(world.owner))
+        pay(item)
+        setattr(entries, name, item)
+    Payment.objects.filter(submission_set__submissions=entries.unpaid).update(
+        paid=False
     )
-    assert result_rows({"ordering": "score"}) == sorted(
-        by_pk, key=lambda row: (row[1], row[0])
+    unjudged = Theme.objects.create(
+        contest=world.contest, title="Unjudged", max_photos=4
     )
-    for ignored in ["rating_sum", "-rating_sum", "rating", "-rating"]:
-        assert result_rows({"ordering": ignored}) == by_pk
+    entries.unjudged = submitted(world, title="Unjudged", theme=unjudged)
+    pay(entries.unjudged)
+    other = other_contest()
+    ThemeResults.objects.create(theme=other, accepted_threshold=1)
+    entries.unpublished = submitted(world, title="Unpublished", theme=other)
+    pay(entries.unpublished)
+    other_judge = Judge.objects.create(judge=world.other, contest=other.contest)
+    for item, score in [
+        (entries.accepted, 5),
+        (entries.declined, 4),
+        (entries.unpaid, 9),
+        (entries.unjudged, 9),
+        (entries.unpublished, 9),
+    ]:
+        Rating.objects.create(
+            user=world.other,
+            judge=other_judge if item is entries.unpublished else judge,
+            submission=item,
+            rating=score,
+        )
+    ThemeResults.objects.create(theme=world.theme, accepted_threshold=5)
+    publish(world.contest)
+    return entries
 
 
-def test_judging_operations_are_the_eight_in_use(schema):
+def published_rows(query=None):
+    """Return the id, acceptance, score and file ids of each listed result."""
+    response = APIClient().get("/api/v1/results/submissions", query or {})
+    assert response.status_code == 200, response.data
+    return [
+        (
+            row["id"],
+            row["accepted"],
+            row["score"],
+            None if row["files"] is None else [file["id"] for file in row["files"]],
+        )
+        for row in response.json()["results"]
+    ]
+
+
+def file_ids(item):
+    """Return the ids of a submission's photographs."""
+    return list(item.files.order_by("pk").values_list("pk", flat=True))
+
+
+def test_results_list_every_paid_entry_of_published_theme_results(world, published):
+    expected = [
+        (published.accepted.pk, True, 5, file_ids(published.accepted)),
+        (published.declined.pk, False, None, None),
+        (published.unrated.pk, False, None, None),
+    ]
+
+    assert published_rows() == expected
+    assert published_rows({"theme": world.theme.pk}) == expected
+    other_themes = Theme.objects.exclude(pk=world.theme.pk)
+    for theme in other_themes:
+        assert published_rows({"theme": theme.pk}) == []
+
+
+def test_a_result_has_one_shape_for_accepted_and_other_entries(world, published):
+    response = APIClient().get("/api/v1/results/submissions")
+    accepted, declined, _ = response.json()["results"]
+    timestamps = DateTimeField()
+
+    assert list(accepted) == [
+        "id",
+        "created",
+        "modified",
+        "author",
+        "theme",
+        "title",
+        "description",
+        "files",
+        "accepted",
+        "score",
+        "reward_kind",
+        "reward_label",
+    ]
+    assert [(file["id"], list(file)) for file in accepted["files"]] == [
+        (pk, ["id", "created", "modified", "file", "thumbnail"])
+        for pk in file_ids(published.accepted)
+    ]
+    assert declined == {
+        "id": published.declined.pk,
+        "created": timestamps.to_representation(published.declined.created),
+        "modified": timestamps.to_representation(published.declined.modified),
+        "author": {
+            "id": world.author.pk,
+            "first_name": "Alice",
+            "last_name": "Photographer",
+            "school": None,
+            "club": None,
+            "reward": None,
+            "reward_theme": None,
+            "country": None,
+        },
+        "theme": world.theme.pk,
+        "title": "Declined",
+        "description": None,
+        "files": None,
+        "accepted": False,
+        "score": None,
+        "reward_kind": None,
+        "reward_label": None,
+    }
+
+
+def test_the_detail_answers_for_every_listed_entry_only(published):
+    client = APIClient()
+    for item, accepted, score, files in [
+        (published.accepted, True, 5, file_ids(published.accepted)),
+        (published.declined, False, None, None),
+        (published.unrated, False, None, None),
+    ]:
+        response = client.get(f"/api/v1/results/submissions/{item.pk}")
+        assert response.status_code == 200, response.data
+        row = response.json()
+        files_listed = None if row["files"] is None else [f["id"] for f in row["files"]]
+        assert (row["id"], row["accepted"], row["score"], files_listed) == (
+            item.pk,
+            accepted,
+            score,
+            files,
+        )
+    for item in [published.unpaid, published.unpublished, published.unjudged]:
+        response = client.get(f"/api/v1/results/submissions/{item.pk}")
+        assert response.status_code == 404, response.data
+
+
+@pytest.mark.parametrize("threshold", [0, -3])
+def test_an_unrated_entry_is_never_accepted(world, published, threshold):
+    ThemeResults.objects.filter(theme=world.theme).update(accepted_threshold=threshold)
+
+    assert published_rows() == [
+        (published.accepted.pk, True, 5, file_ids(published.accepted)),
+        (published.declined.pk, True, 4, file_ids(published.declined)),
+        (published.unrated.pk, False, None, None),
+    ]
+    detail = APIClient().get(f"/api/v1/results/submissions/{published.unrated.pk}")
+    assert (detail.json()["accepted"], detail.json()["score"]) == (False, None)
+
+
+@pytest.mark.parametrize("ordering", ["score", "-score"])
+def test_ordering_does_not_reveal_declined_totals(published, ordering):
+    assert [row[0] for row in published_rows({"ordering": ordering})] == [
+        published.accepted.pk,
+        published.declined.pk,
+        published.unrated.pk,
+    ]
+
+
+def test_no_judging_or_results_operation_declares_ordering(schema):
+    for key, operation in judging_operations(schema["paths"]).items():
+        names = {item["name"] for item in operation.get("parameters", [])}
+        assert "ordering" not in names, key
+
+
+def test_judging_operations_are_the_seven_in_use(schema):
     operations = judging_operations(schema["paths"])
 
     assert set(operations) == {
@@ -601,7 +775,6 @@ def test_judging_operations_are_the_eight_in_use(schema):
         ("/api/v1/judging/ratings", "get"),
         ("/api/v1/judging/ratings/{submission}", "put"),
         ("/api/v1/judging/ratings/{submission}", "delete"),
-        ("/api/v1/results/themes/{id}", "get"),
         ("/api/v1/results/submissions", "get"),
         ("/api/v1/results/submissions/{id}", "get"),
     }
@@ -619,12 +792,7 @@ def test_judging_operations_are_the_eight_in_use(schema):
             "theme",
             "submission",
         },
-        ("/api/v1/results/submissions", "get"): {
-            "page",
-            "page_size",
-            "theme",
-            "ordering",
-        },
+        ("/api/v1/results/submissions", "get"): {"page", "page_size", "theme"},
     }
     responses = {
         key: json_schema(operation["responses"]["200"])
@@ -636,7 +804,6 @@ def test_judging_operations_are_the_eight_in_use(schema):
         ("/api/v1/judging/submissions", "get"): ref("PaginatedJudgeSubmissionList"),
         ("/api/v1/judging/ratings", "get"): ref("PaginatedRatingList"),
         ("/api/v1/judging/ratings/{submission}", "put"): ref("Rating"),
-        ("/api/v1/results/themes/{id}", "get"): ref("ThemeResults"),
         ("/api/v1/results/submissions", "get"): ref("PaginatedSubmissionResultsList"),
         ("/api/v1/results/submissions/{id}", "get"): ref("SubmissionResults"),
     }
@@ -702,8 +869,6 @@ def test_judging_components_have_their_names_and_shapes(schema):
         "JudgeContest",
         "JudgeTheme",
         "JudgeSubmission",
-        "ThemeSubmissionResults",
-        "ThemeResults",
         "AuthorResults",
         "PaginatedJudgeContestList",
         "PaginatedJudgeSubmissionList",
@@ -711,6 +876,31 @@ def test_judging_components_have_their_names_and_shapes(schema):
         "PaginatedSubmissionResultsList",
     ]:
         assert name in components
+    for name in ["ThemeResults", "ThemeSubmissionResults"]:
+        assert name not in components
+
+
+def test_submission_results_null_the_score_and_files_unless_accepted(schema):
+    results = schema["components"]["schemas"]["SubmissionResults"]["properties"]
+
+    assert list(results) == [
+        "id",
+        "created",
+        "modified",
+        "author",
+        "theme",
+        "title",
+        "description",
+        "files",
+        "accepted",
+        "score",
+        "reward_kind",
+        "reward_label",
+    ]
+    assert results["accepted"]["type"] == "boolean"
+    for name in ["score", "files"]:
+        assert results[name]["nullable"] is True
+        assert "accepted" in results[name]["description"]
 
 
 @pytest.mark.skipif(

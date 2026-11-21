@@ -27,7 +27,7 @@ def parameter(schema, path, name):
     return found
 
 
-def test_only_result_submissions_declare_ordering(schema):
+def test_no_list_declares_ordering(schema):
     ordered = {
         path
         for path, operations in schema["paths"].items()
@@ -35,10 +35,10 @@ def test_only_result_submissions_declare_ordering(schema):
         for item in operation.get("parameters", [])
         if item["name"] == "ordering"
     }
-    assert ordered == {"/api/v1/results/submissions"}
+    assert ordered == set()
 
 
-def test_lists_ignore_ordering_outside_results(world):
+def test_lists_ignore_ordering(world):
     Contest.objects.create(
         title="Later",
         start_date=world.contest.start_date,
