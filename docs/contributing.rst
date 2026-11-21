@@ -70,7 +70,7 @@ development stack:
    uv run python manage.py createcachetable
    uv run python manage.py runserver
 
-The frontend needs Node.js 26.13.0, the version in ``frontend/.node-version``.
+The frontend needs Node.js 26.13.1, the version in ``frontend/.node-version``.
 From ``frontend/``:
 
 .. code-block:: shell
@@ -294,13 +294,13 @@ and locked with hashes in ``backend/uv.lock``. Upgrade one package with ``uv
 lock --upgrade-package <name>``. npm packages are declared in
 ``frontend/package.json`` and locked in ``frontend/package-lock.json``;
 ``npm install <package>@<version>`` updates both. Generate the npm lockfile
-with the npm that ships with Node.js 26.13.0. With another Node.js
+with the npm that ships with Node.js 26.13.1. With another Node.js
 installed, run that npm from the Node.js image, from ``frontend/``, and
 then install from the new lockfile:
 
 .. code-block:: shell
 
-   docker run --rm -v "$PWD":/app -w /app node:26.13.0-alpine3.24 \
+   docker run --rm -v "$PWD":/app -w /app node:26.13.1-alpine3.24 \
        npm install --package-lock-only --ignore-scripts <package>@<range>
    npm ci
 
@@ -367,7 +367,7 @@ images and the actions. These pins move by hand:
   the newest uv, which may be inside the release-age window. The uv version
   also sets the Python patch releases that CI tests, because CI uses only
   uv's own Python builds: 3.14.10 and 3.15.2 with uv 0.13.9.
-* Node.js 26.13.0 is in ``frontend/.node-version``, which CI reads, and in
+* Node.js 26.13.1 is in ``frontend/.node-version``, which CI reads, and in
   ``frontend/Dockerfile``, which Dependabot updates. Keep them equal, and
   update the version that ``frontend/README.md`` and this page name with
   them. Dependabot ignores Node.js majors and ``@types/node`` majors, which

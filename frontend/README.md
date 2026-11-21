@@ -1,7 +1,7 @@
 # Rola frontend
 
 The React frontend of Rola, built with Vite on Rola's design system, with
-components on React Aria Components. It needs Node.js 26.13.0, the version
+components on React Aria Components. It needs Node.js 26.13.1, the version
 in `.node-version`. npm installs only releases that are at least 7 days old
 (`.npmrc`).
 
