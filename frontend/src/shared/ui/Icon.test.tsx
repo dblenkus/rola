@@ -27,6 +27,21 @@ describe('icon', () => {
     expect(group).toHaveAttribute('stroke-width', '1.5');
   });
 
+  it.each(['monitor', 'sun', 'moon'] as const)(
+    'draws the appearance glyph %s on the 16 px grid with a 1.5 px stroke',
+    (name) => {
+      const { container } = render(<Icon name={name} />);
+      expect(container.querySelector('svg')).toHaveAttribute(
+        'viewBox',
+        '0 0 16 16',
+      );
+      expect(container.querySelector('g')).toHaveAttribute(
+        'stroke-width',
+        '1.5',
+      );
+    },
+  );
+
   it('draws at the size it is given', () => {
     const { container } = render(<Icon name="arrow-up-right" size={16} />);
     expect(container.querySelector('svg')).toHaveAttribute('height', '16');
