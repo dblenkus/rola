@@ -445,8 +445,13 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
     if (error) status = <Message severity="error">{error}</Message>;
     else if (submissions?.length === 0)
       status = <p className="body">{t('jury_no_submissions')}</p>;
+    // data-theme="light": the view is drawn with the light theme's values on
+    // its own dark surface, so the page's theme must not reach it.
     return (
-      <div className="rl-on-viewing judge-view judge-view--status">
+      <div
+        className="rl-on-viewing judge-view judge-view--status"
+        data-theme="light"
+      >
         <JudgeBar themeLink={themeLink} />
         <div className="judge-view__status">{status}</div>
       </div>
@@ -502,8 +507,9 @@ const RateSubmission: React.FC<PropsFromRedux> = ({
       </Message>,
     );
 
+  // data-theme="light", as in the status view above.
   return (
-    <div className="rl-on-viewing judge-view">
+    <div className="rl-on-viewing judge-view" data-theme="light">
       <JudgeBar
         themeLink={themeLink}
         context={{ contest: contest.title, theme: theme.title }}

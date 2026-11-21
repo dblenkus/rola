@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../shared/api/client';
 import { signIn } from '../../test/api';
 import { open } from '../../test/app';
@@ -73,5 +73,57 @@ describe('bare layout', () => {
     await user.tab();
     await user.keyboard('{Enter}');
     expect(screen.getByRole('main')).toHaveFocus();
+  });
+});
+
+// The rater is drawn in the light theme's values whatever the page's theme,
+// so what the app shows over it is pinned too; elsewhere nothing is.
+describe('theme pinning', () => {
+  function offlineBand(): HTMLElement {
+    const band = screen
+      .getByText('You are offline. Photographs and results need a connection.')
+      .closest('[role="status"]');
+    if (!(band instanceof HTMLElement)) {
+      throw new Error('the offline band has no live region');
+    }
+    return band;
+  }
+
+  function bottomStack(): Element {
+    const stack = document.querySelector('.shell-bottom-stack');
+    if (!stack) throw new Error('the shell has no bottom stack');
+    return stack;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('pins the bottom stack, the offline band and the skip link on the rater', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    signIn();
+    open('/judge/contest/1/theme/2/rate');
+
+    expect(bottomStack()).toHaveAttribute('data-theme', 'light');
+    expect(offlineBand()).toHaveAttribute('data-theme', 'light');
+    expect(
+      screen
+        .getByRole('link', { name: 'Skip to content' })
+        .closest('[data-theme]'),
+    ).toHaveAttribute('data-theme', 'light');
+    expect(screen.getByRole('main').closest('[data-theme]')).toBeNull();
+  });
+
+  it('pins nothing on other routes', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    open('/contests');
+
+    expect(bottomStack().closest('[data-theme]')).toBeNull();
+    expect(offlineBand().closest('[data-theme]')).toBeNull();
+    expect(
+      screen
+        .getByRole('link', { name: 'Skip to content' })
+        .closest('[data-theme]'),
+    ).toBeNull();
   });
 });

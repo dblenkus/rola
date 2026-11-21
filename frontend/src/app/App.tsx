@@ -20,19 +20,23 @@ import store from './store';
 // The offline band sits at the top of the layout's main, under the app bar.
 // The notification and the update prompt share the layout's bottom stack,
 // the prompt nearest the corner, where the layout's tab bar space leaves room.
+// On the rater both are pinned to the light theme, as the scoring view is, so
+// the screen looks the same in either theme; the bare layout's own fallbacks
+// keep the page's theme.
 function Shell() {
   const rater = useMatch(raterPath);
   const upload = useMatch(uploadPath);
+  const pinned = rater ? 'light' : undefined;
   const content = (
     <>
-      <OfflineNotice />
+      <OfflineNotice theme={pinned} />
       <RouteErrorBoundary>
         <AppRoutes />
       </RouteErrorBoundary>
     </>
   );
   const bottomStack = (
-    <BottomStack>
+    <BottomStack theme={pinned}>
       <Notifications />
       <UpdatePrompt />
     </BottomStack>
