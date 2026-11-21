@@ -20,6 +20,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
+from rola.common.ids import ID_PATH_PATTERN
 from rola.contests.models import Contest, Theme
 from rola.entries.models import Submission
 from rola.judging import services
@@ -53,8 +54,7 @@ class RatingViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # A judge rates a submission at most once, so the submission's id names
     # the caller's rating of it.
     lookup_field = "submission"
-    # At most 18 digits, so the id fits a signed 64-bit integer in the query.
-    lookup_value_regex = "[0-9]{1,18}"
+    lookup_value_regex = ID_PATH_PATTERN
 
     def get_queryset(self):
         """Restrict ratings to those of the caller's judges, as the PUT sets them."""

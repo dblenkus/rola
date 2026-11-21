@@ -5,6 +5,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_sche
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
+from rola.common.ids import ID_PATH_PATTERN
 from rola.common.permissions import IsSuperUser
 from rola.entries.models import SubmissionSet
 from rola.payments import services
@@ -22,8 +23,7 @@ class PaymentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     filterset_class = PaymentFilter
     # A submission set has at most one payment, so its id names the payment.
     lookup_field = "submission_set"
-    # At most 18 digits, so the id fits a signed 64-bit integer in the query.
-    lookup_value_regex = "[0-9]{1,18}"
+    lookup_value_regex = ID_PATH_PATTERN
 
     @extend_schema(
         parameters=[
