@@ -18,7 +18,7 @@ into them. The transfer writes nothing to the old buckets or media
 directory, and changes the old database only where "Check the old data"
 calls for a fix, so a rollback finds every photograph.
 
-The copied tables have the same columns in the new schema, with eight
+The copied tables have the same columns in the new schema, with nine
 differences that decide how the data is copied:
 
 * The tables have new names, because the apps have new labels (see `Old and
@@ -65,6 +65,14 @@ differences that decide how the data is copied:
   ``rating_judge`` table had no such constraint, and a single account added
   twice as a judge of one contest makes the copy fail, so the old data is
   checked for that first too.
+* ``contests_contest`` keeps a required club or school visible, through the
+  check constraints ``contests_club_required_is_visible`` and
+  ``contests_school_required_is_visible``. The old ``core_contest`` table
+  had neither, and its Django admin set only ``club_required`` and
+  ``school_required``, while ``club_show`` and ``school_show`` were added
+  later as false for every contest. A single contest with a required but
+  hidden club or school makes the copy fail, so the old data is checked for
+  that first as well.
 
 Content types and permissions are created by ``migrate`` and get new ids, so
 their tables are not copied. The group and user permissions are remapped
@@ -167,7 +175,9 @@ The constraints that the project names itself take the new label too:
 becomes ``judging_unique_judge_submission``, and
 ``rating_rating_between_1_and_10`` becomes
 ``judging_rating_between_1_and_10``. ``unique_name_kind`` on the institutions
-keeps its name, and ``judging_unique_contest_judge`` on the judges is new.
+keeps its name. ``judging_unique_contest_judge`` on the judges is new, and
+so are ``contests_club_required_is_visible`` and
+``contests_school_required_is_visible`` on the contests.
 The names that Django generates for keys, indexes and sequences start with
 the new table names, and their hash suffixes differ.
 
@@ -436,6 +446,72 @@ If it prints any, stop. The jury view has only ever sent scores from 1 to
 10, so such a score came from a direct API request. Ask the organizer of its
 contest for the correct score, set it or delete the rating in the old
 database as for the duplicates, and start again from the dump.
+
+Look for contests that require the club or the school without showing it,
+which the new schema refuses. ``club`` and ``school`` say which of the two is
+required but hidden, and ``entries_closed`` whether the contest has stopped
+accepting entries, because its end date or its publish date has passed.
+This must print no rows:
+
+.. code-block:: shell
+
+   docker compose exec -T db psql -U rola -d rola_old -c \
+       "SELECT id, title, start_date, end_date, publish_date, club_required AND NOT club_show AS club, school_required AND NOT school_show AS school, now() > end_date OR now() >= publish_date AS entries_closed FROM core_contest WHERE (club_required AND NOT club_show) OR (school_required AND NOT school_show) ORDER BY id"
+
+If it prints any, stop. The new upload form requires a required field even
+where it hides it, so it would refuse every entry of such a contest. The new
+results publish an author's club or school only where the contest shows it,
+whichever fix is chosen, while the previous deployment sent every author's
+club and school with the results whatever these settings said, and its admin
+could not set ``club_show`` or ``school_show``. Expect older contests here.
+Choose one of two fixes for each printed contest and field:
+
+* Clear the requirement (``club_required`` or ``school_required`` false).
+  The field stays hidden: the upload form no longer asks for it, and the new
+  results do not publish it. Choose this for a contest whose entries are
+  closed, unless its organizer wants the clubs or schools to stay in its
+  published results.
+* Show the field (``club_show`` or ``school_show`` true). The upload form
+  asks every entrant for it, and the new results of the contest publish
+  every author's club or school, those of the earlier entries included.
+  Choose this for a contest whose entries are open or not yet open and whose
+  organizer wants the field asked and published, and for a closed contest
+  whose results should keep showing it.
+
+Neither fix loses an author's club or school, and the contest admin of the
+new stack can change the choice later.
+
+Then make the fixes in the old database, in one transaction. Replace each
+``<ids>`` with the comma-separated ids of the contests that get that fix
+for that field, such as ``12,15``, or with nothing, leaving ``'{}'``, for a
+fix that no contest gets. Each statement changes only a
+contest whose field is still required and hidden, so a contest named twice
+for one field gets only the first fix. Fill in the old server as for the
+dump, with ``--network`` and the password lines if the dump needed them.
+Then start again from the dump:
+
+.. code-block:: shell
+
+   read -rs PGPASSWORD && export PGPASSWORD
+   docker run --rm -i -e PGPASSWORD postgres:18.6-alpine3.24 \
+       psql -v ON_ERROR_STOP=1 -h <old host> -U <old user> -d <old database> <<'SQL'
+   BEGIN;
+   UPDATE core_contest SET club_required = false
+   WHERE id = ANY ('{<ids>}'::bigint[]) AND club_required AND NOT club_show;
+   UPDATE core_contest SET school_required = false
+   WHERE id = ANY ('{<ids>}'::bigint[]) AND school_required AND NOT school_show;
+   UPDATE core_contest SET club_show = true
+   WHERE id = ANY ('{<ids>}'::bigint[]) AND club_required AND NOT club_show;
+   UPDATE core_contest SET school_show = true
+   WHERE id = ANY ('{<ids>}'::bigint[]) AND school_required AND NOT school_show;
+   COMMIT;
+   SQL
+   unset PGPASSWORD
+
+psql prints ``UPDATE <n>`` for each statement, the number of contests it
+changed; the four numbers add up to the number of ``t`` values in the
+check's ``club`` and ``school`` columns. On the scratch copy restored from
+the new dump, the check must print no rows.
 
 List the contests whose notice or confirmation text holds content that the
 frontend now removes before it shows them: scripts, such as those of the
@@ -807,6 +883,7 @@ at the old deployment and restarting its web server from the old deployment's
 directory. The old buckets or media directory have not changed since the
 freeze, and the old database only by the fixes that the checks called for: a
 changed email address, merged duplicate judges, removed duplicate ratings,
-corrected scores. The old deployment therefore finds every photograph it
-had, and its results show the corrected totals. Everything written to the
+corrected scores, a club or school that a contest no longer requires or now
+shows. The old deployment therefore finds every photograph it had, and its
+results show the corrected totals. Everything written to the
 new stack in the meantime is lost.
