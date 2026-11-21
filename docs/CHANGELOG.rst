@@ -78,10 +78,13 @@ API changes
   ``PATCH`` and ``DELETE`` on ``/api/v1/contests/{id}`` answer 405 to every
   account, and 401 without one. Superusers used to create, change and delete
   contests there; organizers set up contests and their themes in the Django
-  admin. The contest list keeps ``?is_active=`` and no longer declares
-  ``?submitted=``, and the institution list no longer declares ``?kind=``,
-  ``?name=`` or its ``name`` lookups; such parameters are ignored, as is
-  ``?is_active=`` on ``/api/v1/judging/contests``.
+  admin. The contest admin now also sets ``club_visible`` and
+  ``school_visible``, which decide whether the upload form shows the club and
+  school inputs and whether results show them; they used to be settable only
+  through the API. The contest list keeps ``?is_active=`` and no longer
+  declares ``?submitted=``, and the institution list no longer declares
+  ``?kind=``, ``?name=`` or its ``name`` lookups; such parameters are
+  ignored, as is ``?is_active=`` on ``/api/v1/judging/contests``.
 * Themes in ``/api/v1/contests`` no longer carry ``submissions_number``, the
   count of all their submissions. Themes in ``/api/v1/judging/contests``
   keep it as ``submission_count``, which counts paid submissions.
