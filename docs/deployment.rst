@@ -394,7 +394,9 @@ superusers and staff accounts with the ``contests.change_contest``
 permission, in the Django admin, the only place where contests are changed.
 Styles apply to the whole page, so they can restyle or cover the rest of it,
 and images and stylesheets may come from any host, which then sees the
-entrant's address.
+entrant's address. Both texts are optional: a contest without a notice shows
+none, and the page after an upload shows a default confirmation text when
+the contest has none.
 
 Payment buttons are not supported for now. A payment provider's script in a
 confirmation text does not run, and the policy in `HTTPS and headers`_ lets

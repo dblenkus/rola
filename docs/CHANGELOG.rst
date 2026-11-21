@@ -585,6 +585,11 @@ Fixes
 * The Django admin index no longer fails for an account without a first name.
 * The Django admin's submission list and pages no longer fail when a
   submission has no title.
+* A contest's notice and confirmation text are optional, and the page shown
+  after an upload shows a default confirmation text when the contest has
+  none. The Django admin refused to save a contest without them, and the
+  form for a new contest does not offer the confirmation text, so a new
+  contest could not be saved again until an organizer wrote one.
 * The contest download sends a logged-out organizer to the Django admin
   login and back, instead of to a page that does not exist.
 * A login with the old password that overlaps a password change or reset is

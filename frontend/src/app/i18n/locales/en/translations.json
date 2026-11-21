@@ -105,6 +105,7 @@
   "upload": "Upload",
   "upload_already_received": "Your earlier upload had already been received. Check your entry under $t(edit_submissions).",
   "upload_contest_closed": "The contest is closed. Your photographs were not submitted.",
+  "upload_default_confirmation": "Your photographs have been submitted.",
   "upload_failed": "Upload failed. Please try again.",
   "upload_photos": "Upload Photos",
   "upload_succeeded": "Your photographs for {{contest}} were uploaded.",

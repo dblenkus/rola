@@ -39,7 +39,11 @@ const UploadConfirmView: React.FC = () => {
       {error ? (
         <Message severity="error">{error}</Message>
       ) : contest ? (
-        <SanitizedHtml html={contest.confirmation_html ?? ''} />
+        contest.confirmation_html?.trim() ? (
+          <SanitizedHtml html={contest.confirmation_html} />
+        ) : (
+          <p className="body">{t('upload_default_confirmation')}</p>
+        )
       ) : (
         <LoadingProgress />
       )}
