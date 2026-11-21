@@ -126,6 +126,23 @@ such as ``upload-``. The layout responds
 to the viewport through CSS alone, with two breakpoints, phones below
 40rem and wide screens from 64rem, so every width renders the same DOM.
 
+The design system has a light and a dark theme, which differ only in the
+values of the colour tokens. ``tokens.css`` declares the light values on
+``:root`` and on any element with ``data-theme="light"``, and the dark
+values on any element with ``data-theme="dark"`` and, when the device
+prefers dark, on a root without the attribute. The page therefore follows
+the device from CSS alone. A person's choice in the account menu, which is
+called the appearance because a theme is part of a contest, is kept in the
+browser's storage under ``rola.appearance`` and put on ``<html>`` as
+``data-theme``, by ``/appearance.js`` before the first paint and by
+``app/appearance`` afterwards; the script is a file of its own because the
+script policy allows no inline script. The judge's scoring view is drawn
+with the light values on its own dark surface, so its root carries
+``data-theme="light"``, as do the notification, the update prompt, the
+offline band and the skip link while that view is open. Organizer-written
+HTML is stripped of its own colours and classes when it is sanitized, so
+that it reads in both themes.
+
 The shell in ``app`` picks a layout per route: the standard one with the
 app bar, the main navigation and the footer; its task variant for the
 upload form, which hides the bars on a phone; and a bare one for the judge's

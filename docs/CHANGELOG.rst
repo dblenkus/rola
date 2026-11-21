@@ -214,6 +214,15 @@ Interface changes
   new visit shows a new version at once, and a page that was open before the
   release announces the new version with a Reload prompt instead of being
   reloaded by itself.
+* The interface has a dark theme. It follows the device, and the account
+  menu's "Appearance" offers System, Light and Dark, a choice the browser
+  keeps. The judge's scoring view looks the same in both.
+* A contest's notice and confirmation text are shown in the interface's own
+  colours and type. ``<style>`` and ``<font>`` elements, inline SVG and
+  MathML, and the ``class``, ``data-`` and colour attributes in them are
+  dropped. Of an inline style only alignment, weight, italics, the underline,
+  width, an image's height, spacing, vertical alignment, white-space handling
+  and list markers are kept.
 
 Deployment changes
 ------------------

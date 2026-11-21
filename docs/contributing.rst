@@ -398,7 +398,9 @@ from the design system and are never edited here:
   ``frontend/``, writes ``tokens.css`` from it with
   ``scripts/build-tokens.ts``, and ``npm run tokens:check``, which
   ``npm run build`` runs first, fails while ``tokens.css`` is out of date.
-  Commit ``tokens.css`` with the change to ``tokens.json``.
+  Commit ``tokens.css`` with the change to ``tokens.json``. A colour has
+  one value, or one for each of the two themes, ``light`` and ``dark``; the
+  script accepts no other theme.
 * ``components.css``, the component styles, kept as published except for
   its Google Fonts import, which ``fonts.css`` replaces with the same faces
   served from the site. ``scripts/design.test.ts`` fails if the file imports
@@ -412,6 +414,22 @@ styles there, never in ``components.css``. ``layers.css`` imports
 layer, so an unlayered rule of the app overrides them even with a lower
 specificity; put only element defaults in ``app.css``'s ``base`` layer,
 which stays below them.
+
+Every colour in the repository's CSS is a token, never a literal, so that
+it follows the theme. Prefer the role tokens (``--text``, ``--line``,
+``--well``) to the swatches. A dark theme turns the swatches around:
+``--ink`` is the light colour there and ``--paper`` the dark one, so a rule
+that needs black or white whatever the theme has no token for it and belongs
+inside an element with ``data-theme="light"``, as the judge's scoring view
+is. Never write another value to ``data-theme`` than ``light`` or ``dark``:
+with any other value on ``<html>``, a dark device gets the light theme.
+Check a change to a page in both themes; the account menu's Appearance
+switches them.
+
+``public/appearance.js`` applies the stored appearance before the first
+paint. An installed service worker can serve an older copy of it to a newer
+page, so the storage key ``rola.appearance`` and its two values, ``light``
+and ``dark``, never change.
 
 To update the design system, from ``frontend/``:
 

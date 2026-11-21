@@ -26,7 +26,8 @@ Without it, nothing is reported. Production builds require it.
 
 - `src/design/`: the design system. `tokens.json` and `components.css` come
   from it and are not edited here; `tokens.css` is generated from
-  `tokens.json`. `fonts.css` declares Inter and DM Mono, served from the
+  `tokens.json`, with each colour's value for the light and the dark theme.
+  `fonts.css` declares Inter and DM Mono, served from the
   site by `@fontsource-variable/inter` and `@fontsource/dm-mono` in their
   latin and latin-ext subsets, with no request to Google Fonts. `app.css`
   holds the app-wide rules and names the two breakpoints. `layers.css`
@@ -34,8 +35,11 @@ Without it, nothing is reported. Production builds require it.
   `design-system` for `tokens.css` and `components.css`. Every other rule is
   unlayered and beats both, whatever its specificity and file order.
 - `src/shared/ui/`: the component kit, each component with its CSS beside it.
-- `src/app/`: the shell, the routes, the store, the translations, and in
-  `pwa/` the service worker's registration and the handlers it imports.
+- `src/app/`: the shell, the routes, the store, the translations, in
+  `pwa/` the service worker's registration and the handlers it imports, and
+  in `appearance/` the choice of the light or dark theme.
+- `public/appearance.js`: applies that choice before the first paint. It is
+  a file because the script policy allows no inline script.
 - `src/features/<feature>/`: each feature's API calls, pages and state.
 - `src/sw.ts`: the service worker, built with `vite-plugin-pwa`.
 - `scripts/`: `build-tokens.ts`, which writes `tokens.css`, and the tests

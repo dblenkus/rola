@@ -362,7 +362,10 @@ in ``frontend/docker/default.conf`` and rebuild the frontend. API and Django
 admin responses do not carry the policy, because with ``ROLA_USE_S3`` the
 Django admin's scripts come from the static bucket's host. The policy sets
 no ``worker-src``, so the service worker falls under ``script-src``, which
-it meets because ``/sw.js`` comes from the site's own origin.
+it meets because ``/sw.js`` comes from the site's own origin. The page's
+one script outside ``/assets/`` is ``/appearance.js``, which applies a
+stored choice of the light or dark theme before the first paint; it is a
+file because the policy allows no inline script.
 
 The HTML document must not be served from a shared cache. A cache that
 stores the page with its header gives every visitor the same nonce, which
@@ -651,7 +654,7 @@ nginx sends these caching headers for the frontend's files:
    * - ``/sw.js``, ``/site.webmanifest``
      - ``no-cache``
      - 404
-   * - other files at the root, such as icons
+   * - other files at the root, such as icons and ``/appearance.js``
      - ``no-cache``
      - 404
    * - every other path, and ``/index.html``
