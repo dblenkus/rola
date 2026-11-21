@@ -1600,16 +1600,11 @@ components:
           maximum: 2147483647
           minimum: -2147483648
           title: Number of photos
-        submission_count:
-          type: integer
-          description: Count submissions in this theme.
-          readOnly: true
       required:
       - created
       - id
       - max_photos
       - modified
-      - submission_count
       - title
     Token:
       type: object

@@ -824,8 +824,6 @@ export interface components {
             is_series?: boolean;
             /** Number of photos */
             max_photos: number;
-            /** @description Count submissions in this theme. */
-            readonly submission_count: number;
         };
         /** @description Represent a newly issued token and its expiration. */
         Token: {

@@ -72,7 +72,7 @@ API changes
 * The contest and institution lists move to plural paths:
   ``GET /api/v1/contests``, ``GET /api/v1/contests/{id}`` and
   ``GET /api/v1/institutions``, with unchanged responses apart from the
-  renamed fields below. The singular ``/api/v1/contest`` and
+  removed and renamed fields below. The singular ``/api/v1/contest`` and
   ``/api/v1/institution`` paths answer 404.
 * Contests are read-only in the API: ``POST /api/v1/contests`` and ``PUT``,
   ``PATCH`` and ``DELETE`` on ``/api/v1/contests/{id}`` answer 405 to every
@@ -82,6 +82,9 @@ API changes
   ``?submitted=``, and the institution list no longer declares ``?kind=``,
   ``?name=`` or its ``name`` lookups; such parameters are ignored, as is
   ``?is_active=`` on ``/api/v1/judging/contests``.
+* Themes in ``/api/v1/contests`` no longer carry ``submissions_number``, the
+  count of all their submissions. Themes in ``/api/v1/judging/contests``
+  keep it as ``submission_count``, which counts paid submissions.
 * The entries endpoints move to plural paths: ``POST /api/v1/authors``,
   ``POST /api/v1/files``, ``GET /api/v1/submissions``,
   ``DELETE /api/v1/submissions/{id}``, ``GET`` and ``POST``
@@ -259,13 +262,13 @@ API changes
 * Fields are renamed. Contests in ``/api/v1/contests`` and
   ``/api/v1/judging/contests``: ``dob_required`` to
   ``date_of_birth_required``, ``club_show`` to ``club_visible`` and
-  ``school_show`` to ``school_visible``. Their themes:
-  ``n_photos`` to ``max_photos`` and ``submissions_number`` to
-  ``submission_count``, and ``ratings_number`` to ``rating_count`` in
-  judges' themes. Authors in ``/api/v1/authors`` and in submissions and
-  submission sets: ``dob`` to ``date_of_birth``. Payments in
-  ``/api/v1/payments``: ``submissionset`` to ``submission_set``, and the
-  filter ``?submissionset__in=`` to ``?submission_set__in=``.
+  ``school_show`` to ``school_visible``. Their themes: ``n_photos`` to
+  ``max_photos``. Judges' themes: ``submissions_number`` to
+  ``submission_count`` and ``ratings_number`` to ``rating_count``. Authors
+  in ``/api/v1/authors`` and in submissions and submission sets: ``dob`` to
+  ``date_of_birth``. Payments in ``/api/v1/payments``: ``submissionset`` to
+  ``submission_set``, and the filter ``?submissionset__in=`` to
+  ``?submission_set__in=``.
 * The API sends no CORS headers; the frontend calls it from the same origin.
 * ``backend/openapi.yaml`` describes the API, generated with the PostgreSQL
   backend's integer bounds; the backend serves no schema at runtime. Its

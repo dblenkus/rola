@@ -54,10 +54,10 @@ def test_judging_contests_have_their_own_components(components):
     themes = components["Contest"]["properties"]["themes"]
     assert themes["items"] == {"$ref": "#/components/schemas/Theme"}
     assert "rating_count" not in components["Theme"]["properties"]
+    assert "submission_count" not in components["Theme"]["properties"]
 
 
 def test_counts_and_acceptance_are_typed(components):
-    assert components["Theme"]["properties"]["submission_count"]["type"] == "integer"
     judge_theme = components["JudgeTheme"]["properties"]
     assert judge_theme["rating_count"]["type"] == "integer"
     assert judge_theme["submission_count"]["type"] == "integer"

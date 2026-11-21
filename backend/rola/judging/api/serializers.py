@@ -28,24 +28,24 @@ class RatingSerializer(BaseSerializer):
 class JudgeThemeSerializer(CoreThemeSerializer):
     """Serializer for Theme objects."""
 
+    submission_count = serializers.SerializerMethodField("get_submission_count")
     rating_count = serializers.SerializerMethodField("get_rating_count")
-    # Declared again only to describe it: the parent's method reads the
-    # count, which the judging queryset annotates from paid submissions.
-    submission_count = serializers.SerializerMethodField(
-        help_text="Count paid submissions available for judging."
-    )
 
     class Meta(CoreThemeSerializer.Meta):
         """Serializer configuration."""
 
         fields = CoreThemeSerializer.Meta.fields + [
+            "submission_count",
             "rating_count",
         ]
 
-    # The judging contest queryset annotates the rating count, and the paid
-    # submission count that the parent reads. Reading them directly fails
-    # loudly if a queryset loses the annotations, instead of counting each
-    # theme again.
+    # The judging contest queryset annotates both counts. Reading them
+    # directly fails loudly if a queryset loses the annotations, instead of
+    # counting each theme again.
+    def get_submission_count(self, theme) -> int:
+        """Count paid submissions available for judging."""
+        return theme.submission_count
+
     def get_rating_count(self, theme) -> int:
         """Count ratings submitted by the requesting judge."""
         return theme.rating_count

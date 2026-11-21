@@ -23,7 +23,6 @@ export const contest: Contest = {
       title: 'Nature',
       is_series: false,
       max_photos: 2,
-      submission_count: 0,
     },
   ],
   start_date: '2026-01-01',
