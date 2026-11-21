@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 
-import { requestError } from '../../../shared/api/errors';
+import { contentUnavailable, requestError } from '../../../shared/api/errors';
 import { ResultsSubmission } from '../../../shared/api/types';
 import AwardMark from '../../../shared/ui/AwardMark';
 import LoadingProgress from '../../../shared/ui/LoadingProgress';
@@ -33,12 +33,16 @@ const SubmissionResults: React.FC = () => {
     fetch().catch((error: unknown) => setError(requestError(error)));
   }, [submissionId]);
 
-  if (error || !submission) {
+  // The results link only accepted entries to their own page; the API also
+  // answers a declined one, without its photographs.
+  const message =
+    error ?? (submission && !submission.accepted ? contentUnavailable() : null);
+  if (message || !submission) {
     // Until the submission is known, the page is named generically.
     return (
       <Page title={t('results')} titleHidden>
-        {error ? (
-          <Message severity="error">{error}</Message>
+        {message ? (
+          <Message severity="error">{message}</Message>
         ) : (
           <LoadingProgress />
         )}

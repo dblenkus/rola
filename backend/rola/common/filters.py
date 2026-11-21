@@ -1,14 +1,9 @@
-"""Filter backends and filters shared by the API endpoints."""
+"""Filter API lists by integer ids in the databases' 64-bit range."""
 
-from collections.abc import Sequence
 from typing import Any
 
 from django import forms
-from django.db.models import QuerySet
 from django_filters import rest_framework as django_filters
-from rest_framework import filters
-from rest_framework.request import Request
-from rest_framework.views import APIView
 
 from rola.common.ids import ID_RANGE
 
@@ -35,18 +30,3 @@ class IdFilter(django_filters.NumberFilter):  # type: ignore[misc]
 
 class IdInFilter(django_filters.BaseInFilter, IdFilter):  # type: ignore[misc]
     """Filter by a comma-separated list of integer ids."""
-
-
-class OrderingFilter(filters.OrderingFilter):
-    """Order by the requested fields with the primary key as the last key.
-
-    Requested fields are seldom unique, and the database may return tied rows
-    in a different order for each page unless a unique key comes last.
-    """
-
-    def get_ordering(
-        self, request: Request, queryset: QuerySet[Any], view: APIView
-    ) -> Sequence[str] | None:
-        """Return the requested or view ordering followed by ``pk``."""
-        ordering = super().get_ordering(request, queryset, view)
-        return [*ordering, "pk"] if ordering else ordering

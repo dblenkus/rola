@@ -163,11 +163,9 @@ API changes
   ``POST /api/v1/payments`` and ``GET``, ``PATCH`` and ``DELETE`` on
   ``/api/v1/payments/{submission_set}`` answer 405, and the list ignores
   ``?submission_set=`` and ``?paid=``.
-* Judging and results move to plural paths, with unchanged responses apart
-  from ``score`` and the renamed fields below:
+* Judging and results move to plural paths:
   ``GET /api/v1/judging/contests``, ``GET /api/v1/judging/submissions``,
-  ``GET /api/v1/judging/ratings``, ``GET /api/v1/results/themes/{id}``,
-  ``GET /api/v1/results/submissions`` and
+  ``GET /api/v1/judging/ratings``, ``GET /api/v1/results/submissions`` and
   ``GET /api/v1/results/submissions/{id}``. The ``/api/v1/judge/…``,
   ``/api/v1/rating`` and singular ``/api/v1/results/…`` paths answer 404.
 * ``/api/v1/judging/submissions`` leaves out each submission's author. Judges
@@ -211,29 +209,33 @@ API changes
   other values answer 400. Any integer used to be stored, so a single score
   outside that range could outweigh all other judges in the totals that
   decide acceptance and ranking.
-* Theme and submission results publish only entries in a paid submission
-  set, as judging lists only those, and ``submission_count`` in theme
-  results counts only those. Theme results list their entries as
-  ``ThemeSubmissionResults``, without ``score``, the total of the ratings;
-  ``/api/v1/results/submissions`` keeps it. A result author's ``school`` is
-  ``null`` unless the contest sets ``school_visible``, and ``club`` unless
-  it sets ``club_visible``. The results used to include unpaid entries, theme
-  results the score of every entry, accepted or not, and every author's
-  school and club.
-* The authors in theme and submission results have only ``id``,
-  ``first_name``, ``last_name``, ``school``, ``club``, ``country``, ``reward``
-  and ``reward_theme``; their date of birth, mentor, distinction, email and
+* A theme's results are ``GET /api/v1/results/submissions?theme={id}``, a
+  paginated list of ``SubmissionResults`` in primary-key order. It replaces
+  ``GET /api/v1/results/theme/{id}``, which answered the theme with all its
+  entries in one response. The list and
+  ``GET /api/v1/results/submissions/{id}`` serve every entry in a paid
+  submission set of a theme that has results, once the contest's results
+  are published; both used to serve only accepted entries, and the detail
+  answered 404 for the others. A theme without results or of an unpublished
+  contest lists no entries; the theme path answered 404 for it, and 500 for
+  a published theme without results.
+* A result's ``accepted`` is true when the total of its ratings reaches the
+  theme's threshold; an entry without ratings is never accepted. ``score``,
+  the total of the ratings, and ``files`` are ``null`` unless the entry is
+  accepted. The total used to be ``rating`` in the submission results, the
+  name of a single judge's rating, and theme results showed the total of
+  every entry, accepted or not.
+* The results publish only entries in a paid submission set, as judging
+  lists only those. A result author's ``school`` is ``null`` unless the
+  contest sets ``school_visible``, and ``club`` unless it sets
+  ``club_visible``. The results used to include unpaid entries and every
+  author's school and club.
+* The authors in the results have only ``id``, ``first_name``,
+  ``last_name``, ``school``, ``club``, ``country``, ``reward`` and
+  ``reward_theme``; their date of birth, mentor, distinction, email and
   timestamps are no longer public.
-* ``reward_theme`` in the authors of theme results is an integer, the
-  rewarded theme's id, instead of the same number as a string.
-* The total of a submission's ratings in ``/api/v1/results/submissions`` is
-  ``score`` instead of ``rating``, the name of a single judge's rating, and
-  the list orders by it with ``?ordering=score`` or ``?ordering=-score``
-  instead of ``?ordering=rating_sum``, which is now ignored. It breaks ties
-  by primary key, so paging through the ordered list no longer repeats or
-  skips rows.
-* The results of a published theme that has no results yet answer 404
-  instead of 500.
+* ``reward_theme`` in a result's author is an integer, the rewarded theme's
+  id; theme results gave the same number as a string.
 * The API answers JSON only. Django REST framework's browsable HTML pages,
   whose forms showed any account the titles of every submission, are gone:
   ``?format=api`` answers 404 and a request that accepts only ``text/html``
@@ -241,9 +243,9 @@ API changes
 * Request bodies are JSON, except the JPEG body of ``POST /api/v1/files``. A
   form-encoded or multipart body answers 415; such bodies used to be
   accepted.
-* Only ``/api/v1/results/submissions`` takes ``?ordering=``. The other lists
-  ignore it and keep their default order; they used to sort by any of their
-  fields.
+* No list takes ``?ordering=``: each ignores it and keeps its default order.
+  The lists used to sort by any of their fields, and the submission results
+  by ``?ordering=rating_sum``.
 * The id filters take integers: ``?contest=`` on ``/api/v1/submissions`` and
   ``/api/v1/submission-sets``, ``?theme=`` on ``/api/v1/judging/submissions``
   and ``/api/v1/results/submissions``, ``?theme=`` and ``?submission=`` on
@@ -257,7 +259,7 @@ API changes
 * Fields are renamed. Contests in ``/api/v1/contests`` and
   ``/api/v1/judging/contests``: ``dob_required`` to
   ``date_of_birth_required``, ``club_show`` to ``club_visible`` and
-  ``school_show`` to ``school_visible``. Their themes and theme results:
+  ``school_show`` to ``school_visible``. Their themes:
   ``n_photos`` to ``max_photos`` and ``submissions_number`` to
   ``submission_count``, and ``ratings_number`` to ``rating_count`` in
   judges' themes. Authors in ``/api/v1/authors`` and in submissions and
@@ -564,6 +566,9 @@ Fixes
   with HTML escapes such as ``&amp;``.
 * Theme results sort names in Slovenian alphabetical order and highlight an
   author's row only in the theme of the author's reward.
+* The theme results page says "No published results." for a theme that has
+  no results yet or whose contest's results are not published. It used to
+  show an error.
 * The Django admin index no longer fails for an account without a first name.
 * The Django admin's submission list and pages no longer fail when a
   submission has no title.

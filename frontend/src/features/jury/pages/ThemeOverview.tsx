@@ -8,8 +8,10 @@ import Page from '../../../shared/ui/Page';
 import Thumbnail from '../../../shared/ui/Thumbnail';
 import ThumbnailGrid from '../../../shared/ui/ThumbnailGrid';
 import { requestError } from '../../../shared/api/errors';
+import fetchAll from '../../../shared/api/fetchAll';
 import { ResultsSubmission } from '../../../shared/api/types';
-import { getResultsOverview } from '../../results';
+import { getResultsByTheme } from '../../results';
+import acceptedByScore from '../acceptedByScore';
 import './ThemeOverview.css';
 
 interface RouteMatchParams {
@@ -30,8 +32,8 @@ const ThemeOverview: React.FC = () => {
   // Initialize the state.
   useEffect(() => {
     const fetch = async (): Promise<void> => {
-      const { data } = await getResultsOverview(themeId);
-      setSubmissions(data.results);
+      const results = await fetchAll(() => getResultsByTheme(themeId));
+      setSubmissions(acceptedByScore(results));
     };
     fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
@@ -42,7 +44,8 @@ const ThemeOverview: React.FC = () => {
   return (
     <Page title={t('jury_overview_title')}>
       {/* The overview uses the public results, which list nothing until the
-          contest's results are published. */}
+          contest's results are published, and shows only the accepted
+          entries. */}
       {submissions.length ? (
         <ol className="jury-overview">
           {submissions.map((submission) => (

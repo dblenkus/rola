@@ -1,21 +1,28 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+} from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { httpError, serveApi } from '../../../test/api';
+import { httpError, page, serveApi } from '../../../test/api';
 import { expectFailedPage } from '../../../test/pages';
 import { author, contest } from '../../../test/fixtures';
 import type {
   Contest,
-  ResultsThemeSubmission,
+  PaginatedResponse,
+  ResultsSubmission,
 } from '../../../shared/api/types';
 import ThemeResults from './ThemeResults';
 
 function result(
   id: number,
   title: string,
-  overrides: Partial<ResultsThemeSubmission> = {},
-): ResultsThemeSubmission {
+  overrides: Partial<ResultsSubmission> = {},
+): ResultsSubmission {
   return {
     id,
     created: '2026-01-01T00:00:00Z',
@@ -30,26 +37,16 @@ function result(
     title,
     files: null,
     accepted: false,
+    score: null,
     reward_kind: null,
     reward_label: null,
     ...overrides,
   };
 }
 
-function renderTheme(
-  submissions: ResultsThemeSubmission[],
-  shownContest: Contest = contest,
-): void {
-  const [nature] = contest.themes;
-  if (!nature) {
-    throw new Error('The contest fixture has no theme');
-  }
-  serveApi({
-    'GET /contests/1': () => shownContest,
-    'GET /results/themes/2': () => ({ ...nature, submissions }),
-  });
+function renderResults(path: string): void {
   render(
-    <MemoryRouter initialEntries={['/results/contest/1/theme/2']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
           path="/results/contest/:contestId/theme/:themeId"
@@ -64,16 +61,30 @@ function renderTheme(
   );
 }
 
+function renderTheme(
+  submissions: ResultsSubmission[],
+  shownContest: Contest = contest,
+): void {
+  serveApi({
+    'GET /contests/1': () => shownContest,
+    'GET /results/submissions': (_config, url) =>
+      page(url.searchParams.get('theme') === '2' ? submissions : []),
+  });
+  renderResults('/results/contest/1/theme/2');
+}
+
 const entries = [
   result(21, 'Hills'),
-  result(22, 'Lake', { accepted: true }),
+  result(22, 'Lake', { accepted: true, score: 31 }),
   result(23, 'Fog', {
     accepted: true,
+    score: 40,
     reward_kind: 'Gold',
     reward_label: 'Gold medal',
   }),
   result(24, 'Rain', {
     accepted: true,
+    score: 35,
     reward_kind: 'Honorable Mention',
     reward_label: 'Honorable mention',
   }),
@@ -153,7 +164,7 @@ it('opens an accepted entry from its title', async () => {
 });
 
 it('names an untitled entry', async () => {
-  renderTheme([result(25, '', { accepted: true })]);
+  renderTheme([result(25, '', { accepted: true, score: 30 })]);
   expect(await screen.findByRole('link', { name: 'Untitled' })).toHaveAttribute(
     'href',
     '/results/contest/1/theme/2/submission/25',
@@ -226,23 +237,137 @@ it('shows a failed load on a page named Results', async () => {
   document.title = 'Active contests · Rola';
   serveApi({
     'GET /contests/1': () => contest,
-    'GET /results/themes/2': (config) => {
-      throw httpError(config, 404);
+    'GET /results/submissions': (config) => {
+      throw httpError(config, 403);
     },
   });
-  render(
-    <MemoryRouter initialEntries={['/results/contest/1/theme/2']}>
-      <Routes>
-        <Route
-          path="/results/contest/:contestId/theme/:themeId"
-          element={<ThemeResults />}
-        />
-      </Routes>
-    </MemoryRouter>,
+  renderResults('/results/contest/1/theme/2');
+
+  await expectFailedPage(
+    'Results',
+    'You do not have permission to perform this action.',
   );
+});
+
+it('reports a theme that is not in the contest', async () => {
+  document.title = 'Active contests · Rola';
+  // The results list of such a theme is empty, like one without results.
+  serveApi({
+    'GET /contests/1': () => contest,
+    'GET /results/submissions': () => page([]),
+  });
+  renderResults('/results/contest/1/theme/99');
 
   await expectFailedPage(
     'Results',
     'The requested content is no longer available.',
   );
+});
+
+it('reports a theme that is not in the contest when its list request fails', async () => {
+  document.title = 'Active contests · Rola';
+  // The API answers 400 to an id that is not a number.
+  serveApi({
+    'GET /contests/1': () => contest,
+    'GET /results/submissions': (config) => {
+      throw httpError(config, 400, { theme: ['Enter a number.'] });
+    },
+  });
+  renderResults('/results/contest/1/theme/abc');
+
+  await expectFailedPage(
+    'Results',
+    'The requested content is no longer available.',
+  );
+});
+
+describe('changing the theme on the mounted page', () => {
+  const [nature] = contest.themes;
+  if (!nature) {
+    throw new Error('The contest fixture has no theme');
+  }
+  const twoThemes: Contest = {
+    ...contest,
+    themes: [nature, { ...nature, id: 3, title: 'City' }],
+  };
+
+  // Serves both themes' lists; a theme in `held` is answered only when its
+  // `release` is called.
+  function serveThemes(entries: Record<string, ResultsSubmission[]>) {
+    const held: Record<string, () => void> = {};
+    const holding = new Set<string>();
+    serveApi({
+      'GET /contests/1': () => twoThemes,
+      'GET /results/submissions': (_config, url) => {
+        const theme = url.searchParams.get('theme') ?? '';
+        const answer = page(entries[theme] ?? []);
+        if (!holding.has(theme)) return answer;
+        return new Promise<PaginatedResponse<ResultsSubmission>>((resolve) => {
+          held[theme] = () => resolve(answer);
+        });
+      },
+    });
+    return {
+      hold: (theme: string) => holding.add(theme),
+      release: (theme: string) => {
+        holding.delete(theme);
+        held[theme]?.();
+      },
+    };
+  }
+
+  function renderRouter(path: string) {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/results/contest/:contestId/theme/:themeId',
+          element: <ThemeResults />,
+        },
+      ],
+      { initialEntries: [path] },
+    );
+    render(<RouterProvider router={router} />);
+    return router;
+  }
+
+  const street = result(31, 'Street', { theme: 3 });
+  const hills = result(21, 'Hills');
+
+  it("never shows a theme's entries under another theme's title", async () => {
+    const api = serveThemes({ '2': [hills], '3': [street] });
+    const router = renderRouter('/results/contest/1/theme/3');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'City' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Street')).toBeVisible();
+
+    api.hold('2');
+    await act(() => router.navigate('/results/contest/1/theme/2'));
+    expect(screen.queryByText('Street')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Nature' }),
+    ).not.toBeInTheDocument();
+
+    await act(async () => api.release('2'));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Nature' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Hills')).toBeVisible();
+    expect(screen.queryByText('Street')).not.toBeInTheDocument();
+  });
+
+  it("keeps a later theme's entries when an earlier theme's list answers late", async () => {
+    const api = serveThemes({ '2': [hills], '3': [street] });
+    api.hold('3');
+    const router = renderRouter('/results/contest/1/theme/3');
+    await act(() => router.navigate('/results/contest/1/theme/2'));
+    expect(await screen.findByText('Hills')).toBeVisible();
+
+    await act(async () => api.release('3'));
+    expect(screen.getByText('Hills')).toBeVisible();
+    expect(screen.queryByText('Street')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Nature' }),
+    ).toBeInTheDocument();
+  });
 });

@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import './i18n/config';
 import store from './store';
 import { deleteMessage } from '../features/notifications/state/actions';
-import { serveApi } from '../test/api';
+import { page, serveApi } from '../test/api';
 import { open } from '../test/app';
 import { author, contest } from '../test/fixtures';
-import type { ResultsThemeSubmission } from '../shared/api/types';
+import type { PaginatedResponse, ResultsSubmission } from '../shared/api/types';
 
 beforeEach(() => {
   localStorage.clear();
@@ -16,46 +16,54 @@ beforeEach(() => {
   }
 });
 
+function result(
+  id: number,
+  title: string,
+  authorId: number,
+  [first_name, last_name]: [string, string],
+): ResultsSubmission {
+  return {
+    id,
+    created: '2026-01-01T00:00:00Z',
+    modified: '2026-01-01T00:00:00Z',
+    author: {
+      ...author,
+      id: authorId,
+      first_name,
+      last_name,
+      reward: null,
+      reward_theme: null,
+      country: 'SI',
+    },
+    theme: 2,
+    title,
+    files: null,
+    accepted: false,
+    score: null,
+    reward_kind: null,
+    reward_label: null,
+  };
+}
+
 describe('theme results', () => {
-  function result(
-    id: number,
-    title: string,
-    authorId: number,
-    [first_name, last_name]: [string, string],
-  ): ResultsThemeSubmission {
-    return {
-      id,
-      created: '2026-01-01T00:00:00Z',
-      modified: '2026-01-01T00:00:00Z',
-      author: {
-        ...author,
-        id: authorId,
-        first_name,
-        last_name,
-        reward: null,
-        reward_theme: null,
-        country: 'SI',
-      },
-      theme: 2,
-      title,
-      files: null,
-      accepted: false,
-      reward_kind: null,
-      reward_label: null,
+  // Answers the results list of theme 2 only.
+  function themeResults(
+    answer: (url: URL) => PaginatedResponse<ResultsSubmission>,
+  ) {
+    return (_config: unknown, url: URL) => {
+      if (url.searchParams.get('theme') !== '2') {
+        throw new Error(`Unexpected results query: ${url.search}`);
+      }
+      return answer(url);
     };
   }
 
   function openWithAuthorReward(rewardTheme: number): void {
-    const [nature] = contest.themes;
-    if (!nature) {
-      throw new Error('The contest fixture has no theme');
-    }
     const hills = result(21, 'Hills', 3, ['Ana', 'Zupan']);
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/themes/2': () => ({
-        ...nature,
-        submissions: [
+      'GET /results/submissions': themeResults(() =>
+        page([
           {
             ...hills,
             author: {
@@ -64,8 +72,8 @@ describe('theme results', () => {
               reward_theme: rewardTheme,
             },
           },
-        ],
-      }),
+        ]),
+      ),
     });
     open('/results/contest/1/theme/2');
   }
@@ -105,22 +113,17 @@ describe('theme results', () => {
   });
 
   it('groups results by author, sorted by last and first name', async () => {
-    const [nature] = contest.themes;
-    if (!nature) {
-      throw new Error('The contest fixture has no theme');
-    }
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/themes/2': () => ({
-        ...nature,
-        submissions: [
+      'GET /results/submissions': themeResults(() =>
+        page([
           result(21, 'Hills', 3, ['Ana', 'Zupan']),
           result(22, 'Lake', 7, ['Mia', 'Novak']),
           result(23, 'Fog', 3, ['Ana', 'Zupan']),
           result(24, 'Snow', 9, ['Ana', 'Novak']),
           result(25, 'Rain', 7, ['Mia', 'Novak']),
-        ],
-      }),
+        ]),
+      ),
     });
     open('/results/contest/1/theme/2');
     await screen.findByText('Hills');
@@ -137,15 +140,10 @@ describe('theme results', () => {
   });
 
   it('sorts author names by Slovenian collation', async () => {
-    const [nature] = contest.themes;
-    if (!nature) {
-      throw new Error('The contest fixture has no theme');
-    }
     serveApi({
       'GET /contests/1': () => contest,
-      'GET /results/themes/2': () => ({
-        ...nature,
-        submissions: [
+      'GET /results/submissions': themeResults(() =>
+        page([
           result(31, 'Bridge', 1, ['Žan', 'Žagar']),
           result(32, 'Field', 2, ['Ana', 'Zupan']),
           result(33, 'Forest', 3, ['Dana', 'Novak']),
@@ -154,8 +152,8 @@ describe('theme results', () => {
           result(36, 'Street', 6, ['Črt', 'Novak']),
           result(37, 'Tower', 7, ['Iva', 'Čeh']),
           result(38, 'Valley', 8, ['Tine', 'Cerar']),
-        ],
-      }),
+        ]),
+      ),
     });
     open('/results/contest/1/theme/2');
     await screen.findByText('Bridge');
@@ -174,5 +172,58 @@ describe('theme results', () => {
       'Zupan, Ana (SI)',
       'Žagar, Žan (SI)',
     ]);
+  });
+
+  it('lists the results from every page', async () => {
+    const lake = result(22, 'Lake', 7, ['Mia', 'Novak']);
+    serveApi({
+      'GET /contests/1': () => contest,
+      'GET /results/submissions': themeResults((url) =>
+        url.searchParams.get('page') === '2'
+          ? page([result(23, 'Fog', 3, ['Ana', 'Zupan'])])
+          : {
+              ...page([
+                result(21, 'Hills', 3, ['Ana', 'Zupan']),
+                { ...lake, accepted: true, score: 30, files: [] },
+              ]),
+              next: '/api/v1/results/submissions?page=2&theme=2',
+            },
+      ),
+    });
+    open('/results/contest/1/theme/2');
+    await screen.findByText('Fog');
+    expect(screen.getAllByRole('row').map((row) => row.textContent)).toEqual([
+      'Novak, Mia (SI)',
+      'LakeAccepted',
+      'Zupan, Ana (SI)',
+      'Hills',
+      'Fog',
+    ]);
+  });
+
+  it('says so for a theme without published results', async () => {
+    serveApi({
+      'GET /contests/1': () => contest,
+      'GET /results/submissions': themeResults(() => page([])),
+    });
+    open('/results/contest/1/theme/2');
+    expect(await screen.findByText('No published results.')).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+describe('submission results', () => {
+  it('says a declined entry is not available on its own page', async () => {
+    // The API answers a declined entry, which the theme's results list but do
+    // not link, without a score or photographs.
+    serveApi({
+      'GET /results/submissions/24': () =>
+        result(24, 'Snow', 9, ['Ana', 'Novak']),
+    });
+    open('/results/contest/1/theme/2/submission/24');
+    expect(
+      await screen.findByText('The requested content is no longer available.'),
+    ).toBeVisible();
+    expect(screen.queryByText('Snow')).not.toBeInTheDocument();
   });
 });

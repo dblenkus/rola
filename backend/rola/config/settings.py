@@ -105,8 +105,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ),
-    # Views that support ordering add the ordering filter themselves, so that
-    # the other lists neither accept nor advertise an ordering parameter.
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.backends.DjangoFilterBackend",
     ),

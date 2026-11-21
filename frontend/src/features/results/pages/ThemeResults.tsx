@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { requestError } from '../../../shared/api/errors';
+import { contentUnavailable, requestError } from '../../../shared/api/errors';
+import fetchAll from '../../../shared/api/fetchAll';
 import {
   Contest,
   ResultsAuthor,
-  ResultsThemeSubmission,
+  ResultsSubmission,
 } from '../../../shared/api/types';
 import AwardMark from '../../../shared/ui/AwardMark';
 import Icon from '../../../shared/ui/Icon';
@@ -20,7 +21,7 @@ import Table, {
 } from '../../../shared/ui/Table';
 import groupBy from '../../../shared/utils/groupBy';
 import { getContest } from '../../contests';
-import { getThemeResults } from '../api';
+import { getResultsByTheme } from '../api';
 import authorDetails from '../authorDetails';
 import './ThemeResults.css';
 
@@ -29,19 +30,23 @@ interface RouteMatchParams {
   themeId: string;
 }
 
-interface ThemeView {
-  title: string;
-  submissionsByAuthor: ResultsThemeSubmission[][];
-}
-
 // Results list Slovenian names, whatever the browser's locale.
 const nameCollator = new Intl.Collator('sl');
 
 const ThemeResults: React.FC = () => {
   const { t } = useTranslation();
-  const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<ThemeView | null>(null);
+  // The page stays mounted when only the theme changes, so the entries and a
+  // failure to load them are kept with the theme they were loaded for.
+  const [entries, setEntries] = useState<{
+    themeId: string;
+    byAuthor: ResultsSubmission[][];
+  } | null>(null);
+  const [entriesError, setEntriesError] = useState<{
+    themeId: string;
+    message: string;
+  } | null>(null);
   const [contest, setContest] = useState<Contest | null>(null);
+  const [contestError, setContestError] = useState<string | null>(null);
   const { contestId, themeId } = useParams<keyof RouteMatchParams>();
   if (!contestId) {
     throw new Error('Missing contestId route parameter');
@@ -51,32 +56,51 @@ const ThemeResults: React.FC = () => {
   }
 
   useEffect(() => {
-    const fetch = async (): Promise<void> => {
-      const { data } = await getThemeResults(themeId);
-      setTheme({
-        title: data.title,
-        submissionsByAuthor: groupBy(
-          data.submissions,
-          (submission) => submission.author.id,
-        ).sort(
-          ([a], [b]) =>
-            nameCollator.compare(a.author.last_name, b.author.last_name) ||
-            nameCollator.compare(a.author.first_name, b.author.first_name),
-        ),
+    // A theme left before its list answers keeps that answer off the page.
+    let active = true;
+    fetchAll(() => getResultsByTheme(themeId))
+      .then((submissions) => {
+        if (!active) return;
+        setEntriesError(null);
+        setEntries({
+          themeId,
+          byAuthor: groupBy(
+            submissions,
+            (submission) => submission.author.id,
+          ).sort(
+            ([a], [b]) =>
+              nameCollator.compare(a.author.last_name, b.author.last_name) ||
+              nameCollator.compare(a.author.first_name, b.author.first_name),
+          ),
+        });
+      })
+      .catch((error: unknown) => {
+        const message = requestError(error);
+        if (active) setEntriesError({ themeId, message });
       });
+    return () => {
+      active = false;
     };
-    fetch().catch((error: unknown) => setError(requestError(error)));
   }, [themeId]);
 
   useEffect(() => {
-    const fetchContest = async (): Promise<void> => {
-      const { data } = await getContest(contestId);
-      setContest(data);
+    let active = true;
+    getContest(contestId)
+      .then(({ data }) => {
+        if (!active) return;
+        setContestError(null);
+        setContest(data);
+      })
+      .catch((error: unknown) => {
+        const message = requestError(error);
+        if (active) setContestError(message);
+      });
+    return () => {
+      active = false;
     };
-    fetchContest().catch((error: unknown) => setError(requestError(error)));
   }, [contestId]);
 
-  const getAuthor = (submissions: ResultsThemeSubmission[]): ResultsAuthor => {
+  const getAuthor = (submissions: ResultsSubmission[]): ResultsAuthor => {
     const author = submissions[0]?.author;
     if (!author) {
       throw new Error('Submission group is empty');
@@ -90,9 +114,7 @@ const ThemeResults: React.FC = () => {
   };
 
   // An award takes the place of "Accepted"; a plain entry shows nothing.
-  const renderReward = (
-    submission: ResultsThemeSubmission,
-  ): React.ReactNode => {
+  const renderReward = (submission: ResultsSubmission): React.ReactNode => {
     if (submission.reward_label)
       return <AwardMark name={submission.reward_label} />;
     if (submission.accepted)
@@ -106,7 +128,7 @@ const ThemeResults: React.FC = () => {
   };
 
   // Only accepted entries open on their own page.
-  const renderTitle = (submission: ResultsThemeSubmission): React.ReactNode => {
+  const renderTitle = (submission: ResultsSubmission): React.ReactNode => {
     const title = submission.title || t('results_untitled');
     if (!submission.accepted) return title;
     return (
@@ -119,12 +141,27 @@ const ThemeResults: React.FC = () => {
     );
   };
 
-  if (error || !theme || !contest) {
+  // Like the entries, the contest shown is the one in the address.
+  const shownContest = contest?.id.toString() === contestId ? contest : null;
+  // The results list of a theme that is not in the contest is empty, or a
+  // 400 for an id that is not a number, so the contest's themes tell such a
+  // theme from one without results, whatever its list answered.
+  const theme = shownContest?.themes.find(
+    ({ id }) => id.toString() === themeId,
+  );
+  const submissionsByAuthor =
+    entries?.themeId === themeId ? entries.byAuthor : null;
+  const message =
+    shownContest && !theme
+      ? contentUnavailable()
+      : (contestError ??
+        (entriesError?.themeId === themeId ? entriesError.message : null));
+  if (message || !theme || !shownContest || !submissionsByAuthor) {
     // Until the theme is known, the page is named generically.
     return (
       <Page title={t('results')} titleHidden>
-        {error ? (
-          <Message severity="error">{error}</Message>
+        {message ? (
+          <Message severity="error">{message}</Message>
         ) : (
           <LoadingProgress />
         )}
@@ -133,15 +170,17 @@ const ThemeResults: React.FC = () => {
   }
 
   return (
-    <Page title={theme.title} lead={contest.title}>
-      {theme.submissionsByAuthor.length ? (
+    <Page title={theme.title} lead={shownContest.title}>
+      {submissionsByAuthor.length ? (
         <Table>
           <TableBody>
-            {theme.submissionsByAuthor.map((submissions) => {
+            {submissionsByAuthor.map((submissions) => {
               const author = getAuthor(submissions);
               const reward = getAuthorReward(author);
               const details = authorDetails(t, {
-                place: contest.school_visible ? author.school : author.country,
+                place: shownContest.school_visible
+                  ? author.school
+                  : author.country,
                 club: author.club,
               });
               return (

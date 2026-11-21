@@ -170,13 +170,16 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
 
 
 def _rewarded_result(world, judge, index):
+    """Publish an accepted and an unrated entry of a newly rewarded author."""
     author = Author.objects.create(user=world.owner, first_name=f"Author {index}")
     AuthorReward.objects.create(author=author, theme=world.theme, label="Best author")
-    submission = submitted(world, author=author)
-    submission.files.add(photo(world.owner))
-    pay(submission)
-    Rating.objects.create(judge=judge, submission=submission, rating=5)
-    SubmissionReward.objects.create(submission=submission, kind=1, label="Gold")
+    for rating in (5, None):
+        submission = submitted(world, author=author)
+        submission.files.add(photo(world.owner))
+        pay(submission)
+        if rating:
+            Rating.objects.create(judge=judge, submission=submission, rating=rating)
+        SubmissionReward.objects.create(submission=submission, kind=1, label="Gold")
 
 
 def test_published_result_queries_do_not_grow_with_submissions(world):
@@ -190,29 +193,28 @@ def test_published_result_queries_do_not_grow_with_submissions(world):
     world.contest.publish_date = timezone.now() - timedelta(seconds=1)
     world.contest.save()
     client = APIClient()
-    rows_key = {
-        "/api/v1/results/submissions": "results",
-        f"/api/v1/results/themes/{world.theme.pk}": "submissions",
-    }
-    query_counts = {url: [] for url in rows_key}
+    queries_by_filter = {"all": {}, "theme": {"theme": world.theme.pk}}
+    query_counts = {name: [] for name in queries_by_filter}
     created = 0
     for count in (1, 4):
         for index in range(created, created + count):
             _rewarded_result(world, judge, index)
         created += count
-        for url, key in rows_key.items():
+        for name, query in queries_by_filter.items():
             with CaptureQueriesContext(connection) as queries:
-                response = client.get(url)
+                response = client.get("/api/v1/results/submissions", query)
             assert response.status_code == 200, response.data
-            query_counts[url].append(len(queries))
-            rows = response.json()[key]
-            assert len(rows) == created
+            query_counts[name].append(len(queries))
+            rows = response.json()["results"]
+            assert [row["accepted"] for row in rows] == [True, False] * created
             for row in rows:
                 assert row["author"]["country"] == "Slovenia"
                 assert row["author"]["reward"] == "Best author"
                 assert row["author"]["reward_theme"] == world.theme.pk
                 assert row["reward_label"] == "Gold"
-                assert len(row["files"]) == 1
+                assert (
+                    len(row["files"]) == 1 if row["accepted"] else row["files"] is None
+                )
 
-    for counts in query_counts.values():
-        assert counts[1] == counts[0]
+    # The page count, the rows, their files and their rewards.
+    assert query_counts == {name: [4, 4] for name in queries_by_filter}

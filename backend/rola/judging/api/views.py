@@ -1,24 +1,25 @@
 """Serve the rating, judging and results endpoints."""
 
 from django.db.models import (
+    Case,
     CharField,
     Count,
     Exists,
     F,
+    IntegerField,
     OuterRef,
     Prefetch,
     Q,
     Subquery,
     Sum,
     Value,
+    When,
 )
 from django.db.models.functions import SHA1, Cast, Coalesce, Concat
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
 
-from rola.common.filters import OrderingFilter
 from rola.contests.models import Contest, Theme
 from rola.entries.models import Submission
 from rola.judging import services
@@ -29,7 +30,6 @@ from rola.judging.api.serializers import (
     JudgeSubmissionSerializer,
     RatingSerializer,
     SubmissionResultsSerializer,
-    ThemeResultsSerializer,
 )
 from rola.judging.models import Judge, Rating
 from rola.payments.models import PAID_SUBMISSION
@@ -38,6 +38,9 @@ from rola.payments.models import PAID_SUBMISSION
 # only those. Exists instead of a join, so an entry in several paid sets is
 # listed once and its ratings are summed once.
 IS_PAID = Exists(Submission.objects.filter(PAID_SUBMISSION, pk=OuterRef("pk")))
+# An entry is accepted when its rating total reaches its theme's threshold.
+# A total of null, an entry without ratings, is never accepted.
+IS_ACCEPTED = Q(rating_total__gte=F("theme__results__accepted_threshold"))
 
 
 class RatingViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -178,46 +181,26 @@ class JudgingContestViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         )
 
 
-class ThemeResultsViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Retrieve published results for a theme."""
-
-    submission_qs = (
-        Submission.objects.filter(IS_PAID)
-        .annotate(score=Sum("rating__rating"))
-        .select_related(
-            "author",
-            "author__user",
-            "author__user__location",
-            "author__reward",
-        )
-        .prefetch_related("files", "reward")
-        .order_by("pk")
-    )
-
-    queryset = Theme.objects.select_related("contest").prefetch_related(
-        Prefetch("submission_set", queryset=submission_qs)
-    )
-    serializer_class = ThemeResultsSerializer
-
-    def get_queryset(self):
-        """Return published themes that have results."""
-        return self.queryset.filter(
-            contest__in=Contest.objects.results_published(), results__isnull=False
-        )
-
-
 class SubmissionResultsViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
-    """List and retrieve accepted, paid submissions after publication."""
+    """List and retrieve the paid submissions of published theme results."""
 
     queryset = (
-        Submission.objects.filter(IS_PAID)
-        .annotate(score=Sum("rating__rating"))
-        .filter(score__gte=F("theme__results__accepted_threshold"))
+        Submission.objects.filter(IS_PAID, theme__results__isnull=False)
+        .alias(rating_total=Sum("rating__rating"))
+        .annotate(
+            # Null unless accepted, so that a declined entry's total cannot
+            # be read from the API, and the serializer derives acceptance
+            # from it.
+            score=Case(
+                When(IS_ACCEPTED, then="rating_total"),
+                default=None,
+                output_field=IntegerField(),
+            ),
+        )
         .select_related(
             "theme__contest",
-            "theme__results",
             "author",
             "author__user",
             "author__user__location",
@@ -227,12 +210,10 @@ class SubmissionResultsViewSet(
         .order_by("pk")
     )
     serializer_class = SubmissionResultsSerializer
-    filter_backends = [*api_settings.DEFAULT_FILTER_BACKENDS, OrderingFilter]
     filterset_class = SubmissionThemeFilter
-    ordering_fields = ["score"]
 
     def get_queryset(self):
-        """Return accepted, paid submissions of published contests."""
+        """Return paid submissions of published contests' theme results."""
         return self.queryset.filter(
             theme__contest__in=Contest.objects.results_published()
         )
