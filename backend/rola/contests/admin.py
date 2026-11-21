@@ -30,7 +30,15 @@ class ContestAdmin(admin.ModelAdmin):
         ("Dates", {"fields": ("start_date", "end_date", "publish_date")}),
         (
             "Author informations",
-            {"fields": ("date_of_birth_required", "club_required", "school_required")},
+            {
+                "fields": (
+                    "date_of_birth_required",
+                    "club_visible",
+                    "club_required",
+                    "school_visible",
+                    "school_required",
+                )
+            },
         ),
         (
             "Details",
