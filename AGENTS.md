@@ -69,7 +69,10 @@ fixtures in `tests/conftest.py`.
   `layers.css` (the cascade layers, `base` below `design-system`, which holds
   `tokens.css` and `components.css`), `fonts.css` (self-hosted Inter and DM
   Mono), `app.css` (app-wide rules, the element defaults in `base`, and the
-  breakpoints, `width < 40rem` and `width >= 64rem`), `logos/`. All other
+  breakpoints, `width < 40rem` and `width >= 64rem`), `logos/`. `tokens.css`
+  declares each colour for the light and the dark theme: light on `:root`
+  and `[data-theme="light"]`, dark on `[data-theme="dark"]` and, on a dark
+  device, on a root without the attribute. All other
   CSS is unlayered, so an app rule beats a vendored one whatever its
   specificity or the order the build links the files in; keep it that way.
 - `app/`: `main.tsx`, `App.tsx` (picks the layout per route), `routes.tsx`
@@ -77,7 +80,9 @@ fixtures in `tests/conftest.py`.
   `preloadPages()` for tests), `store.ts` (the Redux store, which also
   registers the API client's unexpected-failure handler), `layout/`
   (`StandardLayout`, `BareLayout` for the judge's scoring view, `AppBar`,
-  `MainNav`, `LanguageSwitch`, `AccountMenu`), `NotFound.tsx`,
+  `MainNav`, `LanguageSwitch`, `AccountMenu`), `appearance/` (the choice of
+  System, Light or Dark: storage, `data-theme` on `<html>`, other tabs;
+  `public/appearance.js` applies it before the first paint), `NotFound.tsx`,
   `RouteErrorBoundary.tsx`, `RouteFocus.tsx`, `AriaProviders.tsx`, `pwa/`
   (worker registration, update prompt, offline notice, and what `sw.ts`
   imports: `serverPaths.ts`, `navigationHandler.ts`,
@@ -104,7 +109,12 @@ any feature file.
 Styling: the design system's classes and tokens, no MUI or CSS-in-JS. A
 component's CSS sits beside it, with classes prefixed `ui-` in `shared/ui/`,
 `shell-` in `app/layout/`, `pwa-` in `app/pwa/`, and the feature's name in a
-feature (`upload-`, `jury-`, …).
+feature (`upload-`, `jury-`, …). Colours are tokens, never literals, and
+every page works in both themes. The dark theme turns the swatches around
+(`--ink` is light there, `--paper` dark); what must keep the light values,
+as the judge's scoring view does, sits inside `data-theme="light"`. In code
+and in the interface the setting is the "appearance": a theme is part of a
+contest.
 
 ## Where new code goes
 
@@ -173,6 +183,10 @@ From the repository root, with the uv and Node.js versions that
 - `frontend/src/design/components.css` and `tokens.css` are not edited by
   hand. A change to `tokens.json` regenerates `tokens.css` in the same
   commit; `npm run build` fails otherwise.
+- `data-theme` is only ever `light` or `dark`, and "system" is the attribute
+  absent. The storage key `rola.appearance` and those two values never
+  change: an installed service worker can serve an older
+  `public/appearance.js` to a newer page.
 - The service worker caches only the build's own files, never API responses
   or photographs, and gets documents from the network whenever it can be
   reached: every document carries its own script policy nonce.
