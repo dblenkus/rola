@@ -1,7 +1,5 @@
 """Serialize contests, themes and institutions."""
 
-from rest_framework import serializers
-
 from rola.common.serializers import BaseSerializer
 from rola.contests.models import Contest, Institution, Theme
 
@@ -19,8 +17,6 @@ class InstitutionSerializer(BaseSerializer):
 class ThemeSerializer(BaseSerializer):
     """Serializer for Theme objects."""
 
-    submission_count = serializers.SerializerMethodField("get_submission_count")
-
     class Meta(BaseSerializer.Meta):
         """Serializer configuration."""
 
@@ -29,15 +25,7 @@ class ThemeSerializer(BaseSerializer):
             "title",
             "is_series",
             "max_photos",
-            "submission_count",
         ]
-
-    def get_submission_count(self, theme) -> int:
-        """Count submissions in this theme."""
-        # The contest querysets annotate the count. Reading it directly fails
-        # loudly if a queryset loses the annotation, instead of counting each
-        # theme again.
-        return theme.submission_count
 
 
 class ContestSerializer(BaseSerializer):

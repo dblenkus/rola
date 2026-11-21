@@ -429,6 +429,26 @@ def test_a_delete_leaves_another_judges_rating_that_records_the_caller(
     ]
 
 
+def test_judges_themes_count_paid_submissions_and_the_callers_ratings(
+    world, judge, entry
+):
+    unpaid = submitted(world, user=world.other, author=world.other_author)
+    Rating.objects.create(judge=judge, submission=entry, rating=4)
+    other_judge = Judge.objects.create(judge=world.other, contest=world.contest)
+    for item in (entry, unpaid):
+        Rating.objects.create(judge=other_judge, submission=item, rating=2)
+    empty = Theme.objects.create(contest=world.contest, title="City", max_photos=4)
+
+    response = world.client.get("/api/v1/judging/contests")
+
+    assert response.status_code == 200, response.data
+    themes = response.json()["results"][0]["themes"]
+    assert [
+        (theme["id"], theme["submission_count"], theme["rating_count"])
+        for theme in themes
+    ] == [(world.theme.pk, 1, 1), (empty.pk, 0, 0)]
+
+
 def test_the_ratings_list_filters_by_theme_and_submission(world, judge, entry):
     theme = Theme.objects.create(contest=world.contest, title="City", max_photos=4)
     second = submitted(world, user=world.other, author=world.other_author)
@@ -865,6 +885,27 @@ def test_judging_components_have_their_names_and_shapes(schema):
     score.pop("description")
     assert score == {"type": "integer", "nullable": True, "readOnly": True}
     assert "rating" not in results
+    judge_theme = components["JudgeTheme"]["properties"]
+    assert list(judge_theme) == [
+        "id",
+        "created",
+        "modified",
+        "title",
+        "is_series",
+        "max_photos",
+        "submission_count",
+        "rating_count",
+    ]
+    assert judge_theme["submission_count"] == {
+        "type": "integer",
+        "description": "Count paid submissions available for judging.",
+        "readOnly": True,
+    }
+    assert judge_theme["rating_count"] == {
+        "type": "integer",
+        "description": "Count ratings submitted by the requesting judge.",
+        "readOnly": True,
+    }
     for name in [
         "JudgeContest",
         "JudgeTheme",

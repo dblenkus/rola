@@ -96,15 +96,17 @@ def test_list_queries_do_not_grow_with_related_objects(world, endpoint):
                 world.theme.pk,
                 *[entry.theme.pk for entry in entries],
             ]
-            assert [theme["submission_count"] for theme in themes] == [
-                0,
-                *[1 for _ in entries],
-            ]
             if endpoint == "judging/contests":
+                assert [theme["submission_count"] for theme in themes] == [
+                    0,
+                    *[1 for _ in entries],
+                ]
                 assert [theme["rating_count"] for theme in themes] == [
                     0,
                     *[1 for _ in entries],
                 ]
+            else:
+                assert all("submission_count" not in theme for theme in themes)
         elif endpoint == "submission-sets":
             assert [item["id"] for item in data] == [
                 entry.group.pk for entry in entries
@@ -163,10 +165,23 @@ def test_judging_counts_keep_payments_and_judges_independent(world):
     assert [theme["submission_count"] for theme in themes] == [3, 0]
     assert [theme["rating_count"] for theme in themes] == [2, 0]
 
-    response = world.client.get("/api/v1/contests")
+
+@pytest.mark.parametrize("detail", [False, True])
+def test_contest_reads_load_their_themes_in_one_query(
+    world, detail, django_assert_num_queries
+):
+    """A contest list or detail reads its page and then all its themes at once."""
+    for index in range(3):
+        theme = Theme.objects.create(
+            contest=world.contest, title=f"Theme {index}", max_photos=4
+        )
+        pay(submitted(world, theme=theme))
+    path = f"/api/v1/contests/{world.contest.pk}" if detail else "/api/v1/contests"
+
+    with django_assert_num_queries(2 if detail else 3):
+        response = APIClient().get(path)
+
     assert response.status_code == 200, response.data
-    themes = response.data["results"][0]["themes"]
-    assert [theme["submission_count"] for theme in themes] == [3, 0]
 
 
 def _rewarded_result(world, judge, index):

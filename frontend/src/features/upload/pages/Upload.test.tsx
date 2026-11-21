@@ -936,7 +936,6 @@ describe('photograph upload', () => {
       title: 'Cities',
       is_series: false,
       max_photos: 1,
-      submission_count: 0,
     };
     current = {
       ...contest,

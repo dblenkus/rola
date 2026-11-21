@@ -14,6 +14,8 @@ from tests.factories import submitted
 
 pytestmark = pytest.mark.django_db
 
+THEME_FIELDS = ["id", "created", "modified", "title", "is_series", "max_photos"]
+
 
 @pytest.fixture(scope="module")
 def schema():
@@ -70,6 +72,22 @@ def test_anonymous_visitors_list_and_read_contests(world, past):
     assert detail.status_code == 200, detail.data
     assert detail.data["title"] == "Salon"
     assert [theme["id"] for theme in detail.data["themes"]] == [world.theme.pk]
+
+
+def test_contest_themes_carry_no_submission_count(world, past):
+    submitted(world)
+    client = APIClient()
+
+    contests = client.get("/api/v1/contests")
+    detail = client.get(f"/api/v1/contests/{world.contest.pk}")
+
+    assert contests.status_code == 200, contests.data
+    assert detail.status_code == 200, detail.data
+    assert [
+        [list(theme) for theme in contest["themes"]]
+        for contest in contests.json()["results"]
+    ] == [[THEME_FIELDS], []]
+    assert [list(theme) for theme in detail.json()["themes"]] == [THEME_FIELDS]
 
 
 @pytest.mark.parametrize(
@@ -229,6 +247,7 @@ def test_contest_components_keep_their_names_without_request_bodies(schema):
         "items"
     ] == ref("Institution")
     assert components["Contest"]["properties"]["themes"]["items"] == ref("Theme")
+    assert list(components["Theme"]["properties"]) == THEME_FIELDS
     assert "InstitutionKindEnum" in components
     for removed in ("ContestRequest", "PatchedContestRequest", "ThemeRequest"):
         assert removed not in components
