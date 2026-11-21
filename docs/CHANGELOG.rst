@@ -85,6 +85,13 @@ API changes
   declares ``?submitted=``, and the institution list no longer declares
   ``?kind=``, ``?name=`` or its ``name`` lookups; such parameters are
   ignored, as is ``?is_active=`` on ``/api/v1/judging/contests``.
+* A required club or school is always visible: the database refuses a
+  contest with ``club_required`` but not ``club_visible``, or
+  ``school_required`` but not ``school_visible``, and the contest admin
+  answers that combination with a form error. The upload form used to
+  refuse every entry of a contest that required a hidden school, and to
+  ignore a required club that it hid; the results show neither while it is
+  hidden. ``docs/transfer.rst`` checks the old contests for it.
 * Themes in ``/api/v1/contests`` no longer carry ``submissions_number``, the
   count of all their submissions. Themes in ``/api/v1/judging/contests``
   keep it as ``submission_count``, which counts paid submissions.

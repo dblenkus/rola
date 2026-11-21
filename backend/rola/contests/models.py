@@ -59,6 +59,27 @@ class Contest(BaseModel):
         ordering = ["id"]
         verbose_name = _("contest")
         verbose_name_plural = _("contests")
+        # The upload form requires a required field even where it hides it,
+        # so a hidden required field would refuse every entry.
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(club_visible=True) | models.Q(club_required=False),
+                name="contests_club_required_is_visible",
+                violation_error_message=(
+                    'A required club must be visible: tick "Club visible" or '
+                    'untick "Club required".'
+                ),
+            ),
+            models.CheckConstraint(
+                condition=models.Q(school_visible=True)
+                | models.Q(school_required=False),
+                name="contests_school_required_is_visible",
+                violation_error_message=(
+                    'A required school must be visible: tick "School visible" '
+                    'or untick "School required".'
+                ),
+            ),
+        ]
 
     objects = ContestQuerySet.as_manager()
 
