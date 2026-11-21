@@ -10,8 +10,10 @@
   color: var(--text-muted);
 }
 
-/* The mark has no file for the viewing surface and must not be recoloured,
-   so there only the word shows. */
+/* The mark has no white file and must not be recoloured, so on a dark
+   ground (Logo hides it) and on the viewing surface (this rule, which also
+   holds where the viewing surface is pinned light) only the word shows. A
+   hidden mark is no flex item, so no gap is left above the word. */
 .rl-on-viewing .ui-loading .rl-logo {
   display: none;
 }

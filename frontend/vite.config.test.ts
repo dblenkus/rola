@@ -34,3 +34,12 @@ describe('the web app manifest', () => {
     }
   });
 });
+
+describe('the appearance before the first paint', () => {
+  const html = read('./index.html');
+
+  it('lets the browser draw its own controls in either scheme', () => {
+    const meta = /<meta name="color-scheme" content="([^"]+)"/.exec(html);
+    expect(meta?.[1]).toBe('light dark');
+  });
+});

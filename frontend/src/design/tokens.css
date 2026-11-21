@@ -1,6 +1,6 @@
 /* Generated from tokens.json by scripts/build-tokens.ts. Do not edit; run `npm run tokens`. */
 
-:root {
+:root, [data-theme="light"] {
   color-scheme: light;
 
   /* color */
@@ -22,7 +22,59 @@
   --on-viewing-muted: var(--grey-200);
   --focus: var(--ink);
   --focus-on-dark: var(--paper);
+}
 
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* color */
+  --ink: #EDEDED;
+  --viewing: #3A3A3A;
+  --grey-600: #A8A8A8;
+  --grey-500: #808080;
+  --grey-200: #303030;
+  --grey-100: #1E1E1E;
+  --paper: #111111;
+  --error: #F28B82;
+  --text: var(--ink);
+  --text-muted: var(--grey-600);
+  --line: var(--grey-200);
+  --control-line: var(--grey-500);
+  --well: var(--grey-100);
+  --on-ink: var(--paper);
+  --on-viewing: var(--paper);
+  --on-viewing-muted: var(--grey-200);
+  --focus: var(--ink);
+  --focus-on-dark: var(--paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    /* color */
+    --ink: #EDEDED;
+    --viewing: #3A3A3A;
+    --grey-600: #A8A8A8;
+    --grey-500: #808080;
+    --grey-200: #303030;
+    --grey-100: #1E1E1E;
+    --paper: #111111;
+    --error: #F28B82;
+    --text: var(--ink);
+    --text-muted: var(--grey-600);
+    --line: var(--grey-200);
+    --control-line: var(--grey-500);
+    --well: var(--grey-100);
+    --on-ink: var(--paper);
+    --on-viewing: var(--paper);
+    --on-viewing-muted: var(--grey-200);
+    --focus: var(--ink);
+    --focus-on-dark: var(--paper);
+  }
+}
+
+:root {
   /* type families */
   --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;

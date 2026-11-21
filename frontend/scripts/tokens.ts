@@ -10,6 +10,18 @@ export interface NamedToken {
   value: string;
 }
 
+/** The colour themes, in the order tokens.json lists and tokens.css renders them. */
+export const THEMES = ['light', 'dark'] as const;
+export type Theme = (typeof THEMES)[number];
+
+/**
+ * A colour: an alias of another colour, the same alias in every theme, or a
+ * hex literal per theme (a plain hex string in tokens.json applies to both).
+ */
+export type ColorToken =
+  | { name: string; alias: string }
+  | { name: string; values: Record<Theme, string> };
+
 export interface TypeStyle {
   name: string;
   family: string;
@@ -20,14 +32,13 @@ export interface TypeStyle {
 }
 
 export interface Tokens {
-  colors: NamedToken[];
+  colors: ColorToken[];
   families: NamedToken[];
   /** Every `{"tokens": [...]}` section other than colour, in file order. */
   scales: { section: string; tokens: NamedToken[] }[];
   typeStyles: TypeStyle[];
 }
 
-const THEMES = ['light'];
 const NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const ALIAS = /^\{([^{}]*)\}$/;
 const HEX_COLOR = /^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -110,7 +121,64 @@ function parseToken(raw: unknown, where: string): NamedToken {
   return { name, value: asString(token.value, `token '${name}' value`) };
 }
 
-function parseColors(raw: unknown): NamedToken[] {
+function isTheme(key: string): key is Theme {
+  return THEMES.some((theme) => theme === key);
+}
+
+function parseThemedHex(
+  value: Record<string, unknown>,
+  name: string,
+  theme: Theme,
+): string {
+  const text = value[theme];
+  if (text === undefined) fail(`colour '${name}' has no ${theme} value`);
+  if (typeof text !== 'string') {
+    fail(`colour '${name}' ${theme} value must be a string`);
+  }
+  if (ALIAS.test(text)) {
+    fail(
+      `colour '${name}' ${theme} value '${text}' is an alias; an alias is never themed`,
+    );
+  }
+  if (!HEX_COLOR.test(text)) {
+    fail(`colour '${name}' ${theme} value '${text}' is not a hex colour`);
+  }
+  return text;
+}
+
+function parseColorToken(raw: unknown, where: string): ColorToken {
+  const token = asRecord(raw, where);
+  onlyKeys(token, TOKEN_KEYS, where);
+  const name = asName(token.name, `${where}.name`);
+  const { value } = token;
+  if (typeof value === 'string') {
+    const alias = ALIAS.exec(value);
+    if (alias) return { name, alias: alias[1] ?? '' };
+    if (!HEX_COLOR.test(value)) {
+      fail(
+        `colour '${name}' value '${value}' is neither a hex colour nor an alias`,
+      );
+    }
+    return { name, values: { light: value, dark: value } };
+  }
+  if (!isRecord(value)) {
+    fail(
+      `colour '${name}' value must be a hex colour, an alias or an object of ${THEMES.join(', ')} hex colours`,
+    );
+  }
+  for (const key of Object.keys(value)) {
+    if (!isTheme(key)) fail(`colour '${name}' has unknown theme '${key}'`);
+  }
+  return {
+    name,
+    values: {
+      light: parseThemedHex(value, name, 'light'),
+      dark: parseThemedHex(value, name, 'dark'),
+    },
+  };
+}
+
+function parseColors(raw: unknown): ColorToken[] {
   const color = asRecord(raw, 'color');
   onlyKeys(color, ['themes', 'tokens'], 'color');
   const themes = asArray(color.themes, 'color.themes').map((theme, index) =>
@@ -125,30 +193,30 @@ function parseColors(raw: unknown): NamedToken[] {
     );
   }
   const tokens = asArray(color.tokens, 'color.tokens').map((token, index) =>
-    parseToken(token, `color.tokens[${index}]`),
+    parseColorToken(token, `color.tokens[${index}]`),
   );
   const names = new Set(tokens.map((token) => token.name));
-  for (const { name, value } of tokens) {
-    const alias = ALIAS.exec(value);
-    if (alias) {
-      const target = alias[1] ?? '';
-      if (!names.has(target)) {
-        fail(`colour '${name}' is an alias of unknown colour '${target}'`);
-      }
-    } else if (!HEX_COLOR.test(value)) {
+  for (const token of tokens) {
+    if ('alias' in token && !names.has(token.alias)) {
       fail(
-        `colour '${name}' value '${value}' is neither a hex colour nor an alias`,
+        `colour '${token.name}' is an alias of unknown colour '${token.alias}'`,
       );
     }
   }
+  // An alias is the same in every theme, so one theme's walk finds every
+  // cycle.
   for (const { name } of tokens) {
-    resolveColor(tokens, name);
+    resolveColor(tokens, name, 'light');
   }
   return tokens;
 }
 
 /** Follow a colour's aliases to its literal; throws on an alias cycle. */
-function resolveColor(colors: NamedToken[], name: string): string {
+function resolveColor(
+  colors: ColorToken[],
+  name: string,
+  theme: Theme,
+): string {
   const seen: string[] = [];
   let current = name;
   for (;;) {
@@ -160,10 +228,21 @@ function resolveColor(colors: NamedToken[], name: string): string {
     seen.push(current);
     const token = colors.find((candidate) => candidate.name === current);
     if (token === undefined) fail(`unknown colour '${current}'`);
-    const alias = ALIAS.exec(token.value);
-    if (!alias) return token.value;
-    current = alias[1] ?? '';
+    if (!('alias' in token)) return token.values[theme];
+    current = token.alias;
   }
+}
+
+/**
+ * A colour's hex literal in one theme, its aliases followed: for consumers
+ * that take no CSS variables, such as the web app manifest.
+ */
+export function colorLiteral(
+  tokens: Tokens,
+  name: string,
+  theme: Theme,
+): string {
+  return resolveColor(tokens.colors, name, theme);
 }
 
 function parseType(raw: unknown): Pick<Tokens, 'families' | 'typeStyles'> {
@@ -294,19 +373,54 @@ function declaration(name: string, value: string): string {
   return `  --${name}: ${value};`;
 }
 
-export function renderTokensCss(tokens: Tokens): string {
-  const colorValue = (value: string): string => {
-    const alias = ALIAS.exec(value);
-    return alias ? `var(--${alias[1] ?? ''})` : value;
-  };
-  const properties = [
-    '  color-scheme: light;',
+function indent(lines: string[], prefix: string): string[] {
+  return lines.map((line) => (line === '' ? line : `${prefix}${line}`));
+}
+
+/**
+ * One theme's colours as a rule: the colour scheme, every literal and every
+ * alias. The aliases are declared again in each block because a var() is
+ * resolved on the element that declares it: without them, an element that
+ * carries data-theme would get its own swatches but its ancestor's roles.
+ */
+function colorRule(tokens: Tokens, selector: string, theme: Theme): string[] {
+  return [
+    `${selector} {`,
+    `  color-scheme: ${theme};`,
     '',
     '  /* color */',
-    ...tokens.colors.map(({ name, value }) =>
-      declaration(name, colorValue(value)),
+    ...tokens.colors.map((token) =>
+      declaration(
+        token.name,
+        'alias' in token ? `var(--${token.alias})` : token.values[theme],
+      ),
     ),
+    '}',
+  ];
+}
+
+export function renderTokensCss(tokens: Tokens): string {
+  // The three colour blocks, in this order, all from colorRule so they cannot
+  // drift. The order and the selectors carry the cascade:
+  // - html[data-theme="dark"] beats `:root, [data-theme="light"]` only because
+  //   the dark block comes later: both selectors have the specificity of one
+  //   class.
+  // - `:root:not([data-theme])` (two classes) outranks `:root`, so the
+  //   device's dark preference applies when the page names no theme, and
+  //   never when it names one.
+  // - A nested element with data-theme="light" matches only the first block
+  //   (it is never :root), so it gets the light values whatever the page's
+  //   theme.
+  const colors = [
+    ...colorRule(tokens, ':root, [data-theme="light"]', 'light'),
     '',
+    ...colorRule(tokens, '[data-theme="dark"]', 'dark'),
+    '',
+    '@media (prefers-color-scheme: dark) {',
+    ...indent(colorRule(tokens, ':root:not([data-theme])', 'dark'), '  '),
+    '}',
+  ];
+  const properties = [
     '  /* type families */',
     ...tokens.families.map(({ name, value }) =>
       declaration(`font-${name}`, value),
@@ -332,6 +446,8 @@ export function renderTokensCss(tokens: Tokens): string {
   );
   return [
     '/* Generated from tokens.json by scripts/build-tokens.ts. Do not edit; run `npm run tokens`. */',
+    '',
+    colors.join('\n'),
     '',
     `:root {\n${properties.join('\n')}\n}`,
     '',

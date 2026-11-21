@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
-import { parseTokens } from './scripts/tokens.ts';
+import { colorLiteral, parseTokens } from './scripts/tokens.ts';
 
 const target = process.env.API_PROXY_TARGET || 'http://localhost:8000';
 
@@ -14,17 +14,10 @@ const tokens = parseTokens(
   ),
 );
 
-/** A colour token's literal value; the manifest takes no CSS variables. */
-function colorToken(name: string): string {
-  const value = tokens.colors.find((color) => color.name === name)?.value;
-  if (value === undefined || !value.startsWith('#')) {
-    throw new Error(`tokens.json: colour '${name}' is not a hex literal`);
-  }
-  return value;
-}
-
 // The browser chrome takes ink, as index.html's theme-color meta does, and
-// the launch screen the page's paper ground.
+// the launch screen the page's paper ground. A manifest has one value per
+// member and cannot follow the theme, so it takes the light theme's, the
+// design system's first.
 export const manifest: Partial<ManifestOptions> = {
   id: '/',
   name: 'Rola',
@@ -32,8 +25,8 @@ export const manifest: Partial<ManifestOptions> = {
   start_url: '/',
   scope: '/',
   display: 'standalone',
-  theme_color: colorToken('ink'),
-  background_color: colorToken('paper'),
+  theme_color: colorLiteral(tokens, 'ink', 'light'),
+  background_color: colorLiteral(tokens, 'paper', 'light'),
   icons: [
     {
       src: '/icon-192.png',

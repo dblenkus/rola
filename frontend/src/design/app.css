@@ -29,6 +29,32 @@
   --ui-page-margin: var(--space-6);
 }
 
+/*
+ * The logo files for the theme's ground (Logo.css): --ui-logo-ink is the
+ * display of the files drawn in ink, block on a light ground and none on a
+ * dark one; --ui-logo-reversed, of the white header file, is its opposite.
+ * The selectors are tokens.css's three colour blocks, in the same order for
+ * the same cascade, and the properties inherit, so a subtree pinned with
+ * data-theme="light" gets the light pair with no selector of its own.
+ */
+:root,
+[data-theme='light'] {
+  --ui-logo-ink: block;
+  --ui-logo-reversed: none;
+}
+
+[data-theme='dark'] {
+  --ui-logo-ink: none;
+  --ui-logo-reversed: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --ui-logo-ink: none;
+    --ui-logo-reversed: block;
+  }
+}
+
 /* wide */
 @media (width >= 64rem) {
   :root {

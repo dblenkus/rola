@@ -15,6 +15,8 @@ import {
 } from '../test/api';
 import { open } from '../test/app';
 import { contest, jurySubmission } from '../test/fixtures';
+import headerReversedUrl from '../design/logos/rola-logo-header-reversed.svg';
+import headerUrl from '../design/logos/rola-logo-header.svg';
 
 beforeEach(() => {
   localStorage.clear();
@@ -305,9 +307,16 @@ describe('sign-in pages', () => {
       expect(
         await screen.findByRole('heading', { level: 1 }),
       ).toBeInTheDocument();
-      const images = document.querySelectorAll('img');
-      expect(images).toHaveLength(1);
-      expect(screen.getByRole('banner')).toContainElement(images[0] ?? null);
+      // The app bar's lockup is its ink file and its white file, of which
+      // CSS shows the one for the ground; jsdom applies no CSS.
+      const images = Array.from(document.querySelectorAll('img'));
+      expect(images.map((image) => image.getAttribute('src'))).toEqual([
+        headerUrl,
+        headerReversedUrl,
+      ]);
+      for (const image of images) {
+        expect(screen.getByRole('banner')).toContainElement(image);
+      }
     },
   );
 });
