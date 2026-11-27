@@ -18,7 +18,7 @@ services:
     networks: [default, tunnel]
 
   tunnel:
-    image: cloudflare/cloudflared:2026.11.0
+    image: cloudflare/cloudflared:2026.11.1
     # The health check reads the metrics server, from inside the container.
     command: [tunnel, --metrics, "127.0.0.1:20241", run]
     environment:
