@@ -16,7 +16,7 @@ RUN test -n "$VITE_SENTRY_DSN" \
     || { echo "Set the VITE_SENTRY_DSN build argument." >&2; exit 1; }
 RUN npm run build
 
-FROM nginx/nginx-unprivileged:1.30.6-alpine3.24 AS production
+FROM nginx/nginx-unprivileged:1.30.7-alpine3.24 AS production
 COPY docker/default.conf /etc/nginx/conf.d/default.conf
 RUN nginx -t
 COPY --from=build /app/dist /usr/share/nginx/html
